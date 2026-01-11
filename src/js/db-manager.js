@@ -24,7 +24,7 @@ const DBManager = {
                 resolve(this.db);
             };
 
-request.onupgradeneeded = (e) => {
+            request.onupgradeneeded = (e) => {
                 const db = e.target.result;
                 const oldVersion = e.oldVersion;
 
@@ -33,65 +33,65 @@ request.onupgradeneeded = (e) => {
                     db.createObjectStore(APP_CONFIG.STORES.SETTINGS, { keyPath: 'id' });
                 }
 
-    if (!db.objectStoreNames.contains(APP_CONFIG.STORES.LOCATIONS)) {
-        db.createObjectStore(APP_CONFIG.STORES.LOCATIONS, { keyPath: 'name' });
-    }
+                if (!db.objectStoreNames.contains(APP_CONFIG.STORES.LOCATIONS)) {
+                    db.createObjectStore(APP_CONFIG.STORES.LOCATIONS, { keyPath: 'name' });
+                }
 
-    if (!db.objectStoreNames.contains(APP_CONFIG.STORES.TELESCOPES)) {
-        db.createObjectStore(APP_CONFIG.STORES.TELESCOPES, { keyPath: 'name' });
-    }
+                if (!db.objectStoreNames.contains(APP_CONFIG.STORES.TELESCOPES)) {
+                    db.createObjectStore(APP_CONFIG.STORES.TELESCOPES, { keyPath: 'name' });
+                }
 
-    if (!db.objectStoreNames.contains(APP_CONFIG.STORES.SENSORS)) {
-        db.createObjectStore(APP_CONFIG.STORES.SENSORS, { keyPath: 'name' });
-    }
+                if (!db.objectStoreNames.contains(APP_CONFIG.STORES.SENSORS)) {
+                    db.createObjectStore(APP_CONFIG.STORES.SENSORS, { keyPath: 'name' });
+                }
 
-    if (!db.objectStoreNames.contains(APP_CONFIG.STORES.PINNED_TARGETS)) {
-        db.createObjectStore(APP_CONFIG.STORES.PINNED_TARGETS, { keyPath: 'name' });
-    }
+                if (!db.objectStoreNames.contains(APP_CONFIG.STORES.PINNED_TARGETS)) {
+                    db.createObjectStore(APP_CONFIG.STORES.PINNED_TARGETS, { keyPath: 'name' });
+                }
 
-    if (!db.objectStoreNames.contains(APP_CONFIG.STORES.TODO_TARGETS)) {
-        const toDoStore = db.createObjectStore(APP_CONFIG.STORES.TODO_TARGETS, { keyPath: 'targetId' });
-        toDoStore.createIndex('addedDate', 'addedDate', { unique: false });
-    }
+                if (!db.objectStoreNames.contains(APP_CONFIG.STORES.TODO_TARGETS)) {
+                    const toDoStore = db.createObjectStore(APP_CONFIG.STORES.TODO_TARGETS, { keyPath: 'targetId' });
+                    toDoStore.createIndex('addedDate', 'addedDate', { unique: false });
+                }
 
-    if (!db.objectStoreNames.contains(APP_CONFIG.STORES.TARGETS)) {
-        db.createObjectStore(APP_CONFIG.STORES.TARGETS, { keyPath: 'object' });
-    }
+                if (!db.objectStoreNames.contains(APP_CONFIG.STORES.TARGETS)) {
+                    db.createObjectStore(APP_CONFIG.STORES.TARGETS, { keyPath: 'object' });
+                }
 
-    // Version 6: Add Imaging Log stores
-    if (oldVersion < 6) {
-        console.log('Upgrading database to version 6...');
-        
-        // Create filters store
-        if (!db.objectStoreNames.contains(APP_CONFIG.STORES.FILTERS)) {
-            db.createObjectStore(APP_CONFIG.STORES.FILTERS, { keyPath: 'name' });
-            console.log('Created filters store');
-        }
-        
-        // Create imaging projects store
-        if (!db.objectStoreNames.contains(APP_CONFIG.STORES.IMAGING_PROJECTS)) {
-            db.createObjectStore(APP_CONFIG.STORES.IMAGING_PROJECTS, { keyPath: 'id', autoIncrement: true });
-            console.log('Created imagingProjects store');
-        }
-        
-        // Create imaging sessions store with indices
-        if (!db.objectStoreNames.contains(APP_CONFIG.STORES.IMAGING_SESSIONS)) {
-            const sessionsStore = db.createObjectStore(APP_CONFIG.STORES.IMAGING_SESSIONS, { keyPath: 'id', autoIncrement: true });
-            sessionsStore.createIndex('projectId', 'projectId', { unique: false });
-            sessionsStore.createIndex('targetDesignation', 'targetDesignation', { unique: false });
-            sessionsStore.createIndex('date', 'date', { unique: false });
-            console.log('Created imagingSessions store with indices');
-        }
-        
-        // Create imaging programs store
-        if (!db.objectStoreNames.contains(APP_CONFIG.STORES.IMAGING_PROGRAMS)) {
-            db.createObjectStore(APP_CONFIG.STORES.IMAGING_PROGRAMS, { keyPath: 'id', autoIncrement: true });
-            console.log('Created imagingPrograms store');
-        }
-    }
+                // Version 6: Add Imaging Log stores
+                if (oldVersion < 6) {
+                    console.log('Upgrading database to version 6...');
+                    
+                    // Create filters store
+                    if (!db.objectStoreNames.contains(APP_CONFIG.STORES.FILTERS)) {
+                        db.createObjectStore(APP_CONFIG.STORES.FILTERS, { keyPath: 'name' });
+                        console.log('Created filters store');
+                    }
+                    
+                    // Create imaging projects store
+                    if (!db.objectStoreNames.contains(APP_CONFIG.STORES.IMAGING_PROJECTS)) {
+                        db.createObjectStore(APP_CONFIG.STORES.IMAGING_PROJECTS, { keyPath: 'id', autoIncrement: true });
+                        console.log('Created imagingProjects store');
+                    }
+                    
+                    // Create imaging sessions store with indices
+                    if (!db.objectStoreNames.contains(APP_CONFIG.STORES.IMAGING_SESSIONS)) {
+                        const sessionsStore = db.createObjectStore(APP_CONFIG.STORES.IMAGING_SESSIONS, { keyPath: 'id', autoIncrement: true });
+                        sessionsStore.createIndex('projectId', 'projectId', { unique: false });
+                        sessionsStore.createIndex('targetDesignation', 'targetDesignation', { unique: false });
+                        sessionsStore.createIndex('date', 'date', { unique: false });
+                        console.log('Created imagingSessions store with indices');
+                    }
+                    
+                    // Create imaging programs store
+                    if (!db.objectStoreNames.contains(APP_CONFIG.STORES.IMAGING_PROGRAMS)) {
+                        db.createObjectStore(APP_CONFIG.STORES.IMAGING_PROGRAMS, { keyPath: 'id', autoIncrement: true });
+                        console.log('Created imagingPrograms store');
+                    }
+                }
 
-    console.log('Database setup complete');
-};
+                console.log('Database setup complete');
+            };
         });
     },
 
@@ -166,7 +166,8 @@ request.onupgradeneeded = (e) => {
     },
 
     /**
-     * Bulk put operation for multiple items
+     * Bulk put operation for multiple items. Can greatly speed writes up
+     * to the IndexedDB store for large numbers of items.
      */
     async putBulk(storeName, items) {
         return new Promise((resolve, reject) => {
@@ -194,5 +195,6 @@ request.onupgradeneeded = (e) => {
                 request.onerror = () => reject(request.error);
             });
         });
-    }
+    },
+
 };
