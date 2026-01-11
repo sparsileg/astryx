@@ -1,0 +1,32 @@
+/* Weather Forecasts */
+.weather-forecast-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.weather-location-card {
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background: var(--card-bg);
+}
+
+.location-separator {
+    margin: 0 0.5rem;
+}
+
+.weather-link {
+    color: var(--primary-color);
+    text-decoration: none;
+    margin-right: 0.75rem;
+}
+
+.weather-link:hover {
+    color: var(--primary-color);
+    text-decoration: underline;
+}
+
+.weather-link:last-child {
+    margin-right: 0;
+}
