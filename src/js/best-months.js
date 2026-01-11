@@ -4,8 +4,8 @@
  */
 
 // Configurable sampling parameters
-const SAMPLING_INTERVAL_MINUTES = 10;  // Minutes between altitude samples
-const DAY_SAMPLING_STEP = 1;            // 1 = every day, 2 = every other day, etc.
+const SAMPLING_INTERVAL_MINUTES = 10;   // Minutes between altitude samples
+const DAY_SAMPLING_STEP = 3;            // 1 = every day, 2 = every other day, etc.
 
 const BestMonths = {
     isCalculating: false,
@@ -22,6 +22,7 @@ const BestMonths = {
         if (!location) {
             throw new Error(`Location "${locationName}" not found`);
         }
+        const twilightCache = this.buildTwilightCache(location);
 
         // Generate timestamp at start of calculation (YYYYMMDD-HHMMSSZ format)
         const now = new Date();
@@ -54,11 +55,10 @@ const BestMonths = {
             }
 
             // Calculate best month using type-specific altitude thresholds and weighted scoring
-            const transitResult = this.calculateBestMonth(target, location);
+            const transitResult = this.calculateBestMonth(target, location, twilightCache);
 
             // Calculate visibility window based on dark hours
-            const visibilityResult = this.calculateVisibilityWindow(target, location, minAltitude, minDarkHours);
-
+            const visibilityResult = this.calculateVisibilityWindow(target, location, minAltitude, minDarkHours, twilightCache);
             // Initialize objects if they don't exist or convert old single values
             if (typeof target.bestMonth !== 'object' || target.bestMonth === null) {
                 target.bestMonth = {};
@@ -84,9 +84,6 @@ const BestMonths = {
                 delete target.bestMonthCalculated;
             }
 
-            // Save updated target to database
-            await DBManager.put(APP_CONFIG.STORES.TARGETS, target);
-
             if (transitResult.bestMonth !== null && visibilityResult.visibilityStart !== null) {
                 visibleCount++;
             } else {
@@ -99,6 +96,19 @@ const BestMonths = {
             if (progressCallback) {
                 progressCallback(processedCount, totalTargets, target.object);
             }
+
+            // Write in batches of 100 to avoid blocking
+            if (processedCount % 100 === 0) {
+                console.log(`Writing batch of 100 targets (${processedCount}/${totalTargets})...`);
+                await DBManager.putBulk(APP_CONFIG.STORES.TARGETS, targets.slice(processedCount - 100, processedCount));
+            }
+        }
+
+        // Write any remaining targets (less than 100)
+        const remainder = processedCount % 100;
+        if (remainder > 0) {
+            console.log(`Writing final ${remainder} targets...`);
+            await DBManager.putBulk(APP_CONFIG.STORES.TARGETS, targets.slice(processedCount - remainder, processedCount));
         }
 
         this.isCalculating = false;
@@ -120,6 +130,32 @@ const BestMonths = {
     cancelCalculation() {
         this.cancelRequested = true;
     },
+
+    /**
+     * Pre-calculate twilight times for all days of the year
+     * Returns a Map keyed by day offset (0-364)
+     */
+    buildTwilightCache(location) {
+        console.log('Pre-calculating twilight times for 365 days...');
+        const twilightCache = new Map();
+        const startDate = new Date(new Date().getFullYear(), 0, 1);
+        
+        for (let dayOffset = 0; dayOffset < 365; dayOffset++) {
+            const date = new Date(startDate);
+            date.setDate(startDate.getDate() + dayOffset);
+            const isDST = SettingsManager.isDSTActive(date, location.timezone);
+            
+            twilightCache.set(dayOffset, {
+                duskJD: findAstronomicalDusk(date, location.latitude, location.longitude, location.timezone, isDST),
+                dawnJD: findNextAstronomicalDawn(date, location.latitude, location.longitude, location.timezone, isDST),
+                date: date
+            });
+        }
+        
+        console.log('Twilight cache complete');
+        return twilightCache;
+    },
+
 
     /**
      * Calculate best months for all saved locations sequentially
@@ -201,7 +237,7 @@ const BestMonths = {
      * Calculate best observing month for a single target using weighted scoring
      * Returns: { bestMonth: number|null, peakAltitude: number }
      */
-    calculateBestMonth(target, location) {
+    calculateBestMonth(target, location, twilightCache) {
         const today = new Date();
         const startDate = new Date(today.getFullYear(), 0, 1); // January 1
 
@@ -227,8 +263,7 @@ const BestMonths = {
         for (let dayOffset = 0; dayOffset < 365; dayOffset += DAY_SAMPLING_STEP) {
             const date = new Date(startDate);
             date.setDate(startDate.getDate() + dayOffset);
-
-            const darkHours = this.calculateTotalDarkHours(date, target, location, altitudeThreshold);
+            const darkHours = this.calculateTotalDarkHours(date, target, location, altitudeThreshold, twilightCache, dayOffset);
             if (darkHours > maxDarkHours) {
                 maxDarkHours = darkHours;
             }
@@ -251,7 +286,7 @@ const BestMonths = {
             date.setDate(startDate.getDate() + dayOffset);
 
             // Calculate transit score (how close to midnight)
-            const transitHour = this.calculateTransitHour(date, target, location);
+            const transitHour = this.calculateTransitHour(date, target, location, twilightCache, dayOffset);
             let transitScore = 0;
             if (transitHour !== null) {
                 const distanceFromMidnight = Math.min(
@@ -262,7 +297,7 @@ const BestMonths = {
             }
 
             // Calculate dark hours score (normalized)
-            const darkHours = this.calculateTotalDarkHours(date, target, location, altitudeThreshold);
+            const darkHours = this.calculateTotalDarkHours(date, target, location, altitudeThreshold, twilightCache, dayOffset);
             const darkHoursScore = darkHours / maxDarkHours;
 
             // Calculate weighted score
@@ -313,7 +348,7 @@ const BestMonths = {
      * Samples every day of the year to find actual crossing dates
      * Returns: { visibilityStart: number|null, visibilityEnd: number|null }
      */
-    calculateVisibilityWindow(target, location, minAltitude, minDarkHours) {
+    calculateVisibilityWindow(target, location, minAltitude, minDarkHours, twilightCache) {
         const today = new Date();
         const year = today.getFullYear();
         const startDate = new Date(year, 0, 1); // January 1
@@ -336,7 +371,7 @@ const BestMonths = {
             const date = new Date(startDate);
             date.setDate(startDate.getDate() + dayOffset);
 
-            const darkHours = this.calculateDarkHoursAboveAltitude(date, target, location, minAltitude);
+            const darkHours = this.calculateDarkHoursAboveAltitude(date, target, location, minAltitude, twilightCache, dayOffset);
 
             if (darkHours >= minDarkHours) {
                 visibleDays.push(dayOffset);
@@ -432,16 +467,15 @@ const BestMonths = {
      * Calculate longest continuous session target is above minAltitude during astronomical darkness
      * Returns: hours (decimal) of the longest continuous session
      */
-    calculateDarkHoursAboveAltitude(date, target, location, minAltitude) {
-        // Get astronomical dusk and dawn for this date
-        const isDST = SettingsManager.isDSTActive(date, location.timezone);
-        const duskJD = findAstronomicalDusk(date, location.latitude, location.longitude, location.timezone, isDST);
-        const dawnJD = findNextAstronomicalDawn(date, location.latitude, location.longitude, location.timezone, isDST);
+    calculateDarkHoursAboveAltitude(date, target, location, minAltitude, twilightCache, dayOffset) {
+        // Get twilight times from cache
+        const twilight = twilightCache.get(dayOffset);
+        const duskJD = twilight.duskJD;
+        const dawnJD = twilight.dawnJD;
 
         if (!duskJD || !dawnJD) {
             return 0; // No astronomical darkness on this date
         }
-
         // Sample every N minutes during dark period
         const step = SAMPLING_INTERVAL_MINUTES / 1440;
 
@@ -477,16 +511,15 @@ const BestMonths = {
      * Used for best month scoring - sums all time above altitude (not just continuous)
      * Returns: hours (decimal) of total accumulated time
      */
-    calculateTotalDarkHours(date, target, location, minAltitude) {
-        // Get astronomical dusk and dawn for this date
-        const isDST = SettingsManager.isDSTActive(date, location.timezone);
-        const duskJD = findAstronomicalDusk(date, location.latitude, location.longitude, location.timezone, isDST);
-        const dawnJD = findNextAstronomicalDawn(date, location.latitude, location.longitude, location.timezone, isDST);
+    calculateTotalDarkHours(date, target, location, minAltitude, twilightCache, dayOffset) {
+        // Get twilight times from cache
+        const twilight = twilightCache.get(dayOffset);
+        const duskJD = twilight.duskJD;
+        const dawnJD = twilight.dawnJD;
 
         if (!duskJD || !dawnJD) {
             return 0; // No astronomical darkness on this date
         }
-
         // Sample every N minutes during dark period
         const step = SAMPLING_INTERVAL_MINUTES / 1440;
         let totalHours = 0;
@@ -506,7 +539,7 @@ const BestMonths = {
      * Calculate the local hour when target transits on a given date
      * Returns: hour (0-24) or null if transit not found
      */
-    calculateTransitHour(date, target, location) {
+    calculateTransitHour(date, target, location, twilightCache, dayOffset) {
         // Start searching from noon on the given date
         const noon = new Date(
             date.getFullYear(),
