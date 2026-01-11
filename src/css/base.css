@@ -1496,8 +1496,10 @@ input[type="number"] {
     background: rgba(0, 0, 0, 0.2);
 }
 
+/* increase the max-height if additional items are added to the */
+/* Admin Tools submenu */
 .menu-submenu.expanded {
-    max-height: 200px; /* Adjust based on number of items */
+    max-height: 400px; 
 }
 
 /* Submenu items */
