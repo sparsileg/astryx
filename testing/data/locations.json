@@ -1,0 +1,252 @@
+  "locations": {
+    "C.M. Crockett Park": {
+      "latitude": 38.621778,
+      "longitude": -77.721333,
+      "elevation": 99,
+      "timezone": -5,
+      "bortle": 4,
+      "horizon": [
+        {
+          "azimuth": 0,
+          "elevation": 0
+        },
+        {
+          "azimuth": 90,
+          "elevation": 0
+        },
+        {
+          "azimuth": 180,
+          "elevation": 0
+        },
+        {
+          "azimuth": 270,
+          "elevation": 0
+        }
+      ]
+    },
+    "Camp Highroad": {
+      "latitude": 39.031667,
+      "longitude": -77.695,
+      "elevation": 130,
+      "timezone": -5,
+      "bortle": 4,
+      "horizon": [
+        {
+          "azimuth": 0,
+          "elevation": 0
+        },
+        {
+          "azimuth": 90,
+          "elevation": 0
+        },
+        {
+          "azimuth": 180,
+          "elevation": 0
+        },
+        {
+          "azimuth": 270,
+          "elevation": 0
+        }
+      ]
+    },
+    "Home": {
+      "latitude": 39.296739,
+      "longitude": -78.198136,
+      "elevation": 233,
+      "timezone": -5,
+      "bortle": 4,
+      "horizon": [
+        {
+          "azimuth": 0,
+          "elevation": 0
+        },
+        {
+          "azimuth": 90,
+          "elevation": 0
+        },
+        {
+          "azimuth": 180,
+          "elevation": 0
+        },
+        {
+          "azimuth": 270,
+          "elevation": 0
+        }
+      ]
+    },
+    "Meadowkirk": {
+      "latitude": 39.017806,
+      "longitude": -77.683222,
+      "elevation": 127,
+      "timezone": -5,
+      "bortle": 4,
+      "horizon": [
+        {
+          "azimuth": 0,
+          "elevation": 0
+        },
+        {
+          "azimuth": 90,
+          "elevation": 0
+        },
+        {
+          "azimuth": 180,
+          "elevation": 0
+        },
+        {
+          "azimuth": 270,
+          "elevation": 0
+        }
+      ]
+    },
+    "Meadowood": {
+      "latitude": 38.665889,
+      "longitude": -77.206611,
+      "elevation": 41,
+      "timezone": -5,
+      "bortle": 5,
+      "horizon": [
+        {
+          "azimuth": 0,
+          "elevation": 0
+        },
+        {
+          "azimuth": 90,
+          "elevation": 0
+        },
+        {
+          "azimuth": 180,
+          "elevation": 0
+        },
+        {
+          "azimuth": 270,
+          "elevation": 0
+        }
+      ]
+    },
+    "Panguitch": {
+      "latitude": 37.827585,
+      "longitude": -112.460697,
+      "elevation": 1916,
+      "timezone": -7,
+      "bortle": 2,
+      "horizon": [
+        {
+          "azimuth": 0,
+          "elevation": 0
+        },
+        {
+          "azimuth": 90,
+          "elevation": 0
+        },
+        {
+          "azimuth": 180,
+          "elevation": 0
+        },
+        {
+          "azimuth": 270,
+          "elevation": 0
+        }
+      ]
+    },
+    "Sky Meadows State Park": {
+      "latitude": 38.990833,
+      "longitude": -77.965556,
+      "elevation": 265,
+      "timezone": -5,
+      "bortle": 4,
+      "horizon": [
+        {
+          "azimuth": 0,
+          "elevation": 0
+        },
+        {
+          "azimuth": 90,
+          "elevation": 0
+        },
+        {
+          "azimuth": 180,
+          "elevation": 0
+        },
+        {
+          "azimuth": 270,
+          "elevation": 0
+        }
+      ]
+    },
+    "Spruce Knob Mountain Center": {
+      "latitude": 38.682167,
+      "longitude": -79.561861,
+      "elevation": 1265,
+      "timezone": -5,
+      "bortle": 2,
+      "horizon": [
+        {
+          "azimuth": 0,
+          "elevation": 0
+        },
+        {
+          "azimuth": 90,
+          "elevation": 0
+        },
+        {
+          "azimuth": 180,
+          "elevation": 0
+        },
+        {
+          "azimuth": 270,
+          "elevation": 0
+        }
+      ]
+    },
+    "Starfront": {
+      "latitude": 31.5475,
+      "longitude": -99.381667,
+      "elevation": 473,
+      "timezone": -6,
+      "bortle": 1,
+      "horizon": [
+        {
+          "azimuth": 0,
+          "elevation": 0
+        },
+        {
+          "azimuth": 90,
+          "elevation": 0
+        },
+        {
+          "azimuth": 180,
+          "elevation": 0
+        },
+        {
+          "azimuth": 270,
+          "elevation": 0
+        }
+      ]
+    },
+    "Sweet Run State Park": {
+      "latitude": 39.293056,
+      "longitude": -77.725556,
+      "elevation": 101,
+      "timezone": -5,
+      "bortle": 4,
+      "horizon": [
+        {
+          "azimuth": 0,
+          "elevation": 0
+        },
+        {
+          "azimuth": 90,
+          "elevation": 0
+        },
+        {
+          "azimuth": 180,
+          "elevation": 0
+        },
+        {
+          "azimuth": 270,
+          "elevation": 0
+        }
+      ]
+    }
+  },

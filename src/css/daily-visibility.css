@@ -1,0 +1,41 @@
+/* daily visibility */
+/* Altitude override indicator */
+.altitude-override-indicator {
+    display: inline-block;
+    width: 30px;
+    text-align: center;
+    cursor: pointer;
+    color: var(--warning-color);
+    font-size: 1.2rem;
+    visibility: hidden;
+}
+
+.altitude-override-indicator.visible {
+    visibility: visible;
+}
+
+/* Daily Visibility modal control rows */
+.daily-visibility-row-1 {
+    display: grid;
+    grid-template-columns: 90px 90px 30px 130px 90px 30px ;
+    gap: 0.5rem;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.daily-visibility-row-2 {
+    display: grid;
+    grid-template-columns: 80px 110px 30px 120px 170px;
+    gap: 0.5rem;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.daily-visibility-row-3 {
+    display: grid;
+    grid-template-columns: 130px 80px;
+    gap: 0.5rem;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+

@@ -1,0 +1,104 @@
+/* Sidebar */
+:root {
+    --sb-transition: 0.3s;
+    --sb-text-transition: 0.2s;
+}
+
+.sidebar {
+    position: relative;
+    width: 280px;
+    min-width: 280px;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid var(--border-color);
+    background-color: var(--sidebar-bg);
+    transition: width var(--sb-transition) ease-in-out, min-width var(--sb-transition) ease-in-out;
+}
+
+.sidebar-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+    opacity: 1;
+    transition: opacity var(--sb-text-transition) ease-in-out;
+}
+
+.sidebar-header .header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.sidebar-header .header-top h1 {
+    cursor: pointer;
+    transition: opacity 0.2s;
+    font-size: 1.5rem;
+    color: var(--primary-color);
+    margin: 0;
+}
+
+.sidebar-header .header-top h1:hover {
+    opacity: 0.8;
+}
+
+.sidebar-content {
+    flex: 1;
+    padding: 1rem;
+    overflow-y: auto;
+    opacity: 1;
+    transition: opacity var(--sb-text-transition) ease-in-out;
+}
+
+/* toggle sidebar styles */
+.sidebar-toggle {
+    position: absolute;
+    top: 10px;
+    right: -13px;
+    width: 25px;
+    height: 25px;
+    background: var(--primary-color);
+    border: 2px solid var(--border-color);
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    transition: transform var(--sb-text-transition) ease-in-out, right var(--sb-transition) ease-in-out;
+}
+
+.sidebar-toggle:hover {
+    transform: scale(1.2);
+}
+
+/* sidebar toggle icon */
+.toggle-icon {
+    color: black;
+    font-size: 17px;
+    transition: transform 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sidebar.collapsed {
+    width: 30px;
+    min-width: 30px;
+    overflow: visible;
+}
+
+.sidebar.collapsed .sidebar-toggle {
+    right: 2.5px;  /* Center it in the 30px collapsed sidebar */
+}
+
+.sidebar.collapsed .toggle-icon {
+    transform: rotate(180deg);
+}
+
+.sidebar.collapsed .sidebar-content,
+.sidebar.collapsed .sidebar-header {
+    opacity: 0;
+    pointer-events: none;  /* Fixed typo: was "pointer-event" */
+}
+
+/* end of toggle sidebar styles */

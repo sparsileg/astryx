@@ -1,0 +1,34 @@
+:root {
+    /* Background Colors - Pure black and very dark reds */
+    --bg-color: #000000;
+    --sidebar-bg: #0a0000;
+    --card-bg: #0f0000;
+    --card-hover: #150000;
+    --input-bg: #0f0000;
+    
+    /* Text Colors - Dimmer red spectrum for night vision */
+    --text-color: #cc5555;          /* Dimmer red (was #ff6666) */
+    --text-secondary: #994444;      /* Even dimmer (was #cc4444) */
+    --primary-text: #dd6666;        /* Moderate (was #ff8888) */
+    
+    /* Primary Colors - Moderate red */
+    --primary-color: #cc4444;       /* Dimmer (was #ff4444) */
+    --primary-hover: #aa3333;       /* Darker (was #dd2222) */
+    
+    /* Secondary Colors - Dark reds */
+    --secondary-color: #150000;
+    --secondary-hover: #1a0000;
+    
+    /* Border Colors - Subtle red borders */
+    --border-color: #330000;        /* Dimmer (was #440000) */
+    --border-color-light: #220000;
+    
+    /* Status Colors - Dimmer red/amber spectrum */
+    --success-color: #cc5555;       /* Dimmer (was #ff6666) */
+    --warning-color: #dd6644;       /* Dimmer orange-red (was #ff8844) */
+    --error-color: #dd3333;         /* Dimmer (was #ff2222) */
+    --error-hover: #bb2222;         /* Darker (was #dd0000) */
+    
+    /* Focus Ring */
+    --focus-ring: rgba(204, 68, 68, 0.3);
+}

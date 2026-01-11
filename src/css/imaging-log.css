@@ -1,0 +1,424 @@
+/**
+ * imaging-log.css
+ * Styles for Imaging Log feature
+ */
+
+/* Project Sessions Animation */
+:root {
+    --sessions-transition: 0.5s;
+}
+
+/* ============================================================================
+   Tabs
+   ============================================================================ */
+
+.imaging-log-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.imaging-log-tab-btn {
+    padding: 0.75rem 1.5rem;
+    background: none;
+    border: none;
+    border-bottom: 3px solid transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.2s;
+}
+
+.imaging-log-tab-btn:hover {
+    color: var(--text-color);
+    background: var(--hover-bg);
+}
+
+.imaging-log-tab-btn.active {
+    color: var(--primary-color);
+    border-bottom-color: var(--primary-color);
+}
+
+/* ============================================================================
+   Tab Content
+   ============================================================================ */
+
+.imaging-log-tab-content {
+    display: none;
+}
+
+.imaging-log-tab-content.active {
+    display: block;
+}
+
+/* ============================================================================
+   Toolbar
+   ============================================================================ */
+
+.imaging-log-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.imaging-log-filters {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+/* ============================================================================
+   Project Cards
+   ============================================================================ */
+
+.project-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.project-card:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.project-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.75rem;
+}
+
+.project-card-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.project-card-meta {
+    display: flex;
+    gap: 1.5rem;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.project-card-integration {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    flex-wrap: wrap;
+}
+
+/* ============================================================================
+   Status Badges
+   ============================================================================ */
+
+.project-status-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.status-planning {
+    background: rgba(100, 150, 255, 0.2);
+    color: rgb(100, 150, 255);
+}
+
+.status-acquiring-data {
+    background: rgba(251, 191, 36, 0.2);
+    color: rgb(251, 191, 36);
+}
+
+.status-acquisition-complete {
+    background: rgba(139, 92, 246, 0.2);
+    color: rgb(139, 92, 246);
+}
+
+.status-processing {
+    background: rgba(34, 197, 94, 0.2);
+    color: rgb(34, 197, 94);
+}
+
+.status-completed {
+    background: rgba(34, 197, 94, 0.3);
+    color: rgb(34, 197, 94);
+    font-weight: 600;
+}
+
+/* ============================================================================
+   Target Selection
+   ============================================================================ */
+
+.selected-target-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem;
+    margin-bottom: 0.25rem;
+    background: var(--hover-bg);
+    border-radius: 4px;
+}
+
+.selected-target-item:last-child {
+    margin-bottom: 0;
+}
+
+.target-search-result {
+    padding: 0.5rem;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background 0.2s;
+}
+
+.target-search-result:hover {
+    background: var(--hover-bg);
+}
+
+/* ============================================================================
+   Empty States
+   ============================================================================ */
+
+.empty-message {
+    text-align: center;
+    color: var(--text-secondary);
+    padding: 3rem;
+    font-style: italic;
+}
+
+/* ============================================================================
+   Session Table (for Phase 3)
+   ============================================================================ */
+
+.session-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+}
+
+.session-table thead {
+    background: var(--card-bg);
+    border-bottom: 2px solid var(--border-color);
+}
+
+.session-table th {
+    text-align: left;
+    padding: 0.75rem;
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.session-table td {
+    padding: 0.75rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.session-table tbody tr {
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.session-table tbody tr:hover {
+    background: var(--hover-bg);
+}
+
+/* ============================================================================
+   Form Sections (for Phase 3 modals)
+   ============================================================================ */
+
+.settings-section {
+    margin-bottom: 0.0rem;
+    padding-bottom: 0.0rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.settings-section:last-child {
+    border-bottom: none;
+}
+
+.settings-section h4 {
+    margin-bottom: 1rem;
+    color: var(--primary-color);
+}
+
+.form-row {
+    margin-bottom: 1rem;
+}
+
+/* ============================================================================
+   Project Sessions (Collapsible)
+   ============================================================================ */
+
+.project-sessions-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0;
+    margin-top: 0.5rem;
+    cursor: pointer;
+    border-top: 1px solid var(--border-color);
+}
+
+.project-sessions-toggle:hover {
+    background: var(--hover-bg);
+}
+
+.sessions-chevron {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    transition: transform 0.2s;
+    user-select: none;
+    display: inline-block;
+}
+
+.sessions-chevron.expanded {
+    transform: rotate(90deg);
+}
+
+.sessions-label {
+    font-weight: 500;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    user-select: none;
+}
+
+.project-sessions-container {
+    padding-top: 0.5rem;
+}
+
+.project-card-header {
+    cursor: pointer;
+}
+
+.project-card-meta {
+    cursor: pointer;
+}
+
+.project-card-integration {
+    cursor: pointer;
+}
+
+.project-sessions-container {
+    max-height: 0;
+    overflow: hidden;
+    transition:
+        max-height var(--sessions-transition) ease-in-out;
+}
+
+.project-sessions-container.expanded {
+    /* max-height set dynamically in sessionToggle method */
+    overflow: hidden;
+}
+
+
+/* ============================================================================
+   Session Modal Form Fields - Consistent Styling
+   ============================================================================ */
+
+.modal .form-group {
+    margin-bottom: 1.0rem;
+}
+
+/* Add spacing above section titles for breathing room */
+.modal .settings-section h4 {
+    margin-top: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+/* First section shouldn't have top margin */
+.modal .settings-section:first-of-type h4 {
+    margin-top: 0;
+}
+
+/* Target all inputs and selects in modals */
+.modal input[type="date"],
+.modal input[type="time"],
+.modal input[type="number"],
+.modal input[type="text"],
+.modal select,
+.modal textarea {
+    background: var(--input-bg) !important;
+    border: 1px solid var(--border-color) !important;
+    color: var(--text-color) !important;
+    padding: 0.5rem !important;
+    border-radius: 4px !important;
+    font-size: 0.95rem !important;
+    line-height: 1.5 !important;
+    height: auto !important;
+    min-height: 2.5rem !important;
+}
+
+/* Ensure consistent height for all form controls */
+.modal select,
+.modal input[type="date"],
+.modal input[type="time"],
+.modal input[type="number"],
+.modal input[type="text"] {
+    height: 2.5rem !important;
+    padding: 0.4rem 0.5rem !important;
+}
+
+/* Textarea can be taller */
+.modal textarea {
+    height: auto !important;
+    min-height: 6rem !important;
+    padding: 0.5rem !important;
+    resize: vertical !important;
+}
+
+/* Project card action buttons */
+.project-card-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.project-action-btn {
+    padding: 0.4rem 0.8rem;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid var(--border-color);
+}
+
+.project-action-btn-delete {
+    background: var(--error-color);
+    color: white;
+    border-color: var(--error-color);
+}
+
+.project-action-btn-delete:hover {
+    background: var(--error-hover);
+    border-color: var(--error-hover);
+}
+
+.project-action-btn-edit {
+    background: var(--primary-color);
+    color: var(--primary-text);
+    border-color: var(--primary-color);
+}
+
+.project-action-btn-edit:hover {
+    background: var(--primary-hover);
+    border-color: var(--primary-hover);
+}
+
+/* Projects tab - always reserve scrollbar space */
+#app {
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+}

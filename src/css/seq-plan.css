@@ -1,0 +1,262 @@
+/* Session Settings */
+:root {
+    --ss-fade: 1.5s;
+    --ss-move: 0.7s;
+    --ss-hdr: 0.3s;
+}
+
+
+/* Session Settings - Two separate row grids */
+.seq-plan-session-row-1 {
+    display: grid;
+    grid-template-columns: 35px 150px 40px 150px 80px;
+    gap: 0.5rem 1rem;
+    align-items: center;
+    margin-top: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.seq-plan-session-row-2 {
+    display: grid;
+    grid-template-columns: 60px 170px 55px 80px 90px 80px;
+    gap: 0.5rem 1rem;
+    align-items: center;
+}
+
+/* Keep custom time input in layout but invisible when not needed */
+#seq-plan-custom-time {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.seq-plan-settings-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.seq-plan-settings-row label {
+    white-space: nowrap;
+    margin-right: 0.3rem;
+}
+
+.seq-plan-settings-row:last-child {
+    margin-bottom: 0;
+}
+
+#seq-plan-date,
+#seq-plan-location,
+#seq-plan-start-time,
+#seq-plan-min-altitude {
+    background: var(--bg-color);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    padding: 0.4rem;
+    border-radius: 4px;
+}
+
+
+/* ---------------------------------------------------------------------- */
+/* Overhead Settings - Three Row Grids */
+.seq-plan-overhead-row-1 {
+    display: grid;
+    grid-template-columns: 7rem 5rem 5rem 3rem 5.5rem 4rem 3rem;
+    gap: 0.5rem 1rem;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.seq-plan-overhead-row-2 {
+    display: grid;
+    grid-template-columns: 5rem 4rem 3rem 6rem 3rem 2rem 5rem 3rem 2rem;
+    gap: 0.5rem 1rem;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.seq-plan-overhead-row-3 {
+    display: grid;
+    grid-template-columns: 5rem 3rem 2rem 7rem 3rem 2rem;
+    gap: 0.5rem 1rem;
+    align-items: center;
+}
+
+/* Style all overhead selects to match other inputs */
+.seq-plan-overhead-row-1 select,
+.seq-plan-overhead-row-2 select,
+.seq-plan-overhead-row-3 select {
+    background: var(--bg-color);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    padding: 0.4rem;
+    border-radius: 4px;
+}
+
+#seq-plan-af-note {
+    display: inline-block;
+    margin-left: 1rem;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+
+/* ---------------------------------------------------------------------- */
+/* Target Allocation - Compact Layout */
+.seq-plan-target-row {
+    display: grid;
+    grid-template-columns: 30px 140px 115px 40px 275px 180px;
+    gap: 0.75rem;
+    align-items: center;
+    padding: 0.6rem 0.75rem;
+    margin-bottom: 0.5rem;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    cursor: move;
+    transition: background 0.2s;
+}
+
+.seq-plan-target-row:hover {
+    background: var(--hover-bg);
+}
+
+.seq-plan-target-row.dragging {
+    opacity: 0.5;
+}
+
+.seq-plan-drag-handle {
+    cursor: grab;
+    font-size: 1.1rem;
+    color: var(--text-secondary);
+    text-align: center;
+    user-select: none;
+}
+
+.seq-plan-drag-handle:active {
+    cursor: grabbing;
+}
+
+.seq-plan-target-name {
+    font-weight: bold;
+    color: var(--text-color);
+}
+
+.seq-plan-exposure-input {
+    padding: 0.4rem;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background: var(--bg-color);
+    color: var(--text-color);
+}
+
+.seq-plan-slider {
+    width: 100%;
+}
+
+.seq-plan-allocation-value {
+    color: var(--text-color);
+    justify-self: end;
+    text-align: right;
+    font-weight: 500;
+}
+
+
+/* ---------------------------------------------------------------------- */
+/* Collapsible Sections */
+.seqplan-ss-header {
+    cursor: pointer;
+    user-select: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 1.5rem 0.5rem 0;
+    margin: 0;
+    transition: padding var(--ss-move) ease-in-out var(--ss-hdr);
+}
+
+/* When collapsed, ultra-minimal spacing */
+.seqplan-ss-header.collapsed {
+    padding: 0.25rem 1rem 0.25rem 0.1rem;
+}
+
+.seqplan-ss-header h3 {
+    transition:
+        font-size var(--ss-move) ease-in-out var(--ss-hdr),
+        line-height var(--ss-move) ease-in-out var(--ss-hdr),
+        margin var(--ss-move) ease-in-out var(--ss-hdr);
+}
+
+/* Override card header h3 margins when collapsed */
+.seqplan-ss-header.collapsed h3 {
+    font-size: 0.9rem;
+    line-height: 1.2;
+    margin: 0;
+}
+
+.seqplan-ss-header:hover {
+    background: var(--hover-bg);
+}
+
+.collapse-icon {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    transition: transform var(--ss-move) ease-in-out;
+    margin-left: 1rem;
+}
+
+.seqplan-ss-header.collapsed .collapse-icon {
+    transform: rotate(-90deg);
+}
+
+/* to open */
+.seqplan-ss-header ~ .card-body {
+    opacity: 1;
+    max-height: 20rem;
+    overflow: hidden;
+    transition:
+        max-height var(--ss-move) ease-in-out,
+        opacity var(--ss-fade) ease-in-out;
+}
+
+/* to collapse */
+.seqplan-ss-header.collapsed ~ .card-body.collapsed {
+    opacity: 0;
+    max-height: 0;
+    overflow: hidden;
+    transition:
+        max-height var(--ss-move) ease-in-out,
+        opacity var(--ss-move) ease-in-out;
+}
+
+.seqplan-ss-header {
+    border-bottom: 1px solid var(--border-color);
+    transition: border-color var(--ss-move) ease-in-out;
+}
+
+.seqplan-ss-header.collapsed {
+    border-bottom: 0px;
+    border-bottom-color: transparent;
+}
+
+.card:has(.seqplan-ss-header) {
+    transition: padding var(--ss-move) ease-in-out, margin var(--ss-move) ease-in-out;
+}
+
+.card:has(.seqplan-ss-header.collapsed) {
+    padding: 0 0 0 1.4rem;
+    margin: 0;
+    border-bottom: none;
+}
+
+/* Ultra-minimize card when collapsed */
+/* Remove extra spacing from sequence planner cards */
+.view-container .card {
+    padding-top: 0;
+}
+
+.view-container .card-header {
+    padding-top: 0.5rem;
+}
+
