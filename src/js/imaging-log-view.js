@@ -1292,11 +1292,8 @@ const ImagingLogView = {
         
         // Add action button listeners
         const actionButtons = document.querySelectorAll('.project-action-btn[data-program-id]');
-        console.log('Found action buttons:', actionButtons.length);
         actionButtons.forEach(btn => {
-            console.log('Attaching listener to button:', btn);
             btn.addEventListener('click', async (e) => {
-                console.log('Action button clicked!');
                 e.stopPropagation();
                 const programId = parseInt(btn.getAttribute('data-program-id'));
                 const action = btn.getAttribute('data-action');

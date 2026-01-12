@@ -81,7 +81,7 @@
 }
 
 #target-filter-results {
-    max-height: 25vh;
+    max-height: 20vh;
     overflow-y: auto;
     overflow-x: hidden;
     padding-right: 0.5rem; /* prevents content from hiding under scrollbar */
@@ -94,3 +94,12 @@
     text-align: center;
 }
 
+#create-imaging-program-btn {
+    display: none;
+    padding: 0.25rem 0.75rem;
+    line-height: 1.2;
+}
+
+#create-imaging-program-btn div {
+    font-size: 0.75rem;
+}
