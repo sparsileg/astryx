@@ -3,7 +3,18 @@
  * Target filtering functionality with preset support
  */
 
+/* configurable parameters */
+const INITIAL_RESULTS_BATCH = 5;
+const LAZY_LOAD_BATCH_SIZE = 5;
+const MAX_TOTAL_RESULTS = 1000;
+const RANDOMIZE_RESULTS = true;
+
 const TargetFilter = {
+    // Lazy loading state
+    allResults: [],
+    displayedCount: 0,
+    isLoading: false,
+
     // Filter definitions
     filters: {
         catalog: {
@@ -142,7 +153,7 @@ const TargetFilter = {
         return month >= start || month <= unwrappedEnd;
     },
 
-/**
+    /**
      * Natural sort comparator for target names (handles C9 vs C10 correctly)
      */
     naturalSort(a, b) {
@@ -163,6 +174,18 @@ const TargetFilter = {
         }
 
         return ax.length - bx.length;
+    },
+
+    /**
+     * Shuffle array using Fisher-Yates algorithm
+     */
+    shuffleArray(array) {
+        const shuffled = [...array];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        return shuffled;
     },
 
     /**
@@ -466,7 +489,7 @@ const TargetFilter = {
     },
 
     /**
-     * Display filtered results in results card
+     * Display filtered results with lazy loading
      */
     displayFilterResults(results) {
         const resultsDiv = document.getElementById('target-filter-results');
@@ -481,31 +504,70 @@ const TargetFilter = {
             return;
         }
 
-        const displayCount = Math.min(results.length, 100);
-        countDiv.textContent = `Showing ${displayCount} of ${results.length} results`;
+        // Process results (randomize or sort)
+        const processed = RANDOMIZE_RESULTS ? 
+              this.shuffleArray(results) : 
+              results.sort((a, b) => this.naturalSort(a, b));
 
-        // Sort naturally and display results (limit to 100 for performance)
-        const sorted = results.sort((a, b) => this.naturalSort(a, b));
+        // Store all results and reset state
+        this.allResults = processed.slice(0, MAX_TOTAL_RESULTS);
+        this.displayedCount = 0;
         resultsDiv.innerHTML = '';
-        sorted.slice(0, 100).forEach(target => {
+
+        // Update count display
+        const totalToShow = Math.min(this.allResults.length, MAX_TOTAL_RESULTS);
+        countDiv.textContent = `Showing 0 of ${totalToShow} results`;
+
+        // Display initial batch
+        this.loadMoreResults();
+        console.log('After loadMoreResults:', this.displayedCount, 'of', this.allResults.length);
+
+        // Attach scroll listener for lazy loading
+        this.attachScrollListener();
+    },
+
+    /**
+     * Load and display next batch of results
+     */
+    loadMoreResults() {
+        console.log('loadMoreResults called:', this.displayedCount, 'isLoading:', this.isLoading);
+        if (this.isLoading) return;
+        if (this.displayedCount >= this.allResults.length) return;
+
+        this.isLoading = true;
+        const resultsDiv = document.getElementById('target-filter-results');
+        const countDiv = document.getElementById('target-filter-results-count');
+
+        if (!resultsDiv) {
+            this.isLoading = false;
+            return;
+        }
+
+        // Calculate batch
+        const batchSize = this.displayedCount === 0 ? INITIAL_RESULTS_BATCH : LAZY_LOAD_BATCH_SIZE;
+        const start = this.displayedCount;
+        const end = Math.min(start + batchSize, this.allResults.length);
+        const batch = this.allResults.slice(start, end);
+
+        // Render batch
+        batch.forEach(target => {
             const resultDiv = document.createElement('div');
             resultDiv.className = 'target-result';
 
-            // Get first common name only, if it exists
             const commonName = target.common ? target.common.split(',')[0].trim() : '';
             const constellation = target.constellation ? (CONSTELLATIONS[target.constellation] || target.constellation) : '';
-
             const commonNameDisplay = commonName || '';
             const typeDisplay = target.type ? (OBJECT_TYPES[target.type] || target.type) : 'Unknown type';
+
             resultDiv.innerHTML = `
-                <div style="display: flex; justify-content: space-between; align-items: baseline;">
-                    <div class="target-name">${target.object}</div>
-                    <div style="font-size: 0.85rem; color: var(--text-secondary);">${typeDisplay}</div>
-                </div>
-                <div style="font-size: 0.85rem; color: var(--text-secondary);">
-                    ${commonNameDisplay}${commonNameDisplay && constellation ? ', ' : ''}${constellation}
-                </div>
-            `;
+            <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                <div class="target-name">${target.object}</div>
+                <div style="font-size: 0.85rem; color: var(--text-secondary);">${typeDisplay}</div>
+            </div>
+            <div style="font-size: 0.85rem; color: var(--text-secondary);">
+                ${commonNameDisplay}${commonNameDisplay && constellation ? ', ' : ''}${constellation}
+            </div>
+        `;
 
             resultDiv.addEventListener('click', () => {
                 VisibilityTargets.select(target);
@@ -513,6 +575,41 @@ const TargetFilter = {
 
             resultsDiv.appendChild(resultDiv);
         });
+
+        this.displayedCount = end;
+
+        // Update count
+        if (countDiv) {
+            countDiv.textContent = `Showing ${this.displayedCount} of ${this.allResults.length} results`;
+        }
+
+        this.isLoading = false;
+    },
+
+    /**
+     * Attach scroll listener for lazy loading
+     */
+    attachScrollListener() {
+        const resultsDiv = document.getElementById('target-filter-results');
+        if (!resultsDiv) return;
+
+        // Remove old listener if exists
+        if (this.scrollHandler) {
+            resultsDiv.removeEventListener('scroll', this.scrollHandler);
+        }
+
+        // Create new handler
+        this.scrollHandler = () => {
+            const scrollThreshold = 100; // Load more when within 100px of bottom
+            const scrollPosition = resultsDiv.scrollTop + resultsDiv.clientHeight;
+            const scrollHeight = resultsDiv.scrollHeight;
+
+            if (scrollPosition >= scrollHeight - scrollThreshold) {
+                this.loadMoreResults();
+            }
+        };
+
+        resultsDiv.addEventListener('scroll', this.scrollHandler);
     },
 
     /**
