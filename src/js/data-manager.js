@@ -454,11 +454,19 @@ const DataManager = {
      */
     async importAll(data) {
         try {
+            // Close and reopen database to ensure clean state
+            if (DBManager.db) {
+                DBManager.db.close();
+            }
+            await DBManager.init();
+
             if (data.locations) {
                 await this.importLocations(data.locations);
             }
             if (data.targetDatabase) {
-                await this.importTargets(data.targetDatabase);
+                await DBManager.clear(APP_CONFIG.STORES.TARGETS);
+                await DBManager.putBulk(APP_CONFIG.STORES.TARGETS, data.targetDatabase);
+                await this.loadTargets();
             }
             if (data.pinnedTargets) {
                 await DBManager.clear(APP_CONFIG.STORES.PINNED_TARGETS);
