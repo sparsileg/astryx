@@ -6,8 +6,10 @@
 /* configurable parameters */
 const INITIAL_RESULTS_BATCH = 5;
 const LAZY_LOAD_BATCH_SIZE = 5;
-const MAX_TOTAL_RESULTS = 1000;
+const MAX_TOTAL_RESULTS = 20000;
 const RANDOMIZE_RESULTS = true;
+const MAX_IMAGING_PROGRAM_TARGETS = 199;
+
 
 const TargetFilter = {
     // Lazy loading state
@@ -81,8 +83,6 @@ const TargetFilter = {
         // Populate available options
         this.filters.catalog.available = Array.from(catalogSet).sort();
         this.filters.type.available = Array.from(typeSet).sort();
-
-        console.log(`Found ${this.filters.catalog.available.length} catalogs, ${this.filters.type.available.length} types`);
     },
 
     /**
@@ -136,21 +136,20 @@ const TargetFilter = {
         const selectedLocation = SettingsManager.getSelectedLocation();
         const visibilityStart = target.visibilityStart?.[selectedLocation];
         const visibilityEnd = target.visibilityEnd?.[selectedLocation];
-
+        
         if (!visibilityStart || !visibilityEnd) {
             return false;
         }
-
-        const start = visibilityStart;
-        const end = visibilityEnd;
-
-        if (end >= start) {
-            return month >= start && month <= end;
+        
+        // Wrap-around case: end > 12 means it crosses into next year
+        if (visibilityEnd > 12) {
+            // e.g., start=11, end=15 means Nov, Dec, Jan(13), Feb(14), Mar(15)
+            const unwrappedEnd = visibilityEnd - 12;
+            return month >= visibilityStart || month <= unwrappedEnd;
+        } else {
+            // Normal case: no wrap-around
+            return month >= visibilityStart && month <= visibilityEnd;
         }
-
-        // Wrap-around case
-        const unwrappedEnd = end > 12 ? end - 12 : end;
-        return month >= start || month <= unwrappedEnd;
     },
 
     /**
@@ -427,6 +426,7 @@ const TargetFilter = {
                 this.resetFiltersUI();
             });
         }
+
     },
 
     /**
@@ -518,19 +518,31 @@ const TargetFilter = {
         const totalToShow = Math.min(this.allResults.length, MAX_TOTAL_RESULTS);
         countDiv.textContent = `Showing 0 of ${totalToShow} results`;
 
-        // Display initial batch
-        this.loadMoreResults();
-        console.log('After loadMoreResults:', this.displayedCount, 'of', this.allResults.length);
+        this.loadMoreResults(); // Display initial batch
+        this.attachScrollListener(); // for lazy loading
+        this.updateImagingProgramButton(); // Update Create button
 
-        // Attach scroll listener for lazy loading
-        this.attachScrollListener();
+        // Update Create Imaging Program button
+        this.updateImagingProgramButton();
+
+        // Attach click handler (do this after updating button state)
+        const createProgramBtn = document.getElementById('create-imaging-program-btn');
+        if (createProgramBtn) {
+            // Remove old handler if exists
+            const newBtn = createProgramBtn.cloneNode(true);
+            createProgramBtn.parentNode.replaceChild(newBtn, createProgramBtn);
+            
+            // Attach new handler
+            newBtn.addEventListener('click', () => {
+                this.openCreateProgramModal();
+            });
+        }
     },
 
     /**
      * Load and display next batch of results
      */
     loadMoreResults() {
-        console.log('loadMoreResults called:', this.displayedCount, 'isLoading:', this.isLoading);
         if (this.isLoading) return;
         if (this.displayedCount >= this.allResults.length) return;
 
@@ -610,6 +622,110 @@ const TargetFilter = {
         };
 
         resultsDiv.addEventListener('scroll', this.scrollHandler);
+    },
+
+    /**
+     * Update the Create Imaging Program button visibility and state
+     */
+    updateImagingProgramButton() {
+        const button = document.getElementById('create-imaging-program-btn');
+        if (!button) return;
+
+        const resultCount = this.allResults.length;
+
+        if (resultCount === 0) {
+            // No results - hide button
+            button.style.display = 'none';
+        } else if (resultCount > MAX_IMAGING_PROGRAM_TARGETS) {
+            // Too many results - show enabled but with warning tooltip
+            button.style.display = 'block';
+            button.disabled = false;
+            button.title = `Too many results (${resultCount}). Click to see details.`;
+        } else {
+            // Valid range - show enabled
+            button.style.display = 'block';
+            button.disabled = false;
+            button.title = `Create imaging program with ${resultCount} target(s)`;
+        }
+    },
+
+    /**
+     * Open modal to create imaging program from filtered results
+     */
+    openCreateProgramModal() {
+        const targetCount = this.allResults.length;
+        
+        // Check if results exceed maximum
+        if (targetCount > MAX_IMAGING_PROGRAM_TARGETS) {
+            UIManager.openModal('filter-results-too-many-template', 'Too Many Results', (action) => {
+                if (action === 'ok') {
+                    UIManager.closeModal();
+                }
+            });
+            
+            // Update count in warning modal
+            const tooManyCount = document.getElementById('too-many-count');
+            if (tooManyCount) {
+                tooManyCount.textContent = targetCount;
+            }
+            
+            return;
+        }
+        
+        UIManager.openModal('create-program-from-filter-template', 'Create Imaging Program', async (action, modalBody) => {
+            if (action === 'create') {
+                await this.createImagingProgram(modalBody);
+            } else if (action === 'cancel') {
+                UIManager.closeModal();
+            }
+        });
+        
+        // Update target count in modal
+        const countSpan = document.getElementById('filter-target-count');
+        if (countSpan) {
+            countSpan.textContent = targetCount;
+        }
+    },
+
+    /**
+     * Create imaging program from filtered results
+     */
+    async createImagingProgram(modalBody) {
+        const programNameInput = document.getElementById('program-name-input');
+        const programName = programNameInput?.value.trim();
+        
+        if (!programName) {
+            UIManager.showToast('Please enter a program name', 'error');
+            return;
+        }
+        
+        // Create program with target designations (names only)
+        const targetDesignations = this.allResults.map(target => target.object);
+
+        const programData = {
+            name: programName,
+            status: 'Started',
+            targetDesignations: targetDesignations
+        };
+
+        try {
+            await ImagingLogManager.createProgram(programData);
+            UIManager.closeModal();
+            UIManager.showToast(`Program "${programName}" created with ${targetDesignations.length} targets`, 'success');
+            
+            // Switch to Imaging Log view
+            window.location.hash = '#imaging-log';
+            
+            // Switch to Programs tab after view loads
+            setTimeout(() => {
+                if (typeof ImagingLogView !== 'undefined' && ImagingLogView.switchTab) {
+                    ImagingLogView.switchTab('programs');
+                }
+            }, 100);
+        } catch (error) {
+            console.error('Error creating program:', error);
+            UIManager.showToast('Error creating program: ' + error.message, 'error');
+        }
     },
 
     /**

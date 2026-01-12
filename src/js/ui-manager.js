@@ -1623,6 +1623,11 @@ const UIManager = {
             calculatedDisplay = `${year}-${month}-${day} ${time.substr(0,2)}:${time.substr(2,2)}:${time.substr(4,2)} UTC`;
         }
 
+        // build Observability title from location
+        const obTitle = document.getElementById('target-detail-ob-title');
+        const obsLocation = SettingsManager.getSelectedLocation();
+        obTitle.innerHTML = `Observability from ${obsLocation}`;
+
         // Build criteria display
         const criteriaHTML = `
         <div class="detail-item">
