@@ -6,9 +6,9 @@
 
 const APP_CONFIG = {
     APP_NAME: 'Specula',
-    APP_VERSION: '0.8.0',
+    APP_VERSION: '0.9.0',
     DB_NAME: 'specula-db',
-    DB_VERSION: 6,
+    DB_VERSION: '6.0',
     DEFAULT_THEME: 'Matrix',
 
     // Calculation constants
@@ -37,7 +37,6 @@ const APP_CONFIG = {
         IMAGING_PROGRAMS: 'imagingPrograms'
     },
 
-    // Best months defaults
     NOTIONAL_HORIZON: [
         { azimuth: 0, elevation: 0 },
         { azimuth: 90, elevation: 0 },
