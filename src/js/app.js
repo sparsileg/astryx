@@ -11,7 +11,7 @@ const App = {
      * Initialize application
      */
     async init() {
-        console.log('Initializing Specula...');
+        console.log('Initializing ' + APP_CONFIG.APP_NAME + '...');
 
         try {
             // Initialize database
@@ -41,17 +41,29 @@ const App = {
             // Initial route
             this.route();
 
-            // Display version number
-            const versionEl = document.getElementById('app-version');
-            if (versionEl) {
-                versionEl.textContent  = `${APP_CONFIG.APP_NAME} `;
-                versionEl.textContent += `v${APP_CONFIG.APP_VERSION} `;
-                versionEl.textContent += `db${APP_CONFIG.DB_VERSION}`;
+            // Set app title
+            const appTitleText = document.getElementById('app-title');
+            if (appTitleText) {
+                appTitleText.textContent  = `${APP_CONFIG.APP_TITLE} `;
             }
 
-            console.log('Specula initialized successfully');
+            // Display app name
+            const appNameText = document.getElementById('app-name');
+            if (appNameText) {
+                appNameText.textContent  = `${APP_CONFIG.APP_NAME} `;
+            }
+
+            // Display version numbers
+            const appVersionText = document.getElementById('app-version');
+            if (appVersionText) {
+                appVersionText.textContent  = `${APP_CONFIG.APP_NAME} `;
+                appVersionText.textContent += `v${APP_CONFIG.APP_VERSION} `;
+                appVersionText.textContent += `db${APP_CONFIG.DB_VERSION}`;
+            }
+
+            console.log(APP_CONFIG.APP_NAME + ' initialized successfully');
         } catch (error) {
-            console.error('Failed to initialize Specula:', error);
+            console.error('Failed to initialize' + APP_CONFIG.APP_NAME + ':', error);
             this.showInitializationError(error);
         }
     },
@@ -306,12 +318,12 @@ const App = {
             document.body.innerHTML = `
                 <div style="display: flex; align-items: center; justify-content: center; height: 100vh; flex-direction: column; text-align: center; padding: 2rem;">
                     <h1 style="color: #ef4444; margin-bottom: 1rem;">Initialization Error</h1>
-                    <p>Specula failed to initialize properly.</p>
+                    <p>${APP_CONFIG.APP_NAME} failed to initialize properly.</p>
                     <p style="color: #666; font-family: monospace; margin: 1rem 0;">${error.message || 'Unknown error'}</p>
                     <button onclick="location.reload()" style="padding: 0.75rem 1.5rem; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer; margin: 0.5rem;">
                         Reload Application
                     </button>
-                    <button onclick="localStorage.clear(); indexedDB.deleteDatabase('specula-db'); location.reload()" style="padding: 0.75rem 1.5rem; background: #ef4444; color: white; border: none; border-radius: 6px; cursor: pointer; margin: 0.5rem;">
+                    <button onclick="localStorage.clear(); indexedDB.deleteDatabase(${APP_CONFIG.DB_NAME}); location.reload()" style="padding: 0.75rem 1.5rem; background: #ef4444; color: white; border: none; border-radius: 6px; cursor: pointer; margin: 0.5rem;">
                         Clear Data & Reload
                     </button>
                 </div>

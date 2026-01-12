@@ -7,7 +7,7 @@ The help system uses markdown files that are bundled into JavaScript for local f
 ## Directory Structure
 
 ```
-specula/
+src/
 ├── help/                          # Markdown help files (edit these)
 │   └── calculate-best-months.md
 │   └── build-help.py              # Build script

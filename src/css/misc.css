@@ -30,3 +30,22 @@
 .weather-link:last-child {
     margin-right: 0;
 }
+
+/* About links */
+
+.about-link {
+    box-shadow: inset 0 0 0 0 var(--primary-hover);
+    color: var(--text-secondary);
+    margin: 0 -.25rem;
+    padding: 0 .25rem;
+    transition: color .3s ease-in-out, box-shadow .3s ease-in-out;
+    text-decoration-line: underline;
+    text-decoration-color: var(--text-secondary);
+    text-underline-offset: 2px;
+}
+
+.about-link:hover {
+  box-shadow: inset 300px 0 0 0 var(--primary-hover);
+  color: var(--secondary-color);
+  text-decoration: none;
+}

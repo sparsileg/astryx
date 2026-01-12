@@ -107,10 +107,12 @@
 
 /* end of toggle sidebar styles */
 
-.app-version {
+#app-version {
+    font-family: "Lucida Console", "Courier", monospace;
     position: absolute;
-    bottom: 1rem;
-    left: 1rem;
-    font-size: 0.75rem;
+    bottom: 0.25rem;
+    left: 0.5rem;
+    font-size: 0.9rem !important;
     color: var(--text-secondary);
 }
+

@@ -4,11 +4,16 @@
  * No state management - that's handled by managers
  */
 
+/**
+ * APP_VERSION can be anything
+ * DB_VERSION must be an integer
+ */
 const APP_CONFIG = {
     APP_NAME: 'Specula',
+    APP_TITLE: 'Specula - Astrophotography Planning Tool',
     APP_VERSION: '0.9.0',
     DB_NAME: 'specula-db',
-    DB_VERSION: '6.0',
+    DB_VERSION: 6,
     DEFAULT_THEME: 'Matrix',
 
     // Calculation constants

@@ -84,7 +84,7 @@ miscellaneous additions or modifications are manually created in CSV.
     * Merge by using one database (openngc) as the original and then
       adding, or updating, with the other databases.
     * Validate the final output (final_targets.csv)
-    * Import into Specula
+    * Import CSV database
 
 ## Detailed Instruction
 
@@ -157,7 +157,6 @@ python bin/validate.py manual/misc_addendum.csv
 
 
 # merge all csv files and then scrub to produce the final CSV for import
-# into Specula
 
 python bin/merge.py  \
     -p openngc.csv \
@@ -206,6 +205,6 @@ python bin/scrubber.py \
 rm temp_dso.csv
 
 echo
-echo "Import final_targets.csv into Specula after deleting existing targets"
+echo "Import final_targets.csv after clearing existing target database"
 echo
 ```

@@ -23,7 +23,7 @@ const FOVView = {
         appDiv.appendChild(content);
 
         // Set page title
-        document.title = 'Specula - Field of View';
+        document.title = 'Field of View';
 
         // Initialize
         this.init();

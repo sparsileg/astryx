@@ -1350,7 +1350,7 @@ const UIManager = {
         const url = URL.createObjectURL(dataBlob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `specula-database-${TimeUtils.nowDTG()}.json`;
+        link.download = `${APP_CONFIG.APP_NAME}-database-${TimeUtils.nowDTG()}.json`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -1408,7 +1408,7 @@ const UIManager = {
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `specula-imaging-log-${TimeUtils.nowDTG()}.json`;
+            a.download = `${APP_CONFIG.APP_NAME}-imaging-log-${TimeUtils.nowDTG()}.json`;
             a.click();
             URL.revokeObjectURL(url);
             this.showToast('Imaging log backed up successfully', 'success');
