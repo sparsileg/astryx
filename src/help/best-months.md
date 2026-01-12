@@ -2,7 +2,7 @@
 
 ## Overview
 
-Specula calculates the **best observing month** for each target using a sophisticated two-criteria weighted scoring system. The algorithm evaluates every day of the year to find when a target is most favorably positioned for astrophotography.
+Calculates the **best observing month** for each target using a sophisticated two-criteria weighted scoring system. The algorithm evaluates every day of the year to find when a target is most favorably positioned for astrophotography.
 
 ## How Best Month is Calculated
 
@@ -184,7 +184,7 @@ The best month calculation uses these defaults:
 
 ## Timestamps and Metadata
 
-When best months are calculated, Specula stores:
+When best months are calculated, we store:
 - **Calculation timestamp** - When the calculation was performed
 - **Location used** - Which observer location was used
 - **Altitude parameter** - Minimum altitude threshold used

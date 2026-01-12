@@ -1,7 +1,7 @@
 """
 build-help.py
 Reads all markdown files from help/ folder and generates js/help-content.js
-Usage: python build-help.py
+Usage: python help/build-help.py
 """
 
 import os

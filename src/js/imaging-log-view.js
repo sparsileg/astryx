@@ -16,7 +16,7 @@ const ImagingLogView = {
         console.log('Initializing Imaging Log View');
         
         // Set page title
-        document.title = 'Specula - Imaging Log';
+        document.title = 'Imaging Log';
         
         // Set up tab switching
         const tabButtons = document.querySelectorAll('.imaging-log-tab-btn');

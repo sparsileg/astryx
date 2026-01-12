@@ -3,12 +3,12 @@
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Specula - Astrophotography Planning Tool</title>
+    <title id="app-title"></title>
     <link rel="stylesheet" href="css/base.css">
     <link rel="stylesheet" href="css/target-filter.css">
     <link rel="stylesheet" href="css/daily-visibility.css">
     <link rel="stylesheet" href="css/seq-plan.css">
-    <link rel="stylesheet" href="css/utilities.css">
+    <link rel="stylesheet" href="css/misc.css">
     <link rel="stylesheet" href="css/imaging-log.css">
     <link rel="stylesheet" href="css/sidebar.css">
     <link rel="stylesheet" href="css/themes/dark.css" id="theme-css">
@@ -23,7 +23,7 @@
         </button>
         <div class="sidebar-header">
           <div class="header-top">
-            <h1>Specula</h1>
+            <h1 id="app-name"></h1>
             <button id="hamburger-menu-btn" class="hamburger-btn">≡</button>
           </div>
           <div class="theme-selector">
@@ -43,8 +43,8 @@
 
         <div class="sidebar-content">
           <ul class="nav-list">
-            <li class="nav-item" data-view="todo">To Do List</li>
             <li class="nav-item" data-view="target-select">Target Selection</li>
+            <li class="nav-item" data-view="todo">To Do List</li>
             <li class="nav-item" data-view="daily-visibility">Daily Visibility</li>
             <li class="nav-item" data-view="yearly-observability">Yearly Observability</li>
             <li class="nav-item" data-view="fov">Field of View</li>
@@ -742,8 +742,11 @@
 
         <h4>Acknowledgements</h4>
         <p style="color: var(--text-secondary); line-height: 1.6;">
-          • Saguaro Astronomy Club (SAC) Deep Sky Database<br>
-          • OpenNGC database by Mattia Verga
+          • Saguaro Astronomy Club (<a class="about-link" href="https://www.saguaroastro.org" target="_blank">SAC</a>) Deep Sky Database<br>
+          • OpenNGC <a class="about-link" href="https://github.com/mattiaverga/OpenNGC" target="_blank">database</a> by Mattia Verga<br>
+          • Astronomical
+          League <a class="about-link" href="https://www.astroleague.org/observing-program-division/"
+          target= "_blank">Observing Program Division</a><br>
         </p>
       </div>
     </template>
@@ -1468,7 +1471,7 @@ M 3
       <div class="init-error-container">
         <h1 style="color: var(--error-color); margin-bottom: 1rem; font-size: 2rem;">Initialization Error</h1>
         <p style="margin-bottom: 2rem; max-width: 500px; line-height: 1.6;">
-          Specula failed to initialize properly. This might be due to browser compatibility issues or corrupted data.
+          Failed to initialize properly. This might be due to browser compatibility issues or corrupted data.
         </p>
         <p id="error-details" style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 2rem; font-family: monospace;">
           <!-- Error message will be inserted here -->
@@ -1868,8 +1871,8 @@ M 3
     <!-- END OF Utilities Template -->
 
     <!-- Scripts - load in dependency order -->
-    <script src="js/config.js"></script>
     <script src="include/marked.min.js"></script>
+    <script src="js/config.js"></script>
     <script src="js/help-content.js"></script>
     <script src="js/db-manager.js"></script>
     <script src="js/data-manager.js"></script>
