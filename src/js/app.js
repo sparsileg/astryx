@@ -41,6 +41,14 @@ const App = {
             // Initial route
             this.route();
 
+            // Display version number
+            const versionEl = document.getElementById('app-version');
+            if (versionEl) {
+                versionEl.textContent  = `${APP_CONFIG.APP_NAME} `;
+                versionEl.textContent += `v${APP_CONFIG.APP_VERSION} `;
+                versionEl.textContent += `db${APP_CONFIG.DB_VERSION}`;
+            }
+
             console.log('Specula initialized successfully');
         } catch (error) {
             console.error('Failed to initialize Specula:', error);
