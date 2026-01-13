@@ -32,3 +32,17 @@
     /* Focus Ring */
     --focus-ring: rgba(204, 68, 68, 0.3);
 }
+
+.logo-ring {
+    filter: drop-shadow(0 0 15px rgba(204, 68, 68, 0.5));
+}
+
+.app-logo {
+    filter:
+        grayscale(0.7)
+        sepia(0.4)
+        saturate(0.8)
+        hue-rotate(-10deg)
+        brightness(0.7);
+}
+

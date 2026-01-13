@@ -80,9 +80,14 @@ body {
     color: #ffffff;
 }
 
-[data-theme="matrix"] #target-info-display .form-group,
-[data-theme="matrix"] .info-box-wrapper {
+#target-info-display .form-group,
+.info-box-wrapper {
     background: rgba(0, 255, 0, 0.05);
     border: 1px solid var(--border-color);
+}
+
+
+.logo-ring {
+    filter: drop-shadow(0 0 15px rgba(0, 255, 0, 0.6));
 }
 
