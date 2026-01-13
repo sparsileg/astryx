@@ -22,7 +22,7 @@ available.
 Clicking the hamburger menu opens up a menu.
 
     * Settings: Set Daylight Saving Time mode, Maximum Search Results for
-      the the Target Search, and the global minimum altitude setting. The
+      the Target Search, and the global minimum altitude setting. The
       global minimum altitude is the altitude at which you would begin to
       image and so it affects multiple other functions and calculations
       such as target rise and set times. 
