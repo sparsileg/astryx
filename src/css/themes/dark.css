@@ -38,9 +38,13 @@ body {
     color: var(--text-color);
 }
 
-[data-theme="dark"] #target-info-display .form-group,
-[data-theme="dark"] .info-box-wrapper {
+#target-info-display .form-group,
+.info-box-wrapper {
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid var(--border-color);
+}
+
+.logo-ring {
+    filter: drop-shadow(0 0 15px rgba(79, 195, 247, 0.5));
 }
 

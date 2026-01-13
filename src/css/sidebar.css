@@ -19,8 +19,10 @@
 }
 
 .sidebar-header {
+    position: relative;
     padding: 1.5rem;
-    border-bottom: 1px solid var(--border-color);
+    padding-top: 130px;
+    border-bottom: 2px solid var(--border-color);
     opacity: 1;
     transition: opacity var(--sb-out) ease-in-out;
 }
@@ -34,13 +36,19 @@
 
 .sidebar-header .header-top h1 {
     cursor: pointer;
-    font-size: 1.5rem;
+    font-size: 2.5rem;
     color: var(--primary-color);
     margin: 0;
+    position: absolute;
+    left: 5px;
+    top: -10px;
+    opacity: 0.5;
+    z-index: 20;
+    text-shadow: -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000, 2px 2px 0 #000;
 }
 
 .sidebar-header .header-top h1:hover {
-    opacity: 0.8;
+    opacity: 1.0;
 }
 
 .sidebar-content {
@@ -98,6 +106,7 @@
 }
 
 /* When collapsing: fast fade out */
+.sidebar.collapsed #app-version,
 .sidebar.collapsed .sidebar-content,
 .sidebar.collapsed .sidebar-header {
     opacity: 0;
@@ -107,12 +116,99 @@
 
 /* end of toggle sidebar styles */
 
+/* Hamburger Menu Button */
+.hamburger-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+    font-size: 1.2rem;
+    color: var(--text-color);
+    line-height: 1;
+    width: auto;
+    height: auto;
+    position: absolute;
+    right: 2rem;
+    top: 12px;
+    z-index: 20;
+}
+
+.hamburger-btn:hover {
+    background: var(--card-hover);
+}
+
+.hamburger-btn.active {
+    background: var(--card-hover);
+}
+
+/* Hamburger Dropdown Menu */
+.hamburger-menu {
+    position: fixed;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+    min-width: 200px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.2s ease;
+}
+
+.hamburger-menu.active {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+
+.theme-selector {
+    position: relative;
+    top: -20px;
+    margin-bottom: 1rem;
+}
+
+.theme-selector select {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background: var(--input-bg);
+    color: var(--text-color);
+    font-size: 0.9rem;
+}
+
+
+
 #app-version {
     font-family: "Lucida Console", "Courier", monospace;
     position: absolute;
     bottom: 0.25rem;
     left: 0.5rem;
-    font-size: 0.9rem !important;
+    font-size: 0.9rem;
     color: var(--text-secondary);
+    opacity: 1;
+    transition: opacity var(--sb-out) ease-in-out;
+}
+
+/* logo stuff */
+.app-logo {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    display: block;
+}
+
+
+.logo-ring {
+    position: absolute;
+    top: -12px;
+    left: -12px;
+    width: 128px;
+    height: 128px;
+    z-index: 10;
 }
 
