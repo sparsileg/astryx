@@ -14,6 +14,7 @@ const APP_CONFIG = {
     APP_VERSION: '0.9.0',
     DB_NAME: 'specula-db',
     DB_VERSION: 6,
+    TARGET_VERSION: '20260113',
     DEFAULT_THEME: 'Matrix',
 
     // Calculation constants
