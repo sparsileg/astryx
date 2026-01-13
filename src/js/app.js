@@ -56,9 +56,9 @@ const App = {
             // Display version numbers
             const appVersionText = document.getElementById('app-version');
             if (appVersionText) {
-                appVersionText.textContent  = `${APP_CONFIG.APP_NAME} `;
                 appVersionText.textContent += `v${APP_CONFIG.APP_VERSION} `;
-                appVersionText.textContent += `db${APP_CONFIG.DB_VERSION}`;
+                appVersionText.textContent += `d${APP_CONFIG.DB_VERSION} `;
+                appVersionText.textContent += `t${APP_CONFIG.TARGET_VERSION}`;
             }
 
             console.log(APP_CONFIG.APP_NAME + ' initialized successfully');
