@@ -1072,32 +1072,35 @@ Astronomy Club Deep Sky Database and the OpenNGC database compiled by
 Mattia Verga. The OpenNGC database also contains the IC catalogue.
 
 Additional target sources were located in various places and merged into a
-single database. As part of the compilation into a single database, a
-program merged duplicate entries in a smart way such that no data
-was lost.
+single database. As I identify interesting targets that are not in the
+database, or I come across additional information (such as a Common Name)
+that might be useful for search purposes, I will add that to a special file
+that is included when creating a new database. As part of the compilation
+into a single database, a program merged duplicate entries in a smart way
+such that no data was lost.
 
-However, many targets do not have a complete set of data. For example
-hundreds of targets have neither a minimum nor maximum angular size. Thus,
-they will not be included in the results when the size filter is used.
+Many targets do not have a complete set of data. For example hundreds of
+targets have neither a minimum nor maximum angular size. Thus, they will
+not be included in the results when the size filter is used.
 
-If a target has a maximum size but not a minumum, and vice-versa, the size
-value was copied into the other field. Thus, some objects may seem as if
-they are circular even if they are not. For the purposes of the database,
-however, this is fine.
+If a target has a maximum size but not a minumum or a minimum and not a
+maximum, whichever size value exists is copied into the other field. Thus,
+some objects may seem circular because they have the same value for minimum
+and maximum size.
 
 The following statistics are accurate as of 13 January 2026.
 
 ## Size statistics
 
-    * Total Targets: 14,592
+    * Total Targets: 14,593
     * Targets with missing size values: 860
-    * Targets with valid size values: 13,732
+    * Targets with valid size values: 13,733
 
 Note that of the 860 objects without size values, almost 92% are either
 single stars or multiple star systems. An additional 13 are asteroids. Here
 is the breakdown of those objects without size values
 
-    * Stars: 790
+    * Stars: 791
     * Emission nebulae: 33
     * Open cluster: 19
     * Asteroids: 13
@@ -1153,7 +1156,7 @@ galaxies. There are only 117 galaxies or galaxy clusters that are larger
 than 10 arcminutes. However, some are very large and make magnificant
 imaging targets.
 
-Here is the distribution of all types:
+Here is the distribution of all types in the database:
 
     * Asteroid: 13
     * Emission nebulae: 303
@@ -1167,7 +1170,7 @@ Here is the distribution of all types:
     * Quasar: 1
     * Reflection nebulae: 48
     * Supernova remnant: 20
-    * Stars: 846
+    * Stars: 847
 
 ## How to use this information
 
