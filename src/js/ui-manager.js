@@ -235,7 +235,13 @@ const UIManager = {
         const modalTitle = document.getElementById('modal-title');
         const modalBody = document.getElementById('modal-body');
         const headerButtons = document.getElementById('modal-header-buttons');
+        const modalContent = document.querySelector('.modal-content');
         if (!modal || !modalTitle || !modalBody) return;
+        
+        // Remove narrow-modal class from previous modal
+        if (modalContent) {
+            modalContent.classList.remove('narrow-modal');
+        }
         
         // Clear any existing custom header buttons
         const existingTodoBtn = document.getElementById('modal-todo-btn');
