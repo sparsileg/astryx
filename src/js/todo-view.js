@@ -530,7 +530,7 @@ const ToDoView = {
         if (!todoContainer || !this.riseTimeData) return;
 
         const { observable, duskJD, dawnJD } = this.riseTimeData;
-        const minAltitude = 30; // we want this to be changeable later.
+        const minAltitude = SettingsManager.getGlobalMinAltitude();
 
         if (observable.length === 0) {
             todoContainer.innerHTML = `
@@ -558,11 +558,16 @@ const ToDoView = {
 
         const ctx = canvas.getContext('2d');
 
+        // Get container width and calculate responsive chart dimensions
+        const container = canvas.parentElement;
+        const containerWidth = container.clientWidth;
+        const maxChartWidth = 1000;
+        const chartWidth = Math.min(containerWidth - 80, maxChartWidth); // 80px for padding
+
         // Chart dimensions
         const labelWidth = 0;
-        const chartWidth = 900;
-        const rowHeight = 30;
-        const headerHeight = 40;
+        const rowHeight = 40;
+        const headerHeight = 60;
         const padding = 20;
 
         const totalWidth = labelWidth + chartWidth + padding * 2;
@@ -583,33 +588,43 @@ const ToDoView = {
         ctx.fillStyle = bgColor;
         ctx.fillRect(0, 0, totalWidth, totalHeight);
 
-        // Draw "Dusk" and "Dawn" labels at top
+        // Get location for timezone
+        const locationName = SettingsManager.getSelectedLocation();
+        const location = DataManager.getLocation(locationName);
+        const timezone = location ? location.timezone : 0;
+        const isDST = false; // Simplified for now
+
+        // Format dusk and dawn times
+        const duskTime = this.formatLocalTime(duskJD, timezone, isDST);
+        const dawnTime = this.formatLocalTime(dawnJD, timezone, isDST);
+
+        // Draw header with two lines
         const chartLeft = padding + labelWidth;
         const chartRight = padding + labelWidth + chartWidth;
+        const chartCenter = chartLeft + chartWidth / 2;
 
         ctx.fillStyle = textColor;
+
+        // Line 1: Dusk/Dawn labels at edges
         ctx.font = 'bold 14px sans-serif';
-
-        // "Dusk" at far left
         ctx.textAlign = 'left';
-        ctx.fillText('Dusk', chartLeft + 5, padding + 20);
-
-        // "Dawn" at far right
+        ctx.fillText('Dusk', chartLeft + 5, padding + 15);
         ctx.textAlign = 'right';
-        ctx.fillText('Dawn', chartRight - 5, padding + 20);
-
-        // Center info: Date and minimum altitude
-        const chartCenter = chartLeft + chartWidth / 2;
+        ctx.fillText('Dawn', chartRight - 5, padding + 15);
 
         // Format today's date
         const today = new Date();
         const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
         const formattedDate = today.toLocaleDateString('en-US', dateOptions);
 
-        // Draw date and minimum altitude on same line
-        ctx.font = '12px sans-serif';
+        // Line 1 center: Date and minimum altitude
+        ctx.font = '0.9rem sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText(`${formattedDate}  •  Minimum altitude: ${minAltitude} degrees`, chartCenter, padding + 20);
+        ctx.fillText(`${formattedDate}  •  Minimum altitude: ${minAltitude}°`, chartCenter, padding + 15);
+
+        // Line 2: Astronomical twilight times
+        ctx.font = '0.9rem sans-serif';
+        ctx.fillText(`Astronomical dusk: ${duskTime}  •  Astronomical dawn: ${dawnTime}`, chartCenter, padding + 35);
 
         // Starting Y position for target rows
         const startY = padding + headerHeight;
@@ -629,7 +644,7 @@ const ToDoView = {
                 const barX = chartLeft + chartWidth * barStartFraction;
                 const barWidth = chartWidth * (barEndFraction - barStartFraction);
                 const barY = y + 5;
-                const barHeight = 20;
+                const barHeight = 30;  // Increased from 20
 
                 // Draw bar - use gold for pinned targets
                 const isPinned = this.isTargetPinned(info.target.object);
@@ -641,35 +656,35 @@ const ToDoView = {
                 ctx.globalAlpha = 1.0;
 
                 // Draw bar border
-                ctx.strokeStyle = barColor; // Was: accentColor
+                ctx.strokeStyle = barColor;
                 ctx.lineWidth = 1;
                 ctx.strokeRect(barX, barY, barWidth, barHeight);
 
                 // Draw rise/set times and target label INSIDE the bar
                 ctx.fillStyle = '#ffffff';
-                ctx.font = '10px sans-serif';
+                ctx.font = '12px sans-serif';  // Increased from 10px
 
                 let labelX = barX + 5; // Default: 5px from left edge
 
                 // Show rise time if it's after dusk
                 if (info.riseJD >= duskJD) {
                     ctx.textAlign = 'left';
-                    ctx.fillText(info.riseTime, barX + 5, barY + 14);
+                    ctx.fillText(info.riseTime, barX + 5, barY + 20);  // Adjusted Y position
                     labelX = barX + 5 + ctx.measureText(info.riseTime).width + 30; // 30px after rise time
                 } else {
                     labelX = barX + 30; // 30px from left edge
                 }
 
                 // Draw target label
-                ctx.font = 'bold 11px sans-serif';
+                ctx.font = 'bold 13px sans-serif';  // Increased from 11px
                 ctx.textAlign = 'left';
-                ctx.fillText(info.target.object, labelX, barY + 14);
+                ctx.fillText(info.target.object, labelX, barY + 20);  // Adjusted Y position
 
                 // Show set time if it's before dawn (right-aligned)
                 if (info.setJD <= dawnJD) {
-                    ctx.font = '10px sans-serif';
+                    ctx.font = '12px sans-serif';  // Increased from 10px
                     ctx.textAlign = 'right';
-                    ctx.fillText(info.setTime, barX + barWidth - 5, barY + 14);
+                    ctx.fillText(info.setTime, barX + barWidth - 5, barY + 20);  // Adjusted Y position
                 }
             }
 
