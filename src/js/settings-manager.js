@@ -204,6 +204,13 @@ const SettingsManager = {
     },
 
     /**
+     * Get global minimum altitude
+     */
+    getGlobalMinAltitude() {
+        return this.settings.globalMinAltitude !== undefined ? this.settings.globalMinAltitude : 35;
+    },
+
+    /**
      * Get minimum altitude for daily visibility
      */
     getMinAltitudeDaily() {
@@ -333,5 +340,5 @@ const SettingsManager = {
         this.settings.globalMinAltitude = altitude;
         await this.saveSettings();
     }
-    
+
 };
