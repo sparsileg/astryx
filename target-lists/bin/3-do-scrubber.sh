@@ -30,7 +30,7 @@ python bin/scrubber.py \
        --to-extra "Pal,RCW,vdB" \
        --rm-unknown \
        --to-stars \
-       --keep "Abell,Arp,Barnard,Caldwell,Extra,IC,LDN,Messier,Minor Planet,NGC,Sharpless"
+       --keep "Abell,Arp,Barnard,Caldwell,Extra,Exotic,IC,LDN,Messier,Minor Planet,NGC,Sharpless"
 
 
 rm temp_dso.csv

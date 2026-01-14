@@ -29,3 +29,8 @@ types to the new Stars type in an attempt to reduce non-useful types but
 still keep the necessary objects in the database. The Common field will be
 updated to be "Single Star", "Doublle Star", "Asterism" for the current
 1STAR, 2STAR, and ASTER types.
+
+== Exotic ==
+
+For things like quasars and black holes, I created an exotic.csv input file
+and a catalog named Exotic.
