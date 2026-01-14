@@ -44,9 +44,15 @@ const FOVView = {
         this.populateSensorDropdown();
 
         // Load current target if available
-        if (typeof VisibilityTargets !== 'undefined' && VisibilityTargets.currentTarget) {
-            this.currentTarget = VisibilityTargets.currentTarget;
-            this.displayTargetInfo();
+        if (typeof VisibilityTargets !== 'undefined') {
+            // Load last selected target if not already loaded
+            if (!VisibilityTargets.currentTarget) {
+                VisibilityTargets.loadLastTarget();
+            }
+            if (VisibilityTargets.currentTarget) {
+                this.currentTarget = VisibilityTargets.currentTarget;
+                this.displayTargetInfo();
+            }
         }
 
         // Setup event listeners
@@ -301,6 +307,9 @@ const FOVView = {
         const resultsDiv = document.getElementById('fov-results');
         if (!resultsDiv) return;
 
+        const tgtHeight = Math.round((this.currentTarget.size_max*60)/fovData.resolution);
+        const tgtWidth = Math.round((this.currentTarget.size_min*60)/fovData.resolution);
+
         resultsDiv.innerHTML = `
             <div style="display: grid; grid-template-columns: auto 1fr; gap: 0.5rem 1rem; align-items: center;">
                 <strong>Effective Focal Length:</strong>
@@ -308,10 +317,12 @@ const FOVView = {
 
                 <strong>Field of View:</strong>
                 <span>${fovData.fovWidth.toFixed(3)}° × ${fovData.fovHeight.toFixed(3)}°</span>
-                <!-- ${fovData.fovWidthArcmin.toFixed(1)} × ${fovData.fovHeightArcmin.toFixed(1)} arcmin -->
 
                 <strong>Resolution:</strong>
                 <span>${fovData.resolution.toFixed(2)} arcsec/pixel</span>
+
+                <strong>Target Size:</strong>
+                <span>${tgtHeight} x ${tgtWidth} pixels</span>
 
                 <strong>Dawes Limit:</strong>
                 <span>${fovData.dawesLimit.toFixed(2)} arcsec</span>
