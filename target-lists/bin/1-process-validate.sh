@@ -7,7 +7,9 @@ python bin/process_raw_sac.py original/SAC_DeepSky_Ver81_Fence.TXT > sac.csv
 python bin/validate.py openngc.csv
 python bin/validate.py openngc_addendum.csv
 python bin/validate.py sac.csv
+python bin/validate.py manual/caldwell.csv
+python bin/validate.py manual/exotic.csv
 python bin/validate.py manual/ic_addendum.csv
 python bin/validate.py manual/messier_addendum.csv
-python bin/validate.py manual/caldwell.csv
+python bin/validate.py manual/minor_planets.csv
 python bin/validate.py manual/misc_addendum.csv
