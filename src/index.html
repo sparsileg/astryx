@@ -374,12 +374,12 @@
           <strong><span id="filter-target-count">0</span> targets</strong>
           from the current filter results.
         </p>
-        
+
         <div class="form-group">
           <label for="program-name-input">Program Name:</label>
           <input type="text" id="program-name-input" class="full-width" placeholder="e.g., October Galaxies" autofocus>
         </div>
-        
+
         <div class="modal-actions">
           <button class="btn-secondary" data-action="cancel">Cancel</button>
           <button class="btn-primary" data-action="create">Create</button>
@@ -637,7 +637,7 @@
         <p style="color: var(--text-secondary); margin-bottom: 0.5rem;">
           Manage your telescopes, sensors, and filters
         </p>
-        
+
         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;">
           <button class="btn-primary" id="manage-equipment-telescopes-btn">
             🔭 Telescopes
@@ -980,7 +980,7 @@
         </div>
       </div>
     </template>
-    <!-- END OF Field of View -->
+    <!-- END OF Field of View template -->
 
     <!-- Manage Telescopes Modal Template -->
     <template id="manage-telescopes-template">
@@ -1078,8 +1078,8 @@
     <template id="manage-project-template">
       <div class="form-group">
         <label for="project-name">Project Name *</label>
-        <input type="text" 
-               id="project-name" 
+        <input type="text"
+               id="project-name"
                maxlength="100"
                placeholder="e.g., Horsehead Nebula Region">
       </div>
@@ -1098,18 +1098,18 @@
       <div class="form-group">
         <label>Targets</label>
         <div style="margin-bottom: 0.5rem;">
-          <input type="text" 
-                 id="project-target-search" 
+          <input type="text"
+                 id="project-target-search"
                  placeholder="Search targets to add..."
                  style="width: 100%;">
         </div>
-        <div id="project-target-search-results" 
+        <div id="project-target-search-results"
              style="max-height: 150px; overflow-y: auto; margin-bottom: 1rem; border: 1px solid var(--border-color); border-radius: 4px;">
         </div>
-        
-        <div style="border: 1px solid var(--border-color); 
-                    border-radius: 4px; 
-                    padding: 0.5rem; 
+
+        <div style="border: 1px solid var(--border-color);
+                    border-radius: 4px;
+                    padding: 0.5rem;
                     min-height: 100px;
                     background: var(--card-bg);">
           <strong style="display: block; margin-bottom: 0.5rem; color: var(--text-secondary);">Selected Targets:</strong>
@@ -1122,15 +1122,15 @@
       <div class="form-group">
         <label for="project-notes">
           Notes
-          <button type="button" 
-                  class="btn-secondary btn-sm" 
+          <button type="button"
+                  class="btn-secondary btn-sm"
                   id="project-notes-expand-btn"
                   style="margin-left: 0.5rem;">
             Expand
           </button>
         </label>
-        <textarea id="project-notes" 
-                  rows="6" 
+        <textarea id="project-notes"
+                  rows="6"
                   placeholder="Project notes (supports Markdown)..."></textarea>
       </div>
     </template>
@@ -1140,11 +1140,11 @@
     <template id="import-program-template">
       <div class="form-group">
         <label for="program-name">Program Name *</label>
-        <input type="text" 
-               id="program-name" 
+        <input type="text"
+               id="program-name"
                placeholder="e.g., Messier Marathon">
       </div>
-      
+
       <div class="form-group">
         <label>Program Type</label>
         <div style="display: flex; gap: 1.5rem; margin-top: 0.5rem;">
@@ -1158,30 +1158,30 @@
           </label>
         </div>
       </div>
-      
+
       <!-- Pattern Mode Fields -->
       <div id="pattern-fields" style="display: none;">
         <div class="form-group">
           <label for="program-catalog-prefix">Catalog Prefix</label>
-          <input type="text" 
-                 id="program-catalog-prefix" 
+          <input type="text"
+                 id="program-catalog-prefix"
                  placeholder="e.g., NGC, M, IC, Sh">
         </div>
         <div class="form-group">
           <label for="program-max-number">Maximum Number</label>
-          <input type="number" 
-                 id="program-max-number" 
-                 min="1" 
+          <input type="number"
+                 id="program-max-number"
+                 min="1"
                  placeholder="e.g., 7840">
         </div>
       </div>
-      
+
       <!-- Manual List Fields -->
       <div id="manual-fields">
         <div class="form-group">
           <label for="program-targets">Target List</label>
-          <textarea id="program-targets" 
-                    rows="10" 
+          <textarea id="program-targets"
+                    rows="10"
                     placeholder="Enter target designations (one per line)&#10;M 31&#10;M 42&#10;NGC 7000"></textarea>
         </div>
         <div id="import-results" style="display: none; margin-top: 1rem; padding: 1rem; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 4px;">
@@ -1225,8 +1225,8 @@
           <div class="form-group" style="position: relative;">
             <label for="session-filter">Filter *</label>
             <select id="session-filter"></select>
-            <input type="text" 
-                   id="session-filter-new-input" 
+            <input type="text"
+                   id="session-filter-new-input"
                    placeholder="Enter filter name and press Enter..."
                    style="display: none; position: absolute; top: 1.75rem; left: 0; right: 0; z-index: 10;">
           </div>
@@ -1235,17 +1235,17 @@
         <div class="form-row" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 1rem;">
           <div class="form-group">
             <label for="session-rotation">Rotation (°)</label>
-            <input type="number" 
-                   id="session-rotation" 
-                   step="0.1" 
+            <input type="number"
+                   id="session-rotation"
+                   step="0.1"
                    placeholder="e.g., 45.3">
           </div>
 
           <div class="form-group">
             <label for="session-temp-setpoint">Temp Setpoint (°C)</label>
-            <input type="number" 
-                   id="session-temp-setpoint" 
-                   min="-40" 
+            <input type="number"
+                   id="session-temp-setpoint"
+                   min="-40"
                    max="0"
                    value="-20"
                    placeholder="-20">
@@ -1263,9 +1263,9 @@
 
           <div class="form-group">
             <label for="session-gain">Gain</label>
-            <input type="number" 
-                   id="session-gain" 
-                   min="0" 
+            <input type="number"
+                   id="session-gain"
+                   min="0"
                    max="999"
                    value="100"
                    placeholder="100">
@@ -1273,9 +1273,9 @@
 
           <div class="form-group">
             <label for="session-offset">Offset</label>
-            <input type="number" 
-                   id="session-offset" 
-                   min="0" 
+            <input type="number"
+                   id="session-offset"
+                   min="0"
                    max="255"
                    value="70"
                    placeholder="25">
@@ -1287,8 +1287,8 @@
       <div class="settings-section">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
           <h4 style="margin: 0;">Moon & Conditions</h4>
-          <button type="button" 
-                  class="btn-secondary btn-sm" 
+          <button type="button"
+                  class="btn-secondary btn-sm"
                   id="session-calc-moon-btn">
             Calculate Moon Data
           </button>
@@ -1307,18 +1307,18 @@
 
           <div class="form-group">
             <label for="session-moon-illumination">Illumination (%)</label>
-            <input type="number" 
-                   id="session-moon-illumination" 
-                   min="0" 
+            <input type="number"
+                   id="session-moon-illumination"
+                   min="0"
                    max="100"
                    placeholder="0-100">
           </div>
 
           <div class="form-group">
             <label for="session-angle-from-moon">Angle from Moon (°)</label>
-            <input type="number" 
-                   id="session-angle-from-moon" 
-                   min="0" 
+            <input type="number"
+                   id="session-angle-from-moon"
+                   min="0"
                    max="180"
                    placeholder="0-180">
           </div>
@@ -1354,33 +1354,33 @@
         <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 1rem;">
           <div class="form-group">
             <label for="session-sub-length">Sub Length (seconds) *</label>
-            <input type="number" 
-                   id="session-sub-length" 
+            <input type="number"
+                   id="session-sub-length"
                    min="1"
                    placeholder="e.g., 300">
           </div>
 
           <div class="form-group">
             <label for="session-num-exposures">Original Exposures *</label>
-            <input type="number" 
-                   id="session-num-exposures" 
+            <input type="number"
+                   id="session-num-exposures"
                    min="1"
                    placeholder="e.g., 120">
           </div>
 
           <div class="form-group">
             <label for="session-used-exposures">Used</label>
-            <input type="number" 
-                   id="session-used-exposures" 
+            <input type="number"
+                   id="session-used-exposures"
                    min="0"
                    placeholder="e.g., 115">
           </div>
 
           <div class="form-group">
             <label>Integration Time</label>
-            <div id="session-integration-time" 
-                 style="padding: 0.5rem; 
-                        background: var(--hover-bg); 
+            <div id="session-integration-time"
+                 style="padding: 0.5rem;
+                        background: var(--hover-bg);
                         border-radius: 4px;
                         font-weight: 600;
                         line-height: 2.5;">
@@ -1395,8 +1395,8 @@
         <h4>Notes</h4>
 
         <div class="form-group">
-          <textarea id="session-notes" 
-                    rows="6" 
+          <textarea id="session-notes"
+                    rows="6"
                     placeholder="Session notes (Markdown)"></textarea>
         </div>
       </div>
@@ -1407,8 +1407,8 @@
     <template id="manage-program-template">
       <div class="form-group">
         <label for="program-name">Program Name *</label>
-        <input type="text" 
-               id="program-name" 
+        <input type="text"
+               id="program-name"
                maxlength="100"
                placeholder="e.g., Messier Observing Program">
       </div>
@@ -1423,9 +1423,9 @@
 
       <div class="form-group">
         <label>Target Count</label>
-        <div id="program-target-count" 
-             style="padding: 0.5rem; 
-                    background: var(--hover-bg); 
+        <div id="program-target-count"
+             style="padding: 0.5rem;
+                    background: var(--hover-bg);
                     border-radius: 4px;
                     font-weight: 600;">
           0 targets
@@ -1441,16 +1441,16 @@
     <template id="import-program-template">
       <div class="form-group">
         <label for="import-program-name">Program Name *</label>
-        <input type="text" 
-               id="import-program-name" 
+        <input type="text"
+               id="import-program-name"
                maxlength="100"
                placeholder="e.g., Messier Observing Program">
       </div>
 
       <div class="form-group">
         <label for="import-target-list">Target List (one per line)</label>
-        <textarea id="import-target-list" 
-                  rows="15" 
+        <textarea id="import-target-list"
+                  rows="15"
                   placeholder="Paste target designations here, one per line...
 Example:
 M 1
@@ -1600,7 +1600,7 @@ M 3
                 <option value="no">No</option>
               </select>
             </div>
-            
+
             <!-- Separator -->
             <hr style="margin: 1rem 0; border: none; border-top: 1px solid var(--border-color);">
 
@@ -1769,8 +1769,8 @@ M 3
             <button class="btn-primary" id="imaging-log-new-project-btn">+ New Project</button>
 
             <div class="imaging-log-filters">
-              <input type="text" 
-                     id="imaging-log-project-search" 
+              <input type="text"
+                     id="imaging-log-project-search"
                      placeholder="Search projects..."
                      style="width: 200px;">
 
@@ -1812,7 +1812,7 @@ M 3
 
         <!-- Reports Tab -->
         <div id="imaging-log-reports-tab" class="imaging-log-tab-content">
-          
+
           <!-- Catalog Coverage Report -->
           <div class="card">
             <div class="card-header">
