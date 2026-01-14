@@ -1,0 +1,12 @@
+/* Field of View styling */
+
+.todo-rise-chart-container{
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}
+
+
+#todo-rise-chart {
+    max-width: 100%;
+}
