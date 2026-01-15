@@ -31,22 +31,21 @@
     margin-right: 0;
 }
 
-/* About links */
+/* Block links */
 
-.about-link {
+.block-link {
     box-shadow: inset 0 0 0 0 var(--primary-hover);
     color: var(--text-secondary);
     margin: 0 -.25rem;
     padding: 0 .25rem;
-    transition: color .3s ease-in-out, box-shadow .3s ease-in-out;
-    text-decoration-line: underline;
-    text-decoration-color: var(--text-secondary);
-    text-underline-offset: 2px;
+    transition: color .3s ease-in-out, box-shadow .3s ease-in-out, text-shadow .3s ease-in-out;
+    text-decoration: none;
+    text-shadow: 0 0 6px var(--primary-color);
 }
 
-.about-link:hover {
-  box-shadow: inset 300px 0 0 0 var(--primary-hover);
-  color: var(--secondary-color);
-  text-decoration: none;
+.block-link:hover {
+    box-shadow: inset 300px 0 0 0 var(--primary-hover);
+    color: var(--secondary-color);
+    text-decoration: none;
+    text-shadow: none;  /* Remove glow on hover since block fills */
 }
-
