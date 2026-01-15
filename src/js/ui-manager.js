@@ -84,11 +84,6 @@ const UIManager = {
                         this.toggleAdminToolsSubmenu();
                         return;
                     }
-                    if (action === 'backup-restore') {
-                        e.stopPropagation();
-                        this.toggleBackupRestoreSubmenu();
-                        return;
-                    }
 
                     // Handle submenu items - don't close menu yet
                     if (item.classList.contains('submenu-item')) {
@@ -111,19 +106,6 @@ const UIManager = {
     toggleAdminToolsSubmenu() {
         const parent = document.querySelector('[data-action="admin-tools"]');
         const submenu = document.getElementById('admin-tools-submenu');
-
-        if (parent && submenu) {
-            parent.classList.toggle('expanded');
-            submenu.classList.toggle('expanded');
-        }
-    },
-
-    /**
-     * Toggle Backup/Restore submenu
-     */
-    toggleBackupRestoreSubmenu() {
-        const parent = document.querySelector('[data-action="backup-restore"]');
-        const submenu = document.getElementById('backup-restore-submenu');
 
         if (parent && submenu) {
             parent.classList.toggle('expanded');
@@ -182,17 +164,11 @@ const UIManager = {
         case 'import-targets':
             this.openImportTargetsModal();
             break;
-        case 'backup-database':
-            this.backupDatabase();
+        case 'new-backup':
+            this.openNewBackupModal();
             break;
-        case 'restore-database':
-            this.restoreDatabase();
-            break;
-        case 'backup-imaging-log':
-            this.backupImagingLog();
-            break;
-        case 'restore-imaging-log':
-            this.restoreImagingLog();
+        case 'new-restore':
+            this.openNewRestoreModal();
             break;
         case 'clear-all-targets':
             this.clearAllTargets();
@@ -237,12 +213,12 @@ const UIManager = {
         const headerButtons = document.getElementById('modal-header-buttons');
         const modalContent = document.querySelector('.modal-content');
         if (!modal || !modalTitle || !modalBody) return;
-        
+
         // Remove narrow-modal class from previous modal
         if (modalContent) {
             modalContent.classList.remove('narrow-modal');
         }
-        
+
         // Clear any existing custom header buttons
         const existingTodoBtn = document.getElementById('modal-todo-btn');
         if (existingTodoBtn) {
@@ -252,14 +228,14 @@ const UIManager = {
         if (existingSaveBtn) {
             existingSaveBtn.remove();
         }
-        
+
         // Set title
         modalTitle.textContent = title;
-        
-        // Add Save button for session, project, program, and settings modals
+
+        // Add Save button for session, project, program, settings, backup, and restore modals
         if (headerButtons) {
             let saveBtn = null;
-            
+
             if (templateId === 'manage-session-template') {
                 saveBtn = document.createElement('button');
                 saveBtn.id = 'modal-save-btn';
@@ -348,20 +324,54 @@ const UIManager = {
                 saveBtn.addEventListener('click', () => {
                     this.handleSaveFilter();
                 });
+            } else if (templateId === 'backup-modal-template') {
+                saveBtn = document.createElement('button');
+                saveBtn.id = 'modal-save-btn';
+                saveBtn.className = 'btn-primary btn-sm';
+                saveBtn.textContent = 'Save Backup';
+                saveBtn.addEventListener('click', () => {
+                    if (onAction) {
+                        onAction('save', modalBody);
+                    }
+                });
+            } else if (templateId === 'restore-confirm-template') {
+                saveBtn = document.createElement('button');
+                saveBtn.id = 'modal-save-btn';
+                saveBtn.className = 'btn-primary btn-sm';
+                saveBtn.textContent = 'Restore';
+                saveBtn.disabled = true;
+                saveBtn.style.opacity = '0.5';
+                saveBtn.addEventListener('click', () => {
+                    if (onAction) {
+                        onAction('restore', modalBody);
+                    }
+                });
+            } else if (templateId === 'restore-picker-template') {
+                saveBtn = document.createElement('button');
+                saveBtn.id = 'modal-save-btn';
+                saveBtn.className = 'btn-primary btn-sm';
+                saveBtn.textContent = 'Continue';
+                saveBtn.disabled = true;
+                saveBtn.style.opacity = '0.5';
+                saveBtn.addEventListener('click', () => {
+                    if (onAction) {
+                        onAction('continue', modalBody);
+                    }
+                });
             }
-            
+
             if (saveBtn) {
                 headerButtons.appendChild(saveBtn);
             }
         }
-        
+
         // Load template content
         const template = document.getElementById(templateId);
         if (template) {
             const content = template.content.cloneNode(true);
             modalBody.innerHTML = '';
             modalBody.appendChild(content);
-            
+
             // Setup action handlers for buttons in template
             if (onAction) {
                 modalBody.querySelectorAll('[data-action]').forEach(btn => {
@@ -372,7 +382,7 @@ const UIManager = {
                 });
             }
         }
-        
+
         // Show modal
         modal.classList.add('active');
         this.currentModal = templateId;
@@ -656,7 +666,7 @@ const UIManager = {
         document.getElementById('manage-elevation').value = location.elevation;
         document.getElementById('manage-timezone').value = location.timezone;
         document.getElementById('manage-bortle').value = location.bortle;
-        
+
         // Populate horizon data
         const horizonTextarea = document.getElementById('manage-horizon');
         if (location.horizon && location.horizon.length > 0) {
@@ -666,10 +676,10 @@ const UIManager = {
             // Show default 4-point horizon
             horizonTextarea.value = '0 0\n90 0\n180 0\n270 0';
         }
-        
+
         // Update form title
         document.getElementById('location-form-title').textContent = `Edit Location: ${locationName}`;
-        
+
         // Store original name for editing in header button
         const saveBtn = document.getElementById('modal-save-btn');
         if (saveBtn) {
@@ -704,14 +714,14 @@ const UIManager = {
         const tzInput = document.getElementById('manage-timezone');
         const bortleInput = document.getElementById('manage-bortle');
         const horizonInput = document.getElementById('manage-horizon');
-        
+
         const name = nameInput.value.trim();
         const latitude = parseFloat(latInput.value);
         const longitude = parseFloat(lonInput.value);
         const elevation = parseInt(elevInput.value);
         const timezone = parseInt(tzInput.value);
         const bortle = parseInt(bortleInput.value);
-        
+
         // Validation
         if (!name) {
             this.showToast('Please enter a location name', 'error');
@@ -737,11 +747,11 @@ const UIManager = {
             this.showToast('Bortle scale must be between 1 and 9', 'error');
             return;
         }
-        
+
         // Parse and validate horizon data
         const horizonText = horizonInput.value.trim();
         let horizon;
-        
+
         if (horizonText === '') {
             // Empty textarea - revert to default 4-point horizon
             horizon = [
@@ -753,42 +763,42 @@ const UIManager = {
         } else {
             // Parse horizon data
             const lines = horizonText.split('\n').filter(line => line.trim() !== '');
-            
+
             if (lines.length < 4) {
                 this.showToast('Horizon profile must have at least 4 points', 'error');
                 return;
             }
-            
+
             horizon = [];
             for (let i = 0; i < lines.length; i++) {
                 const parts = lines[i].trim().split(/\s+/);
-                
+
                 if (parts.length !== 2) {
                     this.showToast(`Invalid horizon format at line ${i + 1}. Expected: azimuth elevation`, 'error');
                     return;
                 }
-                
+
                 const azimuth = parseFloat(parts[0]);
                 const elevation = parseFloat(parts[1]);
-                
+
                 if (isNaN(azimuth) || azimuth < 0 || azimuth > 360) {
                     this.showToast(`Invalid azimuth at line ${i + 1}. Must be 0-360 degrees`, 'error');
                     return;
                 }
-                
+
                 if (isNaN(elevation) || elevation < -90 || elevation > 90) {
                     this.showToast(`Invalid elevation at line ${i + 1}. Must be -90 to 90 degrees`, 'error');
                     return;
                 }
-                
+
                 horizon.push({ azimuth, elevation });
             }
         }
-        
+
         // Check if editing
         const saveBtn = document.getElementById('modal-save-btn');
         const editingLocation = saveBtn?.dataset.editingLocation;
-        
+
         // Save location
         await DataManager.saveLocation(name, {
             latitude,
@@ -798,11 +808,11 @@ const UIManager = {
             bortle,
             horizon
         });
-        
+
         this.showToast(`Location "${name}" saved successfully`, 'success');
         this.clearLocationForm();
         this.populateManageLocationsModal();
-        
+
         // Notify other components to refresh their location lists
         document.dispatchEvent(new CustomEvent('locations-updated'));
     },
@@ -830,27 +840,27 @@ const UIManager = {
      */
     openManageEquipmentModal() {
         this.openModal('manage-equipment-template', 'Manage Equipment');
-        
+
         setTimeout(() => {
             // Set up button handlers
             const telescopesBtn = document.getElementById('manage-equipment-telescopes-btn');
             const sensorsBtn = document.getElementById('manage-equipment-sensors-btn');
             const filtersBtn = document.getElementById('manage-equipment-filters-btn');
-            
+
             if (telescopesBtn) {
                 telescopesBtn.addEventListener('click', () => {
                     this.closeModal();
                     this.openManageTelescopesModal();
                 });
             }
-            
+
             if (sensorsBtn) {
                 sensorsBtn.addEventListener('click', () => {
                     this.closeModal();
                     this.openManageSensorsModal();
                 });
             }
-            
+
             if (filtersBtn) {
                 filtersBtn.addEventListener('click', () => {
                     this.closeModal();
@@ -1074,7 +1084,7 @@ const UIManager = {
                 if (progress.processedTargets >= 10) {
                     const elapsedMs = Date.now() - startTime;
                     const avgTimePerTarget = elapsedMs / progress.processedTargets;
-                    const remainingTargets = (progress.totalTargets - progress.processedTargets) + 
+                    const remainingTargets = (progress.totalTargets - progress.processedTargets) +
                           ((progress.totalLocations - progress.locationIndex) * progress.totalTargets);
                     const estimatedRemainingMs = avgTimePerTarget * remainingTargets;
 
@@ -1117,7 +1127,7 @@ const UIManager = {
             }
         } else {
             this.showToast('All locations calculated!', 'success');
-            
+
             // Build summary for all locations
             let summaryHTML = '<h4>Calculation Summary - All Locations</h4>';
             Object.entries(result.locationResults).forEach(([locationName, locResult]) => {
@@ -1125,8 +1135,8 @@ const UIManager = {
                     <div style="margin-bottom: 1rem; padding: 0.75rem; background: var(--input-bg); border-radius: 6px;">
                         <strong>${locationName}</strong><br>
                         <span style="font-size: 0.9rem;">
-                            Total: ${locResult.totalTargets} | 
-                            Visible: ${locResult.visibleCount} | 
+                            Total: ${locResult.totalTargets} |
+                            Visible: ${locResult.visibleCount} |
                             Not visible: ${locResult.notVisibleCount}
                         </span>
                     </div>
@@ -1138,7 +1148,7 @@ const UIManager = {
                     <strong>Visibility window:</strong> Uses system settings (Min Altitude: ${minAltitude}°, Continuous Dark Hours: ${minDarkHours}h).
                 </p>
             `;
-            
+
             if (resultsDiv) {
                 resultsDiv.style.display = 'block';
                 resultsDiv.innerHTML = summaryHTML;
@@ -1201,7 +1211,7 @@ const UIManager = {
                 }
             });
         }
-        
+
         // Global minimum altitude
         const minAltSelect = document.getElementById('global-min-altitude');
         if (minAltSelect) {
@@ -1224,17 +1234,17 @@ const UIManager = {
             }
         }
         await SettingsManager.updateDSTConfig(config);
-        
+
         const maxSearch = modalBody.querySelector('#max-search-results')?.value;
         if (maxSearch) {
             await SettingsManager.updateMaxSearchResults(parseInt(maxSearch));
         }
-        
+
         const minAlt = modalBody.querySelector('#global-min-altitude')?.value;
         if (minAlt) {
             await SettingsManager.updateGlobalMinAltitude(parseInt(minAlt));
         }
-        
+
         this.showToast('Settings saved successfully', 'success');
     },
 
@@ -1270,7 +1280,7 @@ const UIManager = {
                 } catch (e) {
                     // Ignore if not on visibility view
                 }
-            }            
+            }
 
             // Reload DataManager to clear the in-memory cache
             await DataManager.init();
@@ -1344,136 +1354,8 @@ const UIManager = {
         }
     },
 
-    /**
-     * Backup all data as JSON
-     */
-    async backupDatabase() {
-        console.log('backupDatabase called');
-        const data = await DataManager.exportAll();
-        console.log('Data to export:', data);
-        const dataStr = JSON.stringify(data, null, 2);
-        const dataBlob = new Blob([dataStr], { type: 'application/json' });
-        const url = URL.createObjectURL(dataBlob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `${APP_CONFIG.APP_NAME}-database-${TimeUtils.nowDTG()}.json`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        this.showToast('Database backed up successfully', 'success');
-    },
 
-    /**
-     * Restore database from backup file
-     */
-    async restoreDatabase() {
-        if (!confirm('This will DELETE all existing data and replace it with the backup. Continue?')) {
-            return;
-        }
 
-        // Create file input
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = 'application/json';
-
-        input.onchange = async (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            try {
-                const text = await file.text();
-                const data = JSON.parse(text);
-
-                // Clear all existing data
-                await DataManager.clearAll();
-
-                // Import new data
-                await DataManager.importAll(data);
-
-                this.showToast('Database restored successfully', 'success');
-
-                // Reload page to refresh all views
-                setTimeout(() => location.reload(), 1000);
-            } catch (error) {
-                console.error('Restore error:', error);
-                this.showToast('Failed to restore database: ' + error.message, 'error');
-            }
-        };
-
-        input.click();
-    },
-
-    /**
-     * Backup imaging log data
-     */
-    async backupImagingLog() {
-        try {
-            const data = await DataManager.exportImagingLog();
-            const json = JSON.stringify(data, null, 2);
-            const blob = new Blob([json], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${APP_CONFIG.APP_NAME}-imaging-log-${TimeUtils.nowDTG()}.json`;
-            a.click();
-            URL.revokeObjectURL(url);
-            this.showToast('Imaging log backed up successfully', 'success');
-        } catch (error) {
-            console.error('Error backing up imaging log:', error);
-            this.showToast('Error backing up imaging log: ' + error.message, 'error');
-        }
-    },
-
-    /**
-     * Restore imaging log data
-     */
-    async restoreImagingLog() {
-        if (!confirm(
-            'Restore imaging log from backup?\n\n' +
-                'WARNING: This will REPLACE all existing imaging log data.\n\n' +
-                'Projects, sessions, and programs will be replaced with the backup.'
-        )) {
-            return;
-        }
-
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = '.json';
-        
-        input.onchange = async (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            try {
-                const text = await file.text();
-                const data = JSON.parse(text);
-
-                // Always replace (clearExisting = true)
-                const stats = await DataManager.importImagingLog(data, true);
-
-                this.showToast(
-                    `Imaging log restored: ${stats.projects} projects, ${stats.sessions} sessions, ${stats.programs} programs`,
-                    'success'
-                );
-
-                // Refresh imaging log view if currently open
-                if (window.location.hash === '#imaging-log') {
-                    if (ImagingLogView.currentTab === 'projects') {
-                        await ImagingLogView.renderProjectList();
-                    } else if (ImagingLogView.currentTab === 'programs') {
-                        await ImagingLogView.renderProgramsList();
-                    } else if (ImagingLogView.currentTab === 'reports') {
-                        await ImagingLogView.renderReports();
-                    }
-                }
-            } catch (error) {
-                console.error('Error restoring imaging log:', error);
-                this.showToast('Error restoring imaging log: ' + error.message, 'error');
-            }
-        };
-
-        input.click();
-    },
 
     /**
      * Show toast notification
@@ -1507,7 +1389,7 @@ const UIManager = {
 
         // Fetch fresh target from DataManager to ensure we have latest bestMonth data
         const freshTarget = DataManager.getTargets().find(t => t.object === target.object);
-        
+
         // Populate target details with fresh data
         this.populateObjectDetail(freshTarget || target);
         this.addToDoListButton(target);
@@ -1519,37 +1401,37 @@ const UIManager = {
     addToDoListButton(target) {
         const headerButtons = document.getElementById('modal-header-buttons');
         if (!headerButtons) return;
-        
+
         // Remove any existing todo button
         const existingBtn = document.getElementById('modal-todo-btn');
         if (existingBtn) {
             existingBtn.remove();
         }
-        
+
         // Create the button 'btn-primary btn-sm'
         const todoBtn = document.createElement('button');
         todoBtn.id = 'modal-todo-btn';
         todoBtn.className = 'btn-primary';
         todoBtn.style.cursor = 'pointer';
 
-        
+
         const updateButtonState = () => {
             const isInList = ToDoManager.isInToDoList(target.object);
-            
+
             if (isInList) {
                 todoBtn.textContent = 'Remove from To Do List';
             } else {
                 todoBtn.textContent = 'Add to To Do List';
             }
         };
-        
+
         // Set initial state
         updateButtonState();
-        
+
         // Add click handler
         todoBtn.addEventListener('click', async () => {
             const isInList = ToDoManager.isInToDoList(target.object);
-            
+
             if (isInList) {
                 // Remove from list
                 await ToDoManager.removeFromToDoList(target.object);
@@ -1559,11 +1441,11 @@ const UIManager = {
                 await ToDoManager.addToToDoList(target.object);
                 this.showToast(`Added ${target.object} to To Do List`, 'success');
             }
-            
+
             // Update button state
             updateButtonState();
         });
-        
+
         headerButtons.appendChild(todoBtn);
     },
 
@@ -1648,7 +1530,7 @@ const UIManager = {
 
         // Get current location
         const selectedLocation = SettingsManager.getSelectedLocation();
-        
+
         // Check if target meets criteria - all properties are now per-location
         const bestMonth = target.bestMonth?.[selectedLocation];
         const visibilityStart = target.visibilityStart?.[selectedLocation];
@@ -1756,7 +1638,7 @@ const UIManager = {
         console.log('openDailyVisibilityModal called');
         console.log('VisibilityTargets exists?', typeof VisibilityTargets !== 'undefined');
         console.log('Current target before load:', VisibilityTargets?.currentTarget);
-        
+
         // Load last selected target if not already loaded
         if (typeof VisibilityTargets !== 'undefined') {
             if (!VisibilityTargets.currentTarget) {
@@ -1770,9 +1652,9 @@ const UIManager = {
                 console.log('Synced to VisibilityCalculations');
             }
         }
-        
+
         console.log('Final target state:', VisibilityTargets?.currentTarget);
-        
+
         // Open the modal
         this.openModal('daily-visibility-template', 'Daily Visibility Parameters', (action, modalBody) => {
             if (action === 'calculate') {
@@ -1781,7 +1663,7 @@ const UIManager = {
                 this.closeModal();
             }
         });
-        
+
         // Add narrow-modal class and initialize
         const modalContent = document.querySelector('.modal-content');
         if (modalContent) {
@@ -1811,11 +1693,11 @@ const UIManager = {
         if (modalMinAltitude) {
             // Always start at global default (resets on each open)
             modalMinAltitude.value = globalMinAltitude;
-            
+
             // Remove override styling initially since we're at default
             modalMinAltitude.classList.remove('altitude-override-active');
             modalMinAltitude.title = '';
-            
+
             // Setup change handler to update styling
             modalMinAltitude.addEventListener('change', () => {
                 this.updateAltitudeOverrideIndicator(modalMinAltitude, null, globalMinAltitude);
@@ -1836,10 +1718,10 @@ const UIManager = {
      */
     updateAltitudeOverrideIndicator(selectElement, indicatorElement, globalDefault) {
         if (!selectElement) return;
-        
+
         const currentValue = parseInt(selectElement.value);
         const isOverride = currentValue !== globalDefault;
-        
+
         if (isOverride) {
             selectElement.classList.add('altitude-override-active');
             selectElement.title = `Override active (global default: ${globalDefault}°)`;
@@ -1859,7 +1741,7 @@ const UIManager = {
         console.log('VisibilityTargets:', VisibilityTargets);
         console.log('VisibilityTargets.currentTarget:', VisibilityTargets?.currentTarget);
         console.log('Boolean check:', !VisibilityTargets.currentTarget);
-        
+
         // Check if a target is selected
         if (typeof VisibilityTargets === 'undefined' || !VisibilityTargets.currentTarget) {
             console.log('FAILED TARGET CHECK - showing toast');
@@ -1867,30 +1749,30 @@ const UIManager = {
             this.closeModal();
             return;
         }
-        
+
         console.log('PASSED TARGET CHECK');
         console.log('Target selected:', VisibilityTargets.currentTarget);
-        
+
         // Get values from modal
         const minAltitude = parseFloat(document.getElementById('modal-min-altitude-daily')?.value);
         const useHorizon = document.getElementById('modal-use-horizon-daily')?.value === 'yes';
         const startDate = document.getElementById('modal-start-date')?.value;
         const searchWindow = document.getElementById('modal-search-window')?.value || '1w-daily';
         const maxResults = document.getElementById('modal-max-results')?.value || '1';
-        
+
         console.log('Modal values:', { minAltitude, useHorizon, startDate, searchWindow, maxResults });
-        
+
         // ... rest of the code ...
-        
+
         // Close modal
         this.closeModal();
-        
+
         console.log('Modal closed, about to calculate');
-        
+
         // Check if calculate function exists
         console.log('VisibilityCalculations exists?', typeof VisibilityCalculations !== 'undefined');
         console.log('calculate function exists?', typeof VisibilityCalculations?.calculate === 'function');
-        
+
         // Trigger calculation
         if (typeof VisibilityCalculations !== 'undefined' && typeof VisibilityCalculations.calculate === 'function') {
             console.log('Calling VisibilityCalculations.calculate()');
@@ -1908,7 +1790,7 @@ const UIManager = {
         console.log('openYearlyObservabilityModal called');
         console.log('VisibilityTargets exists?', typeof VisibilityTargets !== 'undefined');
         console.log('Current target before load:', VisibilityTargets?.currentTarget);
-        
+
         // Load last selected target if not already loaded
         if (typeof VisibilityTargets !== 'undefined') {
             if (!VisibilityTargets.currentTarget) {
@@ -1922,9 +1804,9 @@ const UIManager = {
                 console.log('Synced to VisibilityCalculations');
             }
         }
-        
+
         console.log('Final target state:', VisibilityTargets?.currentTarget);
-        
+
         this.openModal('yearly-observability-template', 'Yearly Observability Parameters', (action, modalBody) => {
             if (action === 'calculate') {
                 this.handleYearlyObservabilityCalculate(modalBody);
@@ -1960,11 +1842,11 @@ const UIManager = {
         if (modalMinAltitude) {
             // Always start at global default (resets on each open)
             modalMinAltitude.value = globalMinAltitude;
-            
+
             // Remove override styling initially since we're at default
             modalMinAltitude.classList.remove('altitude-override-active');
             modalMinAltitude.title = '';
-            
+
             // Setup change handler to update styling
             modalMinAltitude.addEventListener('change', () => {
                 this.updateAltitudeOverrideIndicator(modalMinAltitude, null, globalMinAltitude);
@@ -1985,7 +1867,7 @@ const UIManager = {
         console.log('VisibilityTargets:', VisibilityTargets);
         console.log('VisibilityTargets.currentTarget:', VisibilityTargets?.currentTarget);
         console.log('Boolean check:', !VisibilityTargets.currentTarget);
-        
+
         // Check if a target is selected
         if (typeof VisibilityTargets === 'undefined' || !VisibilityTargets.currentTarget) {
             console.log('FAILED TARGET CHECK - showing toast');
@@ -1993,19 +1875,19 @@ const UIManager = {
             this.closeModal();
             return;
         }
-        
+
         console.log('PASSED TARGET CHECK');
-        
+
         // Get values from modal
         const minAltitude = parseFloat(document.getElementById('modal-min-altitude-yearly')?.value) || 35;
         const showTargetAltitude = document.getElementById('modal-yearly-show-target-altitude')?.checked ?? true;
         const showSkyglow = document.getElementById('modal-yearly-show-skyglow')?.checked ?? true;
         const showMinAltitude = document.getElementById('modal-yearly-show-min-altitude')?.checked ?? true;
-        
+
         // Get location
         const locationName = SettingsManager.getSelectedLocation();
         const location = DataManager.getLocation(locationName);
-        
+
         // Build inputs object
         const inputs = {
             targetName: VisibilityTargets.currentTarget.object,
@@ -2021,13 +1903,13 @@ const UIManager = {
             showMinAltitude: showMinAltitude,
             showSkyglow: showSkyglow
         };
-        
+
         // Close modal
         this.closeModal();
-        
+
         // Switch to yearly observability view
         window.location.hash = '#yearly-observability';
-        
+
         // Wait for view to load, then calculate with inputs
         setTimeout(() => {
             if (typeof VisibilityCalculations !== 'undefined') {
@@ -2353,5 +2235,112 @@ const UIManager = {
 
         // Dispatch event for dropdown refresh
         document.dispatchEvent(new CustomEvent('filters-updated'));
+    },
+
+
+
+
+
+
+
+
+
+
+    /**
+     * Open NEW Backup modal
+     */
+    async openNewBackupModal() {
+        this.openModal('backup-modal-template', 'Backup Database', (action, modalBody) => {
+            if (action === 'save') {
+                BackupManager.handleNewBackup(modalBody);
+            }
+        });
+
+        // Setup Select All/None buttons and populate counts
+        setTimeout(async () => {
+            const selectAllBtn = document.getElementById('backup-select-all');
+            const selectNoneBtn = document.getElementById('backup-select-none');
+
+            if (selectAllBtn) {
+                selectAllBtn.addEventListener('click', () => {
+                    BackupManager.backupSelectAll(true);
+                    BackupManager.updateBackupSizeEstimates();
+                });
+            }
+            if (selectNoneBtn) {
+                selectNoneBtn.addEventListener('click', () => {
+                    BackupManager.backupSelectAll(false);
+                    BackupManager.updateBackupSizeEstimates();
+                });
+            }
+
+            // Get actual counts and update display
+            const counts = await BackupManager.countDataStoreItems();
+            BackupManager.updateBackupCounts(counts);
+
+            // Update size estimates initially
+            await BackupManager.updateBackupSizeEstimates();
+
+            // Set dynamic filename with current timestamp
+            const filename = `${APP_CONFIG.APP_NAME}-v${APP_CONFIG.APP_VERSION}-d${APP_CONFIG.DB_VERSION}-${TimeUtils.nowDTG()}`;
+            const filenameInput = document.getElementById('backup-filename');
+            if (filenameInput) {
+                filenameInput.value = filename;
+            }
+
+            // Add change listeners to all checkboxes to update size
+            const checkboxes = document.querySelectorAll('#modal-body input[type="checkbox"]');
+            checkboxes.forEach(cb => {
+                cb.addEventListener('change', () => BackupManager.updateBackupSizeEstimates());
+            });
+        }, 0);
+    },
+
+
+
+
+
+    /**
+     * Open NEW Restore modal (placeholder for now)
+     */
+    openNewRestoreModal() {
+        this.openModal('restore-picker-template', 'Select Backup File', (action, modalBody) => {
+            if (action === 'continue') {
+                BackupManager.handleRestoreFileSelected(modalBody);
+            }
+        });
+
+        // Setup file picker
+        setTimeout(() => {
+            const browseBtn = document.getElementById('restore-browse-btn');
+            const fileInput = document.getElementById('restore-file-input');
+            const selectedFileDiv = document.getElementById('restore-selected-file');
+
+            if (browseBtn && fileInput) {
+                browseBtn.addEventListener('click', () => {
+                    fileInput.click();
+                });
+
+                fileInput.addEventListener('change', (e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                        selectedFileDiv.textContent = `Selected: ${file.name} (${BackupManager.formatBytes(file.size)})`;
+                        selectedFileDiv.style.color = 'var(--primary-color)';
+                        selectedFileDiv.style.fontStyle = 'normal';
+
+                        // Store file for later use
+                        BackupManager.restoreFile = file;
+
+                        // Enable Continue button (we'll add this next)
+                        const continueBtn = document.getElementById('modal-save-btn');
+                        if (continueBtn) {
+                            continueBtn.disabled = false;
+                            continueBtn.style.opacity = '1';
+                        }
+                    }
+                });
+            }
+        }, 0);
     }
+
 };

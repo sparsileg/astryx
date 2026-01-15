@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title id="app-title"></title>
+    <link rel="stylesheet" href="css/backup-restore.css">
     <link rel="stylesheet" href="css/base.css">
     <link rel="stylesheet" href="css/daily-visibility.css">
     <link rel="stylesheet" href="css/fov.css">
@@ -104,33 +105,21 @@
           Merge New Targets
         </div>
       </div>
-      <div class="menu-item menu-parent" data-action="backup-restore">
+
+      <div class="menu-item" data-action="new-backup">
         <span class="menu-icon">💾</span>
-        Backup/Restore
-        <span class="menu-arrow">›</span>
+        Backup
       </div>
-      <div class="menu-submenu" id="backup-restore-submenu">
-        <div class="menu-item submenu-item" data-action="backup-database">
-          <span class="menu-icon">💾</span>
-          Backup Database
-        </div>
-        <div class="menu-item submenu-item" data-action="restore-database">
-          <span class="menu-icon">📥</span>
-          Restore Database
-        </div>
-        <div class="menu-item submenu-item" data-action="backup-imaging-log">
-          <span class="menu-icon">📷</span>
-          Backup Imaging Log
-        </div>
-        <div class="menu-item submenu-item" data-action="restore-imaging-log">
-          <span class="menu-icon">📸</span>
-          Restore Imaging Log
-        </div>
+      <div class="menu-item" data-action="new-restore">
+        <span class="menu-icon">📥</span>
+        Restore
       </div>
+
       <div class="menu-item" data-action="help">
         <span class="menu-icon">❓</span>
         Help
       </div>
+
       <div class="menu-item" data-action="about">
         <span class="menu-icon">i️</span>
         About
@@ -173,7 +162,6 @@
           </div>
         </div>
 
-        <!-- Location and Target Selection -->
         <!-- Location and Parameters (Left Column) -->
         <div class="ts-two-col-grid">
 
@@ -467,60 +455,60 @@
             </div>
           </div>
 
-        <!-- Three Information Cards (matching original) -->
-        <div id="info-cards-container" class="info-cards-grid" style="display: none;">
-          <!-- Moon Details Card -->
-          <div class="info-card">
-            <h3>Moon Details</h3>
-            <div class="info-card-content">
-              <div class="moon-phase-display">
-                <div>
-                  <div id="moon-phase-name" class="info-value"></div>
-                  <div id="moon-illumination" class="info-subtext"></div>
-                </div>
-                <div id="moon-phase-emoji" class="moon-emoji"></div>
-              </div>
-              <div class="info-section">
-                <div class="info-label">Rise-Set Times</div>
-                <div id="moon-rise-set" class="info-value"></div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Target Details Card -->
-          <div class="info-card">
-            <h3>Target Details</h3>
-            <div class="info-card-content">
-              <div class="target-details-layout">
-                <div class="target-details-content">
-                  <div class="info-section">
-                    <div id="target-altitude" class="info-subtext"></div>
-                    <div id="target-rise-set" class="info-value"></div>
-                    <div id="target-blocked" class="info-value"></div>
-                    <div id="target-peak-altitude" class="info-value"></div>
+          <!-- Three Information Cards (matching original) -->
+          <div id="info-cards-container" class="info-cards-grid" style="display: none;">
+            <!-- Moon Details Card -->
+            <div class="info-card">
+              <h3>Moon Details</h3>
+              <div class="info-card-content">
+                <div class="moon-phase-display">
+                  <div>
+                    <div id="moon-phase-name" class="info-value"></div>
+                    <div id="moon-illumination" class="info-subtext"></div>
                   </div>
+                  <div id="moon-phase-emoji" class="moon-emoji"></div>
                 </div>
-                <div class="target-icon-display">✨</div>
+                <div class="info-section">
+                  <div class="info-label">Rise-Set Times</div>
+                  <div id="moon-rise-set" class="info-value"></div>
+                </div>
               </div>
             </div>
-          </div>
 
-          <!-- Target-Moon Separation Card -->
-          <div class="info-card">
-            <h3>Target-Moon Separation</h3>
-            <div class="info-card-content">
-              <div class="info-section">
-                <div id="separation-dusk" class="info-value"></div>
-                <div id="separation-dusk-desc" class="info-subtext"></div>
+            <!-- Target Details Card -->
+            <div class="info-card">
+              <h3>Target Details</h3>
+              <div class="info-card-content">
+                <div class="target-details-layout">
+                  <div class="target-details-content">
+                    <div class="info-section">
+                      <div id="target-altitude" class="info-subtext"></div>
+                      <div id="target-rise-set" class="info-value"></div>
+                      <div id="target-blocked" class="info-value"></div>
+                      <div id="target-peak-altitude" class="info-value"></div>
+                    </div>
+                  </div>
+                  <div class="target-icon-display">✨</div>
+                </div>
               </div>
-              <div class="info-section" style="margin-top: 15px;">
-                <div id="separation-dawn" class="info-value"></div>
-                <div id="separation-dawn-desc" class="info-subtext"></div>
+            </div>
+
+            <!-- Target-Moon Separation Card -->
+            <div class="info-card">
+              <h3>Target-Moon Separation</h3>
+              <div class="info-card-content">
+                <div class="info-section">
+                  <div id="separation-dusk" class="info-value"></div>
+                  <div id="separation-dusk-desc" class="info-subtext"></div>
+                </div>
+                <div class="info-section" style="margin-top: 15px;">
+                  <div id="separation-dawn" class="info-value"></div>
+                  <div id="separation-dawn-desc" class="info-subtext"></div>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
     </template>
 
     <!-- Settings Modal Template -->
@@ -753,7 +741,7 @@
           • OpenNGC <a class="about-link" href="https://github.com/mattiaverga/OpenNGC" target="_blank">database</a> by Mattia Verga<br>
           • Astronomical
           League <a class="about-link" href="https://www.astroleague.org/observing-program-division/"
-          target= "_blank">Observing Program Division</a><br>
+                    target= "_blank">Observing Program Division</a><br>
         </p>
       </div>
     </template>
@@ -1137,7 +1125,7 @@
     </template>
     <!-- END OF Manage Project Modal Template -->
 
-<!-- Import Program Modal Template -->
+    <!-- Import Program Modal Template -->
     <template id="import-program-template">
       <div class="form-group">
         <label for="program-name">Program Name *</label>
@@ -1453,11 +1441,11 @@
         <textarea id="import-target-list"
                   rows="15"
                   placeholder="Paste target designations here, one per line...
-Example:
-M 1
-M 2
-M 3
-..."></textarea>
+                               Example:
+                               M 1
+                               M 2
+                               M 3
+                               ..."></textarea>
       </div>
 
       <div class="form-actions">
@@ -1877,8 +1865,220 @@ M 3
     </template>
     <!-- END OF Utilities Template -->
 
+    <!-- Backup Modal Template -->
+    <template id="backup-modal-template">
+      <div class="backup-restore-select-buttons">
+        <button type="button" class="backup-restore-select-btn" id="backup-select-all">Select All</button>
+        <button type="button" class="backup-restore-select-btn" id="backup-select-none">Select None</button>
+      </div>
+
+      <!-- User Settings & Configuration -->
+      <div class="backup-restore-section">
+        <div class="backup-restore-section-title">User Settings & Configuration</div>
+        <div class="backup-restore-checkboxes">
+          <div class="backup-restore-checkbox-item">
+            <input type="checkbox" id="backup-settings" checked>
+            <label for="backup-settings" class="backup-restore-checkbox-label">Settings</label>
+            <span class="backup-restore-count" id="backup-count-settings">(1)</span>
+          </div>
+          <div class="backup-restore-checkbox-item">
+            <input type="checkbox" id="backup-locations" checked>
+            <label for="backup-locations" class="backup-restore-checkbox-label">Locations</label>
+            <span class="backup-restore-count" id="backup-count-locations">(0)</span>
+          </div>
+          <div class="backup-restore-checkbox-item">
+            <input type="checkbox" id="backup-telescopes" checked>
+            <label for="backup-telescopes" class="backup-restore-checkbox-label">Telescopes</label>
+            <span class="backup-restore-count" id="backup-count-telescopes">(0)</span>
+          </div>
+          <div class="backup-restore-checkbox-item">
+            <input type="checkbox" id="backup-sensors" checked>
+            <label for="backup-sensors" class="backup-restore-checkbox-label">Sensors</label>
+            <span class="backup-restore-count" id="backup-count-sensors">(0)</span>
+          </div>
+          <div class="backup-restore-checkbox-item">
+            <input type="checkbox" id="backup-filters" checked>
+            <label for="backup-filters" class="backup-restore-checkbox-label">Filters</label>
+            <span class="backup-restore-count" id="backup-count-filters">(0)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Target Lists -->
+      <div class="backup-restore-section">
+        <div class="backup-restore-section-title">Target Lists</div>
+        <div class="backup-restore-checkboxes">
+          <div class="backup-restore-checkbox-item">
+            <input type="checkbox" id="backup-pinned" checked>
+            <label for="backup-pinned" class="backup-restore-checkbox-label">Pinned Targets</label>
+            <span class="backup-restore-count" id="backup-count-pinned">(0)</span>
+          </div>
+          <div class="backup-restore-checkbox-item">
+            <input type="checkbox" id="backup-todo" checked>
+            <label for="backup-todo" class="backup-restore-checkbox-label">To Do List</label>
+            <span class="backup-restore-count" id="backup-count-todo">(0)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Observation Data -->
+      <div class="backup-restore-section">
+        <div class="backup-restore-section-title">Observation Data</div>
+        <div class="backup-restore-checkboxes">
+          <div class="backup-restore-checkbox-item">
+            <input type="checkbox" id="backup-imaging" checked>
+            <label for="backup-imaging" class="backup-restore-checkbox-label">Imaging Projects & Sessions</label>
+            <span class="backup-restore-count" id="backup-count-imaging">(0 / 0)</span>
+          </div>
+          <div class="backup-restore-checkbox-item">
+            <input type="checkbox" id="backup-programs" checked>
+            <label for="backup-programs" class="backup-restore-checkbox-label">Imaging Programs</label>
+            <span class="backup-restore-count" id="backup-count-programs">(0)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Reference Data -->
+      <div class="backup-restore-section">
+        <div class="backup-restore-section-title">Reference Data</div>
+        <div class="backup-restore-checkboxes">
+          <div class="backup-restore-checkbox-item">
+            <input type="checkbox" id="backup-targets">
+            <label for="backup-targets" class="backup-restore-checkbox-label">Target Database</label>
+            <span class="backup-restore-count" id="backup-count-targets">(0)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filename and Size Estimates Row -->
+      <div class="backup-filename-size-row">
+        <!-- Filename -->
+        <div class="backup-filename-group">
+          <label for="backup-filename" class="backup-filename-label">Filename:</label>
+          <input type="text" id="backup-filename" class="backup-filename-input" value="Specula-v0.9.0-d6-20260114-2103">
+        </div>
+
+        <!-- Uncompressed Size -->
+        <div class="backup-size-item">
+          <span class="backup-size-label">Uncompressed</span>
+          <span class="backup-size-value" id="backup-size-uncompressed">8.39 MB</span>
+        </div>
+
+        <!-- Compressed Size -->
+        <div class="backup-size-item">
+          <span class="backup-size-label">Compressed (ZIP)</span>
+          <span class="backup-size-value" id="backup-size-compressed">~469 KB</span>
+        </div>
+      </div>
+    </template>
+
+    <!-- Backup Success Modal Template -->
+    <template id="backup-success-template">
+      <div class="backup-success-icon">✓</div>
+
+      <div class="backup-success-message">
+        <p style="font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem;">Backup completed successfully</p>
+        <p style="color: var(--text-secondary);">
+          Saved to downloads folder: <span class="backup-success-filename" id="backup-success-filename">filename.zip</span>
+        </p>
+      </div>
+
+      <div class="backup-success-details">
+        <div class="backup-success-detail-row">
+          <span class="backup-success-detail-label">File size:</span>
+          <span class="backup-success-detail-value" id="backup-success-size">125 KB</span>
+        </div>
+
+        <div class="backup-success-stats">
+          <div style="font-weight: 600; margin-bottom: 0.5rem; color: var(--text-color);">Data backed up:</div>
+          <div id="backup-success-items">
+            <!-- Items will be dynamically inserted here -->
+          </div>
+          <div class="backup-success-total" id="backup-success-total">
+            Total: 285 records
+          </div>
+        </div>
+      </div>
+    </template>
+    <!-- END OF Backup Success Modal Template -->
+
+    <!-- Restore File Picker Template -->
+    <template id="restore-picker-template">
+      <div style="text-align: center; padding: 2rem;">
+        <p style="margin-bottom: 1.5rem; color: var(--text-color);">
+          Select a backup file to restore:
+        </p>
+
+        <input type="file" id="restore-file-input" accept=".zip,.json" style="display: none;">
+
+        <button type="button" class="btn-primary" id="restore-browse-btn" style="padding: 0.75rem 2rem;">
+          Browse Files
+        </button>
+
+        <div id="restore-selected-file" style="margin-top: 1rem; color: var(--text-secondary); font-style: italic;">
+          No file selected
+        </div>
+      </div>
+    </template>
+
+    <!-- Restore Confirmation Template -->
+    <template id="restore-confirm-template">
+      <div id="restore-file-info" style="margin-bottom: 1.5rem;">
+        <!-- File metadata will be inserted here -->
+      </div>
+
+      <div class="backup-restore-select-buttons">
+        <button type="button" class="backup-restore-select-btn" id="restore-select-all">Select All</button>
+        <button type="button" class="backup-restore-select-btn" id="restore-select-none">Select None</button>
+      </div>
+
+      <div id="restore-stores-list" style="margin-bottom: 1.5rem;">
+        <!-- Data stores checkboxes will be inserted here -->
+      </div>
+
+      <div class="backup-restore-warning">
+        <div class="backup-restore-warning-title">
+          ⚠️ IMPORTANT: This will permanently delete your current data
+        </div>
+        <div class="backup-restore-warning-content">
+          <p style="margin-bottom: 0.5rem;"><strong>Backup your current data first!</strong> This restore operation will:</p>
+          <ul>
+            <li>Delete all selected data stores</li>
+            <li>Replace them with backup file contents</li>
+            <li>This action cannot be undone</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="backup-restore-confirmation">
+        <input type="checkbox" id="restore-confirm-checkbox">
+        <label for="restore-confirm-checkbox">
+          I have backed up my current data and understand this will permanently replace selected data stores
+        </label>
+      </div>
+    </template>
+
+    <!-- Version Mismatch Modal Template -->
+    <template id="version-mismatch-template">
+      <div style="text-align: center; padding: 2rem;">
+        <div style="font-size: 3rem; margin-bottom: 1rem;">⚠️</div>
+
+        <h3 style="color: var(--error-color); margin-bottom: 1rem;">Version Mismatch</h3>
+
+        <div id="version-mismatch-message" style="color: var(--text-color); line-height: 1.6; margin-bottom: 1.5rem;">
+          <!-- Version details will be inserted here -->
+        </div>
+
+        <p style="color: var(--text-secondary); font-size: 0.9rem;">
+          This backup was created with an incompatible version of Specula and cannot be restored.
+        </p>
+      </div>
+    </template>
+
     <!-- Scripts - load in dependency order -->
     <script src="include/marked.min.js"></script>
+    <script src="include/jszip.min.js"></script>
+    <script src="js/backup-manager.js"></script>
     <script src="js/config.js"></script>
     <script src="js/help-content.js"></script>
     <script src="js/db-manager.js"></script>
