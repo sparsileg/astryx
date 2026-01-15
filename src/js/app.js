@@ -193,17 +193,13 @@ const App = {
      * Load a view
      */
     loadView(viewName, params = {}) {
-        console.log('=== LOAD VIEW:', viewName, '===');
-        console.log('Target BEFORE cleanup:', VisibilityTargets?.currentTarget?.object);
-        
+        console.log('LOAD VIEW:', viewName);
+
         // Cleanup current view
         if (this.currentView && this.currentView.destroy) {
-            console.log('Calling destroy on:', this.currentView);
             this.currentView.destroy();
         }
-        
-        console.log('Target AFTER cleanup:', VisibilityTargets?.currentTarget?.object);
-        
+
         // Get container
         const container = document.getElementById('app');
         if (!container) {
@@ -211,10 +207,10 @@ const App = {
             return;
         }
         this.container = container;
-        
+
         // Update sidebar active state
         this.updateSidebarActiveState(viewName);
-        
+
         // Load appropriate view
         switch (viewName) {
             /* to do list */
@@ -222,41 +218,41 @@ const App = {
             this.currentView = ToDoView;
             ToDoView.render(container, params);
             break;
-            
+
             /* target selection */
         case 'target-select':
             this.currentView = TargetSelectionView;
             TargetSelectionView.render(container, params);
             break;
-            
+
             /* daily visibility - modal only, no view */
         case 'daily-visibility':
             // Just open the modal, don't render a view
             UIManager.openDailyVisibilityModal();
             break;
-            
+
         case 'results':
             this.currentView = ResultsView;
             ResultsView.render(container, params);
             break;
-            
+
         case 'skyglow':
             this.currentView = SkyglowView;
             SkyglowView.render(container, params);
             break;
-            
+
             /* yearly observability */
         case 'yearly-observability':
             this.currentView = YearlyObservabilityView;
             YearlyObservabilityView.render(container, params);
             break;
-            
+
             /* field of view */
         case 'fov':
             this.currentView = FOVView;
             FOVView.render();
             break;
-            
+
             /* sequence planner */
         case 'seqplan':
             document.getElementById('app').innerHTML = '';
@@ -265,7 +261,7 @@ const App = {
             document.getElementById('app').appendChild(seqPlanContent);
             SeqPlanView.init();
             break;
-            
+
             /* imaging log */
         case 'imaging-log':
             document.getElementById('app').innerHTML = '';
@@ -274,7 +270,7 @@ const App = {
             document.getElementById('app').appendChild(imagingLogContent);
             ImagingLogView.init();
             break;
-            
+
             /* utilities */
         case 'utilities':
             document.getElementById('app').innerHTML = '';
@@ -283,14 +279,12 @@ const App = {
             document.getElementById('app').appendChild(utilitiesContent);
             UtilitiesView.init();
             break;
-            
+
         default:
             // Default to target selection
             window.location.hash = '#target-select';
             break;
         }
-        
-        console.log('Target AFTER view render:', VisibilityTargets?.currentTarget?.object);
     },
 
     /**

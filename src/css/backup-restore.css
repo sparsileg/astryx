@@ -1,0 +1,336 @@
+/**
+ * backup-restore.css
+ * Styles for Backup and Restore modals
+ */
+
+/* ============================================================================
+   Backup/Restore Shared Styles
+   ============================================================================ */
+
+.backup-restore-section {
+    margin-bottom: 1.5rem;
+}
+
+.backup-restore-section-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.backup-restore-checkboxes {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem 2rem;
+}
+
+.backup-restore-checkbox-item {
+    display: flex;
+    grid-template-columns: auto auto auto;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.backup-restore-checkbox-item:hover {
+    background-color: var(--hover-bg);
+}
+
+.backup-restore-checkbox-item input[type="checkbox"] {
+    cursor: pointer;
+    width: 18px;
+    height: 18px;
+}
+
+.backup-restore-checkbox-label {
+    cursor: pointer;
+    user-select: none;
+    color: var(--text-color);
+}
+
+.backup-restore-count {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    font-family: monospace;
+}
+
+/* Indented items (for grouped data) */
+.backup-restore-checkbox-item.indented {
+    padding-left: 2rem;
+}
+
+/* ============================================================================
+   Select All/None Buttons
+   ============================================================================ */
+
+.backup-restore-select-buttons {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.backup-restore-select-btn {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.85rem;
+    border: 1px solid var(--border-color);
+    background: var(--card-bg);
+    color: var(--text-color);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.backup-restore-select-btn:hover {
+    background: var(--hover-bg);
+    border-color: var(--primary-color);
+}
+
+/* ============================================================================
+   Filename Input
+   ============================================================================ */
+
+.backup-filename-group {
+    margin-top: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.backup-filename-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: var(--text-color);
+}
+
+.backup-filename-input {
+    width: 100%;
+    padding: 0.5rem;
+    background: var(--input-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    color: var(--text-color);
+    font-family: monospace;
+    font-size: 0.9rem;
+}
+
+.backup-filename-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px var(--focus-ring);
+}
+
+/* ============================================================================
+   Size Estimates
+   ============================================================================ */
+
+.backup-size-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.backup-size-label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.25rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.backup-size-value {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-color);
+    font-family: monospace;
+}
+
+/* Filename and Size Row */
+.backup-filename-size-row {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: 1rem 1.5rem;
+    align-items: end;
+    margin-top: 1.5rem;
+}
+
+.backup-filename-size-row .backup-filename-group {
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+/* ============================================================================
+   Success Modal
+   ============================================================================ */
+
+.backup-success-icon {
+    font-size: 3rem;
+    text-align: center;
+    margin-bottom: 1rem;
+}
+
+.backup-success-message {
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.backup-success-filename {
+    font-family: monospace;
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+.backup-success-details {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 1rem;
+    margin-top: 1rem;
+}
+
+.backup-success-detail-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.25rem 0;
+    font-size: 0.9rem;
+}
+
+.backup-success-detail-label {
+    color: var(--text-secondary);
+}
+
+.backup-success-detail-value {
+    font-weight: 500;
+    font-family: monospace;
+}
+
+.backup-success-stats {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.backup-success-stat-item {
+    padding: 0.25rem 0;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.backup-success-total {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border-color);
+    font-weight: 600;
+    font-size: 1rem;
+    color: var(--text-color);
+}
+
+/* ============================================================================
+   Warning Messages
+   ============================================================================ */
+
+.backup-restore-warning {
+    padding: 1rem;
+    background: rgba(var(--warning-color-rgb), 0.1);
+    border: 1px solid var(--warning-color);
+    border-radius: 4px;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+}
+
+.backup-restore-warning-title {
+    font-weight: 600;
+    color: var(--warning-color);
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.backup-restore-warning-content {
+    color: var(--text-color);
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.backup-restore-warning-content ul {
+    margin: 0.5rem 0 0 1.5rem;
+    padding: 0;
+}
+
+.backup-restore-warning-content li {
+    margin: 0.25rem 0;
+}
+
+/* Age-specific warning colors */
+.backup-restore-warning.age-30 {
+    background: rgba(251, 191, 36, 0.1);
+    border-color: #fbbf24;
+}
+
+.backup-restore-warning.age-30 .backup-restore-warning-title {
+    color: #fbbf24;
+}
+
+.backup-restore-warning.age-90 {
+    background: rgba(249, 115, 22, 0.1);
+    border-color: #f97316;
+}
+
+.backup-restore-warning.age-90 .backup-restore-warning-title {
+    color: #f97316;
+}
+
+.backup-restore-warning.age-180 {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: #ef4444;
+}
+
+.backup-restore-warning.age-180 .backup-restore-warning-title {
+    color: #ef4444;
+}
+
+/* ============================================================================
+   Confirmation Checkbox
+   ============================================================================ */
+
+.backup-restore-confirmation {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 1rem;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    margin-top: 1rem;
+}
+
+.backup-restore-confirmation input[type="checkbox"] {
+    margin-top: 0.25rem;
+    cursor: pointer;
+    width: 18px;
+    height: 18px;
+}
+
+.backup-restore-confirmation label {
+    cursor: pointer;
+    user-select: none;
+    color: var(--text-color);
+    font-size: 0.9rem;
+}
+
+/* ============================================================================
+   Restore Count Display
+   ============================================================================ */
+
+.backup-restore-count-compare {
+    font-family: monospace;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.backup-restore-count-arrow {
+    margin: 0 0.5rem;
+    color: var(--primary-color);
+}
