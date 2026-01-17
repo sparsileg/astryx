@@ -13,3 +13,4 @@ python bin/validate.py manual/ic_addendum.csv
 python bin/validate.py manual/messier_addendum.csv
 python bin/validate.py manual/minor_planets.csv
 python bin/validate.py manual/misc_addendum.csv
+python bin/validate.py manual/sharpless.csv
