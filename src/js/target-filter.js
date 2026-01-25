@@ -96,6 +96,9 @@ const TargetFilter = {
             filtered = filtered.filter(t =>
                 t.catalogue && this.filters.catalog.values.has(t.catalogue)
             );
+        } else {
+            // No catalogs selected = show no results
+            filtered = [];
         }
 
         // Type filter
@@ -103,6 +106,9 @@ const TargetFilter = {
             filtered = filtered.filter(t =>
                 t.type && this.filters.type.values.has(t.type)
             );
+        } else {
+            // No types selected = show no results
+            filtered = [];
         }
 
         // Month filter
@@ -223,6 +229,78 @@ const TargetFilter = {
     },
 
     /**
+     * Select all catalogs
+     */
+    selectAllCatalogs() {
+        this.filters.catalog.available.forEach(catalog => {
+            const checkbox = document.getElementById(`catalog-${catalog}`);
+            if (checkbox) {
+                checkbox.checked = true;
+                this.filters.catalog.values.add(catalog);
+            }
+        });
+        this.updateDropdownLabel('catalog');
+        this.applyFiltersToSearch();
+        
+        // Close the dropdown
+        const catalogDropdown = document.querySelector('#target-filter-catalog-trigger')?.parentElement;
+        if (catalogDropdown) {
+            catalogDropdown.classList.remove('open');
+        }
+    },
+
+    /**
+     * Deselect all catalogs
+     */
+    deselectAllCatalogs() {
+        this.filters.catalog.available.forEach(catalog => {
+            const checkbox = document.getElementById(`catalog-${catalog}`);
+            if (checkbox) {
+                checkbox.checked = false;
+            }
+        });
+        this.filters.catalog.values.clear();
+        this.updateDropdownLabel('catalog');
+        this.applyFiltersToSearch();
+    },
+
+    /**
+     * Select all types
+     */
+    selectAllTypes() {
+        this.filters.type.available.forEach(type => {
+            const checkbox = document.getElementById(`type-${type}`);
+            if (checkbox) {
+                checkbox.checked = true;
+                this.filters.type.values.add(type);
+            }
+        });
+        this.updateDropdownLabel('type');
+        this.applyFiltersToSearch();
+        
+        // Close the dropdown
+        const typeDropdown = document.querySelector('#target-filter-type-trigger')?.parentElement;
+        if (typeDropdown) {
+            typeDropdown.classList.remove('open');
+        }
+    },
+
+    /**
+     * Deselect all types
+     */
+    deselectAllTypes() {
+        this.filters.type.available.forEach(type => {
+            const checkbox = document.getElementById(`type-${type}`);
+            if (checkbox) {
+                checkbox.checked = false;
+            }
+        });
+        this.filters.type.values.clear();
+        this.updateDropdownLabel('type');
+        this.applyFiltersToSearch();
+    },
+
+    /**
      * Check if any filters are active
      */
     hasActiveFilters() {
@@ -240,6 +318,16 @@ const TargetFilter = {
         this.populateDropdowns();
         this.attachEventHandlers();
         this.restoreUIState();
+        
+        // Default to all catalogs selected if none are selected
+        if (this.filters.catalog.values.size === 0) {
+            this.selectAllCatalogs();
+        }
+        
+        // Default to all types selected if none are selected
+        if (this.filters.type.values.size === 0) {
+            this.selectAllTypes();
+        }
     },
 
     /**
@@ -293,19 +381,27 @@ const TargetFilter = {
         // Populate catalog dropdown
         const catalogMenu = document.getElementById('target-filter-catalog-menu');
         if (catalogMenu) {
-            catalogMenu.innerHTML = this.filters.catalog.available
-                .map(catalog => `
+            const checkboxesHTML = this.filters.catalog.available
+                  .map(catalog => `
                     <div class="target-filter-dropdown-item">
                         <input type="checkbox" id="catalog-${catalog}" value="${catalog}">
                         <label for="catalog-${catalog}">${catalog}</label>
                     </div>
                 `).join('');
+            
+            catalogMenu.innerHTML = `
+                <div style="display: flex; gap: 0.5rem; padding: 0.5rem; border-bottom: 1px solid var(--border-color);">
+                    <button type="button" class="btn-sm" id="catalog-select-all">Select All</button>
+                    <button type="button" class="btn-sm" id="catalog-select-none">Select None</button>
+                </div>
+                ${checkboxesHTML}
+            `;
         }
 
         // Populate type dropdown
         const typeMenu = document.getElementById('target-filter-type-menu');
         if (typeMenu) {
-            typeMenu.innerHTML = this.filters.type.available
+            const checkboxesHTML = this.filters.type.available
                 .map(type => {
                     const displayName = OBJECT_TYPES[type] || type;
                     return `
@@ -315,6 +411,14 @@ const TargetFilter = {
                         </div>
                     `;
                 }).join('');
+            
+            typeMenu.innerHTML = `
+                <div style="display: flex; gap: 0.5rem; padding: 0.5rem; border-bottom: 1px solid var(--border-color);">
+                    <button type="button" class="btn-sm" id="type-select-all">Select All</button>
+                    <button type="button" class="btn-sm" id="type-select-none">Select None</button>
+                </div>
+                ${checkboxesHTML}
+            `;
         }
     },
 
@@ -353,12 +457,16 @@ const TargetFilter = {
             });
         });
 
-        // Catalog checkboxes
+        // Catalog checkbox changes
         const catalogMenu = document.getElementById('target-filter-catalog-menu');
         if (catalogMenu) {
+            // Stop propagation on all clicks to prevent dropdown from closing
             catalogMenu.addEventListener('click', (e) => {
                 e.stopPropagation();
-                if (e.target.type === 'checkbox') {
+            });
+            
+            catalogMenu.addEventListener('change', (e) => {
+                if (e.target.type === 'checkbox' && e.target.id.startsWith('catalog-')) {
                     const value = e.target.value;
                     if (e.target.checked) {
                         this.filters.catalog.values.add(value);
@@ -366,6 +474,16 @@ const TargetFilter = {
                         this.filters.catalog.values.delete(value);
                     }
                     this.updateDropdownLabel('catalog');
+                    this.applyFiltersToSearch();
+                }
+            });
+            
+            // Select All/None buttons
+            catalogMenu.addEventListener('click', (e) => {
+                if (e.target.id === 'catalog-select-all') {
+                    this.selectAllCatalogs();
+                } else if (e.target.id === 'catalog-select-none') {
+                    this.deselectAllCatalogs();
                 }
             });
         }
@@ -383,6 +501,16 @@ const TargetFilter = {
                         this.filters.type.values.delete(value);
                     }
                     this.updateDropdownLabel('type');
+                    this.applyFiltersToSearch();
+                }
+            });
+            
+            // Select All/None buttons
+            typeMenu.addEventListener('click', (e) => {
+                if (e.target.id === 'type-select-all') {
+                    this.selectAllTypes();
+                } else if (e.target.id === 'type-select-none') {
+                    this.deselectAllTypes();
                 }
             });
         }
@@ -445,10 +573,9 @@ const TargetFilter = {
         const filter = this.filters[filterName];
         const label = document.getElementById(`target-filter-${filterName}-label`);
         if (!label) return;
-
         const count = filter.values.size;
         if (count === 0) {
-            label.textContent = `All ${filterName}s`;
+            label.textContent = `No selection`;
         } else if (count === 1) {
             const value = Array.from(filter.values)[0];
             // Use human-readable name for types
@@ -758,6 +885,10 @@ const TargetFilter = {
         const countDiv = document.getElementById('target-filter-results-count');
         if (resultsDiv) resultsDiv.innerHTML = '';
         if (countDiv) countDiv.textContent = 'No filters applied';
+
+        // Default to all catalogs and types selected
+        this.selectAllCatalogs();
+        this.selectAllTypes();
 
         UIManager.showToast('Filters reset', 'success');
     }
