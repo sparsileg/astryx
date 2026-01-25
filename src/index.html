@@ -259,10 +259,14 @@
                 <label style="min-width: 90px;">Catalog:</label>
                 <div class="target-filter-dropdown" style="flex: 1;">
                   <div class="target-filter-dropdown-trigger" id="target-filter-catalog-trigger">
-                    <span id="target-filter-catalog-label">All catalogs</span>
+                    <span id="target-filter-catalog-label">No selection</span>
                     <span class="target-filter-dropdown-arrow">▼</span>
                   </div>
                   <div class="target-filter-dropdown-menu" id="target-filter-catalog-menu">
+                    <div style="display: flex; gap: 0.5rem; padding: 0.5rem; border-bottom: 1px solid var(--border-color);">
+                      <button type="button" class="btn-sm" id="catalog-select-all">Select All</button>
+                      <button type="button" class="btn-sm" id="catalog-select-none">Select None</button>
+                    </div>
                     <!-- Populated by JS -->
                   </div>
                 </div>
@@ -273,10 +277,14 @@
                 <label style="min-width: 90px;">Type:</label>
                 <div class="target-filter-dropdown" style="flex: 1;">
                   <div class="target-filter-dropdown-trigger" id="target-filter-type-trigger">
-                    <span id="target-filter-type-label">All types</span>
+                    <span id="target-filter-type-label">No selection</span>
                     <span class="target-filter-dropdown-arrow">▼</span>
                   </div>
                   <div class="target-filter-dropdown-menu" id="target-filter-type-menu">
+                    <div style="display: flex; gap: 0.5rem; padding: 0.5rem; border-bottom: 1px solid var(--border-color);">
+                      <button type="button" class="btn-sm" id="type-select-all">Select All</button>
+                      <button type="button" class="btn-sm" id="type-select-none">Select None</button>
+                    </div>
                     <!-- Populated by JS -->
                   </div>
                 </div>
