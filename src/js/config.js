@@ -27,6 +27,8 @@ const APP_CONFIG = {
     DEFAULT_MIN_ALTITUDE: 30,
     DEFAULT_TIMEZONE: -5,
     MAX_SEARCH_RESULTS: 101, // maximum search results you can set
+    DEFAULT_MIN_SIZE: 4.0,   // target filter arc minutes
+    DEFAULT_MAX_MAG: 14.5,   // target filter magnitude
 
     // IndexedDB store names
     STORES: {
