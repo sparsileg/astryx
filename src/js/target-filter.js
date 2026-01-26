@@ -328,6 +328,17 @@ const TargetFilter = {
         if (this.filters.type.values.size === 0) {
             this.selectAllTypes();
         }
+       
+        // Set default values for size and magnitude if not already set
+        if (this.filters.size.value === null) {
+            this.filters.size.value = APP_CONFIG.DEFAULT_MIN_SIZE;
+        }
+        if (this.filters.magnitude.value === null) {
+            this.filters.magnitude.value = APP_CONFIG.DEFAULT_MAX_MAG;
+        }
+
+        // Apply filters automatically on initialization
+        this.applyFiltersToSearch();
     },
 
     /**
@@ -870,15 +881,21 @@ const TargetFilter = {
         this.updateDropdownLabel('catalog');
         this.updateDropdownLabel('type');
 
-        // Reset other inputs
+        // Reset other inputs to defaults
         const monthSelect = document.getElementById('target-filter-month');
         if (monthSelect) monthSelect.value = '';
 
         const sizeInput = document.getElementById('target-filter-size');
-        if (sizeInput) sizeInput.value = '';
+        if (sizeInput) {
+            sizeInput.value = APP_CONFIG.DEFAULT_MIN_SIZE;
+            this.filters.size.value = APP_CONFIG.DEFAULT_MIN_SIZE;
+        }
 
         const magInput = document.getElementById('target-filter-magnitude');
-        if (magInput) magInput.value = '';
+        if (magInput) {
+            magInput.value = APP_CONFIG.DEFAULT_MAX_MAG;
+            this.filters.magnitude.value = APP_CONFIG.DEFAULT_MAX_MAG;
+        }
 
         // Clear results display
         const resultsDiv = document.getElementById('target-filter-results');
