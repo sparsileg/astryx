@@ -86,7 +86,7 @@ const BackupManager = {
 
         // Check if Best Months calculations have been run (stored in targets, not locations)
         let locationsWithBestMonths = 0;
-        if (selectedStores.includes('targets') || selectedStores.includes('locations')) {
+        if (selectedStores.includes('targets')) {
             // Check a sample target to see if it has Best Months data
             const targets = await DBManager.getAll(APP_CONFIG.STORES.TARGETS);
             if (targets.length > 0) {
@@ -101,16 +101,16 @@ const BackupManager = {
         // Refined estimates based on real data
         const estimates = {
             settings: 500,            // ~500 bytes (negligible)
-            locationsBase: 1333,      // ~1.3 KB per location without Best Months
+            locationsBase: 1000,      // ~1 KB per location without Best Months
             bestMonthsPerTarget: 214, // ~214 bytes per target in Best Months data
-            telescopes: 667,          // ~667 bytes per telescope (2KB / 3)
-            sensors: 1000,            // ~1 KB per sensor (2KB / 2)
-            filters: 200,             // ~200 bytes per filter (2KB / 10)
+            telescopes: 500,          // ~500 bytes per telescope
+            sensors: 500,             // ~500 bytes per sensor
+            filters: 150,             // ~150 bytes per filter
             pinnedTargets: 100,       // Conservative estimate
             toDoTargets: 100,         // Conservative estimate
-            imagingProjects: 2086,    // 121KB / 58 sessions ≈ 2KB per project (projects are bigger)
-            imagingSessions: 2086,    // Same as projects for simplicity
-            imagingPrograms: 500,     // Conservative estimate
+            imagingProjects: 2000,    // ~2 KB per project
+            imagingSessions: 1200,    // ~1.2 KB per session
+            imagingPrograms: 300,     // ~300 bytes per program
             targets: 292              // 4265KB / 14593 = 292 bytes per target
         };
 
