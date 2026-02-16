@@ -17,6 +17,9 @@ const TargetFilter = {
     displayedCount: 0,
     isLoading: false,
 
+    // Filter scope (all or todo)
+    filterScope: 'all',
+
     // Filter definitions
     filters: {
         catalog: {
@@ -142,11 +145,11 @@ const TargetFilter = {
         const selectedLocation = SettingsManager.getSelectedLocation();
         const visibilityStart = target.visibilityStart?.[selectedLocation];
         const visibilityEnd = target.visibilityEnd?.[selectedLocation];
-        
+
         if (!visibilityStart || !visibilityEnd) {
             return false;
         }
-        
+
         // Wrap-around case: end > 12 means it crosses into next year
         if (visibilityEnd > 12) {
             // e.g., start=11, end=15 means Nov, Dec, Jan(13), Feb(14), Mar(15)
@@ -241,7 +244,7 @@ const TargetFilter = {
         });
         this.updateDropdownLabel('catalog');
         this.applyFiltersToSearch();
-        
+
         // Close the dropdown
         const catalogDropdown = document.querySelector('#target-filter-catalog-trigger')?.parentElement;
         if (catalogDropdown) {
@@ -277,7 +280,7 @@ const TargetFilter = {
         });
         this.updateDropdownLabel('type');
         this.applyFiltersToSearch();
-        
+
         // Close the dropdown
         const typeDropdown = document.querySelector('#target-filter-type-trigger')?.parentElement;
         if (typeDropdown) {
@@ -318,17 +321,17 @@ const TargetFilter = {
         this.populateDropdowns();
         this.attachEventHandlers();
         this.restoreUIState();
-        
+
         // Default to all catalogs selected if none are selected
         if (this.filters.catalog.values.size === 0) {
             this.selectAllCatalogs();
         }
-        
+
         // Default to all types selected if none are selected
         if (this.filters.type.values.size === 0) {
             this.selectAllTypes();
         }
-       
+
         // Set default values for size and magnitude if not already set
         if (this.filters.size.value === null) {
             this.filters.size.value = APP_CONFIG.DEFAULT_MIN_SIZE;
@@ -345,6 +348,12 @@ const TargetFilter = {
      * Restore UI state from filter values
      */
     restoreUIState() {
+        // Restore filter scope radio button
+        const filterRadio = document.querySelector(`input[name="target-filter-scope"][value="${this.filterScope}"]`);
+        if (filterRadio) {
+            filterRadio.checked = true;
+        }
+
         // Restore catalog checkboxes
         this.filters.catalog.values.forEach(value => {
             const checkbox = document.getElementById(`catalog-${value}`);
@@ -399,7 +408,7 @@ const TargetFilter = {
                         <label for="catalog-${catalog}">${catalog}</label>
                     </div>
                 `).join('');
-            
+
             catalogMenu.innerHTML = `
                 <div style="display: flex; gap: 0.5rem; padding: 0.5rem; border-bottom: 1px solid var(--border-color);">
                     <button type="button" class="btn-sm" id="catalog-select-all">Select All</button>
@@ -422,7 +431,7 @@ const TargetFilter = {
                         </div>
                     `;
                 }).join('');
-            
+
             typeMenu.innerHTML = `
                 <div style="display: flex; gap: 0.5rem; padding: 0.5rem; border-bottom: 1px solid var(--border-color);">
                     <button type="button" class="btn-sm" id="type-select-all">Select All</button>
@@ -475,7 +484,7 @@ const TargetFilter = {
             catalogMenu.addEventListener('click', (e) => {
                 e.stopPropagation();
             });
-            
+
             catalogMenu.addEventListener('change', (e) => {
                 if (e.target.type === 'checkbox' && e.target.id.startsWith('catalog-')) {
                     const value = e.target.value;
@@ -488,7 +497,7 @@ const TargetFilter = {
                     this.applyFiltersToSearch();
                 }
             });
-            
+
             // Select All/None buttons
             catalogMenu.addEventListener('click', (e) => {
                 if (e.target.id === 'catalog-select-all') {
@@ -515,7 +524,7 @@ const TargetFilter = {
                     this.applyFiltersToSearch();
                 }
             });
-            
+
             // Select All/None buttons
             typeMenu.addEventListener('click', (e) => {
                 if (e.target.id === 'type-select-all') {
@@ -526,11 +535,21 @@ const TargetFilter = {
             });
         }
 
+        // Filter scope radio buttons (All Targets vs To Do List)
+        const filterRadios = document.querySelectorAll('input[name="target-filter-scope"]');
+        filterRadios.forEach(radio => {
+            radio.addEventListener('change', () => {
+                this.filterScope = radio.value;
+                this.applyFiltersToSearch();
+            });
+        });
+
         // Month select
         const monthSelect = document.getElementById('target-filter-month');
         if (monthSelect) {
             monthSelect.addEventListener('change', (e) => {
                 this.filters.month.value = e.target.value ? parseInt(e.target.value) : null;
+                this.applyFiltersToSearch();
             });
         }
 
@@ -539,6 +558,7 @@ const TargetFilter = {
         if (sizeInput) {
             sizeInput.addEventListener('input', (e) => {
                 this.filters.size.value = e.target.value ? parseFloat(e.target.value) : null;
+                this.applyFiltersToSearch();
             });
         }
 
@@ -547,6 +567,7 @@ const TargetFilter = {
         if (magInput) {
             magInput.addEventListener('input', (e) => {
                 this.filters.magnitude.value = e.target.value ? parseFloat(e.target.value) : null;
+                this.applyFiltersToSearch();
             });
         }
 
@@ -643,8 +664,8 @@ const TargetFilter = {
         }
 
         // Process results (randomize or sort)
-        const processed = RANDOMIZE_RESULTS ? 
-              this.shuffleArray(results) : 
+        const processed = RANDOMIZE_RESULTS ?
+              this.shuffleArray(results) :
               results.sort((a, b) => this.naturalSort(a, b));
 
         // Store all results and reset state
@@ -669,7 +690,7 @@ const TargetFilter = {
             // Remove old handler if exists
             const newBtn = createProgramBtn.cloneNode(true);
             createProgramBtn.parentNode.replaceChild(newBtn, createProgramBtn);
-            
+
             // Attach new handler
             newBtn.addEventListener('click', () => {
                 this.openCreateProgramModal();
@@ -792,7 +813,7 @@ const TargetFilter = {
      */
     openCreateProgramModal() {
         const targetCount = this.allResults.length;
-        
+
         // Check if results exceed maximum
         if (targetCount > MAX_IMAGING_PROGRAM_TARGETS) {
             UIManager.openModal('filter-results-too-many-template', 'Too Many Results', (action) => {
@@ -800,16 +821,16 @@ const TargetFilter = {
                     UIManager.closeModal();
                 }
             });
-            
+
             // Update count in warning modal
             const tooManyCount = document.getElementById('too-many-count');
             if (tooManyCount) {
                 tooManyCount.textContent = targetCount;
             }
-            
+
             return;
         }
-        
+
         UIManager.openModal('create-program-from-filter-template', 'Create Imaging Program', async (action, modalBody) => {
             if (action === 'create') {
                 await this.createImagingProgram(modalBody);
@@ -817,7 +838,7 @@ const TargetFilter = {
                 UIManager.closeModal();
             }
         });
-        
+
         // Update target count in modal
         const countSpan = document.getElementById('filter-target-count');
         if (countSpan) {
@@ -831,12 +852,12 @@ const TargetFilter = {
     async createImagingProgram(modalBody) {
         const programNameInput = document.getElementById('program-name-input');
         const programName = programNameInput?.value.trim();
-        
+
         if (!programName) {
             UIManager.showToast('Please enter a program name', 'error');
             return;
         }
-        
+
         // Create program with target designations (names only)
         const targetDesignations = this.allResults.map(target => target.object);
 
@@ -850,10 +871,10 @@ const TargetFilter = {
             await ImagingLogManager.createProgram(programData);
             UIManager.closeModal();
             UIManager.showToast(`Program "${programName}" created with ${targetDesignations.length} targets`, 'success');
-            
+
             // Switch to Imaging Log view
             window.location.hash = '#imaging-log';
-            
+
             // Switch to Programs tab after view loads
             setTimeout(() => {
                 if (typeof ImagingLogView !== 'undefined' && ImagingLogView.switchTab) {
