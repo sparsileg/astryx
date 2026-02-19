@@ -79,8 +79,6 @@ const SeqPlanCalculations = {
      */
     calculateExposureCounts(targets, session) {
         const totalMinutes = (session.sessionEndJD - session.sessionStartJD) * 24 * 60;
-
-        // Don't pre-subtract AF overhead - it will be handled dynamically in timeline generation
         const netMinutes = totalMinutes;
 
         let currentJD = session.sessionStartJD;
@@ -93,6 +91,19 @@ const SeqPlanCalculations = {
 
             // Account for target-specific overhead
             let targetOverhead = session.calibrationDuration; // Initial calibration
+
+            // Account for autofocus overhead
+            if (session.autofocusEnabled && session.autofocusDuration > 0) {
+                // Initial AF run at start of target
+                targetOverhead += session.autofocusDuration;
+
+                // Periodic AF runs during target imaging
+                if (session.autofocusInterval > 0) {
+                    const imagingAfterInitial = allocatedMinutes - targetOverhead;
+                    const periodicAfCount = Math.floor(imagingAfterInitial / session.autofocusInterval);
+                    targetOverhead += periodicAfCount * session.autofocusDuration;
+                }
+            }
 
             // Check for meridian flip during this target's window
             const targetEndJD = currentJD + (allocatedMinutes / 1440);
@@ -362,7 +373,7 @@ const SeqPlanCalculations = {
                            startTimeMode, customStartTime, useHorizon = false, horizonProfile = null) {
 
         console.log('calculateSessionWindow - useHorizon:', useHorizon, 'horizonProfile:', horizonProfile ? 'present' : 'none');
-        
+
         // Determine initial start time (dusk or custom)
         let initialStartJD = duskJD;
 
@@ -486,7 +497,7 @@ const SeqPlanCalculations = {
         // Determine valid window
         let validStartJD = riseJD || session.sessionStartJD;
         let validEndJD = setJD || session.sessionEndJD; // If no set found, use session end
-        console.log(`${target.name} constraint check - validStart: ${validStartJD ? jdToDate(validStartJD).toLocaleTimeString() : 'null'}, validEnd: ${validEndJD ? jdToDate(validEndJD).toLocaleTimeString() : 'null'}, imagingStart: ${jdToDate(target.imagingStartJD).toLocaleTimeString()}, imagingEnd: ${jdToDate(target.imagingEndJD).toLocaleTimeString()}`);        
+        console.log(`${target.name} constraint check - validStart: ${validStartJD ? jdToDate(validStartJD).toLocaleTimeString() : 'null'}, validEnd: ${validEndJD ? jdToDate(validEndJD).toLocaleTimeString() : 'null'}, imagingStart: ${jdToDate(target.imagingStartJD).toLocaleTimeString()}, imagingEnd: ${jdToDate(target.imagingEndJD).toLocaleTimeString()}`);
 
         // Check for violations
         let violationType = null;
@@ -540,23 +551,23 @@ const SeqPlanCalculations = {
         const violations = [];
         const stepSize = APP_CONFIG.TARGET_SEARCH_STEP_SIZE;
         let jd = startJD;
-        
+
         let inViolation = false;
         let violationStart = null;
-        
+
         while (jd <= endJD) {
             const altitude = getAltitude(jd, raHours, decDeg, latitude, longitude);
             const azimuth = getAzimuth(jd, raHours, decDeg, latitude, longitude);
-            
+
             // Check if above min altitude but below horizon
             const aboveMinAlt = altitude >= minAltitude;
             const aboveHorizon = isAboveHorizon(altitude, azimuth, minAltitude, horizonArray);
-            
+
             // Violation = above min altitude but blocked by horizon
             const isViolating = aboveMinAlt && !aboveHorizon;
             if (isViolating) {
                 console.log(`Horizon violation detected at ${jdToDate(jd).toLocaleTimeString()}: alt=${altitude.toFixed(1)}°, minAlt=${minAltitude}°, aboveMinAlt=${aboveMinAlt}, aboveHorizon=${aboveHorizon}`);
-            }            
+            }
             if (isViolating && !inViolation) {
                 // Start of violation period
                 violationStart = jd;
@@ -567,15 +578,15 @@ const SeqPlanCalculations = {
                 inViolation = false;
                 violationStart = null;
             }
-            
+
             jd += stepSize;
         }
-        
+
         // Handle violation extending to end of window
         if (inViolation && violationStart !== null) {
             violations.push({ startJD: violationStart, endJD: endJD });
         }
-        
+
         return violations;
     }
 
