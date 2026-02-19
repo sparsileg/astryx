@@ -33,7 +33,7 @@ const SeqPlanView = {
         this.attachEventHandlers();
         this.setupCollapsibleSections();
         SeqPlanTimeline.init();
-        
+
         // Add window resize listener to redraw timeline
         let resizeTimer;
         const redrawTimeline = () => {
@@ -49,9 +49,9 @@ const SeqPlanView = {
                 }
             }, 250);
         };
-        
+
         window.addEventListener('resize', redrawTimeline);
-        
+
         // Watch for sidebar collapse/expand using MutationObserver
         const sidebar = document.querySelector('.sidebar');
         if (sidebar) {
@@ -71,13 +71,13 @@ const SeqPlanView = {
                     }
                 });
             });
-            
+
             observer.observe(sidebar, {
                 attributes: true,
                 attributeFilter: ['class']
             });
         }
-        
+
         // Auto-generate plan
         this.debouncedGenerate();
         console.log('Sequence Planner initialized');
@@ -156,12 +156,12 @@ const SeqPlanView = {
     loadSettings() {
         // Min altitude - always use global default on load
         const globalMinAlt = SettingsManager.getGlobalMinAltitude();
-        
+
         const minAltSelect = document.getElementById('seq-plan-min-altitude');
-        
+
         if (minAltSelect) {
             minAltSelect.value = globalMinAlt;
-            
+
             // Remove override styling since we're starting with global default
             minAltSelect.classList.remove('altitude-override-active');
             minAltSelect.title = '';
@@ -269,13 +269,13 @@ const SeqPlanView = {
         // Min altitude dropdown override styling
         const minAltSelect = document.getElementById('seq-plan-min-altitude');
         const globalMinAlt = SettingsManager.getGlobalMinAltitude();
-        
+
         if (minAltSelect) {
             // Update styling on change
             minAltSelect.addEventListener('change', () => {
                 const currentValue = parseInt(minAltSelect.value);
                 const isOverride = currentValue !== globalMinAlt;
-                
+
                 if (isOverride) {
                     minAltSelect.classList.add('altitude-override-active');
                     minAltSelect.title = `Override active (global default: ${globalMinAlt}°)`;
@@ -298,6 +298,12 @@ const SeqPlanView = {
         if (afCheckbox && afNote) {
             afCheckbox.addEventListener('change', (e) => {
                 afNote.style.display = e.target.checked ? 'inline' : 'none';
+
+                // Rebuild session config and recalculate to include/exclude autofocus events
+                if (this.currentSession && this.calculatedResults.length > 0) {
+                    this.currentSession = this.buildSessionConfig();
+                    this.recalculateAndUpdate();
+                }
             });
             // Set initial state based on current checkbox value
             afNote.style.display = afCheckbox.checked ? 'inline' : 'none';
@@ -418,7 +424,7 @@ const SeqPlanView = {
             );
             target.altitudeConstraint = constraint;
             target.altitudeViolation = !constraint.isValid;
-            
+
             // Find horizon violations if using horizon profile
             if (this.currentSession.useHorizon && this.currentSession.location.horizon) {
                 target.horizonViolations = SeqPlanCalculations.findHorizonViolations(
@@ -508,12 +514,12 @@ const SeqPlanView = {
     displayResults() {
         const resultsDiv = document.getElementById('seq-plan-results');
         if (!resultsDiv) return;
-        
+
         // Format session times
         const startTime = jdToDate(this.currentSession.sessionStartJD);
         const endTime = jdToDate(this.currentSession.sessionEndJD);
         const duration = (this.currentSession.sessionEndJD - this.currentSession.sessionStartJD) * 24;
-        
+
         let html = `
     <div class="card">
         <div class="card-header">
@@ -527,12 +533,12 @@ const SeqPlanView = {
             </p>
             <h4 style="margin-top: 1.5rem;">Target Sequence:</h4>
     `;
-        
+
         this.calculatedResults.forEach((target, index) => {
             const targetStartTime = jdToDate(target.imagingStartJD);
             const targetEndTime = jdToDate(target.imagingEndJD);
             const flipWarning = target.meridianFlipJD ? ' • ⚠ Includes meridian flip' : '';
-            
+
             // Main imaging entry (full window)
             html += `
             <p style="margin-bottom: 0.5rem;">
@@ -542,14 +548,14 @@ const SeqPlanView = {
                 ${target.exposureCount} × ${target.exposureTime}s${flipWarning}
             </p>
             `;
-            
+
             // Add altitude constraint violation warnings as indented sub-items (if any)
             if (target.altitudeConstraint && !target.altitudeConstraint.isValid) {
                 const constraint = target.altitudeConstraint;
-                
+
                 // Check if we have horizon violations to avoid duplicates
                 const horizonViolations = target.horizonViolations || [];
-                
+
                 // Helper function to check if a time period overlaps with any horizon violation
                 const overlapsHorizonViolation = (startJD, endJD) => {
                     return horizonViolations.some(hv => {
@@ -557,14 +563,14 @@ const SeqPlanView = {
                         return (startJD < hv.endJD && endJD > hv.startJD);
                     });
                 };
-                
+
                 // Show violation for "starts early" case (only if not covered by horizon violation and >= 1 minute duration)
                 if (constraint.violationType === 'starts_early' || constraint.violationType === 'both') {
                     const violationMinutes = (constraint.validStartJD - target.imagingStartJD) * 1440;
                     if (violationMinutes >= 1 && !overlapsHorizonViolation(target.imagingStartJD, constraint.validStartJD)) {
                         const violationStart = jdToDate(target.imagingStartJD);
                         const violationEnd = jdToDate(constraint.validStartJD);
-                        
+
                         html += `
             <p style="margin-bottom: 0.5rem; margin-left: 0rem;">
                 <span style="color: var(--error-color);">⚠ ${target.name} • Altitude constraint</span> •
@@ -574,14 +580,14 @@ const SeqPlanView = {
                         `;
                     }
                 }
-                
+
                 // Show violation for "ends late" case (only if not covered by horizon violation and >= 1 minute duration)
                 if (constraint.violationType === 'ends_late' || constraint.violationType === 'both') {
                     const violationMinutes = (target.imagingEndJD - constraint.validEndJD) * 1440;
                     if (violationMinutes >= 1 && !overlapsHorizonViolation(constraint.validEndJD, target.imagingEndJD)) {
                         const violationStart = jdToDate(constraint.validEndJD);
                         const violationEnd = jdToDate(target.imagingEndJD);
-                        
+
                         html += `
             <p style="margin-bottom: 0.5rem; margin-left: 0rem;">
                 <span style="color: var(--error-color);">⚠ ${target.name} • Altitude constraint</span> •
@@ -592,17 +598,17 @@ const SeqPlanView = {
                     }
                 }
             }
-            
+
             // Add horizon violation warnings as indented sub-items (if any)
             if (target.horizonViolations && target.horizonViolations.length > 0) {
                 target.horizonViolations.forEach(violation => {
                     const violationMinutes = (violation.endJD - violation.startJD) * 1440;
                     // Skip violations less than 1 minute
                     if (violationMinutes < 1) return;
-                    
+
                     const violationStart = jdToDate(violation.startJD);
                     const violationEnd = jdToDate(violation.endJD);
-                    
+
                     html += `
             <p style="margin-bottom: 0.5rem; margin-left: 0rem;">
                 <span style="color: var(--error-color);">⚠ ${target.name} • Horizon constraint</span> •
@@ -613,12 +619,12 @@ const SeqPlanView = {
                 });
             }
         });
-        
+
         html += `
         </div>
     </div>
     `;
-        
+
         resultsDiv.innerHTML = html;
     },
 
@@ -835,7 +841,7 @@ const SeqPlanView = {
             );
             target.altitudeConstraint = constraint;
             target.altitudeViolation = !constraint.isValid;
-            
+
             // Find horizon violations if using horizon profile
             if (this.currentSession.useHorizon && this.currentSession.location.horizon) {
                 target.horizonViolations = SeqPlanCalculations.findHorizonViolations(
@@ -953,6 +959,9 @@ const SeqPlanView = {
     async resetAndOptimize() {
         if (!this.currentSession || this.calculatedResults.length === 0) return;
 
+        // Rebuild session config to pick up any changed settings (like autofocus)
+        this.currentSession = this.buildSessionConfig();
+
         // Reset to equal allocation
         const equalPercent = 100 / this.currentTargets.length;
         this.currentTargets.forEach(target => {
@@ -982,7 +991,7 @@ const SeqPlanView = {
             );
             target.altitudeConstraint = constraint;
             target.altitudeViolation = !constraint.isValid;
-            
+
             // Find horizon violations if using horizon profile
             if (this.currentSession.useHorizon && this.currentSession.location.horizon) {
                 target.horizonViolations = SeqPlanCalculations.findHorizonViolations(
@@ -1059,7 +1068,7 @@ const SeqPlanView = {
 
         // Calculate session window based on first/last target altitude constraints
         const sessionWindow = SeqPlanCalculations.calculateSessionWindow(
-            optimizedTargets,
+            this.calculatedResults,
             timing.duskJD,
             timing.dawnJD,
             this.currentSession.location,
@@ -1087,7 +1096,7 @@ const SeqPlanView = {
             );
             target.altitudeConstraint = constraint;
             target.altitudeViolation = !constraint.isValid;
-            
+
             // Find horizon violations if using horizon profile
             if (this.currentSession.useHorizon && this.currentSession.location.horizon) {
                 target.horizonViolations = SeqPlanCalculations.findHorizonViolations(
@@ -1139,10 +1148,10 @@ const SeqPlanView = {
             header.addEventListener('click', () => {
                 const targetId = header.dataset.collapseTarget;
                 const targetBody = document.getElementById(targetId);
-                
+
                 if (targetBody) {
                     header.classList.toggle('collapsed');
-                    
+
                     // Add tiny delay before collapsing body to prevent rendering glitches
                     if (targetBody.classList.contains('collapsed')) {
                         targetBody.classList.remove('collapsed');
