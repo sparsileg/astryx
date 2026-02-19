@@ -177,7 +177,7 @@ const ToDoView = {
         const html = sortedTypes.map(type => {
             const typeDisplay = OBJECT_TYPES[type] || type;
             const targets = groupedByType[type];
-            return this.buildCard(typeDisplay, targets);
+            return this.buildCard(typeDisplay, targets, null, false);
         }).join('');
 
         todoContainer.innerHTML = html;
@@ -244,14 +244,14 @@ const ToDoView = {
             const targets = groupedByMonth[monthNum];
             if (targets.length > 0) {
                 const monthName = `${monthNames[monthNum - 1]} (${targets.length})`;
-                html += this.buildCard(monthName, targets);
+                html += this.buildCard(monthName, targets, null, true);
             }
         }
 
         // Add "Not observable" card if needed
         if (groupedByMonth['none'].length > 0) {
             const notObsName = `Not Observable (${groupedByMonth['none'].length})`;
-            html += this.buildCard(notObsName, groupedByMonth['none']);
+            html += this.buildCard(notObsName, groupedByMonth['none'], null, true);
         }
 
         todoContainer.innerHTML = html;
@@ -468,7 +468,9 @@ const ToDoView = {
         if (observable.length > 0) {
             const targets = observable.map((info, index) => {
                 const commonNames = this.getCommonNames(info.target.common);
-                const displayName = commonNames ? `${info.target.object} (${commonNames})` : info.target.object;
+                const typeDisplay = OBJECT_TYPES[info.target.type] || info.target.type || '';
+                const typePart = typeDisplay ? ` ${typeDisplay}` : '';
+                const displayName = commonNames ? `${info.target.object}${typePart} (${commonNames})` : `${info.target.object}${typePart}`;
 
                 // Check if pinned
                 const isPinned = this.isTargetPinned(info.target.object);
@@ -487,14 +489,16 @@ const ToDoView = {
     `;
             });
 
-            html += this.buildCard(`Observable Tonight (${observable.length})`, null, targets.join(''));
+            html += this.buildCard(`Observable Tonight (${observable.length})`, null, targets.join(''), true);
         }
 
         // Build not observable targets
         if (notObservable.length > 0) {
             const targets = notObservable.map((info, index) => {
                 const commonNames = this.getCommonNames(info.target.common);
-                const displayName = commonNames ? `${info.target.object} (${commonNames})` : info.target.object;
+                const typeDisplay = OBJECT_TYPES[info.target.type] || info.target.type || '';
+                const typePart = typeDisplay ? ` ${typeDisplay}` : '';
+                const displayName = commonNames ? `${info.target.object}${typePart} (${commonNames})` : `${info.target.object}${typePart}`;
 
                 // Check if pinned
                 const isPinned = this.isTargetPinned(info.target.object);
@@ -513,7 +517,7 @@ const ToDoView = {
     `;
             });
 
-            html += this.buildCard(`Not Observable Tonight (${notObservable.length})`, null, targets.join(''));
+            html += this.buildCard(`Not Observable Tonight (${notObservable.length})`, null, targets.join(''), true);
         }
 
         todoContainer.innerHTML = html;
@@ -676,9 +680,11 @@ const ToDoView = {
                 }
 
                 // Draw target label
-                ctx.font = 'bold 13px sans-serif';  // Increased from 11px
+                ctx.font = 'bold 13px sans-serif';
                 ctx.textAlign = 'left';
-                ctx.fillText(info.target.object, labelX, barY + 20);  // Adjusted Y position
+                const chartTypeDisplay = OBJECT_TYPES[info.target.type] || info.target.type || '';
+                const chartLabel = chartTypeDisplay ? `${info.target.object} ${chartTypeDisplay}` : info.target.object;
+                ctx.fillText(chartLabel, labelX, barY + 20);
 
                 // Show set time if it's before dawn (right-aligned)
                 if (info.setJD <= dawnJD) {
@@ -732,7 +738,7 @@ const ToDoView = {
     /**
      * Build a card for a group of targets
      */
-    buildCard(title, targets, customContent = null) {
+    buildCard(title, targets, customContent = null, showType = false) {
         let content;
 
         if (customContent) {
@@ -742,7 +748,9 @@ const ToDoView = {
             // Generate from targets array (for type/month views)
             content = targets.map((target, index) => {
                 const commonNames = this.getCommonNames(target.common);
-                const displayName = commonNames ? `${target.object} (${commonNames})` : target.object;
+                const typeDisplay = showType ? (OBJECT_TYPES[target.type] || target.type || '') : '';
+                const typePart = typeDisplay ? ` ${typeDisplay}` : '';
+                const displayName = commonNames ? `${target.object}${typePart} (${commonNames})` : `${target.object}${typePart}`;
                 const comma = index < targets.length - 1 ? ',' : '';
 
                 return `
