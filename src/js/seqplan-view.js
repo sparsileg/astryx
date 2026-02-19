@@ -957,6 +957,23 @@ const SeqPlanView = {
 
         this.calculatedResults = reordered;
 
+        this.calculatedResults = reordered;
+
+        // Recalculate session window based on new first/last target order
+        const sessionWindow = SeqPlanCalculations.calculateSessionWindow(
+            reordered,
+            this.currentSession.duskJD,
+            this.currentSession.dawnJD,
+            this.currentSession.location,
+            this.currentSession.minAltitude,
+            this.currentSession.startTimeMode,
+            this.currentSession.customStartTime,
+            this.currentSession.useHorizon,
+            this.currentSession.location.horizon
+        );
+        this.currentSession.sessionStartJD = sessionWindow.sessionStartJD;
+        this.currentSession.sessionEndJD = sessionWindow.sessionEndJD;
+
         // Recalculate and update
         this.recalculateAndUpdate();
 
@@ -973,6 +990,20 @@ const SeqPlanView = {
         // Rebuild session config to pick up any changed settings (like autofocus)
         this.currentSession = this.buildSessionConfig();
 
+        // Recalculate dusk/dawn timing
+        const timing = SeqPlanCalculations.calculateSessionTiming(
+            this.currentSession.date,
+            this.currentSession.location
+        );
+        if (!timing) {
+            UIManager.showToast('No astronomical night at this location/date', 'error');
+            return;
+        }
+        this.currentSession.duskJD = timing.duskJD;
+        this.currentSession.dawnJD = timing.dawnJD;
+        this.currentSession.sessionStartJD = timing.duskJD;
+        this.currentSession.sessionEndJD = timing.dawnJD;
+
         // Reset to equal allocation
         const equalPercent = 100 / this.currentTargets.length;
         this.currentTargets.forEach(target => {
@@ -984,6 +1015,21 @@ const SeqPlanView = {
             this.currentTargets,
             this.currentSession
         );
+
+        // Recalculate session window based on optimized target order
+        const sessionWindow = SeqPlanCalculations.calculateSessionWindow(
+            optimizedTargets,
+            timing.duskJD,
+            timing.dawnJD,
+            this.currentSession.location,
+            this.currentSession.minAltitude,
+            this.currentSession.startTimeMode,
+            this.currentSession.customStartTime,
+            this.currentSession.useHorizon,
+            this.currentSession.location.horizon
+        );
+        this.currentSession.sessionStartJD = sessionWindow.sessionStartJD;
+        this.currentSession.sessionEndJD = sessionWindow.sessionEndJD;
 
         // Recalculate with new order and equal allocations
         this.calculatedResults = SeqPlanCalculations.calculateExposureCounts(

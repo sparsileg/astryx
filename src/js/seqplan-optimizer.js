@@ -18,24 +18,52 @@ const SeqPlanOptimizer = {
                 session.sessionStartJD,
                 session.sessionEndJD,
                 target.ra,
-                target.dec,  // ADD THIS - dec is required
-                session.location.longitude  // CHANGE from .lng to .longitude
+                target.dec,
+                session.location.longitude
             );
 
-            // Score based on how early in session the target transits
-            const score = transitJD ? (transitJD - session.sessionStartJD) : 999;
+            // Find when target sets below minimum altitude
+            const setJD = findTargetSet(
+                session.sessionStartJD,
+                session.sessionEndJD,
+                target.ra,
+                target.dec,
+                session.location.latitude,
+                session.location.longitude,
+                session.minAltitude,
+                null
+            );
+
+            // Find when target rises above minimum altitude
+            const riseJD = findTargetRise(
+                session.sessionStartJD,
+                session.sessionEndJD,
+                target.ra,
+                target.dec,
+                session.location.latitude,
+                session.location.longitude,
+                session.minAltitude,
+                null
+            );
+
+            // Score by set time (earliest setting targets first)
+            // Targets that never set (visible all night) score last
+            // Use riseJD as secondary to avoid scheduling before target is visible
+            const setScore = setJD ? (setJD - session.sessionStartJD) : 999;
 
             return {
                 ...target,
-                transitJD: transitJD,  // Already present - good!
-                score: score,
-                suggestedOrder: 0,  // Will be set below
-                userOrder: 0,       // Will be set below
+                transitJD: transitJD,
+                riseJD: riseJD,
+                setJD: setJD,
+                score: setScore,
+                suggestedOrder: 0,
+                userOrder: 0,
                 orderOverridden: false
             };
         });
 
-        // Sort by score (earlier transits first)
+        // Sort by set time (earliest setting targets imaged first)
         scoredTargets.sort((a, b) => a.score - b.score);
 
         // Assign suggested order
@@ -80,7 +108,7 @@ const SeqPlanOptimizer = {
         // Calculate target altitude and azimuth
         const altitude = getAltitude(jd, raHours, decDeg, latitude, longitude);
         const azimuth = getAzimuth(jd, raHours, decDeg, latitude, longitude);
-        
+
         // Use isAboveHorizon() from astro-core.js
         // If not using horizon, pass empty array (acts as flat horizon)
         return isAboveHorizon(altitude, azimuth, minAltitude, useHorizon ? horizonArray : []);
