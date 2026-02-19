@@ -8,16 +8,16 @@ const ImagingLogView = {
     currentProjectId: null,
     currentSessionId: null,
     selectedTargets: [],
-    
+
     /**
      * Initialize view
      */
     async init() {
         console.log('Initializing Imaging Log View');
-        
+
         // Set page title
         document.title = 'Imaging Log';
-        
+
         // Set up tab switching
         const tabButtons = document.querySelectorAll('.imaging-log-tab-btn');
         tabButtons.forEach(btn => {
@@ -25,14 +25,14 @@ const ImagingLogView = {
                 this.switchTab(e.target.dataset.tab);
             });
         });
-        
+
         // Set up project controls
         this.setupProjectControls();
-        
+
         // Load initial data
         await this.renderProjectList();
     },
-    
+
     /**
      * Setup project tab controls
      */
@@ -42,43 +42,43 @@ const ImagingLogView = {
         if (newProjectBtn) {
             newProjectBtn.addEventListener('click', () => this.showProjectModal());
         }
-        
+
         // Search input
         const searchInput = document.getElementById('imaging-log-project-search');
         if (searchInput) {
             searchInput.addEventListener('input', () => this.renderProjectList());
         }
-        
+
         // Status filter
         const statusFilter = document.getElementById('imaging-log-project-status-filter');
         if (statusFilter) {
             statusFilter.addEventListener('change', () => this.renderProjectList());
         }
-        
+
         // Sort selector
         const sortSelect = document.getElementById('imaging-log-project-sort');
         if (sortSelect) {
             sortSelect.addEventListener('change', () => this.renderProjectList());
         }
     },
-    
+
     /**
      * Switch tabs
      */
     async switchTab(tabName) {
         this.currentTab = tabName;
-        
+
         // Update tab buttons
         document.querySelectorAll('.imaging-log-tab-btn').forEach(btn => {
             btn.classList.toggle('active', btn.dataset.tab === tabName);
         });
-        
+
         // Update tab content
         document.querySelectorAll('.imaging-log-tab-content').forEach(content => {
             const isActive = content.id === `imaging-log-${tabName}-tab`;
             content.classList.toggle('active', isActive);
         });
-        
+
         // Load content for tab (always re-render to ensure fresh data)
         if (tabName === 'projects') {
             await this.renderProjectList();
@@ -89,30 +89,30 @@ const ImagingLogView = {
             await this.renderReports();
         }
     },
-    
+
     /**
      * Render project list
      */
     async renderProjectList() {
         const container = document.getElementById('imaging-log-projects-list');
         if (!container) return;
-        
+
         const projects = await ImagingLogManager.getAllProjects();
-        
+
         // Apply filters
         const searchQuery = document.getElementById('imaging-log-project-search')?.value.toLowerCase() || '';
         const statusFilter = document.getElementById('imaging-log-project-status-filter')?.value || '';
-        
+
         let filteredProjects = projects.filter(project => {
             // Search filter
             if (searchQuery) {
                 const nameMatch = project.name.toLowerCase().includes(searchQuery);
-                const targetMatch = project.targetDesignations.some(designation => 
+                const targetMatch = project.targetDesignations.some(designation =>
                     designation.toLowerCase().includes(searchQuery)
                 );
                 if (!nameMatch && !targetMatch) return false;
             }
-            
+
             // Status filter
             if (statusFilter) {
                 if (statusFilter === 'all-but-completed') {
@@ -123,27 +123,27 @@ const ImagingLogView = {
                     return false;
                 }
             }
-            
+
             return true;
         });
-        
+
         // Apply sort
         const sortValue = document.getElementById('imaging-log-project-sort')?.value || 'modified-desc';
         filteredProjects = this.sortProjects(filteredProjects, sortValue);
-        
+
         if (filteredProjects.length === 0) {
             container.innerHTML = '<p class="empty-message">No projects found. Create your first project!</p>';
             return;
         }
-        
+
         let html = '';
         for (const project of filteredProjects) {
             html += await this.renderProjectCard(project);
         }
-        
+
         container.innerHTML = html;
     },
-    
+
 
     /**
      * Render a single project card
@@ -155,16 +155,17 @@ const ImagingLogView = {
               .filter(([filter, seconds]) => seconds > 0)  // Only show filters with time
               .map(([filter, seconds]) => `${filter}: ${this.formatIntegrationTime(seconds)}`)
               .join(' &nbsp; ');
-        
+
         // Get sessions
         const sessions = await ImagingLogManager.getSessionsForProject(project.id);
-        
+        sessions.sort((a, b) => new Date(a.date) - new Date(b.date));
+
         const statusClass = this.getStatusClass(project.status);
         const lastModified = new Date(project.modified).toLocaleDateString();
-        
+
         // Generate unique ID for this project's sessions container
         const sessionsId = `project-sessions-${project.id}`;
-        
+
         return `
             <div class="project-card" data-project-id="${project.id}">
                 <div class="project-card-header" onclick="ImagingLogView.toggleProjectSessions(${project.id})">
@@ -172,17 +173,17 @@ const ImagingLogView = {
                         <div class="project-card-title">${this.escapeHtml(project.name)}</div>
                     </div>
                     <div class="project-card-actions">
-                        <button class="project-action-btn project-action-btn-delete" 
+                        <button class="project-action-btn project-action-btn-delete"
                                 onclick="event.stopPropagation(); ImagingLogView.handleDeleteProject(${project.id})">
                             Delete Project
                         </button>
-                        <button class="project-action-btn project-action-btn-edit" 
+                        <button class="project-action-btn project-action-btn-edit"
                                 onclick="event.stopPropagation(); ImagingLogView.handleEditProject(${project.id})">
                             Edit Project
                         </button>
                     </div>
                 </div>
-                
+
                 <div class="project-card-meta" onclick="ImagingLogView.toggleProjectSessions(${project.id})">
                     <span>Targets: ${project.targetDesignations.length}</span>
                     <span>Sessions: ${sessions.length}</span>
@@ -190,19 +191,19 @@ const ImagingLogView = {
                     <span class="project-status-badge ${statusClass}">${project.status}</span>
                     <span>Modified: ${lastModified}</span>
                 </div>
-                
+
                 <!-- Sessions Toggle Row -->
                 <div class="project-sessions-toggle" onclick="ImagingLogView.toggleProjectSessions(${project.id})">
                     <span class="sessions-chevron" id="chevron-${project.id}">▶</span>
                     <span class="sessions-label">Imaging Sessions</span>
-                    <button class="btn-primary btn-sm" 
+                    <button class="btn-primary btn-sm"
                             id="add-session-btn-${project.id}"
                             style="display: none; margin-left: auto;"
                             onclick="event.stopPropagation(); ImagingLogView.showSessionModal(null, ${project.id})">
                         + Add Session
                     </button>
                 </div>
-                
+
                 <!-- Sessions Section (Collapsible) -->
                 <div id="${sessionsId}" class="project-sessions-container">
                     ${sessions.length > 0 ? `
@@ -220,7 +221,7 @@ const ImagingLogView = {
             <tbody>
             ${sessions.map(session => {
                 const exposureCount = session.usedExposures !== undefined && session.usedExposures !== '' && session.usedExposures !== 0
-                      ? session.usedExposures 
+                      ? session.usedExposures
                       : (session.numExposures || 0);
                 const integrationSeconds = session.subLength * exposureCount;
                 return `
@@ -231,7 +232,7 @@ const ImagingLogView = {
                                             <td>${this.formatIntegrationTime(integrationSeconds)}</td>
                                             <td>${this.escapeHtml(session.location)}</td>
                                             <td onclick="event.stopPropagation()">
-                                                <button class="btn-danger btn-sm" 
+                                                <button class="btn-danger btn-sm"
                                                         onclick="ImagingLogView.deleteSession(${session.id})">
                                                     Delete
                                                 </button>
@@ -246,13 +247,13 @@ const ImagingLogView = {
             </div>
         `;
     },
-    
+
     /**
      * Sort projects
      */
     sortProjects(projects, sortValue) {
         const sorted = [...projects];
-        
+
         switch (sortValue) {
         case 'modified-desc':
             sorted.sort((a, b) => new Date(b.modified) - new Date(a.modified));
@@ -271,30 +272,30 @@ const ImagingLogView = {
             sorted.sort((a, b) => statusOrder.indexOf(a.status) - statusOrder.indexOf(b.status));
             break;
         }
-        
+
         return sorted;
     },
-    
+
     /**
      * Show project modal (create or edit)
      */
     async showProjectModal(projectId = null) {
         this.currentProjectId = projectId;
         this.selectedTargets = [];
-        
+
         const title = projectId ? 'Edit Project' : 'New Project';
-        
+
         this.openModal('manage-project-template', title, async (action, modalBody) => {
             if (action === 'save') {
                 await this.handleSaveProject(modalBody);
             }
         });
-        
+
         setTimeout(async () => {
             await this.initializeProjectModal(projectId);
         }, 0);
     },
-    
+
     /**
      * Initialize project modal
      */
@@ -320,10 +321,10 @@ const ImagingLogView = {
                         requestAnimationFrame(() => {
                             // Double RAF ensures reflow is complete
                             notesTextarea.scrollTop = notesTextarea.scrollHeight;
-                            
+
                             const modalBody = document.getElementById('modal-body');
                             const modalContent = document.querySelector('.modal-content');
-                            
+
                             if (modalBody) {
                                 modalBody.scrollTop = modalBody.scrollHeight;
                             }
@@ -342,7 +343,7 @@ const ImagingLogView = {
         } else {
             console.log('Elements not found!');
         }
-        
+
         // Set up target search
         const searchInput = document.getElementById('project-target-search');
         if (searchInput) {
@@ -350,14 +351,14 @@ const ImagingLogView = {
                 this.searchTargetsForProject(e.target.value);
             });
         }
-        
+
         if (projectId) {
             // Edit mode - load project data
             const project = await ImagingLogManager.getProject(projectId);
             document.getElementById('project-name').value = project.name;
             document.getElementById('project-status').value = project.status;
             document.getElementById('project-notes').value = project.notes || '';
-            
+
             // Load selected targets
             this.selectedTargets = [...project.targetDesignations];
             this.renderSelectedTargets();
@@ -367,46 +368,46 @@ const ImagingLogView = {
             this.renderSelectedTargets();
         }
     },
-    
+
     /**
      * Search targets for project
      */
     searchTargetsForProject(query) {
         const resultsContainer = document.getElementById('project-target-search-results');
         if (!resultsContainer) return;
-        
+
         if (!query || query.length < 2) {
             resultsContainer.innerHTML = '';
             resultsContainer.style.display = 'none';
             return;
         }
-        
+
         const results = DataManager.searchTargets(query, 10);
-        
+
         if (results.length === 0) {
             resultsContainer.innerHTML = '<p style="padding: 0.5rem; color: var(--text-secondary);">No results</p>';
             resultsContainer.style.display = 'block';
             return;
         }
-        
+
         let html = '';
         results.forEach(target => {
-            const displayName = target.common 
+            const displayName = target.common
                   ? `${target.object} (${target.common})`
                   : target.object;
-            
+
             html += `
-                <div class="target-search-result" 
+                <div class="target-search-result"
                      onclick="ImagingLogView.addTargetToProject('${this.escapeHtml(target.object)}')">
                     ${this.escapeHtml(displayName)}
                 </div>
             `;
         });
-        
+
         resultsContainer.innerHTML = html;
         resultsContainer.style.display = 'block';
     },
-    
+
     /**
      * Add target to project
      */
@@ -415,21 +416,21 @@ const ImagingLogView = {
             UIManager.showToast('This target is already in the project', 'error');
             return;
         }
-        
+
         this.selectedTargets.push(targetDesignation);
         this.renderSelectedTargets();
-        
+
         // Clear search
         const searchInput = document.getElementById('project-target-search');
         if (searchInput) searchInput.value = '';
-        
+
         const resultsContainer = document.getElementById('project-target-search-results');
         if (resultsContainer) {
             resultsContainer.innerHTML = '';
             resultsContainer.style.display = 'none';
         }
     },
-    
+
     /**
      * Remove target from project
      */
@@ -437,26 +438,26 @@ const ImagingLogView = {
         this.selectedTargets = this.selectedTargets.filter(d => d !== targetDesignation);
         this.renderSelectedTargets();
     },
-    
+
     /**
      * Render selected targets
      */
     renderSelectedTargets() {
         const container = document.getElementById('project-selected-targets-list');
         if (!container) return;
-        
+
         if (this.selectedTargets.length === 0) {
             container.innerHTML = '<p style="color: var(--text-secondary); font-style: italic;">No targets selected</p>';
             return;
         }
-        
+
         let html = '';
         this.selectedTargets.forEach(designation => {
             const target = DataManager.getTarget(designation);
-            const displayName = target && target.common 
+            const displayName = target && target.common
                   ? `${designation} (${target.common})`
                   : designation;
-            
+
             // Get alternate designations from Other field
             let alsoText = '';
             if (target && target.other) {
@@ -465,21 +466,21 @@ const ImagingLogView = {
                     alsoText = ` <span style="color: var(--text-secondary); font-size: 0.9em;">(also: ${this.escapeHtml(otherDesignations.join(', '))})</span>`;
                 }
             }
-            
+
             html += `
                 <div class="selected-target-item">
                     <span>${this.escapeHtml(displayName)}${alsoText}</span>
-                    <button class="btn-danger btn-sm" 
+                    <button class="btn-danger btn-sm"
                             onclick="ImagingLogView.removeTargetFromProject('${this.escapeHtml(designation)}')">
                         Remove
                     </button>
                 </div>
             `;
         });
-        
+
         container.innerHTML = html;
     },
-    
+
     /**
      * Handle save project
      */
@@ -487,21 +488,21 @@ const ImagingLogView = {
         const name = document.getElementById('project-name')?.value.trim();
         const status = document.getElementById('project-status')?.value;
         const notes = document.getElementById('project-notes')?.value.trim();
-        
+
         const projectData = {
             name: name,
             targetDesignations: this.selectedTargets,
             status: status,
             notes: notes
         };
-        
+
         // Validate
         const validation = ImagingLogManager.validateProject(projectData);
         if (!validation.valid) {
             UIManager.showToast(validation.error, 'error');
             return;
         }
-        
+
         try {
             if (this.currentProjectId) {
                 // Update existing
@@ -512,13 +513,13 @@ const ImagingLogView = {
                 await ImagingLogManager.createProject(projectData);
                 UIManager.showToast(`Project "${name}" created`, 'success');
             }
-            
+
             // Auto-update pattern-based programs with new targets
             await this.updatePatternProgramsFromProject(projectData.targetDesignations);
-            
+
             // Close modal
             UIManager.closeModal();
-            
+
             // Refresh project list
             await this.renderProjectList();
         } catch (error) {
@@ -526,29 +527,29 @@ const ImagingLogView = {
             UIManager.showToast('Error saving project: ' + error.message, 'error');
         }
     },
-    
+
     async updatePatternProgramsFromProject(targetDesignations) {
         // Get all pattern-based programs
         const allPrograms = await ImagingLogManager.getAllPrograms();
         const patternPrograms = allPrograms.filter(p => ImagingLogManager.isProgramPatternBased(p));
-        
+
         // Expand target designations to include Other field
         const expandedDesignations = new Set();
         targetDesignations.forEach(designation => {
             expandedDesignations.add(designation);
-            
+
             const target = DataManager.getTarget(designation);
             if (target && target.other) {
                 const otherDesignations = target.other.split(',').map(d => d.trim()).filter(d => d.length > 0);
                 otherDesignations.forEach(other => expandedDesignations.add(other));
             }
         });
-        
+
         // For each pattern program, check if any targets match
         for (const program of patternPrograms) {
             let updated = false;
             const observedSet = new Set(program.observedTargets || []);
-            
+
             expandedDesignations.forEach(designation => {
                 if (ImagingLogManager.matchesPattern(designation, program.catalogPrefix, program.maxNumber)) {
                     if (!observedSet.has(designation)) {
@@ -557,7 +558,7 @@ const ImagingLogView = {
                     }
                 }
             });
-            
+
             // Update program if new targets were added
             if (updated) {
                 const updateData = {
@@ -575,14 +576,14 @@ const ImagingLogView = {
         // Get all pattern-based programs
         const allPrograms = await ImagingLogManager.getAllPrograms();
         const patternPrograms = allPrograms.filter(p => ImagingLogManager.isProgramPatternBased(p));
-        
+
         // Get all remaining projects
         const allProjects = await ImagingLogManager.getAllProjects();
-        
+
         // For each pattern program, rebuild from scratch
         for (const program of patternPrograms) {
             const observedTargets = new Set();
-            
+
             // Scan all projects
             allProjects.forEach(project => {
                 project.targetDesignations.forEach(designation => {
@@ -590,7 +591,7 @@ const ImagingLogView = {
                     if (ImagingLogManager.matchesPattern(designation, program.catalogPrefix, program.maxNumber)) {
                         observedTargets.add(designation);
                     }
-                    
+
                     // Also check Other field for alternate designations
                     const target = DataManager.getTarget(designation);
                     if (target && target.other) {
@@ -603,7 +604,7 @@ const ImagingLogView = {
                     }
                 });
             });
-            
+
             // Update program
             const updateData = {
                 name: program.name,
@@ -613,7 +614,7 @@ const ImagingLogView = {
             };
             await ImagingLogManager.updateProgram(program.id, updateData);
         }
-    },    
+    },
 
     /**
      * Open modal using UIManager's modal system
@@ -643,7 +644,7 @@ const ImagingLogView = {
 
         setTimeout(async () => {
             await this.initializeSessionModal(sessionId, projectId);
-            
+
             // Auto-populate from most recent session if creating new session
             if (!sessionId && projectId) {
                 await this.autoPopulateSessionFields(projectId);
@@ -758,7 +759,7 @@ const ImagingLogView = {
             filterSelect.innerHTML += `<option value="${name}">${name}</option>`;
         });
         filterSelect.innerHTML += '<option value="__ADD_NEW__">+ Add New Filter...</option>';
-        
+
         // Set up filter change handler for inline creation
         filterSelect.addEventListener('change', (e) => {
             if (e.target.value === '__ADD_NEW__') {
@@ -875,7 +876,7 @@ const ImagingLogView = {
         let currentJD = startJD;
         let maxAltitude = -90;
         let transitJD = startJD;
-        
+
         // Search every minute for 24 hours
         for (let i = 0; i < 1440; i++) {
             const altitude = getAltitude(currentJD, targetRA, targetDec, latitude, longitude);
@@ -885,7 +886,7 @@ const ImagingLogView = {
             }
             currentJD += oneMinute;
         }
-        
+
         return transitJD;
     },
 
@@ -1006,11 +1007,11 @@ const ImagingLogView = {
             // Get the session to find its project
             const session = await ImagingLogManager.getSession(sessionId);
             const projectId = session.projectId;
-            
+
             await ImagingLogManager.deleteSession(sessionId);
             UIManager.showToast('Session deleted', 'success');
             await this.renderProjectList();
-            
+
             // Re-expand the project's sessions
             setTimeout(() => {
                 const sessionsContainer = document.getElementById(`project-sessions-${projectId}`);
@@ -1029,7 +1030,7 @@ const ImagingLogView = {
         }
     },
 
-    
+
     /**
      * Delete project
      */
@@ -1038,34 +1039,34 @@ const ImagingLogView = {
         try {
             await ImagingLogManager.deleteProject(projectId);
             UIManager.showToast(`Project "${project.name}" deleted`, 'success');
-            
+
             // Rebuild all pattern-based programs from remaining projects
             await this.rebuildPatternPrograms();
-            
+
             await this.renderProjectList();
         } catch (error) {
             console.error('Error deleting project:', error);
             UIManager.showToast('Error deleting project: ' + error.message, 'error');
         }
     },
-    
+
     /**
      * Handle edit project button click
      */
     async handleEditProject(projectId) {
         await this.showProjectModal(projectId);
     },
-    
+
     /**
      * Handle delete project button click with confirmation
      */
     async handleDeleteProject(projectId) {
         const project = await ImagingLogManager.getProject(projectId);
-        
+
         if (!confirm(`This action will permanently delete the project "${project.name}" and all its sessions. Are you sure?`)) {
             return;
         }
-        
+
         await this.deleteProject(projectId);
     },
 
@@ -1076,10 +1077,10 @@ const ImagingLogView = {
         const sessionsContainer = document.getElementById(`project-sessions-${projectId}`);
         const chevron = document.getElementById(`chevron-${projectId}`);
         const addButton = document.getElementById(`add-session-btn-${projectId}`);
-        
+
         if (sessionsContainer) {
             const isExpanded = sessionsContainer.classList.contains('expanded');
-            
+
             if (isExpanded) {
                 // Collapse - set max-height to current height first, then to 0
                 sessionsContainer.style.maxHeight = sessionsContainer.scrollHeight + 'px';
@@ -1092,7 +1093,7 @@ const ImagingLogView = {
                 sessionsContainer.classList.add('expanded');
                 sessionsContainer.style.maxHeight = sessionsContainer.scrollHeight + 'px';
             }
-            
+
             // Rotate chevron
             if (chevron) {
                 if (isExpanded) {
@@ -1101,7 +1102,7 @@ const ImagingLogView = {
                     chevron.classList.add('expanded');
                 }
             }
-            
+
             // Show/hide add button
             if (addButton) {
                 addButton.style.display = isExpanded ? 'none' : 'inline-block';
@@ -1116,14 +1117,14 @@ const ImagingLogView = {
         const hours = seconds / 3600;
         return hours.toFixed(1) + 'h';
     },
-    
+
     /**
      * Get status CSS class
      */
     getStatusClass(status) {
         return 'status-' + status.toLowerCase().replace(/ /g, '-');
     },
-    
+
     /**
      * Escape HTML to prevent XSS
      */
@@ -1139,35 +1140,35 @@ const ImagingLogView = {
     showInlineFilterInput() {
         const filterSelect = document.getElementById('session-filter');
         const filterInput = document.getElementById('session-filter-new-input');
-        
+
         if (!filterInput) return;
-        
+
         // Store previous value
         const previousValue = filterSelect.value;
-        
+
         // Hide dropdown, show input
         filterSelect.style.display = 'none';
         filterInput.style.display = 'block';
         filterInput.value = '';
         filterInput.focus();
-        
+
         // Handle Enter key
         const handleEnter = async (e) => {
             if (e.key === 'Enter') {
                 e.preventDefault();
                 const newFilterName = filterInput.value.trim();
-                
+
                 if (newFilterName) {
                     await this.saveInlineFilter(newFilterName);
                 } else {
                     this.hideInlineFilterInput();
                 }
-                
+
                 filterInput.removeEventListener('keydown', handleEnter);
                 filterInput.removeEventListener('keydown', handleEsc);
             }
         };
-        
+
         // Handle Esc key
         const handleEsc = (e) => {
             if (e.key === 'Escape') {
@@ -1177,10 +1178,10 @@ const ImagingLogView = {
                 filterInput.removeEventListener('keydown', handleEsc);
             }
         };
-        
+
         filterInput.addEventListener('keydown', handleEnter);
         filterInput.addEventListener('keydown', handleEsc);
-        
+
         // Handle blur (click outside)
         const handleBlur = () => {
             setTimeout(() => {
@@ -1190,24 +1191,24 @@ const ImagingLogView = {
                 filterInput.removeEventListener('keydown', handleEsc);
             }, 200);
         };
-        
+
         filterInput.addEventListener('blur', handleBlur);
     },
-    
+
     /**
      * Hide inline filter input
      */
     hideInlineFilterInput() {
         const filterSelect = document.getElementById('session-filter');
         const filterInput = document.getElementById('session-filter-new-input');
-        
+
         if (!filterInput) return;
-        
+
         filterInput.style.display = 'none';
         filterSelect.style.display = 'block';
         filterSelect.value = ''; // Reset to "Select filter..."
     },
-    
+
     /**
      * Save inline filter
      */
@@ -1218,24 +1219,24 @@ const ImagingLogView = {
             this.hideInlineFilterInput();
             return;
         }
-        
+
         try {
             // Save filter
             await DataManager.saveFilter(name);
             UIManager.showToast(`Filter "${name}" added`, 'success');
-            
+
             // Refresh dropdown
             await this.populateSessionEquipmentDropdowns();
-            
+
             // Select the new filter
             const filterSelect = document.getElementById('session-filter');
             filterSelect.value = name;
-            
+
             // Hide input, show dropdown
             const filterInput = document.getElementById('session-filter-new-input');
             filterInput.style.display = 'none';
             filterSelect.style.display = 'block';
-            
+
         } catch (error) {
             console.error('Error saving filter:', error);
             UIManager.showToast('Error saving filter: ' + error.message, 'error');
@@ -1289,7 +1290,7 @@ const ImagingLogView = {
         }
 
         container.innerHTML = html;
-        
+
         // Add action button listeners
         const actionButtons = document.querySelectorAll('.project-action-btn[data-program-id]');
         actionButtons.forEach(btn => {
@@ -1298,7 +1299,7 @@ const ImagingLogView = {
                 const programId = parseInt(btn.getAttribute('data-program-id'));
                 const action = btn.getAttribute('data-action');
                 console.log('Program ID:', programId, 'Action:', action);
-                
+
                 if (action === 'delete') {
                     await this.handleDeleteProgram(programId);
                 } else if (action === 'edit') {
@@ -1315,10 +1316,10 @@ const ImagingLogView = {
         // Get progress
         const progress = await ImagingLogManager.getProgramProgress(program.id);
         const progressPercent = parseFloat(progress.percentage);
-        
+
         // Determine if pattern-based or manual
         const isPattern = ImagingLogManager.isProgramPatternBased(program);
-        
+
         // Calculate status based on progress
         let status = 'Not Started';
         if (progress.imaged > 0 && progress.imaged < progress.total) {
@@ -1326,10 +1327,10 @@ const ImagingLogView = {
         } else if (progress.imaged === progress.total && progress.total > 0) {
             status = 'Complete';
         }
-        
+
         // Status badge
         const statusClass = status === 'Complete' ? 'status-completed' : 'status-acquiring-data';
-        
+
         return `
             <div class="project-card">
                 <div class="project-card-header">
@@ -1340,24 +1341,24 @@ const ImagingLogView = {
                         </div>
                     </div>
                     <div class="project-card-actions">
-                        <button class="project-action-btn project-action-btn-delete" 
+                        <button class="project-action-btn project-action-btn-delete"
                                 data-program-id="${program.id}" data-action="delete">
                             Delete Program
                         </button>
-                        <button class="project-action-btn project-action-btn-edit" 
+                        <button class="project-action-btn project-action-btn-edit"
                                 data-program-id="${program.id}" data-action="edit">
                             Edit Program
                         </button>
                     </div>
                 </div>
-                
+
                 <div class="project-card-meta">
                     <span>Targets: ${progress.total}</span>
                     <span>Imaged: ${progress.imaged} (${progressPercent}%)</span>
                     <span>Remaining: ${progress.total - progress.imaged}</span>
                     <span class="project-status-badge ${statusClass}">${status}</span>
                 </div>
-                
+
                 <!-- Progress bar -->
                 <div style="margin-top: 0.75rem;">
                     <div style="background: var(--border-color); height: 8px; border-radius: 4px; overflow: hidden;">
@@ -1375,7 +1376,7 @@ const ImagingLogView = {
     async handleEditProgram(programId) {
         await this.showImportProgramModal(programId);
     },
-    
+
     /**
      * Handle delete program button click with confirmation
      */
@@ -1388,7 +1389,7 @@ const ImagingLogView = {
      */
     async showProgramModal(programId = null) {
         const modal = document.getElementById('program-modal');
-        
+
         modal.innerHTML = `
             <div class="modal-content">
                 <div class="modal-header">
@@ -1400,7 +1401,7 @@ const ImagingLogView = {
                         <label for="program-name">Program Name</label>
                         <input type="text" id="program-name" placeholder="e.g., Messier Marathon">
                     </div>
-                    
+
                     <div class="form-group">
                         <label>Program Type</label>
                         <div style="display: flex; gap: 1.5rem; margin-top: 0.5rem;">
@@ -1414,7 +1415,7 @@ const ImagingLogView = {
                             </label>
                         </div>
                     </div>
-                    
+
                     <!-- Pattern Mode Fields -->
                     <div id="pattern-fields" style="display: none;">
                         <div class="form-group">
@@ -1426,7 +1427,7 @@ const ImagingLogView = {
                             <input type="number" id="program-max-number" min="1" placeholder="e.g., 7840">
                         </div>
                     </div>
-                    
+
                     <!-- Manual List Fields -->
                     <div id="manual-fields">
                         <div class="form-group">
@@ -1434,9 +1435,9 @@ const ImagingLogView = {
                                 Target List
                                 <button type="button" class="btn-sm" id="import-targets-btn">Import from Database</button>
                             </label>
-                            <textarea id="program-targets" rows="10" 
+                            <textarea id="program-targets" rows="10"
                                 placeholder="Enter (or paste) target designations (one per line)&#10;M 31&#10;M 42&#10;NGC 7000"></textarea>
-                            
+
                             <!-- Import Results Display -->
                             <div id="import-results" style="display: none; margin-top: 1rem; padding: 1rem; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 4px;">
                                 <div id="import-results-summary" style="margin-bottom: 1rem;"></div>
@@ -1446,7 +1447,7 @@ const ImagingLogView = {
                         </div>
                         </div>
                     </div>
-                    
+
                     <div class="form-group">
                         <label for="program-status">Status</label>
                         <select id="program-status">
@@ -1462,9 +1463,9 @@ const ImagingLogView = {
                 </div>
             </div>
         `;
-        
+
         modal.style.display = 'flex';
-        
+
         setTimeout(async () => {
             await this.initializeProgramModal(programId);
         }, 0);
@@ -1482,7 +1483,7 @@ const ImagingLogView = {
         const statusField = document.getElementById('program-status');
         const importBtn = document.getElementById('import-targets-btn');
         const saveBtn = document.getElementById('save-program-btn');
-        
+
         // Toggle fields based on program type
         const toggleFields = () => {
             if (patternRadio.checked) {
@@ -1493,17 +1494,17 @@ const ImagingLogView = {
                 manualFields.style.display = 'block';
             }
         };
-        
+
         patternRadio.addEventListener('change', toggleFields);
         manualRadio.addEventListener('change', toggleFields);
-        
+
         // If editing existing program
         if (programId) {
             const program = await ImagingLogManager.getProgram(programId);
             if (program) {
                 nameField.value = program.name;
                 statusField.value = program.status;
-                
+
                 // Detect program mode
                 if (ImagingLogManager.isProgramPatternBased(program)) {
                     patternRadio.checked = true;
@@ -1513,16 +1514,16 @@ const ImagingLogView = {
                     manualRadio.checked = true;
                     targetsField.value = program.targetDesignations.join('\n');
                 }
-                
+
                 toggleFields();
             }
         }
-        
+
         // Import button handler
         importBtn.addEventListener('click', () => {
             this.showTargetImportModal(programId);
         });
-        
+
         // Save button handler
         saveBtn.addEventListener('click', async () => {
             const name = nameField.value.trim();
@@ -1530,45 +1531,45 @@ const ImagingLogView = {
                 UIManager.showToast('Program name is required', 'error');
                 return;
             }
-            
+
             const programData = {
                 name: name,
                 status: statusField.value
             };
-            
+
             // Pattern-based mode
             if (patternRadio.checked) {
                 const prefix = catalogPrefixField.value.trim();
                 const maxNum = parseInt(maxNumberField.value);
-                
+
                 if (!prefix) {
                     UIManager.showToast('Catalog prefix is required', 'error');
                     return;
                 }
-                
+
                 if (!maxNum || maxNum < 1) {
                     UIManager.showToast('Maximum number must be at least 1', 'error');
                     return;
                 }
-                
+
                 programData.catalogPrefix = prefix;
                 programData.maxNumber = maxNum;
-            } 
+            }
             // Manual list mode
             else {
                 const targetList = targetsField.value
                     .split('\n')
                     .map(line => line.trim())
                     .filter(line => line.length > 0);
-                
+
                 if (targetList.length === 0) {
                     UIManager.showToast('At least one target is required', 'error');
                     return;
                 }
-                
+
                 programData.targetDesignations = targetList;
             }
-            
+
             try {
                 if (programId) {
                     await ImagingLogManager.updateProgram(programId, programData);
@@ -1577,7 +1578,7 @@ const ImagingLogView = {
                     await ImagingLogManager.createProgram(programData);
                     UIManager.showToast('Program created', 'success');
                 }
-                
+
                 this.closeProgramModal();
                 await this.renderProgramsList();
                 await this.renderReports();
@@ -1595,13 +1596,13 @@ const ImagingLogView = {
     showImportProgramModal(programId = null) {
         this.currentProgramId = programId;  // Store for later use
         const title = programId ? 'Edit Program' : 'New Program';
-        
+
         this.openModal('import-program-template', title, async (action, modalBody) => {
             if (action === 'import') {
                 await this.handleSaveProgram(modalBody, programId);
             }
         });
-        
+
         setTimeout(async () => {
             await this.initializeImportProgramModal(programId);
         }, 0);
@@ -1612,7 +1613,7 @@ const ImagingLogView = {
         const manualRadio = document.getElementById('program-type-manual');
         const patternFields = document.getElementById('pattern-fields');
         const manualFields = document.getElementById('manual-fields');
-        
+
         // Toggle fields based on program type
         const toggleFields = () => {
             if (patternRadio && manualRadio) {
@@ -1625,19 +1626,19 @@ const ImagingLogView = {
                 }
             }
         };
-        
+
         if (patternRadio) patternRadio.addEventListener('change', toggleFields);
         if (manualRadio) manualRadio.addEventListener('change', toggleFields);
-        
+
         // If editing existing program
         if (programId) {
             console.log('Loading program:', programId);
             const program = await ImagingLogManager.getProgram(programId);
             console.log('Program loaded:', program);
-            
+
             if (program) {
                 document.getElementById('program-name').value = program.name;
-                
+
                 // Detect program mode
                 if (ImagingLogManager.isProgramPatternBased(program)) {
                     console.log('Pattern-based program detected');
@@ -1645,12 +1646,12 @@ const ImagingLogView = {
                     const maxField = document.getElementById('program-max-number');
                     console.log('Prefix field:', prefixField);
                     console.log('Max field:', maxField);
-                    
+
                     patternRadio.checked = true;
-                    
+
                     if (prefixField) prefixField.value = program.catalogPrefix;
                     if (maxField) maxField.value = program.maxNumber;
-                    
+
                     console.log('Set prefix to:', program.catalogPrefix);
                     console.log('Set max to:', program.maxNumber);
                     patternRadio.checked = true;
@@ -1661,7 +1662,7 @@ const ImagingLogView = {
                     manualRadio.checked = true;
                     document.getElementById('program-targets').value = program.targetDesignations.join('\n');
                 }
-                
+
                 toggleFields();
             }
         }
@@ -1673,34 +1674,34 @@ const ImagingLogView = {
     async handleSaveProgram(modalBody, programId = null) {
         const name = document.getElementById('program-name')?.value.trim();
         const patternRadio = document.getElementById('program-type-pattern');
-        
+
         if (!name) {
             UIManager.showToast('Program name is required', 'error');
             return;
         }
-        
+
         const programData = {
             name: name
         };
-        
+
         // Pattern-based mode
         if (patternRadio && patternRadio.checked) {
             const prefix = document.getElementById('program-catalog-prefix')?.value.trim();
             const maxNum = parseInt(document.getElementById('program-max-number')?.value);
-            
+
             if (!prefix) {
                 UIManager.showToast('Catalog prefix is required', 'error');
                 return;
             }
-            
+
             if (!maxNum || maxNum < 1) {
                 UIManager.showToast('Maximum number must be at least 1', 'error');
                 return;
             }
-            
+
             programData.catalogPrefix = prefix;
             programData.maxNumber = maxNum;
-            
+
             try {
                 if (programId) {
                     // Editing existing program - clear and re-populate
@@ -1711,18 +1712,18 @@ const ImagingLogView = {
                         observedTargets: []  // Clear existing targets
                     };
                     await ImagingLogManager.updateProgram(programId, updateData);
-                    
+
                     // Re-scan all projects for matching targets
                     const allProjects = await ImagingLogManager.getAllProjects();
                     const observedTargets = new Set();
-                    
+
                     allProjects.forEach(project => {
                         project.targetDesignations.forEach(designation => {
                             // Check primary designation
                             if (ImagingLogManager.matchesPattern(designation, prefix, maxNum)) {
                                 observedTargets.add(designation);
                             }
-                            
+
                             // Check Other field for alternate designations
                             const target = DataManager.getTarget(designation);
                             if (target && target.other) {
@@ -1735,7 +1736,7 @@ const ImagingLogView = {
                             }
                         });
                     });
-                    
+
                     // Update with new observed targets
                     if (observedTargets.size > 0) {
                         updateData.observedTargets = Array.from(observedTargets);
@@ -1744,24 +1745,24 @@ const ImagingLogView = {
                     } else {
                         UIManager.showToast(`Program "${name}" updated`, 'success');
                     }
-                    
+
                     UIManager.closeModal();
                     await this.renderProgramsList();
                 } else {
                     // Creating new program
                     const newProgram = await ImagingLogManager.createProgram(programData);
-                    
+
                     // Auto-populate from existing projects
                     const allProjects = await ImagingLogManager.getAllProjects();
                     const observedTargets = new Set();
-                    
+
                     allProjects.forEach(project => {
                         project.targetDesignations.forEach(designation => {
                             // Check primary designation
                             if (ImagingLogManager.matchesPattern(designation, prefix, maxNum)) {
                                 observedTargets.add(designation);
                             }
-                            
+
                             // Check Other field for alternate designations
                             const target = DataManager.getTarget(designation);
                             if (target && target.other) {
@@ -1774,7 +1775,7 @@ const ImagingLogView = {
                             }
                         });
                     });
-                    
+
                     // Update program with observed targets
                     if (observedTargets.size > 0) {
                         const updateData = {
@@ -1788,7 +1789,7 @@ const ImagingLogView = {
                     } else {
                         UIManager.showToast(`Program "${name}" created`, 'success');
                     }
-                    
+
                     UIManager.closeModal();
                     await this.renderProgramsList();
                 }
@@ -1796,29 +1797,29 @@ const ImagingLogView = {
                 console.error('Error saving program:', error);
                 UIManager.showToast('Error saving program: ' + error.message, 'error');
             }
-        } 
+        }
         // Manual list mode
         else {
             const targetList = document.getElementById('program-targets')?.value.trim();
-            
+
             if (!targetList) {
                 UIManager.showToast('Target list is required', 'error');
                 return;
             }
-            
+
             try {
                 // Match targets against database
                 const results = await ImagingLogManager.matchProgramTargets(targetList);
-                
+
                 // Display results
                 this.displayImportResults(results);
-                
+
                 // If we have matches, create the program
                 if (results.matched.length > 0) {
                     const targetDesignations = results.matched.map(m => m.target.object);
-                    
+
                     programData.targetDesignations = targetDesignations;
-                    
+
                     if (programId) {
                         // Editing existing manual list program
                         await ImagingLogManager.updateProgram(programId, programData);
@@ -1828,7 +1829,7 @@ const ImagingLogView = {
                         await ImagingLogManager.createProgram(programData);
                         UIManager.showToast(`Program "${name}" created with ${results.matched.length} targets`, 'success');
                     }
-                    
+
 //                    UIManager.closeModal();
                     await this.renderProgramsList();
                 } else {
@@ -1873,7 +1874,7 @@ const ImagingLogView = {
                         Matched Targets (${results.matched.length})
                     </summary>
                     <div style="max-height: 200px; overflow-y: auto; padding: 0.5rem; background: var(--hover-bg); border-radius: 4px;">
-                        ${results.matched.map(m => 
+                        ${results.matched.map(m =>
                             `<div>${this.escapeHtml(m.input)} → ${this.escapeHtml(m.target.object)}</div>`
                         ).join('')}
                     </div>
@@ -1889,7 +1890,7 @@ const ImagingLogView = {
                         Failed Targets (${results.failed.length})
                     </summary>
                     <div style="max-height: 200px; overflow-y: auto; padding: 0.5rem; background: var(--hover-bg); border-radius: 4px; margin-bottom: 0.5rem;">
-                        ${results.failed.map(f => 
+                        ${results.failed.map(f =>
                             `<div>${this.escapeHtml(f.input)}</div>`
                         ).join('')}
                     </div>
@@ -1943,7 +1944,7 @@ const ImagingLogView = {
             UIManager.showToast('Error deleting program: ' + error.message, 'error');
         }
     },
-    
+
     // ============================================================================
     // Reports
     // ============================================================================
@@ -1963,16 +1964,16 @@ const ImagingLogView = {
     async renderCatalogCoverageReport() {
         const container = document.getElementById('report-catalog-coverage');
         if (!container) return;
-        
+
         // Get all projects and their targets
         const projects = await ImagingLogManager.getAllProjects();
         const allTargets = new Set();
-        
+
         projects.forEach(project => {
             project.targetDesignations.forEach(designation => {
                 // Add primary designation
                 allTargets.add(designation);
-                
+
                 // Add alternate designations from Other field
                 const target = DataManager.getTarget(designation);
                 if (target && target.other) {
@@ -1981,31 +1982,31 @@ const ImagingLogView = {
                 }
             });
         });
-        
+
         // Count by catalog
         const catalogCounts = {};
         allTargets.forEach(designation => {
             const catalog = this.getCatalogFromDesignation(designation);
             catalogCounts[catalog] = (catalogCounts[catalog] || 0) + 1;
         });
-        
+
         // Sort by count descending
         const sortedCatalogs = Object.entries(catalogCounts)
               .sort((a, b) => b[1] - a[1]);
-        
+
         if (sortedCatalogs.length === 0) {
             container.innerHTML = '<p style="color: var(--text-secondary);">No targets imaged yet.</p>';
             return;
         }
-        
+
         let html = '<table class="session-table">';
         html += '<thead><tr><th>Catalog</th><th>Targets Imaged</th></tr></thead>';
         html += '<tbody>';
-        
+
         sortedCatalogs.forEach(([catalog, count]) => {
             html += `<tr><td>${catalog}</td><td>${count}</td></tr>`;
         });
-        
+
         html += '</tbody></table>';
         container.innerHTML = html;
     },
@@ -2025,7 +2026,7 @@ const ImagingLogView = {
         }
 
         let html = '';
-        
+
         for (const program of programs) {
             const progress = await ImagingLogManager.getProgramProgress(program.id);
             const projects = await ImagingLogManager.getAllProjects();
@@ -2038,12 +2039,12 @@ const ImagingLogView = {
                     imagedTargets.add(designation);
                 });
             });
-            
+
             // Build completed targets section
             let completedSection = '';
             if (progress.imaged > 0) {
                 let completedTargets;
-                
+
                 if (isPattern) {
                     // Pattern-based: use observedTargets
                     completedTargets = (program.observedTargets || [])
@@ -2054,12 +2055,12 @@ const ImagingLogView = {
                         .filter(t => imagedTargets.has(t))
                         .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
                 }
-                
+
                 let completedHTML = '';
                 completedTargets.forEach(target => {
                     // First try direct match
                     let targetProjects = projects.filter(p => p.targetDesignations.includes(target));
-                    
+
                     // If no direct match, find projects where this target appears in Other field
                     if (targetProjects.length === 0) {
                         targetProjects = projects.filter(p => {
@@ -2073,21 +2074,21 @@ const ImagingLogView = {
                             });
                         });
                     }
-                    
-                    const projectLinks = targetProjects.map(proj => 
-                        `<span onclick="ImagingLogView.navigateToProject('${proj.id}')" 
+
+                    const projectLinks = targetProjects.map(proj =>
+                        `<span onclick="ImagingLogView.navigateToProject('${proj.id}')"
                                style="cursor: pointer; color: var(--primary-color); text-decoration: underline;">
                             ${this.escapeHtml(proj.name)}
                         </span>`
                     ).join(', ');
-                    
+
                     completedHTML += `
                         <div style="padding: 0.25rem;">
                             <strong>${target}:</strong> ${projectLinks || '<span style="color: var(--text-secondary);">No project found</span>'}
                         </div>
                     `;
                 });
-                
+
                 completedSection = `
                     <details style="margin-bottom: 0.5rem;">
                         <summary style="cursor: pointer; color: var(--success-color); font-size: 0.9rem;">
@@ -2099,14 +2100,14 @@ const ImagingLogView = {
                     </details>
                 `;
             }
-            
+
             // Build missing targets section (only for manual list programs)
             let missingSection = '';
             if (!isPattern) {
                 const missingTargets = program.targetDesignations.filter(
                     designation => !imagedTargets.has(designation)
                 );
-                
+
                 if (missingTargets.length > 0) {
                     const sortedMissing = missingTargets.sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
                     missingSection = `
@@ -2123,7 +2124,7 @@ const ImagingLogView = {
                     missingSection = '<div style="color: var(--success-color); font-weight: 600;">✓ Program Complete!</div>';
                 }
             }
-            
+
             html += `
                 <div class="info-card" style="margin-bottom: 1rem; padding: 1rem;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
@@ -2163,7 +2164,7 @@ const ImagingLogView = {
         }
         const statuses = ['Planning', 'Acquiring Data', 'Acquisition Complete', 'Processing', 'Completed'];
         const grouped = {};
-        
+
         statuses.forEach(status => {
             grouped[status] = projects.filter(p => p.status === status);
         });
@@ -2174,7 +2175,7 @@ const ImagingLogView = {
             const projectList = grouped[status];
             if (projectList.length === 0) continue;
             const totalTargets = projectList.reduce((sum, p) => sum + p.targetDesignations.length, 0);
-            
+
             let totalSessions = 0;
             for (const project of projectList) {
                 const sessions = await ImagingLogManager.getSessionsForProject(project.id);
@@ -2199,7 +2200,7 @@ const ImagingLogView = {
      */
     getCatalogFromDesignation(designation) {
         const prefix = designation.split(' ')[0].replace(/[0-9-]/g, '');
-        
+
         return CATALOG_MAP[prefix] || 'Other';
     },
 
@@ -2208,15 +2209,15 @@ const ImagingLogView = {
      */
     async autoPopulateSessionFields(projectId) {
         const sessions = await ImagingLogManager.getSessionsForProject(projectId);
-        
+
         if (sessions.length === 0) {
             return; // No previous sessions to copy from
         }
-        
+
         // Sort by date to get most recent
         sessions.sort((a, b) => new Date(b.date) - new Date(a.date));
         const mostRecent = sessions[0];
-        
+
         // Auto-populate these fields
         if (mostRecent.location) {
             document.getElementById('session-location').value = mostRecent.location;
@@ -2241,37 +2242,37 @@ const ImagingLogView = {
     async navigateToProject(projectId) {
         // Switch to Projects tab
         this.switchTab('projects');
-        
+
         // Clear status filter to show all projects
         const statusFilter = document.getElementById('imaging-log-project-status-filter');
         if (statusFilter) {
             statusFilter.value = ''; // Show all statuses
         }
-        
+
         // Wait for render
         await this.renderProjectList();
-        
+
         // Scroll to and expand the project
         setTimeout(() => {
             const projectCard = document.querySelector(`[data-project-id="${projectId}"]`);
             if (projectCard) {
                 projectCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                
+
                 // Add highlight effect
                 projectCard.style.transition = 'background-color 0.3s';
                 projectCard.style.backgroundColor = 'var(--primary-color)';
                 projectCard.style.opacity = '0.8';
-                
+
                 setTimeout(() => {
                     projectCard.style.backgroundColor = '';
                     projectCard.style.opacity = '';
                 }, 1500);
-                
+
                 // Expand sessions if collapsed
                 const sessionsContainer = document.getElementById(`project-sessions-${projectId}`);
                 const chevron = document.getElementById(`chevron-${projectId}`);
                 const addButton = document.getElementById(`add-session-btn-${projectId}`);
-                
+
                 if (sessionsContainer && sessionsContainer.style.display === 'none') {
                     sessionsContainer.style.display = 'block';
                     if (chevron) chevron.classList.add('expanded');
@@ -2283,6 +2284,6 @@ const ImagingLogView = {
                 console.log('Project card NOT found!');
             }
         }, 200);
-    }        
+    }
 
 };
