@@ -562,26 +562,26 @@ def convert_to_stars(targets):
         '2STAR': 'Double Star',
         'ASTER': 'Asterism'
     }
-    
+
     converted = 0
     for target in targets:
         target_type = target.get('Type')
         if target_type in star_type_map:
             # Change type to Stars
             target['Type'] = 'Stars'
-            
+
             # Append to Common field (handle None values)
             common = target.get('Common') or ''
             common = common.strip()
             star_designation = star_type_map[target_type]
-            
+
             if common:
                 target['Common'] = f"{common} ({star_designation})"
             else:
                 target['Common'] = f"({star_designation})"
-            
+
             converted += 1
-    
+
     log(f"Converted {converted} star targets (1STAR→Stars, 2STAR→Stars, ASTER→Stars)")
     return targets
 
@@ -756,6 +756,34 @@ def dupe_size_fields(targets):
     return modified_count
 
 
+def fix_size_order(targets):
+    """Swap Size_min and Size_max if min > max (values are reversed)."""
+    swapped_count = 0
+
+    for target in targets:
+        size_min_str = (target.get('Size_min') or '').strip()
+        size_max_str = (target.get('Size_max') or '').strip()
+
+        if not size_min_str or not size_max_str:
+            continue  # Skip if either value is missing
+
+        try:
+            size_min = float(size_min_str)
+            size_max = float(size_max_str)
+        except ValueError:
+            continue  # Skip if either value is not numeric
+
+        if size_min > size_max:
+            target['Size_min'] = size_max_str
+            target['Size_max'] = size_min_str
+            swapped_count += 1
+            log(f"  Swapped Size_min/Size_max for {target.get('Object')}: {size_min_str} ↔ {size_max_str}")
+
+    log(f"Fixed size order for {swapped_count} targets")
+    return swapped_count
+
+
+
 def main():
     global log_file
 
@@ -839,6 +867,10 @@ def main():
         if args.dupe_size:
             log("\nDuplicating size fields...")
             dupe_count = dupe_size_fields(targets)
+
+        # 2.75. Fix size field order (swap if min > max)
+        log("\nChecking size field order...")
+        fix_size_order(targets)
 
         # 3. Deduplicate records (requires prefer to have been run first)
         if args.dedupe_from_catalogues:
