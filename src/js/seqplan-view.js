@@ -133,21 +133,32 @@ const SeqPlanView = {
             select.appendChild(option);
         });
 
-        // Restore last selected location or use first available
-        const lastLocation = SettingsManager.getSetting('seqPlanLastLocation');
-        if (lastLocation && locations[lastLocation]) {
-            select.value = lastLocation;
-        } else {
-            const firstLocation = Object.keys(locations)[0];
-            if (firstLocation) {
-                select.value = firstLocation;
-            }
+        // Sync to global location on populate
+        const globalLocation = SettingsManager.getSelectedLocation();
+        if (globalLocation && select.querySelector(`option[value="${globalLocation}"]`)) {
+            select.value = globalLocation;
         }
 
-        // Save location when changed
-        select.addEventListener('change', () => {
-            SettingsManager.saveSetting('seqPlanLastLocation', select.value);
+        document.addEventListener('pinned-targets-updated', () => {
+            this.loadPinnedTargets();
         });
+
+        // Listen for location updates
+        document.addEventListener('locations-updated', () => {
+            this.populateLocationDropdown();
+        });
+
+        // Sync seq-plan location when sidebar location changes
+        const sidebarSelect = document.getElementById('sidebar-location-select');
+        if (sidebarSelect) {
+            sidebarSelect.addEventListener('change', (e) => {
+                const locationName = e.target.value;
+                if (locationName && select.querySelector(`option[value="${locationName}"]`)) {
+                    select.value = locationName;
+                    select.dispatchEvent(new Event('input'));
+                }
+            });
+        }
     },
 
     /**
