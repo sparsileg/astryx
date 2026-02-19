@@ -519,6 +519,62 @@ const SeqPlanView = {
         };
     },
 
+    showTargetDetailModal(targetId) {
+        const target = this.calculatedResults.find(t => t.targetId === targetId);
+        if (!target || !this.currentSession) return;
+
+        // Generate timeline events for this target only
+        const events = SeqPlanCalculations.generateTimelineEvents([target], this.currentSession);
+
+        // Build table rows
+        let rows = '';
+        events.forEach(event => {
+            const startTime = jdToDate(event.startJD).toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false});
+            const endTime = jdToDate(event.endJD).toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false});
+            const durationMin = ((event.endJD - event.startJD) * 24 * 60).toFixed(1);
+
+            const typeLabel = {
+                'autofocus':  'Autofocus',
+                'calibration': 'Calibration',
+                'imaging':    'Imaging',
+                'flip-pause': 'Flip Pause',
+                'flip':       'Meridian Flip'
+            }[event.type] || event.type;
+
+            rows += `
+                <tr>
+                    <td>${target.name}</td>
+                    <td>${typeLabel}</td>
+                    <td>${startTime}</td>
+                    <td>${endTime}</td>
+                    <td style="text-align: right;">${durationMin}m</td>
+                </tr>`;
+        });
+
+        const html = `
+            <table class="session-table">
+                <thead>
+                    <tr>
+                        <th>Target</th>
+                        <th>Event</th>
+                        <th>Start</th>
+                        <th>End</th>
+                        <th style="text-align: right;">Duration</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${rows}
+                </tbody>
+            </table>`;
+
+        // Open modal and inject content directly
+        UIManager.openModal(null, `${target.name} — Session Detail`, null);
+        const modalBody = document.getElementById('modal-body');
+        if (modalBody) {
+            modalBody.innerHTML = html;
+        }
+    },
+
     /**
      * Display calculation results
      */
@@ -553,7 +609,7 @@ const SeqPlanView = {
             // Main imaging entry (full window)
             html += `
             <p style="margin-bottom: 0.5rem;">
-                <strong>${index + 1}. ${target.name}</strong> •
+                <strong>${index + 1}. <a href="#" class="block-link" onclick="SeqPlanView.showTargetDetailModal('${target.targetId}'); return false;">${target.name}</a></strong> •
                 Start: ${targetStartTime.toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false})} •
                 End: ${targetEndTime.toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false})} (${target.imagingMinutes.toFixed(0)}m) •
                 ${target.exposureCount} × ${target.exposureTime}s${flipWarning}
