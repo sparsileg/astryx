@@ -11,10 +11,10 @@
 const APP_CONFIG = {
     APP_NAME: 'Specula',
     APP_TITLE: 'Specula - Astrophotography Planning Tool',
-    APP_VERSION: '0.9.0',
+    APP_VERSION: '0.10.0',
     DB_NAME: 'specula-db',
     DB_VERSION: 7,
-    TARGET_VERSION: '20260114',
+    TARGET_VERSION: '20260219',
     DEFAULT_THEME: 'Matrix',
 
     // Calculation constants
