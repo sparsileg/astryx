@@ -31,6 +31,36 @@
     margin-right: 0;
 }
 
+/* Utilities input fields - themed to match app */
+.utilities-card-grid input[type="number"],
+.utilities-card-grid input[type="text"],
+.utilities-card-grid select {
+    background: var(--input-bg);
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+    padding: 0.4rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.95rem;
+    height: 2.5rem;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.utilities-card-grid input[type="number"]:focus,
+.utilities-card-grid input[type="text"]:focus,
+.utilities-card-grid select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px var(--focus-ring);
+}
+
+/* Utilities card grid - two columns */
+.utilities-card-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
 /* Block links */
 
 .block-link {
