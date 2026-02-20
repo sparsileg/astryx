@@ -944,6 +944,14 @@
                     <option value="">Select sensor...</option>
                   </select>
                 </div>
+                <div class="form-group" style="display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                  <input type="checkbox" id="fov-show-target" style="cursor: pointer;" checked>
+                  <label for="fov-show-target" style="cursor: pointer; margin-bottom: 0;">Show target outline</label>
+                </div>
+                <div class="form-group" style="display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                  <input type="checkbox" id="fov-show-dss" style="cursor: pointer;">
+                  <label for="fov-show-dss" style="cursor: pointer; margin-bottom: 0;">Show DSS background image</label>
+                </div>
                 <div class="form-group" style="display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 0.5rem; margin-bottom: 0;">
                   <input type="checkbox" id="fov-show-moon" style="cursor: pointer;">
                   <label for="fov-show-moon" style="cursor: pointer; margin-bottom: 0;">Show full moon for size comparison</label>
@@ -1329,7 +1337,7 @@
               <option value="None">None</option>
               <option value="Intermittent">Intermittent</option>
               <option value="Hazy">Hazy</option>
-            </select>          </div>
+          </select>          </div>
           <div class="form-group">
             <label for="session-smoke">Smoke</label>
             <select id="session-smoke">
@@ -1363,59 +1371,59 @@
           </div>
         </div>
 
-      <!-- Acquisition -->
-      <div class="settings-section">
-        <h4>Acquisition</h4>
+        <!-- Acquisition -->
+        <div class="settings-section">
+          <h4>Acquisition</h4>
 
-        <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 1rem;">
-          <div class="form-group">
-            <label for="session-sub-length">Sub Length (seconds) *</label>
-            <input type="number"
-                   id="session-sub-length"
-                   min="1"
-                   placeholder="e.g., 300">
-          </div>
+          <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 1rem;">
+            <div class="form-group">
+              <label for="session-sub-length">Sub Length (seconds) *</label>
+              <input type="number"
+                     id="session-sub-length"
+                     min="1"
+                     placeholder="e.g., 300">
+            </div>
 
-          <div class="form-group">
-            <label for="session-num-exposures">Original Exposures *</label>
-            <input type="number"
-                   id="session-num-exposures"
-                   min="1"
-                   placeholder="e.g., 120">
-          </div>
+            <div class="form-group">
+              <label for="session-num-exposures">Original Exposures *</label>
+              <input type="number"
+                     id="session-num-exposures"
+                     min="1"
+                     placeholder="e.g., 120">
+            </div>
 
-          <div class="form-group">
-            <label for="session-used-exposures">Used</label>
-            <input type="number"
-                   id="session-used-exposures"
-                   min="0"
-                   placeholder="e.g., 115">
-          </div>
+            <div class="form-group">
+              <label for="session-used-exposures">Used</label>
+              <input type="number"
+                     id="session-used-exposures"
+                     min="0"
+                     placeholder="e.g., 115">
+            </div>
 
-          <div class="form-group">
-            <label>Integration Time</label>
-            <div id="session-integration-time"
-                 style="padding: 0.5rem;
-                        background: var(--hover-bg);
-                        border-radius: 4px;
-                        font-weight: 600;
-                        line-height: 2.5;">
-              -
+            <div class="form-group">
+              <label>Integration Time</label>
+              <div id="session-integration-time"
+                   style="padding: 0.5rem;
+                          background: var(--hover-bg);
+                          border-radius: 4px;
+                          font-weight: 600;
+                          line-height: 2.5;">
+                -
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- Notes -->
-      <div class="settings-section" style="border-bottom: none;">
-        <h4>Notes</h4>
+        <!-- Notes -->
+        <div class="settings-section" style="border-bottom: none;">
+          <h4>Notes</h4>
 
-        <div class="form-group">
-          <textarea id="session-notes"
-                    rows="6"
-                    placeholder="Session notes (Markdown)"></textarea>
+          <div class="form-group">
+            <textarea id="session-notes"
+                      rows="6"
+                      placeholder="Session notes (Markdown)"></textarea>
+          </div>
         </div>
-      </div>
     </template>
     <!-- END OF Manage Session Modal Template -->
 
@@ -1896,6 +1904,45 @@
           <div class="card-body">
             <div id="utilities-light-pollution-info">
               <!-- light pollution link will be populated here -->
+            </div>
+          </div>
+        </div>
+
+        <div class="utilities-card-grid">
+          <div class="card">
+            <div class="card-header">
+              <h3>Dust Mote Distance Estimator</h3>
+            </div>
+            <div class="card-body">
+              <div class="form-row" style="margin-bottom: 0.75rem;">
+                <div>
+                  <label for="dust-telescope-select">Telescope</label>
+                  <select id="dust-telescope-select" class="full-width">
+                    <option value="">Select telescope...</option>
+                  </select>
+                </div>
+                <div>
+                  <label for="dust-sensor-select">Sensor</label>
+                  <select id="dust-sensor-select" class="full-width">
+                    <option value="">Select sensor...</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-row" style="margin-bottom: 0.75rem;">
+                <div>
+                  <label for="dust-focal-ratio">Focal Ratio (f/)</label>
+                  <input type="number" id="dust-focal-ratio" class="full-width" step="0.1" min="1" placeholder="e.g. 7.2">
+                </div>
+                <div>
+                  <label for="dust-pixel-size">Pixel Size (µm)</label>
+                  <input type="number" id="dust-pixel-size" class="full-width" step="0.1" min="0.1" placeholder="e.g. 4.63">
+                </div>
+              </div>
+              <div style="margin-bottom: 0.75rem;">
+                <label for="dust-spot-pixels">Dust Spot Diameter (pixels)</label>
+                <input type="number" id="dust-spot-pixels" class="full-width" step="1" min="1" placeholder="measure in your imaging software">
+              </div>
+              <div id="dust-mote-result" style="margin-top: 1rem;"></div>
             </div>
           </div>
         </div>

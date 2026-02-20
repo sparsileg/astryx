@@ -58,22 +58,31 @@ const DBManager = {
                     db.createObjectStore(APP_CONFIG.STORES.TARGETS, { keyPath: 'object' });
                 }
 
+                // Version 7: Add DSS image cache store
+                if (oldVersion < 7) {
+                    console.log('Upgrading database to version 7...');
+                    if (!db.objectStoreNames.contains(APP_CONFIG.STORES.DSS_CACHE)) {
+                        db.createObjectStore(APP_CONFIG.STORES.DSS_CACHE, { keyPath: 'id' });
+                        console.log('Created dssCache store');
+                    }
+                }
+
                 // Version 6: Add Imaging Log stores
                 if (oldVersion < 6) {
                     console.log('Upgrading database to version 6...');
-                    
+
                     // Create filters store
                     if (!db.objectStoreNames.contains(APP_CONFIG.STORES.FILTERS)) {
                         db.createObjectStore(APP_CONFIG.STORES.FILTERS, { keyPath: 'name' });
                         console.log('Created filters store');
                     }
-                    
+
                     // Create imaging projects store
                     if (!db.objectStoreNames.contains(APP_CONFIG.STORES.IMAGING_PROJECTS)) {
                         db.createObjectStore(APP_CONFIG.STORES.IMAGING_PROJECTS, { keyPath: 'id', autoIncrement: true });
                         console.log('Created imagingProjects store');
                     }
-                    
+
                     // Create imaging sessions store with indices
                     if (!db.objectStoreNames.contains(APP_CONFIG.STORES.IMAGING_SESSIONS)) {
                         const sessionsStore = db.createObjectStore(APP_CONFIG.STORES.IMAGING_SESSIONS, { keyPath: 'id', autoIncrement: true });
@@ -82,7 +91,7 @@ const DBManager = {
                         sessionsStore.createIndex('date', 'date', { unique: false });
                         console.log('Created imagingSessions store with indices');
                     }
-                    
+
                     // Create imaging programs store
                     if (!db.objectStoreNames.contains(APP_CONFIG.STORES.IMAGING_PROGRAMS)) {
                         db.createObjectStore(APP_CONFIG.STORES.IMAGING_PROGRAMS, { keyPath: 'id', autoIncrement: true });

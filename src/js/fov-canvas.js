@@ -7,6 +7,7 @@ const FOVCanvas = {
     canvas: null,
     ctx: null,
     showMoon: false,
+    dssImage: null,
 
     /**
      * Initialize canvas
@@ -31,6 +32,16 @@ const FOVCanvas = {
     },
 
     /**
+     * Draw DSS background image on canvas
+     * @param {HTMLImageElement} img - Image to draw as background
+     */
+    renderBackground(img) {
+        if (!this.ctx || !img) return;
+        this.dssImage = img;
+        this.ctx.drawImage(img, 0, 0, this.canvas.width, this.canvas.height);
+    },
+
+    /**
      * Clear canvas
      */
     clear() {
@@ -48,6 +59,11 @@ const FOVCanvas = {
         if (!this.ctx) return;
 
         this.clear();
+
+        // Redraw DSS background if available
+        if (this.dssImage) {
+            this.ctx.drawImage(this.dssImage, 0, 0, this.canvas.width, this.canvas.height);
+        }
 
         const width = this.canvas.width;
         const height = this.canvas.height;

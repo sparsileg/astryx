@@ -13,7 +13,7 @@ const APP_CONFIG = {
     APP_TITLE: 'Specula - Astrophotography Planning Tool',
     APP_VERSION: '0.9.0',
     DB_NAME: 'specula-db',
-    DB_VERSION: 6,
+    DB_VERSION: 7,
     TARGET_VERSION: '20260114',
     DEFAULT_THEME: 'Matrix',
 
@@ -42,7 +42,8 @@ const APP_CONFIG = {
         FILTERS: 'filters',
         IMAGING_PROJECTS: 'imagingProjects',
         IMAGING_SESSIONS: 'imagingSessions',
-        IMAGING_PROGRAMS: 'imagingPrograms'
+        IMAGING_PROGRAMS: 'imagingPrograms',
+        DSS_CACHE: 'dssCache'
     },
 
     NOTIONAL_HORIZON: [

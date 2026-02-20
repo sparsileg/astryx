@@ -5,6 +5,10 @@
 
 const FOVView = {
     currentTarget: null,
+    showDSS: false,
+    showTarget: true,
+    dssLockedSize: null,
+    lastToastKey: null,
 
     /**
      * Render the FOV view
@@ -36,6 +40,13 @@ const FOVView = {
      * Initialize FOV view
      */
     init() {
+        // Reset DSS state on each view load
+        this.showDSS = false;
+        this.showTarget = true;
+        this.dssLockedSize = null;
+        this.lastToastKey = null;
+        FOVCanvas.dssImage = null;
+
         // Initialize canvas
         FOVCanvas.init('fov-canvas');
 
@@ -62,6 +73,18 @@ const FOVView = {
         const showMoonCheckbox = document.getElementById('fov-show-moon');
         if (showMoonCheckbox) {
             showMoonCheckbox.checked = FOVCanvas.showMoon;
+        }
+
+        // Always reset DSS checkbox on view load
+        const showDSSCheckbox = document.getElementById('fov-show-dss');
+        if (showDSSCheckbox) {
+            showDSSCheckbox.checked = false;
+        }
+
+        // Target outline defaults to on
+        const showTargetCheckbox = document.getElementById('fov-show-target');
+        if (showTargetCheckbox) {
+            showTargetCheckbox.checked = true;
         }
 
         // Load saved selections
@@ -168,6 +191,31 @@ const FOVView = {
             });
         }
 
+        // Target outline toggle
+        const showTargetCheckbox = document.getElementById('fov-show-target');
+        if (showTargetCheckbox) {
+            showTargetCheckbox.addEventListener('change', (e) => {
+                this.showTarget = e.target.checked;
+                this.calculate();
+            });
+        }
+
+        // DSS background toggle
+        const showDSSCheckbox = document.getElementById('fov-show-dss');
+        if (showDSSCheckbox) {
+            showDSSCheckbox.addEventListener('change', async (e) => {
+                this.showDSS = e.target.checked;
+                if (this.showDSS) {
+                    this.lockCanvasSize();
+                    await this.calculate();
+                } else {
+                    FOVCanvas.dssImage = null;
+                    this.unlockCanvasSize();
+                    this.calculate();
+                }
+            });
+        }
+
         // Manage telescopes button
         const manageTelBtn = document.getElementById('fov-manage-telescopes-btn');
         if (manageTelBtn) {
@@ -220,7 +268,7 @@ const FOVView = {
     /**
      * Calculate and render FOV
      */
-    calculate() {
+    async calculate() {
         const telescopeName = document.getElementById('fov-telescope-select')?.value;
         const sensorName = document.getElementById('fov-sensor-select')?.value;
 
@@ -259,9 +307,13 @@ const FOVView = {
             const targetLarger = Math.max(targetSizeMax, targetSizeMin);
             fieldCoverage = (targetLarger / fovSmaller) * 100;
 
-            // Show toast if target fills > 50% of FOV
+            // Show toast if target fills > 50% of FOV, but only once per unique combination
             if (fieldCoverage > 50) {
-                UIManager.showToast(`Target occupies ${fieldCoverage.toFixed(0)}% of field of view. Consider a longer focal length for more context.`, 'info', 6000);
+                const toastKey = `${telescopeName}|${sensorName}|${this.currentTarget.object}`;
+                if (toastKey !== this.lastToastKey) {
+                    this.lastToastKey = toastKey;
+                    UIManager.showToast(`Target occupies ${fieldCoverage.toFixed(0)}% of field of view. Consider a longer focal length for more context.`, 'info', 6000);
+                }
             }
         }
 
@@ -269,7 +321,7 @@ const FOVView = {
         this.displayResults(fovData, fieldCoverage);
 
         // Prepare target data with numeric sizes for canvas rendering
-        const targetForCanvas = this.currentTarget ? {
+        const targetForCanvas = this.currentTarget && this.showTarget ? {
             ...this.currentTarget,
             size_max: parseFloat(this.currentTarget.size_max) || 0,
             size_min: parseFloat(this.currentTarget.size_min) || 0
@@ -282,6 +334,11 @@ const FOVView = {
         const moonNote = document.getElementById('fov-moon-note');
         if (moonNote) {
             moonNote.style.display = FOVCanvas.showMoon ? 'block' : 'none';
+        }
+
+        // Fetch and render DSS background if enabled
+        if (this.showDSS && this.currentTarget) {
+            await this.fetchAndRenderDSS(fovData);
         }
 
         // Check if target fits
@@ -333,6 +390,179 @@ const FOVView = {
                 ` : ''}
             </div>
         `;
+    },
+
+    /**
+     * Get cache key for DSS image
+     */
+    getDSSCacheKey(ra, dec, width, height, fovDeg) {
+        return `dss_${ra.toFixed(4)}_${dec.toFixed(4)}_${width}_${height}_${fovDeg.toFixed(4)}`;
+    },
+
+    /**
+     * Get cached DSS image if still valid (< 24 hours old)
+     */
+    async getDSSFromCache(key) {
+        try {
+            const cached = await DBManager.get('dssCache', key);
+            if (!cached) return null;
+            const age = Date.now() - cached.timestamp;
+            if (age > 24 * 60 * 60 * 1000) {
+                await DBManager.delete('dssCache', key);
+                return null;
+            }
+            return cached.dataUrl;
+        } catch (e) {
+            return null;
+        }
+    },
+
+    /**
+     * Store DSS image in cache
+     */
+    async saveDSSToCache(key, dataUrl) {
+        try {
+            await DBManager.put('dssCache', {
+                id: key,
+                dataUrl: dataUrl,
+                timestamp: Date.now()
+            });
+        } catch (e) {
+            console.warn('Failed to cache DSS image:', e);
+        }
+    },
+
+    /**
+     * Purge DSS cache entries older than 24 hours
+     */
+    async purgeDSSCache() {
+        try {
+            const all = await DBManager.getAll('dssCache');
+            const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+            for (const entry of all) {
+                if (entry.timestamp < cutoff) {
+                    await DBManager.delete('dssCache', entry.id);
+                }
+            }
+        } catch (e) {
+            console.warn('Failed to purge DSS cache:', e);
+        }
+    },
+
+    /**
+     * Fetch DSS image and draw on canvas
+     */
+    async fetchAndRenderDSS(fovData) {
+        if (!this.currentTarget || !this.currentTarget.ra || !this.currentTarget.dec) {
+            console.warn('No target coordinates for DSS fetch');
+            return;
+        }
+
+        // Convert RA from hours to degrees
+        const raDeg = this.currentTarget.ra * 15;
+        const decDeg = this.currentTarget.dec;
+
+        const canvas = FOVCanvas.canvas;
+        const width = canvas.width;
+        const height = canvas.height;
+
+        // Use the larger FOV dimension for the query
+        const fovDeg = Math.max(fovData.fovWidth, fovData.fovHeight);
+
+        const cacheKey = this.getDSSCacheKey(raDeg, decDeg, width, height, fovDeg);
+
+        // Check cache first
+        let dataUrl = await this.getDSSFromCache(cacheKey);
+
+        if (!dataUrl) {
+            const url = `https://alasky.u-strasbg.fr/hips-image-services/hips2fits?hips=CDS/P/DSS2/red` +
+                `&ra=${raDeg.toFixed(6)}&dec=${decDeg.toFixed(6)}` +
+                `&fov=${fovDeg.toFixed(6)}&width=${width}&height=${height}` +
+                `&projection=TAN&format=jpg`;
+
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    console.warn('DSS fetch failed:', response.status);
+                    return;
+                }
+                const blob = await response.blob();
+                dataUrl = await new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result);
+                    reader.readAsDataURL(blob);
+                });
+                await this.saveDSSToCache(cacheKey, dataUrl);
+                await this.purgeDSSCache();
+            } catch (e) {
+                console.warn('DSS fetch error:', e);
+                return;
+            }
+        }
+
+        // Draw image on canvas
+        const img = new Image();
+        img.onload = () => {
+            // Redraw: background first, then overlays
+            FOVCanvas.clear();
+            FOVCanvas.renderBackground(img);
+
+            // Redraw target and moon overlays
+            const targetForCanvas = this.currentTarget && this.showTarget ? {
+                ...this.currentTarget,
+                size_max: parseFloat(this.currentTarget.size_max) || 0,
+                size_min: parseFloat(this.currentTarget.size_min) || 0
+            } : null;
+
+            const width = FOVCanvas.canvas.width;
+            const height = FOVCanvas.canvas.height;
+            const scaleX = width / fovData.fovWidthArcmin;
+            const scaleY = height / fovData.fovHeightArcmin;
+
+            FOVCanvas.drawFOVBorder(width, height);
+
+            if (targetForCanvas && targetForCanvas.size_max && targetForCanvas.size_min) {
+                FOVCanvas.drawTarget(
+                    width / 2, height / 2,
+                    targetForCanvas.size_max * scaleX,
+                    targetForCanvas.size_min * scaleY
+                );
+            }
+
+            if (FOVCanvas.showMoon) {
+                const moonDiameter = FOVCalculations.getFullMoonDiameter();
+                FOVCanvas.drawMoon(width / 2, height / 2,
+                    (moonDiameter * scaleX) / 2,
+                    (moonDiameter * scaleY) / 2);
+            }
+        };
+        img.src = dataUrl;
+    },
+
+    /**
+     * Lock canvas to current pixel size
+     */
+    lockCanvasSize() {
+        const canvas = FOVCanvas.canvas;
+        const w = canvas.offsetWidth;
+        const h = canvas.offsetHeight;
+        canvas.width = w;
+        canvas.height = h;
+        canvas.style.width = w + 'px';
+        canvas.style.height = h + 'px';
+        canvas.style.maxWidth = w + 'px';
+        this.dssLockedSize = { width: w, height: h };
+    },
+
+    /**
+     * Unlock canvas size
+     */
+    unlockCanvasSize() {
+        const canvas = FOVCanvas.canvas;
+        canvas.style.width = '';
+        canvas.style.height = '';
+        canvas.style.maxWidth = '100%';
+        this.dssLockedSize = null;
     },
 
     /**
