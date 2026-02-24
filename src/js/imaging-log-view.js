@@ -7,6 +7,7 @@ const ImagingLogView = {
     currentTab: 'projects',
     currentProjectId: null,
     currentSessionId: null,
+    expandedProjectIds: new Set(),
     selectedTargets: [],
 
     /**
@@ -97,6 +98,7 @@ const ImagingLogView = {
         const container = document.getElementById('imaging-log-projects-list');
         if (!container) return;
 
+        const expandedProjects = this.expandedProjectIds;
         const projects = await ImagingLogManager.getAllProjects();
 
         // Apply filters
@@ -142,6 +144,19 @@ const ImagingLogView = {
         }
 
         container.innerHTML = html;
+
+        // Restore expanded state
+        expandedProjects.forEach(projectId => {
+            const sessionsContainer = document.getElementById(`project-sessions-${projectId}`);
+            const chevron = document.getElementById(`chevron-${projectId}`);
+            const addButton = document.getElementById(`add-session-btn-${projectId}`);
+            if (sessionsContainer) {
+                sessionsContainer.classList.add('expanded');
+                sessionsContainer.style.maxHeight = sessionsContainer.scrollHeight + 'px';
+                if (chevron) chevron.classList.add('expanded');
+                if (addButton) addButton.style.display = 'inline-block';
+            }
+        });
     },
 
 
@@ -304,14 +319,11 @@ const ImagingLogView = {
         // Set up notes expand button
         const expandBtn = document.getElementById('project-notes-expand-btn');
         const notesTextarea = document.getElementById('project-notes');
-        console.log('Expand button:', expandBtn);
-        console.log('Notes textarea:', notesTextarea);
         if (expandBtn && notesTextarea) {
             let expanded = false;
             expandBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                console.log('Expand clicked, expanded:', expanded);
                 expanded = !expanded;
                 if (expanded) {
                     notesTextarea.style.cssText = 'height: 30rem !important; min-height: 30rem !important; resize: none !important;';
@@ -339,7 +351,6 @@ const ImagingLogView = {
                     expandBtn.textContent = 'Expand';
                 }
             });
-            console.log('Event listener added');
         } else {
             console.log('Elements not found!');
         }
@@ -925,19 +936,8 @@ const ImagingLogView = {
             // Close modal
             UIManager.closeModal();
 
-            // Remember which project to expand
-            const expandProjectId = projectId;
-
             // Refresh project list (which includes sessions)
             await this.renderProjectList();
-
-            // Re-expand the project's sessions
-            setTimeout(() => {
-                const projectCard = document.querySelector(`[data-project-id="${expandProjectId}"]`);
-                if (projectCard) {
-                    projectCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }
-            }, 100);
 
         } catch (error) {
             console.error('Error saving session:', error);
@@ -961,19 +961,6 @@ const ImagingLogView = {
             await ImagingLogManager.deleteSession(sessionId);
             UIManager.showToast('Session deleted', 'success');
             await this.renderProjectList();
-
-            // Re-expand the project's sessions
-            setTimeout(() => {
-                const sessionsContainer = document.getElementById(`project-sessions-${projectId}`);
-                const chevron = document.getElementById(`chevron-${projectId}`);
-                const addButton = document.getElementById(`add-session-btn-${projectId}`);
-
-                if (sessionsContainer && sessionsContainer.style.display === 'none') {
-                    sessionsContainer.style.display = 'block';
-                    if (chevron) chevron.classList.add('expanded');
-                    if (addButton) addButton.style.display = 'inline-block';
-                }
-            }, 100);
         } catch (error) {
             console.error('Error deleting session:', error);
             UIManager.showToast('Error deleting session: ' + error.message, 'error');
@@ -1026,6 +1013,12 @@ const ImagingLogView = {
 
         if (sessionsContainer) {
             const isExpanded = sessionsContainer.classList.contains('expanded');
+
+            if (isExpanded) {
+                this.expandedProjectIds.delete(projectId);
+            } else {
+                this.expandedProjectIds.add(projectId);
+            }
 
             if (isExpanded) {
                 // Collapse - set max-height to current height first, then to 0
@@ -1590,16 +1583,12 @@ const ImagingLogView = {
                     console.log('Pattern-based program detected');
                     const prefixField = document.getElementById('program-catalog-prefix');
                     const maxField = document.getElementById('program-max-number');
-                    console.log('Prefix field:', prefixField);
-                    console.log('Max field:', maxField);
 
                     patternRadio.checked = true;
 
                     if (prefixField) prefixField.value = program.catalogPrefix;
                     if (maxField) maxField.value = program.maxNumber;
 
-                    console.log('Set prefix to:', program.catalogPrefix);
-                    console.log('Set max to:', program.maxNumber);
                     patternRadio.checked = true;
                     document.getElementById('program-catalog-prefix').value = program.catalogPrefix;
                     document.getElementById('program-max-number').value = program.maxNumber;
