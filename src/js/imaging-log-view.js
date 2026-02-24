@@ -514,8 +514,8 @@ const ImagingLogView = {
                 UIManager.showToast(`Project "${name}" created`, 'success');
             }
 
-            // Auto-update pattern-based programs with new targets
-            await this.updatePatternProgramsFromProject(projectData.targetDesignations);
+            // Check for targets exceeding program max numbers
+            await this.checkTargetsAgainstProgramLimits(projectData.targetDesignations);
 
             // Close modal
             UIManager.closeModal();
@@ -528,92 +528,40 @@ const ImagingLogView = {
         }
     },
 
-    async updatePatternProgramsFromProject(targetDesignations) {
-        // Get all pattern-based programs
+
+    async checkTargetsAgainstProgramLimits(targetDesignations) {
         const allPrograms = await ImagingLogManager.getAllPrograms();
         const patternPrograms = allPrograms.filter(p => ImagingLogManager.isProgramPatternBased(p));
+        const warnings = [];
 
-        // Expand target designations to include Other field
-        const expandedDesignations = new Set();
         targetDesignations.forEach(designation => {
-            expandedDesignations.add(designation);
-
+            // Build full list of designations to check (primary + alternates)
+            const toCheck = [designation];
             const target = DataManager.getTarget(designation);
             if (target && target.other) {
-                const otherDesignations = target.other.split(',').map(d => d.trim()).filter(d => d.length > 0);
-                otherDesignations.forEach(other => expandedDesignations.add(other));
+                const others = target.other.split(',').map(d => d.trim()).filter(d => d.length > 0);
+                others.forEach(o => toCheck.push(o));
             }
-        });
 
-        // For each pattern program, check if any targets match
-        for (const program of patternPrograms) {
-            let updated = false;
-            const observedSet = new Set(program.observedTargets || []);
-
-            expandedDesignations.forEach(designation => {
-                if (ImagingLogManager.matchesPattern(designation, program.catalogPrefix, program.maxNumber)) {
-                    if (!observedSet.has(designation)) {
-                        observedSet.add(designation);
-                        updated = true;
-                    }
-                }
-            });
-
-            // Update program if new targets were added
-            if (updated) {
-                const updateData = {
-                    name: program.name,
-                    catalogPrefix: program.catalogPrefix,
-                    maxNumber: program.maxNumber,
-                    observedTargets: Array.from(observedSet)
-                };
-                await ImagingLogManager.updateProgram(program.id, updateData);
-            }
-        }
-    },
-
-    async rebuildPatternPrograms() {
-        // Get all pattern-based programs
-        const allPrograms = await ImagingLogManager.getAllPrograms();
-        const patternPrograms = allPrograms.filter(p => ImagingLogManager.isProgramPatternBased(p));
-
-        // Get all remaining projects
-        const allProjects = await ImagingLogManager.getAllProjects();
-
-        // For each pattern program, rebuild from scratch
-        for (const program of patternPrograms) {
-            const observedTargets = new Set();
-
-            // Scan all projects
-            allProjects.forEach(project => {
-                project.targetDesignations.forEach(designation => {
-                    // Add primary designation if it matches
-                    if (ImagingLogManager.matchesPattern(designation, program.catalogPrefix, program.maxNumber)) {
-                        observedTargets.add(designation);
-                    }
-
-                    // Also check Other field for alternate designations
-                    const target = DataManager.getTarget(designation);
-                    if (target && target.other) {
-                        const otherDesignations = target.other.split(',').map(d => d.trim()).filter(d => d.length > 0);
-                        otherDesignations.forEach(other => {
-                            if (ImagingLogManager.matchesPattern(other, program.catalogPrefix, program.maxNumber)) {
-                                observedTargets.add(other);
+            toCheck.forEach(des => {
+                patternPrograms.forEach(program => {
+                    const normalizedDes = des.replace(/\s+/g, '').toUpperCase();
+                    const normalizedPrefix = program.catalogPrefix.replace(/\s+/g, '').toUpperCase();
+                    if (normalizedDes.startsWith(normalizedPrefix)) {
+                        const afterPrefix = normalizedDes.substring(normalizedPrefix.length);
+                        const match = afterPrefix.match(/^(\d+)([A-Z]*)$/);
+                        if (match) {
+                            const number = parseInt(match[1], 10);
+                            if (number > program.maxNumber) {
+                                warnings.push(`${des} exceeds max number (${program.maxNumber}) for program "${program.name}"`);
                             }
-                        });
+                        }
                     }
                 });
             });
+        });
 
-            // Update program
-            const updateData = {
-                name: program.name,
-                catalogPrefix: program.catalogPrefix,
-                maxNumber: program.maxNumber,
-                observedTargets: Array.from(observedTargets)
-            };
-            await ImagingLogManager.updateProgram(program.id, updateData);
-        }
+        warnings.forEach(warning => UIManager.showToast(warning, 'warning'));
     },
 
     /**
@@ -622,6 +570,8 @@ const ImagingLogView = {
     openModal(templateId, title, callback) {
         UIManager.openModal(templateId, title, callback);
     },
+
+
 
     // ============================================================================
     // Session Management
@@ -1039,10 +989,6 @@ const ImagingLogView = {
         try {
             await ImagingLogManager.deleteProject(projectId);
             UIManager.showToast(`Project "${project.name}" deleted`, 'success');
-
-            // Rebuild all pattern-based programs from remaining projects
-            await this.rebuildPatternPrograms();
-
             await this.renderProjectList();
         } catch (error) {
             console.error('Error deleting project:', error);
@@ -1704,92 +1650,18 @@ const ImagingLogView = {
 
             try {
                 if (programId) {
-                    // Editing existing program - clear and re-populate
                     const updateData = {
                         name: name,
                         catalogPrefix: prefix,
-                        maxNumber: maxNum,
-                        observedTargets: []  // Clear existing targets
+                        maxNumber: maxNum
                     };
                     await ImagingLogManager.updateProgram(programId, updateData);
-
-                    // Re-scan all projects for matching targets
-                    const allProjects = await ImagingLogManager.getAllProjects();
-                    const observedTargets = new Set();
-
-                    allProjects.forEach(project => {
-                        project.targetDesignations.forEach(designation => {
-                            // Check primary designation
-                            if (ImagingLogManager.matchesPattern(designation, prefix, maxNum)) {
-                                observedTargets.add(designation);
-                            }
-
-                            // Check Other field for alternate designations
-                            const target = DataManager.getTarget(designation);
-                            if (target && target.other) {
-                                const otherDesignations = target.other.split(',').map(d => d.trim()).filter(d => d.length > 0);
-                                otherDesignations.forEach(other => {
-                                    if (ImagingLogManager.matchesPattern(other, prefix, maxNum)) {
-                                        observedTargets.add(other);
-                                    }
-                                });
-                            }
-                        });
-                    });
-
-                    // Update with new observed targets
-                    if (observedTargets.size > 0) {
-                        updateData.observedTargets = Array.from(observedTargets);
-                        await ImagingLogManager.updateProgram(programId, updateData);
-                        UIManager.showToast(`Program "${name}" updated with ${observedTargets.size} targets observed`, 'success');
-                    } else {
-                        UIManager.showToast(`Program "${name}" updated`, 'success');
-                    }
-
+                    UIManager.showToast(`Program "${name}" updated`, 'success');
                     UIManager.closeModal();
                     await this.renderProgramsList();
                 } else {
-                    // Creating new program
-                    const newProgram = await ImagingLogManager.createProgram(programData);
-
-                    // Auto-populate from existing projects
-                    const allProjects = await ImagingLogManager.getAllProjects();
-                    const observedTargets = new Set();
-
-                    allProjects.forEach(project => {
-                        project.targetDesignations.forEach(designation => {
-                            // Check primary designation
-                            if (ImagingLogManager.matchesPattern(designation, prefix, maxNum)) {
-                                observedTargets.add(designation);
-                            }
-
-                            // Check Other field for alternate designations
-                            const target = DataManager.getTarget(designation);
-                            if (target && target.other) {
-                                const otherDesignations = target.other.split(',').map(d => d.trim()).filter(d => d.length > 0);
-                                otherDesignations.forEach(other => {
-                                    if (ImagingLogManager.matchesPattern(other, prefix, maxNum)) {
-                                        observedTargets.add(other);
-                                    }
-                                });
-                            }
-                        });
-                    });
-
-                    // Update program with observed targets
-                    if (observedTargets.size > 0) {
-                        const updateData = {
-                            name: name,
-                            catalogPrefix: prefix,
-                            maxNumber: maxNum,
-                            observedTargets: Array.from(observedTargets)
-                        };
-                        await ImagingLogManager.updateProgram(newProgram.id, updateData);
-                        UIManager.showToast(`Program "${name}" created with ${observedTargets.size} targets already observed`, 'success');
-                    } else {
-                        UIManager.showToast(`Program "${name}" created`, 'success');
-                    }
-
+                    await ImagingLogManager.createProgram(programData);
+                    UIManager.showToast(`Program "${name}" created`, 'success');
                     UIManager.closeModal();
                     await this.renderProgramsList();
                 }
@@ -2046,8 +1918,26 @@ const ImagingLogView = {
                 let completedTargets;
 
                 if (isPattern) {
-                    // Pattern-based: use observedTargets
-                    completedTargets = (program.observedTargets || [])
+                    // Pattern-based: calculate dynamically from projects
+                    const matchedDesignations = new Set();
+                    projects.forEach(project => {
+                        project.targetDesignations.forEach(designation => {
+                            if (ImagingLogManager.matchesPattern(designation, program.catalogPrefix, program.maxNumber)) {
+                                matchedDesignations.add(designation);
+                                return;
+                            }
+                            const target = DataManager.getTarget(designation);
+                            if (target && target.other) {
+                                const otherDesignations = target.other.split(',').map(d => d.trim()).filter(d => d.length > 0);
+                                otherDesignations.forEach(other => {
+                                    if (ImagingLogManager.matchesPattern(other, program.catalogPrefix, program.maxNumber)) {
+                                        matchedDesignations.add(other);
+                                    }
+                                });
+                            }
+                        });
+                    });
+                    completedTargets = Array.from(matchedDesignations)
                         .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
                 } else {
                     // Manual list: filter targetDesignations
