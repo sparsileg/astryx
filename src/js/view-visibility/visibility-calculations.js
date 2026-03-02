@@ -15,10 +15,10 @@ const VisibilityCalculations = {
         const maxResultsEl = document.getElementById('modal-max-results') || document.getElementById('max-results');
         const startDateEl = document.getElementById('modal-start-date') || document.getElementById('start-date');
         const minAltitudeEl = document.getElementById('modal-min-altitude-daily') || document.getElementById('min-altitude');
-        
+
         const searchWindow = searchWindowEl?.value || '1w-daily';
         const maxResults = maxResultsEl?.value || '1';
-        
+
         // Parse search window
         let numDays, stepDays;
         switch(searchWindow) {
@@ -46,11 +46,11 @@ const VisibilityCalculations = {
             numDays = 28;
             stepDays = 1;
         }
-        
+
         // Get location from sidebar dropdown
         const locationName = SettingsManager.getSelectedLocation();
         const location = DataManager.getLocation(locationName);
-        
+
         return {
             obsDate: startDateEl?.value || '',
             numDays: numDays,
@@ -73,11 +73,11 @@ const VisibilityCalculations = {
      */
     calculate(providedInputs = null) {
         console.log('=== calculate() called ===');
-        
+
         // Use provided inputs or get from DOM
         const inputs = providedInputs || this.getInputs();
         console.log('Inputs:', inputs);
-        
+
         this.currentLocationName = inputs.locationName;
         const validation = VisibilityUI.validateCalculationInputs(inputs);
         console.log('Validation result:', validation);
@@ -87,9 +87,9 @@ const VisibilityCalculations = {
             UIManager.showToast(validation.error, 'error');
             return;
         }
-        
+
         console.log('Validation PASSED, continuing with calculation...');
-        
+
         // Get DST settings
         const dstConfig = SettingsManager.getDSTConfig();
 
@@ -120,7 +120,7 @@ const VisibilityCalculations = {
             // Get horizon array if useHorizon is enabled
             const location = DataManager.getLocation(inputs.locationName);
             const horizonArray = (this.useHorizon && location) ? location.horizon : null;
-            
+
             const result = this.calculateSingleDay(
                 dateStr,
                 twilightTimes.duskJD,
@@ -260,13 +260,13 @@ const VisibilityCalculations = {
         const obsDate = new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) - 1, parseInt(dateParts[2]));
         const isDST = SettingsManager.isDSTActive(obsDate, timezone);
         const noonWindow = getNoonToNoonWindow(dateStr, timezone, isDST);
-        
+
         // Find rise/set times within noon-to-noon window (not just dusk-to-dawn)
         const riseJD = findTargetRise(noonWindow.startJD, noonWindow.endJD, ra, dec,
                                       latitude, longitude, minAltitude, horizonArray);
         const setJD = findTargetSet(noonWindow.startJD, noonWindow.endJD, ra, dec,
                                     latitude, longitude, minAltitude, horizonArray);
-        
+
         // Extend search for set time if still up at dawn
         let actualSetJD = setJD;
         if (!setJD) {
@@ -285,10 +285,10 @@ const VisibilityCalculations = {
                 }
             }
         }
-        
+
         // Calculate moon rise and set times - use full day bounds
         const moonRiseSet = this.calculateMoonRiseSet(noonWindow.startJD, noonWindow.endJD, latitude, longitude);
-        
+
         // Calculate blocked time if horizon is being used
         let blockedMinutes = 0;
         console.log('Blocked time calculation:', {
@@ -299,25 +299,25 @@ const VisibilityCalculations = {
             hasRise: !!riseJD,
             hasSet: !!setJD
         });
-        
+
         if (horizonArray && riseJD && setJD) {
             const stepSize = APP_CONFIG.TARGET_SEARCH_STEP_SIZE;
             let jd = riseJD;
             let blockedSteps = 0;
-            
+
             while (jd <= setJD) {
                 const altitude = getAltitude(jd, ra, dec, latitude, longitude);
                 const azimuth = getAzimuth(jd, ra, dec, latitude, longitude);
-                
+
                 // Check if blocked: above min altitude but below horizon
                 const horizonElevation = getHorizonElevationAtAzimuth(azimuth, horizonArray);
                 if (altitude >= minAltitude && altitude < horizonElevation) {
                     blockedSteps++;
                 }
-                
+
                 jd += stepSize;
             }
-            
+
             // Convert steps to minutes
             blockedMinutes = Math.round(blockedSteps * stepSize * 1440); // 1440 minutes per day
             console.log('Blocked time result:', {
@@ -326,7 +326,7 @@ const VisibilityCalculations = {
                 blockedMinutes: blockedMinutes
             });
         }
-        
+
         return {
             date: dateStr,
             duskJD: duskJD,
@@ -383,17 +383,17 @@ const VisibilityCalculations = {
         console.log('=== displayResults called ===');
         console.log('Results data:', resultsData);
         console.log('Setting window.visibilityResults');
-        
+
         // Store results for the results view
         window.visibilityResults = resultsData;
-        
+
         console.log('window.visibilityResults set to:', window.visibilityResults);
         console.log('Current hash before change:', window.location.hash);
         console.log('Navigating to #results');
-        
+
         // Navigate to results view
         window.location.hash = '#results';
-        
+
         console.log('Hash set to:', window.location.hash);
     },
 
@@ -404,16 +404,16 @@ const VisibilityCalculations = {
         // Get location from sidebar dropdown
         const locationName = SettingsManager.getSelectedLocation();
         const location = DataManager.getLocation(locationName);
-        
+
         // Try modal element first, fall back to main view element, then default
-        const minAltitudeInput = document.getElementById('modal-min-altitude-yearly') || document.getElementById('min-altitude');
+        const minAltitudeInput = document.getElementById('yearly-min-altitude') || document.getElementById('modal-min-altitude-yearly') || document.getElementById('min-altitude');
         const minAltitude = minAltitudeInput ? parseFloat(minAltitudeInput.value) : 35;
-        
+
         // Safely get checkbox values if they exist, otherwise use defaults
         const showTargetAltitudeCheck = document.getElementById('yearly-show-target-altitude');
         const showMinAltitudeCheck = document.getElementById('yearly-show-min-altitude');
         const showSkyglowCheck = document.getElementById('yearly-show-skyglow');
-        
+
         return {
             targetName: this.currentTarget ? this.currentTarget.object : '',
             targetCommonName: this.currentTarget ? this.currentTarget.common : null,
@@ -436,7 +436,7 @@ const VisibilityCalculations = {
     calculateYearly(providedInputs = null) {
         // Use provided inputs or get from DOM
         const inputs = providedInputs || this.getYearlyInputs();
-        
+
         // Validate yearly-specific inputs (no date needed)
         if (!inputs.targetName) {
             UIManager.showToast('Please select a target', 'error');
@@ -878,7 +878,7 @@ const VisibilityCalculations = {
     displayYearlyObservabilityGraph(altitudeData, inputs) {
         const graphContainer = document.getElementById('yearly-observability-graph');
         const headerContainer = document.getElementById('yearly-observability-header');
-        
+
         if (!graphContainer) {
             console.error('Yearly observability graph container not found');
             return;
@@ -892,23 +892,43 @@ const VisibilityCalculations = {
 
         // Populate header if container exists
         if (headerContainer) {
+            const currentMinAlt = inputs.minAltitude || 35;
+            const altOptions = [5,10,15,20,25,30,35,40,45,50,55,60]
+                .map(v => `<option value="${v}"${v === currentMinAlt ? ' selected' : ''}>${v}°</option>`)
+                .join('');
+
             headerContainer.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                 <div>
                     <h2 style="margin: 0; color: var(--text-primary);">${inputs.targetName}${inputs.targetCommonName ? ' (' + inputs.targetCommonName + ')' : ''}</h2>
                     <p style="margin: 0.25rem 0 0 0; color: var(--text-secondary); font-size: 0.9rem;">${peakAltitudeStr}</p>
+                    <div class="form-inline" style="margin-top: 0.5rem;">
+                        <label for="yearly-min-altitude" style="font-size: 0.9rem; color: var(--text-secondary); margin-right: 0.5rem;">Minimum Altitude:</label>
+                        <select id="yearly-min-altitude">${altOptions}</select>
+                    </div>
                 </div>
                 <div style="display: flex; gap: 0.5rem;">
                     <button id="yearly-observability-help-btn" class="btn-secondary">Help</button>
                 </div>
             </div>
         `;
-            
+
             const helpBtn = document.getElementById('yearly-observability-help-btn');
-            
+
             if (helpBtn) {
                 helpBtn.addEventListener('click', () => {
                     UIManager.showMarkdownHelp('yearly-observability');
+                });
+            }
+
+            const minAltSelect = document.getElementById('yearly-min-altitude');
+            if (minAltSelect) {
+                minAltSelect.addEventListener('change', () => {
+                    // Re-sync current target before recalculating
+                    if (typeof VisibilityTargets !== 'undefined' && VisibilityTargets.currentTarget) {
+                        VisibilityCalculations.currentTarget = VisibilityTargets.currentTarget;
+                    }
+                    VisibilityCalculations.calculateYearly();
                 });
             }
         }
@@ -1274,7 +1294,7 @@ const VisibilityCalculations = {
             const minAltLabel = document.createElement('span');
             minAltLabel.style.color = textColor;
             minAltLabel.style.fontSize = '12px';
-            minAltLabel.textContent = `Minimum Altitude (${inputs.minAltitude}°)`;
+            minAltLabel.textContent = `Minimum Altitude`;
             minAltItem.appendChild(minAltLabel);
 
             legendContainer.appendChild(minAltItem);
