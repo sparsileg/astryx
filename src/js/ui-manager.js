@@ -1277,6 +1277,12 @@ const UIManager = {
         try {
             await DBManager.clear(APP_CONFIG.STORES.TARGETS);
 
+            // Reset best months metadata so recalculation is triggered after new import
+            await SettingsManager.setLastBestMonthsCalculated(null);
+            await SettingsManager.setLastBestMonthsAltitude(null);
+            await SettingsManager.setLastBestMonthsDarkHours(null);
+            await SettingsManager.setLastBestMonthsLocation(null);
+
             // clear filter options so they can be reloaded fresh upon new target import
             TargetFilter.clearAvailableOptions();
 
@@ -1412,6 +1418,12 @@ const UIManager = {
                 // Refresh visibility view if it's current
                 if (window.currentView === 'visibility') {
                     document.dispatchEvent(new CustomEvent('targets-updated'));
+                }
+
+                // Auto-calculate best months for current location
+                const locationName = SettingsManager.getSelectedLocation();
+                if (locationName && !this.locationHasBestMonths(locationName)) {
+                    await this.autoCalculateBestMonths(locationName);
                 }
             }
         } catch (error) {
