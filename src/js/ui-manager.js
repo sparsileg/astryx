@@ -1893,44 +1893,27 @@ const UIManager = {
     },
 
 
-    /**
-     * Open Yearly Observability modal
-     */
     openYearlyObservabilityModal() {
-        console.log('openYearlyObservabilityModal called');
-        console.log('VisibilityTargets exists?', typeof VisibilityTargets !== 'undefined');
-        console.log('Current target before load:', VisibilityTargets?.currentTarget);
-
         // Load last selected target if not already loaded
         if (typeof VisibilityTargets !== 'undefined') {
             if (!VisibilityTargets.currentTarget) {
-                console.log('No current target, loading from localStorage');
                 VisibilityTargets.loadLastTarget();
-                console.log('Target after load:', VisibilityTargets.currentTarget);
             }
-            // Also sync with VisibilityCalculations
             if (typeof VisibilityCalculations !== 'undefined' && VisibilityTargets.currentTarget) {
                 VisibilityCalculations.currentTarget = VisibilityTargets.currentTarget;
-                console.log('Synced to VisibilityCalculations');
             }
         }
 
-        console.log('Final target state:', VisibilityTargets?.currentTarget);
-
-        this.openModal('yearly-observability-template', 'Yearly Observability Parameters', (action, modalBody) => {
-            if (action === 'calculate') {
-                this.handleYearlyObservabilityCalculate(modalBody);
-            } else if (action === 'cancel') {
-                this.closeModal();
-            }
-        });
-        // Add narrow-modal class
-        const modalContent = document.querySelector('.modal-content');
-        if (modalContent) {
-            modalContent.classList.add('narrow-modal');
+        if (typeof VisibilityTargets === 'undefined' || !VisibilityTargets.currentTarget) {
+            this.showToast('Please select a target first', 'error');
+            return;
         }
-        // Initialize modal inputs after modal is opened
-        setTimeout(() => this.initializeYearlyObservabilityModal(), 0);
+
+        // Navigate to yearly observability view first, then calculate
+        window.location.hash = '#yearly-observability';
+        setTimeout(() => {
+            VisibilityCalculations.calculateYearly();
+        }, 100);
     },
 
     /**
