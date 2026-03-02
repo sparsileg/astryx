@@ -1719,6 +1719,13 @@ const UIManager = {
         }
     },
 
+    updateSidebarCurrentTarget(targetName) {
+        const el = document.getElementById('sidebar-current-target');
+        if (el) {
+            el.textContent = `Current Target: ${targetName || 'None'}`;
+        }
+    },
+
     /**
      * Open Daily Visibility modal
      */

@@ -165,12 +165,12 @@ const VisibilityTargets = {
     select(target) {
         // Store the current target
         this.currentTarget = target;
-        
+
         // Only set if VisibilityCalculations exists
         if (typeof VisibilityCalculations !== 'undefined') {
             VisibilityCalculations.currentTarget = target;
         }
-        
+
         // Only update DOM if elements exist (we're on Target Selection view)
         const targetNameInput = document.getElementById('target-name');
         if (targetNameInput) {
@@ -188,7 +188,7 @@ const VisibilityTargets = {
         const targetConstellation = document.getElementById('target-constellation');
         const targetCommonNameEl = document.getElementById('target-common-name');
         const targetOtherInfo = document.getElementById('target-other-info');
-        
+
         if (targetType) {
             targetType.textContent = target.type ? (OBJECT_TYPES[target.type] || target.type) : '—';
         }
@@ -230,6 +230,9 @@ const VisibilityTargets = {
 
         // Save last selected target (save full target object)
         localStorage.setItem('lastSelectedTarget', JSON.stringify(target));
+
+        // Update sidebar current target display
+        UIManager.updateSidebarCurrentTarget(target.object);
     },
 
     /**
@@ -242,6 +245,7 @@ const VisibilityTargets = {
                 const target = JSON.parse(lastTarget);
                 this.currentTarget = target;
                 this.select(target);
+                UIManager.updateSidebarCurrentTarget(target.object);
             } catch (e) {
                 console.error('Failed to load last target:', e);
             }
