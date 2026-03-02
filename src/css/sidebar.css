@@ -151,7 +151,6 @@
 .theme-selector {
     position: relative;
     top: -20px;
-    margin-bottom: 1rem;
 }
 
 .theme-selector select {
@@ -164,6 +163,20 @@
     font-size: 0.9rem;
 }
 
+
+#sidebar-current-target {
+    margin-top: 0.25rem;
+    padding: 0.2rem 0.6rem;
+    color: var(--bg-color);
+    background: var(--primary-color);
+    border: 1px solid var(--primary-color);
+    border-radius: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 0.9rem;
+    font-weight: bold;
+}
 
 
 #app-version {
