@@ -23,6 +23,9 @@ const App = {
             TargetFilter.initialize();
             await ToDoManager.init();
 
+            // Check for target database updates
+            await this.checkForTargetUpdates();
+
             // Initialize UI
             UIManager.init();
 
@@ -56,15 +59,46 @@ const App = {
             // Display version numbers
             const appVersionText = document.getElementById('app-version');
             if (appVersionText) {
+                const targetVersion = await DataManager.getTargetVersion();
                 appVersionText.textContent += `v${APP_CONFIG.APP_VERSION} `;
                 appVersionText.textContent += `d${APP_CONFIG.DB_VERSION} `;
-                appVersionText.textContent += `t${APP_CONFIG.TARGET_VERSION}`;
+                appVersionText.textContent += `t${targetVersion || 'none'}`;
+            }
+
+            // Auto-calculate Best Months for selected location if needed
+            const selectedLocation = SettingsManager.getSelectedLocation();
+            if (selectedLocation && !UIManager.locationHasBestMonths(selectedLocation)) {
+                await UIManager.autoCalculateBestMonths(selectedLocation);
             }
 
             console.log(APP_CONFIG.APP_NAME + ' initialized successfully');
         } catch (error) {
             console.error('Failed to initialize' + APP_CONFIG.APP_NAME + ':', error);
             this.showInitializationError(error);
+        }
+    },
+
+    /**
+     * Check for target database updates via fetch
+     */
+    async checkForTargetUpdates() {
+        const meta = await DataManager.fetchTargetMeta();
+        if (!meta) return; // Offline or no meta file - skip silently
+
+        const storedVersion = await DataManager.getTargetVersion();
+        const currentVersion = storedVersion ? String(storedVersion) : null;
+        const metaVersion = String(meta.version);
+
+        if (currentVersion === metaVersion) {
+            console.log(`Target database is current (version ${currentVersion})`);
+            return;
+        }
+
+        console.log(`Target database update available: ${currentVersion || 'none'} → ${metaVersion}`);
+        const loaded = await DataManager.fetchAndLoadTargets(meta);
+        if (loaded) {
+            TargetFilter.initialize();
+            setTimeout(() => location.reload(), 500);
         }
     },
 

@@ -331,9 +331,8 @@ const ImagingLogManager = {
                     // Check primary designation
                     if (this.matchesPattern(designation, program.catalogPrefix, program.maxNumber)) {
                         matchedDesignations.add(designation);
-                        return;
                     }
-                    // Check Other field for alternate designations
+                    // Always check Other field for additional alternate designations
                     const target = DataManager.getTarget(designation);
                     if (target && target.other) {
                         const otherDesignations = target.other.split(',').map(d => d.trim()).filter(d => d.length > 0);
