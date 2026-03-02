@@ -11,7 +11,7 @@
 const APP_CONFIG = {
     APP_NAME: 'Specula',
     APP_TITLE: 'Specula - Astrophotography Planning Tool',
-    APP_VERSION: '0.10.0',
+    APP_VERSION: '0.11.0',
     DB_NAME: 'specula-db',
     DB_VERSION: 7,
     TARGET_DATA_PATH: './data/',
