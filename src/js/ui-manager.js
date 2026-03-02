@@ -407,6 +407,13 @@ const UIManager = {
             helpBtn.style.display = 'none';
             helpBtn.onclick = null;
         }
+
+        // Hide subtitle
+        const subtitle = document.getElementById('modal-subtitle');
+        if (subtitle) {
+            subtitle.style.display = 'none';
+            subtitle.textContent = '';
+        }
     },
 
     /**
@@ -1749,6 +1756,14 @@ const UIManager = {
         }
 
         console.log('Final target state:', VisibilityTargets?.currentTarget);
+
+        // Set subtitle to current target
+        const subtitle = document.getElementById('modal-subtitle');
+        if (subtitle) {
+            const targetName = VisibilityTargets?.currentTarget?.object;
+            subtitle.textContent = targetName || 'No target selected';
+            subtitle.style.display = 'block';
+        }
 
         // Open the modal
         this.openModal('daily-visibility-template', 'Daily Visibility Parameters', (action, modalBody) => {
