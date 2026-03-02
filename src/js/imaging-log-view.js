@@ -1913,7 +1913,6 @@ const ImagingLogView = {
                         project.targetDesignations.forEach(designation => {
                             if (ImagingLogManager.matchesPattern(designation, program.catalogPrefix, program.maxNumber)) {
                                 matchedDesignations.add(designation);
-                                return;
                             }
                             const target = DataManager.getTarget(designation);
                             if (target && target.other) {

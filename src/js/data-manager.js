@@ -226,11 +226,76 @@ const DataManager = {
     /**
      * Import target database from CSV/parsed data
      */
-    async importTargets(targetsArray) {
+    async importTargets(targetsArray, targetVersion) {
         // Merge new targets with existing (no clear)
         await DBManager.putBulk(APP_CONFIG.STORES.TARGETS, targetsArray);
+        if (targetVersion) {
+            await this.setTargetVersion(targetVersion);
+        }
         await this.loadTargets();
         return this.targetDatabase.length;
+    },
+
+    async getTargetVersion() {
+        const record = await DBManager.get(APP_CONFIG.STORES.SETTINGS, 'target-version');
+        return record ? record.value : null;
+    },
+
+    async setTargetVersion(version) {
+        await DBManager.put(APP_CONFIG.STORES.SETTINGS, {
+            id: 'target-version',
+            value: version
+        });
+    },
+
+    async fetchAndLoadTargets(meta) {
+        try {
+            console.log(`Fetching target file: ${meta.filename} (version ${meta.version})`);
+            const response = await fetch(APP_CONFIG.TARGET_DATA_PATH + meta.filename);
+            if (!response.ok) {
+                console.warn('Target CSV file not found or unavailable');
+                return false;
+            }
+            const text = await response.text();
+            const parsed = CSVUtils.parseTargetCSV(text);
+
+            if (parsed.errors.length > 0) {
+                console.warn('Target CSV parse errors:', parsed.errors);
+            }
+
+            if (parsed.targets.length === 0) {
+                console.warn('No targets parsed from CSV');
+                return false;
+            }
+
+            await DBManager.clear(APP_CONFIG.STORES.TARGETS);
+            await this.importTargets(parsed.targets, String(meta.version));
+            console.log(`Target database loaded: ${parsed.targets.length} targets (version ${meta.version})`);
+
+            if (parsed.targets.length !== meta.count) {
+                console.warn(`Count mismatch: expected ${meta.count}, loaded ${parsed.targets.length}`);
+            }
+
+            return true;
+        } catch (error) {
+            console.warn('Failed to fetch and load targets:', error.message);
+            return false;
+        }
+    },
+
+    async fetchTargetMeta() {
+        try {
+            const response = await fetch(APP_CONFIG.TARGET_DATA_PATH + 'targets-meta.json');
+            if (!response.ok) {
+                console.warn('targets-meta.json not found or unavailable');
+                return null;
+            }
+            const meta = await response.json();
+            return meta;
+        } catch (error) {
+            console.warn('Failed to fetch targets-meta.json:', error.message);
+            return null;
+        }
     },
 
     // ============================================================================

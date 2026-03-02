@@ -170,6 +170,9 @@ const UIManager = {
         case 'new-restore':
             this.openNewRestoreModal();
             break;
+        case 'check-target-updates':
+            this.checkForTargetUpdates();
+            break;
         case 'clear-all-targets':
             this.clearAllTargets();
             break;
@@ -1298,9 +1301,62 @@ const UIManager = {
     },
 
 
-    /**
-     * Open import targets modal
-     */
+    locationHasBestMonths(locationName) {
+        const targets = DataManager.getTargets();
+        if (!targets || targets.length === 0) return false;
+        // Sample first 10 targets to check if location has best months data
+        const sample = targets.slice(0, 10);
+        return sample.some(t => t.bestMonth && t.bestMonth[locationName] !== undefined);
+    },
+
+    async autoCalculateBestMonths(locationName) {
+        const minAltitude = SettingsManager.getMinAltitudeYearly() || 35;
+        const minDarkHours = 2;
+
+        this.showProgressToast(`Calculating Best Months for ${locationName}: 0%`);
+
+        try {
+            await BestMonths.calculateBestMonths(locationName, minAltitude, minDarkHours, (processed, total) => {
+                const percent = Math.round((processed / total) * 100);
+                this.updateProgressToast(`Calculating Best Months for ${locationName}: ${percent}%`);
+            });
+
+            this.dismissProgressToast();
+            this.showToast(`Best Months calculated for ${locationName}`, 'success');
+        } catch (error) {
+            this.dismissProgressToast();
+            this.showToast(`Best Months calculation failed: ${error.message}`, 'error');
+            console.error('Auto Best Months error:', error);
+        }
+    },
+
+    async checkForTargetUpdates() {
+        const meta = await DataManager.fetchTargetMeta();
+        if (!meta) {
+            this.showToast('Target update file not available', 'warning');
+            return;
+        }
+
+        const storedVersion = await DataManager.getTargetVersion();
+        const currentVersion = storedVersion ? String(storedVersion) : null;
+        const metaVersion = String(meta.version);
+
+        if (currentVersion === metaVersion) {
+            this.showToast('Target database is already up to date', 'success');
+            return;
+        }
+
+        this.showToast('Updating target database...', 'info');
+        const loaded = await DataManager.fetchAndLoadTargets(meta);
+        if (loaded) {
+            TargetFilter.initialize();
+            this.showToast('Target database updated - reloading...', 'success');
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            this.showToast('Failed to update target database', 'error');
+        }
+    },
+
     openImportTargetsModal() {
         this.openModal('import-targets-template', 'Import Target Database', async (action, modalBody) => {
             if (action === 'import') {
@@ -1324,6 +1380,9 @@ const UIManager = {
         }
 
         try {
+            // Parse version from filename (e.g. specula-targets-1737934800.csv)
+            const versionMatch = file.name.match(/specula-targets-(\d+)\.csv$/);
+            const targetVersion = versionMatch ? versionMatch[1] : null;
             const text = await file.text();
             const parsed = CSVUtils.parseTargetCSV(text);
 
@@ -1335,7 +1394,7 @@ const UIManager = {
             }
 
             if (parsed.targets.length > 0) {
-                const count = await DataManager.importTargets(parsed.targets);
+                const count = await DataManager.importTargets(parsed.targets, targetVersion);
                 TargetFilter.initialize();
                 this.showToast(`Successfully imported ${count} target(s)`, 'success');
 
@@ -1360,6 +1419,32 @@ const UIManager = {
     /**
      * Show toast notification
      */
+    showProgressToast(message) {
+        const existing = document.getElementById('progress-toast');
+        if (existing) existing.remove();
+
+        const toast = document.createElement('div');
+        toast.id = 'progress-toast';
+        toast.className = 'toast toast-info';
+        toast.textContent = message;
+
+        document.body.appendChild(toast);
+        setTimeout(() => toast.classList.add('show'), 10);
+    },
+
+    updateProgressToast(message) {
+        const toast = document.getElementById('progress-toast');
+        if (toast) toast.textContent = message;
+    },
+
+    dismissProgressToast() {
+        const toast = document.getElementById('progress-toast');
+        if (toast) {
+            toast.classList.remove('show');
+            setTimeout(() => { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 300);
+        }
+    },
+
     showToast(message, type = 'info') {
         const toast = document.createElement('div');
         toast.className = `toast toast-${type}`;
@@ -1597,6 +1682,9 @@ const UIManager = {
             const locationName = e.target.value;
             if (locationName) {
                 await SettingsManager.setSelectedLocation(locationName);
+                if (!this.locationHasBestMonths(locationName)) {
+                    await this.autoCalculateBestMonths(locationName);
+                }
             }
         });
 

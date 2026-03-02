@@ -19,9 +19,12 @@
 
 
 
+EPOCH=$(date +%s)
+TARGET_FILE="specula-targets-${EPOCH}.csv"
+
 python bin/scrubber.py \
        --in temp_dso.csv \
-       --out final_targets.csv \
+       --out "$TARGET_FILE" \
        --log scrubber.log \
        --create-missing \
        --fill \
@@ -35,6 +38,28 @@ python bin/scrubber.py \
 
 rm temp_dso.csv
 
+# Generate targets-meta.json
+RECORD_COUNT=$(( $(wc -l < "$TARGET_FILE") - 1 ))
+GENERATED=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
+
+cat > targets-meta.json << EOF
+{
+    "filename": "${TARGET_FILE}",
+    "version": ${EPOCH},
+    "count": ${RECORD_COUNT},
+    "generated": "${GENERATED}"
+}
+EOF
+
+# Ensure data folder exists
+mkdir -p ../src/data/
+
+# Move files to Specula data folder
+mv "$TARGET_FILE" ../src/data/
+mv targets-meta.json ../src/data/
+
 echo
-echo "Import final_targets.csv into Specula after deleting existing targets"
+echo "Files moved to ../src/data/"
+echo "  ${TARGET_FILE}"
+echo "  targets-meta.json"
 echo
