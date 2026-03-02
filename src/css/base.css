@@ -276,6 +276,18 @@ body {
     margin: 0;
 }
 
+.modal-header-left {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+#modal-subtitle {
+    display: none;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
 .close-btn {
     background: var(--border-color);
     border: 1px solid var(--border-color);
@@ -1441,7 +1453,7 @@ input[type="number"] {
 /* increase the max-height if additional items are added to the */
 /* Admin Tools submenu */
 .menu-submenu.expanded {
-    max-height: 400px; 
+    max-height: 400px;
 }
 
 /* Submenu items */
