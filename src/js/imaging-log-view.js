@@ -519,10 +519,12 @@ const ImagingLogView = {
                 // Update existing
                 await ImagingLogManager.updateProject(this.currentProjectId, projectData);
                 UIManager.showToast(`Project "${name}" updated`, 'success');
+                UIManager.markDataChanged();
             } else {
                 // Create new
                 await ImagingLogManager.createProject(projectData);
                 UIManager.showToast(`Project "${name}" created`, 'success');
+                UIManager.markDataChanged();
             }
 
             // Check for targets exceeding program max numbers
@@ -927,10 +929,12 @@ const ImagingLogView = {
                 // Update existing
                 await ImagingLogManager.updateSession(this.currentSessionId, sessionData);
                 UIManager.showToast('Session updated', 'success');
+                UIManager.markDataChanged();
             } else {
                 // Create new
                 await ImagingLogManager.createSession(sessionData);
                 UIManager.showToast('Session created', 'success');
+                UIManager.markDataChanged();
             }
 
             // Close modal
@@ -960,6 +964,7 @@ const ImagingLogView = {
 
             await ImagingLogManager.deleteSession(sessionId);
             UIManager.showToast('Session deleted', 'success');
+            UIManager.markDataChanged();
             await this.renderProjectList();
         } catch (error) {
             console.error('Error deleting session:', error);
@@ -976,6 +981,7 @@ const ImagingLogView = {
         try {
             await ImagingLogManager.deleteProject(projectId);
             UIManager.showToast(`Project "${project.name}" deleted`, 'success');
+            UIManager.markDataChanged();
             await this.renderProjectList();
         } catch (error) {
             console.error('Error deleting project:', error);
@@ -1513,9 +1519,11 @@ const ImagingLogView = {
                 if (programId) {
                     await ImagingLogManager.updateProgram(programId, programData);
                     UIManager.showToast('Program updated', 'success');
+                    UIManager.markDataChanged();
                 } else {
                     await ImagingLogManager.createProgram(programData);
                     UIManager.showToast('Program created', 'success');
+                    UIManager.markDataChanged();
                 }
 
                 this.closeProgramModal();
@@ -1646,11 +1654,13 @@ const ImagingLogView = {
                     };
                     await ImagingLogManager.updateProgram(programId, updateData);
                     UIManager.showToast(`Program "${name}" updated`, 'success');
+                    UIManager.markDataChanged();
                     UIManager.closeModal();
                     await this.renderProgramsList();
                 } else {
                     await ImagingLogManager.createProgram(programData);
                     UIManager.showToast(`Program "${name}" created`, 'success');
+                    UIManager.markDataChanged();
                     UIManager.closeModal();
                     await this.renderProgramsList();
                 }
@@ -1685,10 +1695,12 @@ const ImagingLogView = {
                         // Editing existing manual list program
                         await ImagingLogManager.updateProgram(programId, programData);
                         UIManager.showToast(`Program "${name}" updated with ${results.matched.length} targets`, 'success');
+                        UIManager.markDataChanged();
                     } else {
                         // Creating new manual list program
                         await ImagingLogManager.createProgram(programData);
                         UIManager.showToast(`Program "${name}" created with ${results.matched.length} targets`, 'success');
+                        UIManager.markDataChanged();
                     }
 
 //                    UIManager.closeModal();
@@ -1799,6 +1811,7 @@ const ImagingLogView = {
         try {
             await ImagingLogManager.deleteProgram(programId);
             UIManager.showToast(`Program "${program.name}" deleted`, 'success');
+            UIManager.markDataChanged();
             await this.renderProgramsList();
         } catch (error) {
             console.error('Error deleting program:', error);

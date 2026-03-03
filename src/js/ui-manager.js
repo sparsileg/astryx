@@ -707,6 +707,7 @@ const UIManager = {
 
         await DataManager.deleteLocation(locationName);
         this.showToast(`Location "${locationName}" deleted`, 'success');
+        this.markDataChanged();
         this.populateManageLocationsModal();
 
         // Notify other components to refresh their location lists
@@ -820,6 +821,7 @@ const UIManager = {
         });
 
         this.showToast(`Location "${name}" saved successfully`, 'success');
+        this.markDataChanged();
         this.clearLocationForm();
         this.populateManageLocationsModal();
 
@@ -1227,6 +1229,12 @@ const UIManager = {
         if (minAltSelect) {
             minAltSelect.value = SettingsManager.getGlobalMinAltitude();
         }
+
+        // Auto-backup toggle
+        const autoBackupCheckbox = document.getElementById('auto-backup-enabled');
+        if (autoBackupCheckbox) {
+            autoBackupCheckbox.checked = SettingsManager.getAutoBackupEnabled();
+        }
     },
 
     /**
@@ -1255,7 +1263,11 @@ const UIManager = {
             await SettingsManager.updateGlobalMinAltitude(parseInt(minAlt));
         }
 
+        const autoBackup = modalBody.querySelector('#auto-backup-enabled')?.checked ?? true;
+        await SettingsManager.setAutoBackupEnabled(autoBackup);
+
         this.showToast('Settings saved successfully', 'success');
+        this.markDataChanged();
     },
 
     /**
@@ -1320,6 +1332,13 @@ const UIManager = {
         // Sample first 10 targets to check if location has best months data
         const sample = targets.slice(0, 10);
         return sample.some(t => t.bestMonth && t.bestMonth[locationName] !== undefined);
+    },
+
+    async markDataChanged() {
+        if (!SettingsManager.getAutoBackupEnabled()) return;
+        const dtg = TimeUtils.nowDTG();
+        await SettingsManager.setLastChangeTimestamp(dtg);
+        BackupManager.scheduleAutoBackup();
     },
 
     async autoCalculateBestMonths(locationName) {
@@ -1540,10 +1559,12 @@ const UIManager = {
                 // Remove from list
                 await ToDoManager.removeFromToDoList(target.object);
                 this.showToast(`Removed ${target.object} from To Do List`, 'success');
+                UIManager.markDataChanged();
             } else {
                 // Add to list
                 await ToDoManager.addToToDoList(target.object);
                 this.showToast(`Added ${target.object} to To Do List`, 'success');
+                UIManager.markDataChanged();
             }
 
             // Update button state
@@ -2104,6 +2125,7 @@ const UIManager = {
         });
 
         this.showToast(`Telescope "${name}" saved successfully`, 'success');
+        this.markDataChanged();
 
         // Clear form
         document.getElementById('telescope-name').value = '';
@@ -2128,6 +2150,7 @@ const UIManager = {
 
         await DataManager.deleteTelescope(name);
         this.showToast(`Telescope "${name}" deleted`, 'success');
+        this.markDataChanged();
         this.refreshTelescopeList();
 
         // Dispatch event for dropdown refresh
@@ -2216,6 +2239,7 @@ const UIManager = {
         });
 
         this.showToast(`Sensor "${name}" saved successfully`, 'success');
+        this.markDataChanged();
 
         // Clear form
         document.getElementById('sensor-name').value = '';
@@ -2240,6 +2264,7 @@ const UIManager = {
         }
         await DataManager.deleteSensor(name);
         this.showToast(`Sensor "${name}" deleted`, 'success');
+        this.markDataChanged();
         this.refreshSensorList();
         // Dispatch event for dropdown refresh
         document.dispatchEvent(new CustomEvent('sensors-updated'));
@@ -2315,6 +2340,7 @@ const UIManager = {
 
         await DataManager.saveFilter(name);
         this.showToast(`Filter "${name}" saved successfully`, 'success');
+        this.markDataChanged();
 
         // Clear form
         document.getElementById('filter-name').value = '';
@@ -2336,19 +2362,12 @@ const UIManager = {
 
         await DataManager.deleteFilter(name);
         this.showToast(`Filter "${name}" deleted`, 'success');
+        this.markDataChanged();
         this.refreshFilterList();
 
         // Dispatch event for dropdown refresh
         document.dispatchEvent(new CustomEvent('filters-updated'));
     },
-
-
-
-
-
-
-
-
 
 
     /**
