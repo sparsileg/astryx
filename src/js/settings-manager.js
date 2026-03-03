@@ -20,7 +20,9 @@ const SettingsManager = {
         lastBestMonthsAltitude: null, // Last altitude used for best months calc
         lastBestMonthsDarkHours: null, // Last dark hours used for best months calc
         lastBestMonthsCalculated: null, // Timestamp of last best months calc
-        lastBestMonthsLocation: null  // Location used for last best months calc
+        lastBestMonthsLocation: null,  // Location used for last best months calc
+        autoBackupEnabled: true,       // Auto-backup on data change
+        lastChangeTimestamp: null      // DTG of last data change
     },
 
     /**
@@ -338,6 +340,24 @@ const SettingsManager = {
      */
     async updateGlobalMinAltitude(altitude) {
         this.settings.globalMinAltitude = altitude;
+        await this.saveSettings();
+    },
+
+    getAutoBackupEnabled() {
+        return this.settings.autoBackupEnabled !== false;
+    },
+
+    async setAutoBackupEnabled(enabled) {
+        this.settings.autoBackupEnabled = enabled;
+        await this.saveSettings();
+    },
+
+    getLastChangeTimestamp() {
+        return this.settings.lastChangeTimestamp;
+    },
+
+    async setLastChangeTimestamp(dtg) {
+        this.settings.lastChangeTimestamp = dtg;
         await this.saveSettings();
     }
 

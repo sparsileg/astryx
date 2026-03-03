@@ -203,6 +203,52 @@ const BackupManager = {
     /**
      * Handle NEW Backup save action
      */
+    scheduleAutoBackup() {
+        // Clear any existing timer
+        if (this._autoBackupTimer) {
+            clearTimeout(this._autoBackupTimer);
+        }
+        // Schedule backup after 60 seconds
+        this._autoBackupTimer = setTimeout(() => {
+            this.executeAutoBackup();
+        }, 60000);
+    },
+
+    async executeAutoBackup() {
+        if (!SettingsManager.getAutoBackupEnabled()) return;
+
+        try {
+            const dtg = SettingsManager.getLastChangeTimestamp() || TimeUtils.nowDTG();
+            const filename = `${APP_CONFIG.APP_NAME}-v${APP_CONFIG.APP_VERSION}-d${APP_CONFIG.DB_VERSION}-${dtg}`;
+
+            const selectedStores = [
+                'settings', 'locations', 'telescopes', 'sensors', 'filters',
+                'pinnedTargets', 'toDoTargets', 'imagingProjects', 'imagingSessions', 'imagingPrograms'
+            ];
+
+            const backupData = await this.generateBackupData(selectedStores);
+            const jsonString = JSON.stringify(backupData, null, 2);
+
+            const zip = new JSZip();
+            zip.file(filename + '.json', jsonString);
+            const zipBlob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
+
+            const url = URL.createObjectURL(zipBlob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename + '.zip';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            UIManager.showToast('Auto-backup saved', 'success');
+        } catch (error) {
+            console.error('Auto-backup failed:', error);
+            UIManager.showToast('Auto-backup failed: ' + error.message, 'error');
+        }
+    },
+
     async handleNewBackup(modalBody) {
         const selectedStores = this.getSelectedBackupStores();
 

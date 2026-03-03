@@ -281,6 +281,7 @@ const VisibilityTargets = {
 
         if (success) {
             UIManager.showToast(`Target "${this.currentTarget.object}" pinned`, 'success');
+            UIManager.markDataChanged();
             this.updatePinnedDisplay();
         } else {
             UIManager.showToast(`Target "${this.currentTarget.object}" is already pinned`, 'warning');
@@ -294,6 +295,7 @@ const VisibilityTargets = {
         const success = await DataManager.unpinTarget(name);
         if (success) {
             UIManager.showToast(`Target "${name}" unpinned`, 'success');
+            UIManager.markDataChanged();
             this.updatePinnedDisplay();
         }
     },
