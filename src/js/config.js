@@ -51,7 +51,12 @@ const APP_CONFIG = {
         { azimuth: 90, elevation: 0 },
         { azimuth: 180, elevation: 0 },
         { azimuth: 270, elevation: 0 }
-    ]
+    ],
+
+    // Feature flags
+    FEATURES: {
+        OPTIMIZER_COMBINATIONS: true  // Issue #38 - combination mode for target optimizer
+    }
 };
 
 /**

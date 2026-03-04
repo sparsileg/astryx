@@ -180,9 +180,82 @@ const OptimizerCalculations = {
         // Sort by composite score descending
         scored.sort((a, b) => b.scores.composite - a.scores.composite);
 
+        // Tally elimination reasons
+        const eliminationCounts = {};
+        for (const e of eliminated) {
+            eliminationCounts[e.eliminationReason] = (eliminationCounts[e.eliminationReason] || 0) + 1;
+        }
+
         // Return top N (from settings)
-        const topN = SettingsManager.getSetting('optimizerCandidateCount', 25) || 25;
-        return scored.slice(0, topN);
+        const topN = SettingsManager.getSetting('optimizerCandidateCount', 23) || 23;
+        const topScored = scored.slice(0, topN);
+        const belowCutoff = scored.length - topScored.length;
+        if (belowCutoff > 0) {
+            eliminationCounts['below top ' + topN] = belowCutoff;
+        }
+        topScored._eliminationCounts = eliminationCounts;
+        topScored._totalEvaluated = candidates.length;
+        return topScored;
+    },
+
+    /**
+     * Generate best target combinations for a night
+     * @param {Array} scoredCandidates - Already scored candidates from scoreCandidates()
+     * @returns {Array} Top 10 combinations sorted by quality-weighted score descending
+     */
+    generateCombinations(scoredCandidates) {
+        if (!scoredCandidates || scoredCandidates.length === 0) return [];
+
+        const combos = [];
+
+        // Size 1: each target as a solo combination
+        for (let i = 0; i < scoredCandidates.length; i++) {
+            const a = scoredCandidates[i];
+            combos.push({
+                targets: [a],
+                comboScore: a.scores.composite * a.windowHours
+            });
+        }
+
+        // Size 2: all pairs
+        for (let i = 0; i < scoredCandidates.length; i++) {
+            for (let j = i + 1; j < scoredCandidates.length; j++) {
+                const a = scoredCandidates[i];
+                const b = scoredCandidates[j];
+                combos.push({
+                    targets: [a, b],
+                    comboScore: (a.scores.composite * a.windowHours) +
+                                (b.scores.composite * b.windowHours)
+                });
+            }
+        }
+
+        // Size 3: all triplets
+        for (let i = 0; i < scoredCandidates.length; i++) {
+            for (let j = i + 1; j < scoredCandidates.length; j++) {
+                for (let k = j + 1; k < scoredCandidates.length; k++) {
+                    const a = scoredCandidates[i];
+                    const b = scoredCandidates[j];
+                    const c = scoredCandidates[k];
+                    combos.push({
+                        targets: [a, b, c],
+                        comboScore: (a.scores.composite * a.windowHours) +
+                                    (b.scores.composite * b.windowHours) +
+                                    (c.scores.composite * c.windowHours)
+                    });
+                }
+            }
+        }
+
+        // Split by size, sort each group, return top results per group
+        const singles = combos.filter(c => c.targets.length === 1)
+            .sort((a, b) => b.comboScore - a.comboScore).slice(0, 5);
+        const pairs = combos.filter(c => c.targets.length === 2)
+            .sort((a, b) => b.comboScore - a.comboScore).slice(0, 5);
+        const triplets = combos.filter(c => c.targets.length === 3)
+            .sort((a, b) => b.comboScore - a.comboScore).slice(0, 5);
+
+        return { singles, pairs, triplets };
     },
 
     /**
