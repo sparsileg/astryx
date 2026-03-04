@@ -1,0 +1,386 @@
+/**
+ * optimizer-view.js
+ * Target Optimizer view controller and UI
+ */
+
+const OptimizerView = {
+
+    // In-memory pool from Filter Targets "Send to Optimizer"
+    filterTargetsPool: null,
+
+    /**
+     * Initialize Target Optimizer view
+     */
+    init() {
+        console.log('Initializing Target Optimizer view');
+
+        // Set default date to today
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = (today.getMonth() + 1).toString().padStart(2, '0');
+        const day = today.getDate().toString().padStart(2, '0');
+        document.getElementById('optimizer-date').value = `${year}-${month}-${day}`;
+
+        this.updateFilterSourceOption();
+        this.attachEventHandlers();
+
+        console.log('Target Optimizer initialized');
+    },
+
+    /**
+     * Update the Filter Targets source option based on whether a pool is loaded
+     */
+    updateFilterSourceOption() {
+        const filterOption = document.getElementById('optimizer-source-filter');
+        if (!filterOption) return;
+
+        if (this.filterTargetsPool && this.filterTargetsPool.length > 0) {
+            filterOption.disabled = false;
+            filterOption.textContent = `Filter Targets (${this.filterTargetsPool.length} targets)`;
+        } else {
+            filterOption.disabled = true;
+            filterOption.textContent = 'Filter Targets (none loaded)';
+        }
+    },
+
+    /**
+     * Attach event handlers
+     */
+    attachEventHandlers() {
+        // Session start selector - show/hide custom time input
+        const startTimeSelect = document.getElementById('optimizer-start-time');
+        const customTimeInput = document.getElementById('optimizer-custom-time');
+
+        if (startTimeSelect && customTimeInput) {
+            startTimeSelect.addEventListener('change', (e) => {
+                if (e.target.value === 'custom') {
+                    customTimeInput.style.opacity = '1';
+                    customTimeInput.style.pointerEvents = 'auto';
+                } else {
+                    customTimeInput.style.opacity = '0';
+                    customTimeInput.style.pointerEvents = 'none';
+                }
+            });
+        }
+
+        // Execute button
+        const executeBtn = document.getElementById('optimizer-execute-btn');
+        if (executeBtn) {
+            executeBtn.addEventListener('click', () => {
+                this.execute();
+            });
+        }
+    },
+
+    /**
+     * Execute optimization
+     */
+    execute() {
+        const date = document.getElementById('optimizer-date').value;
+        const source = document.getElementById('optimizer-source').value;
+        const startTimeMode = document.getElementById('optimizer-start-time').value;
+        const customStartTime = document.getElementById('optimizer-custom-time').value;
+
+        if (!date) {
+            UIManager.showToast('Please select a date', 'error');
+            return;
+        }
+
+        const locationName = SettingsManager.getSelectedLocation();
+        if (!locationName) {
+            UIManager.showToast('No location selected. Please set a location in settings.', 'error');
+            return;
+        }
+
+        const location = DataManager.getLocations()[locationName];
+        if (!location) {
+            UIManager.showToast('Location data not found.', 'error');
+            return;
+        }
+
+        // Calculate dusk/dawn for the session
+        const timing = SeqPlanCalculations.calculateSessionTiming(date, location);
+        if (!timing) {
+            UIManager.showToast('No astronomical night at this location/date', 'error');
+            return;
+        }
+
+        // Determine session start JD
+        let sessionStartJD = timing.duskJD;
+        if (startTimeMode === 'custom' && customStartTime) {
+            const dateParts = date.split('-');
+            const customDate = new Date(
+                parseInt(dateParts[0]),
+                parseInt(dateParts[1]) - 1,
+                parseInt(dateParts[2]),
+                parseInt(customStartTime.split(':')[0]),
+                parseInt(customStartTime.split(':')[1]),
+                0
+            );
+            sessionStartJD = dateToJD(customDate);
+        }
+
+        const session = {
+            date,
+            location,
+            minAltitude: SettingsManager.getGlobalMinAltitude(),
+            sessionStartJD,
+            sessionEndJD: timing.dawnJD
+        };
+
+        // Assemble candidate pool
+        const candidates = OptimizerCalculations.assembleCandidatePool(source);
+        if (candidates.length === 0) {
+            UIManager.showToast('No candidates found in selected source', 'warning');
+            return;
+        }
+
+        // Score candidates
+        const results = OptimizerCalculations.scoreCandidates(candidates, session);
+        if (results.length === 0) {
+            UIManager.showToast('No targets meet minimum visibility requirements', 'warning');
+            return;
+        }
+
+        // Store total evaluated count for display
+        this.totalEvaluated = candidates.length;
+
+        // Render results
+        this.renderResults(results, this.totalEvaluated);
+    },
+
+    /**
+     * Render scored results into #optimizer-results
+     * @param {Array} results - Scored candidate array from scoreCandidates
+     * @param {number} totalEvaluated - Total candidates evaluated
+     */
+    renderResults(results, totalEvaluated) {
+        const container = document.getElementById('optimizer-results');
+        if (!container) return;
+
+        // Store results for pruning
+        this.currentResults = results.slice();
+
+        const eliminated = totalEvaluated - results.length;
+
+        let html = `
+            <div class="card" style="margin-top: 1rem;">
+                <div class="card-header">
+                    <h3>Suggested Targets</h3>
+                </div>
+                <div class="card-body">
+                    <div class="optimizer-results-summary">
+                        <span>Showing ${results.length} of ${totalEvaluated} evaluated &bull; ${eliminated} eliminated</span>
+                    </div>
+                    <div id="optimizer-candidate-list">
+        `;
+
+        results.forEach((target, index) => {
+            const windowStart = jdToDate(target.windowStartJD).toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false});
+            const windowEnd   = jdToDate(target.windowEndJD).toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false});
+            const peakTime    = jdToDate(target.peakJD).toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false});
+            const typeDisplay = OBJECT_TYPES?.[target.type] || target.type || 'Unknown';
+            const sizeDisplay = target.sizeMax ? `${target.sizeMax}'` : '—';
+            const commonDisplay = target.common ? target.common.split(',')[0].trim() : '';
+
+            html += `
+                <div class="optimizer-candidate-card" id="optimizer-card-${index}" data-index="${index}">
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 0.25rem; min-width: 2rem;">
+                        <div class="optimizer-candidate-rank">${index + 1}</div>
+                        <button class="optimizer-remove-btn" data-index="${index}" title="Remove from list" style="margin-left: 0.35rem;">✕</button>
+                    </div>
+                    <div class="optimizer-candidate-body">
+                        <div class="optimizer-candidate-line1" style="justify-content: space-between;">
+                            <div style="display: flex; flex-wrap: wrap; gap: 0.25rem; align-items: baseline;">
+                                <span class="opt-name">${target.name}</span>
+                                ${commonDisplay ? `<span class="opt-sep">·</span><span class="opt-meta">${commonDisplay}</span>` : ''}
+                                <span class="opt-sep">·</span><span class="opt-meta">${typeDisplay}</span>
+                                <span class="opt-sep">·</span><span class="opt-meta">Min/Max Size: ${target.sizeMin ? target.sizeMin + "'" : '—'}/${target.sizeMax ? target.sizeMax + "'" : '—'}</span>
+                            </div>
+                            <button class="btn-primary btn-sm optimizer-dv-btn" data-index="${index}" title="View Daily Visibility" style="flex-shrink: 0;">Daily Visibility</button>
+                            <button class="btn-primary btn-sm optimizer-pin-card-btn" data-index="${index}" title="Add to Pinned Targets" style="flex-shrink: 0;">📌 Pin</button>
+                        </div>
+                        <div class="optimizer-candidate-line1">
+                            <span class="opt-meta">Window: ${windowStart} – ${windowEnd} (${target.windowHours.toFixed(1)}h)</span>
+                            <span class="opt-sep">·</span><span class="opt-meta">Peak: ${target.peakAltitude.toFixed(1)}° at ${peakTime}</span>
+                            <span class="opt-sep">·</span><span class="opt-meta">Moon: ${target.moonSeparation.toFixed(0)}°</span>
+                        </div>
+                        <div class="optimizer-score-area">
+                            <div class="optimizer-score-left">
+                                <div class="optimizer-score-values">
+                                    <span>${target.scores.window}</span>
+                                    <span>${target.scores.altitude}</span>
+                                    <span>${target.scores.centering}</span>
+                                    <span>${target.scores.moon}</span>
+                                </div>
+                                <div class="optimizer-score-labels">
+                                    <span>Window</span>
+                                    <span>Altitude</span>
+                                    <span>Centering</span>
+                                    <span>Moon</span>
+                                </div>
+                                <div class="optimizer-composite-line">Composite Score: <strong>${target.scores.composite}</strong></div>
+                            </div>
+                            <!-- STUB: thumbnail image placeholder - future implementation -->
+                            <div class="optimizer-thumbnail-stub">IMG<br>future</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+
+        html += `
+                    </div>
+                </div>
+            </div>
+        `;
+
+        container.innerHTML = html;
+
+        // Attach remove button listeners
+        container.querySelectorAll('.optimizer-remove-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const index = parseInt(e.currentTarget.dataset.index);
+                this.removeCandidate(index);
+            });
+        });
+
+        // Attach daily visibility button listeners
+        container.querySelectorAll('.optimizer-dv-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const index = parseInt(e.currentTarget.dataset.index);
+                this.viewDailyVisibility(index);
+            });
+        });
+
+        // Attach per-card pin button listeners
+        container.querySelectorAll('.optimizer-pin-card-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const index = parseInt(e.currentTarget.dataset.index);
+                this.pinCandidate(index);
+            });
+        });
+    },
+
+    /**
+     * Remove a candidate from the displayed list
+     * @param {number} index - Index in currentResults
+     */
+    removeCandidate(index) {
+        this.currentResults.splice(index, 1);
+        this.renderResults(this.currentResults, this.totalEvaluated);
+    },
+
+    /**
+     * Pin a single candidate to pinned targets
+     * @param {number} index - Index in currentResults
+     */
+    async pinCandidate(index) {
+        const candidate = this.currentResults[index];
+        if (!candidate) return;
+
+        const target = DataManager.getTargets().find(t => t.object === candidate.id);
+        if (!target) {
+            UIManager.showToast('Target not found', 'error');
+            return;
+        }
+
+        const alreadyPinned = DataManager.getPinnedTargets().some(p => p.name === candidate.id);
+        if (alreadyPinned) {
+            UIManager.showToast(`${candidate.name} is already pinned`, 'warning');
+            return;
+        }
+
+        await DataManager.pinTarget({ ...target, name: target.object });
+        UIManager.showToast(`${candidate.name} pinned`, 'success');
+    },
+
+    /**
+     * Open Daily Visibility chart for a candidate directly
+     * @param {number} index - Index in currentResults
+     */
+    viewDailyVisibility(index) {
+        const candidate = this.currentResults[index];
+        if (!candidate) return;
+
+        // Find full target object from DataManager
+        const target = DataManager.getTargets().find(t => t.object === candidate.id);
+        if (!target) {
+            UIManager.showToast('Target not found', 'error');
+            return;
+        }
+
+        // Set current target for visibility system
+        VisibilityTargets.currentTarget = target;
+        VisibilityCalculations.currentTarget = target;
+
+        // Get location
+        const locationName = SettingsManager.getSelectedLocation();
+        const loc = DataManager.getLocations()[locationName];
+
+        // Build inputs — single day, straight to chart
+        const inputs = {
+            obsDate:      document.getElementById('optimizer-date').value,
+            numDays:      1,
+            stepDays:     1,
+            maxResults:   1,
+            targetName:   target.object,
+            locationName: locationName,
+            ra:           target.ra,
+            dec:          target.dec,
+            latitude:     loc.latitude,
+            longitude:    loc.longitude,
+            elevation:    loc.elevation,
+            timezone:     loc.timezone,
+            minAltitude:  SettingsManager.getGlobalMinAltitude()
+        };
+
+        // Calculate single day — results stored in window.visibilityResults
+        VisibilityCalculations.calculate(inputs);
+
+        // After calculate, pull the single result and build skyglowData directly
+        setTimeout(() => {
+            const vr = window.visibilityResults;
+            if (!vr || !vr.results || vr.results.length === 0) {
+                UIManager.showToast('No visibility data for this target on this date', 'warning');
+                return;
+            }
+            const result = vr.results[0];
+
+            window.skyglowData = {
+                date: result.date,
+                targetName: vr.targetName,
+                commonName: vr.commonName || '',
+                locationName: vr.locationName,
+                ra: vr.ra,
+                dec: vr.dec,
+                latitude: vr.latitude,
+                longitude: vr.longitude,
+                elevation: vr.elevation,
+                timezone: vr.timezone,
+                isDSTActive: vr.isDSTActive,
+                minAltitude: vr.minAltitude,
+                duskJD: result.duskJD,
+                dawnJD: result.dawnJD,
+                riseJD: result.riseJD,
+                setJD: result.setJD,
+                moonRiseSet: result.moonRiseSet,
+                useHorizon: vr.useHorizon !== undefined ? vr.useHorizon : true,
+                blockedMinutes: result.blockedMinutes
+            };
+
+            window.location.hash = '#skyglow';
+        }, 100);
+    },
+
+    /**
+     * Receive filter targets pool from Target Filter
+     * Called by TargetFilter "Send to Optimizer" button (Phase 5)
+     * @param {Array} targets - Filtered target array
+     */
+    receiveFilterPool(targets) {
+        this.filterTargetsPool = targets;
+        this.updateFilterSourceOption();
+    }
+
+};

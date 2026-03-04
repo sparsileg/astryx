@@ -696,6 +696,18 @@ const TargetFilter = {
                 this.openCreateProgramModal();
             });
         }
+
+        // Attach Send to Optimizer button handler
+        const sendToOptimizerBtn = document.getElementById('send-to-optimizer-btn');
+        if (sendToOptimizerBtn) {
+            const newBtn = sendToOptimizerBtn.cloneNode(true);
+            sendToOptimizerBtn.parentNode.replaceChild(newBtn, sendToOptimizerBtn);
+
+            newBtn.addEventListener('click', () => {
+                OptimizerView.receiveFilterPool(this.allResults);
+                UIManager.showToast(`${this.allResults.length} targets sent to Optimizer`, 'success');
+            });
+        }
     },
 
     /**

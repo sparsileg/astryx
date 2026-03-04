@@ -96,10 +96,16 @@
 
 #create-imaging-program-btn {
     display: none;
-    padding: 0.25rem 0.75rem;
-    line-height: 1.2;
 }
 
-#create-imaging-program-btn div {
+#create-imaging-program-btn,
+#send-to-optimizer-btn {
+    padding: 0.25rem 0.75rem;
+    line-height: 1.2;
+    width: 100%;
+}
+
+#create-imaging-program-btn div,
+#send-to-optimizer-btn div {
     font-size: 0.75rem;
 }

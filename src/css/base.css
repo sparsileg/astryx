@@ -1366,6 +1366,14 @@ input[type="number"] {
     gap: 1rem;
 }
 
+/* Two-column settings row */
+.settings-two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+}
+
 .form-group.form-inline label {
     flex: 0 0 auto;
     margin-bottom: 0;

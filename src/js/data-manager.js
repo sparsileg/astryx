@@ -321,7 +321,7 @@ const DataManager = {
      */
     async pinTarget(target) {
         // Check if already pinned
-        const existing = this.pinnedTargets.find(t => t.name === target.name);
+        const existing = this.pinnedTargets.find(t => t.object === target.name);
         if (existing) {
             return false;
         }

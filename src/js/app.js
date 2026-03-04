@@ -314,6 +314,15 @@ const App = {
             UtilitiesView.init();
             break;
 
+            /* target optimizer */
+        case 'optimizer':
+            document.getElementById('app').innerHTML = '';
+            const optimizerTemplate = document.getElementById('optimizer-view-template');
+            const optimizerContent = optimizerTemplate.content.cloneNode(true);
+            document.getElementById('app').appendChild(optimizerContent);
+            OptimizerView.init();
+            break;
+
         default:
             // Default to target selection
             window.location.hash = '#target-select';
