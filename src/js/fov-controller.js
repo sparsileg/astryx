@@ -69,25 +69,28 @@ const FOVView = {
         // Setup event listeners
         this.setupEventListeners();
 
-        // Restore moon checkbox state
+        // Moon defaults to off
         const showMoonCheckbox = document.getElementById('fov-show-moon');
         if (showMoonCheckbox) {
-            showMoonCheckbox.checked = FOVCanvas.showMoon;
+            showMoonCheckbox.checked = false;
+            FOVCanvas.setShowMoon(false);
         }
 
-        // Always reset DSS checkbox on view load
+        // DSS defaults to on
         const showDSSCheckbox = document.getElementById('fov-show-dss');
         if (showDSSCheckbox) {
-            showDSSCheckbox.checked = false;
+            showDSSCheckbox.checked = true;
+            this.showDSS = true;
         }
 
-        // Target outline defaults to on
+        // Target outline defaults to off
         const showTargetCheckbox = document.getElementById('fov-show-target');
         if (showTargetCheckbox) {
-            showTargetCheckbox.checked = true;
+            showTargetCheckbox.checked = false;
+            this.showTarget = false;
         }
 
-        // Load saved selections
+        // Load saved selections (will trigger calculate() if equipment is selected)
         this.loadSavedSelections();
     },
 
@@ -156,6 +159,9 @@ const FOVView = {
 
         // Calculate if both are selected
         if (savedTelescope && savedSensor) {
+            if (this.showDSS) {
+                this.lockCanvasSize();
+            }
             this.calculate();
         }
     },
@@ -406,11 +412,13 @@ const FOVView = {
         try {
             const cached = await DBManager.get('dssCache', key);
             if (!cached) return null;
-            const age = Date.now() - cached.timestamp;
-            if (age > 24 * 60 * 60 * 1000) {
+            const age = Date.now() - cached.lastAccessed;
+            if (age > APP_CONFIG.DSS_CACHE_DURATION) {
                 await DBManager.delete('dssCache', key);
                 return null;
             }
+            // Reset lastAccessed on every view
+            await DBManager.put('dssCache', { ...cached, lastAccessed: Date.now() });
             return cached.dataUrl;
         } catch (e) {
             return null;
@@ -425,7 +433,8 @@ const FOVView = {
             await DBManager.put('dssCache', {
                 id: key,
                 dataUrl: dataUrl,
-                timestamp: Date.now()
+                timestamp: Date.now(),
+                lastAccessed: Date.now()
             });
         } catch (e) {
             console.warn('Failed to cache DSS image:', e);
@@ -433,14 +442,15 @@ const FOVView = {
     },
 
     /**
-     * Purge DSS cache entries older than 24 hours
+     * Purge DSS cache entries not accessed in 15 days
      */
     async purgeDSSCache() {
         try {
             const all = await DBManager.getAll('dssCache');
-            const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+            const cutoff = Date.now() - 15 * 24 * 60 * 60 * 1000;
             for (const entry of all) {
-                if (entry.timestamp < cutoff) {
+                const lastAccessed = entry.lastAccessed || entry.timestamp;
+                if (lastAccessed < cutoff) {
                     await DBManager.delete('dssCache', entry.id);
                 }
             }

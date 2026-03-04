@@ -23,6 +23,9 @@ const APP_CONFIG = {
     MOON_SEARCH_MAX_STEPS: 2880,
     TARGET_SEARCH_STEP_SIZE: 1/1440,
 
+    // DSS background image cache duration in ms
+    DSS_CACHE_DURATION: 15 * 24 * 60 * 60 * 1000,
+
     // UI constants
     DEFAULT_MIN_ALTITUDE: 30,
     DEFAULT_TIMEZONE: -5,
