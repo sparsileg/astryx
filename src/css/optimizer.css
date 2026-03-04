@@ -1,0 +1,157 @@
+/* ============================================================
+   optimizer.css
+   Target Optimizer styles
+   ============================================================ */
+
+#optimizer-execute-btn {
+    min-width: 120px;
+    background-color: var(--primary-color);
+    color: var(--primary-text);
+    border-color: var(--primary-color);
+}
+
+/* Results summary bar */
+.optimizer-results-summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 1rem 0 0.5rem 0;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+/* Pin selected button */
+#optimizer-pin-btn {
+    min-width: 160px;
+}
+
+/* Candidate card */
+.optimizer-candidate-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.5rem;
+    display: grid;
+    grid-template-columns: 2rem 1fr auto;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.optimizer-candidate-card:hover {
+    background: var(--card-hover);
+}
+
+/* Rank number */
+.optimizer-candidate-rank {
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: var(--text-secondary);
+    text-align: center;
+}
+
+/* Main content area */
+.optimizer-candidate-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+/* Line 1: all meta on one line */
+.optimizer-candidate-line1 {
+    font-size: 0.85rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    align-items: baseline;
+}
+
+.optimizer-candidate-line1 .opt-name {
+    font-weight: bold;
+    font-size: 1rem;
+}
+
+.optimizer-candidate-line1 .opt-sep {
+    color: var(--text-secondary);
+}
+
+.optimizer-candidate-line1 .opt-meta {
+    color: var(--text-secondary);
+}
+
+/* Score area: values+labels+composite on left, thumbnail on right */
+.optimizer-score-area {
+    display: flex;
+    justify-content: flex-start;
+    align-items: stretch;
+    margin-top: 0.35rem;
+    gap: 1rem;
+}
+
+.optimizer-score-left {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+}
+
+.optimizer-score-values {
+    display: flex;
+    gap: 1.5rem;
+    font-weight: bold;
+    font-size: 0.9rem;
+    color: var(--primary-color);
+}
+
+.optimizer-score-labels {
+    display: flex;
+    gap: 1.5rem;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.optimizer-score-values span,
+.optimizer-score-labels span {
+    min-width: 3rem;
+    text-align: center;
+}
+
+.optimizer-composite-line {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-top: 0.15rem;
+}
+
+.optimizer-composite-line strong {
+    color: var(--primary-color);
+}
+
+/* Thumbnail stub */
+.optimizer-thumbnail-stub {
+    width: 80px;
+    background: var(--secondary-color);
+    border: 1px dashed var(--border-color);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.65rem;
+    color: var(--text-secondary);
+    text-align: center;
+    /* STUB: replace with actual thumbnail image in future implementation */
+}
+
+/* Remove button */
+.optimizer-remove-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 0.25rem;
+    line-height: 1;
+    align-self: start;
+}
+
+.optimizer-remove-btn:hover {
+    color: var(--error-color);
+}

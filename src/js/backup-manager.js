@@ -221,9 +221,10 @@ const BackupManager = {
             const dtg = SettingsManager.getLastChangeTimestamp() || TimeUtils.nowDTG();
             const filename = `${APP_CONFIG.APP_NAME}-v${APP_CONFIG.APP_VERSION}-d${APP_CONFIG.DB_VERSION}-${dtg}`;
 
+            // removed 'pinnedTargets'
             const selectedStores = [
                 'settings', 'locations', 'telescopes', 'sensors', 'filters',
-                'pinnedTargets', 'toDoTargets', 'imagingProjects', 'imagingSessions', 'imagingPrograms'
+                'toDoTargets', 'imagingProjects', 'imagingSessions', 'imagingPrograms'
             ];
 
             const backupData = await this.generateBackupData(selectedStores);

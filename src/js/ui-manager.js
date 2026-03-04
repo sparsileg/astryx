@@ -1210,18 +1210,9 @@ const UIManager = {
         // maximum number of target search results
         const maxSearchInput = document.getElementById('max-search-results');
         if (maxSearchInput) {
-            maxSearchInput.value = SettingsManager.getMaxSearchResults();
-            maxSearchInput.max = APP_CONFIG.MAX_SEARCH_RESULTS;
-            // Enforce max value on input
-            maxSearchInput.addEventListener('input', (e) => {
-                const value = parseInt(e.target.value);
-                if (value > APP_CONFIG.MAX_SEARCH_RESULTS) {
-                    e.target.value = APP_CONFIG.MAX_SEARCH_RESULTS;
-                }
-                if (value < 1) {
-                    e.target.value = 1;
-                }
-            });
+            const validSearchValues = ['1', '2', '3', '5', '8', '13', '21'];
+            const savedValue = String(SettingsManager.getMaxSearchResults());
+            maxSearchInput.value = validSearchValues.includes(savedValue) ? savedValue : '8';
         }
 
         // Global minimum altitude
@@ -1234,6 +1225,12 @@ const UIManager = {
         const autoBackupCheckbox = document.getElementById('auto-backup-enabled');
         if (autoBackupCheckbox) {
             autoBackupCheckbox.checked = SettingsManager.getAutoBackupEnabled();
+        }
+
+        // Optimizer candidate count
+        const optimizerCountInput = document.getElementById('optimizer-candidate-count');
+        if (optimizerCountInput) {
+            optimizerCountInput.value = SettingsManager.getOptimizerCandidateCount();
         }
     },
 
@@ -1265,6 +1262,11 @@ const UIManager = {
 
         const autoBackup = modalBody.querySelector('#auto-backup-enabled')?.checked ?? true;
         await SettingsManager.setAutoBackupEnabled(autoBackup);
+
+        const optimizerCount = modalBody.querySelector('#optimizer-candidate-count')?.value;
+        if (optimizerCount) {
+            await SettingsManager.setOptimizerCandidateCount(parseInt(optimizerCount));
+        }
 
         this.showToast('Settings saved successfully', 'success');
         this.markDataChanged();

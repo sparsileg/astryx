@@ -12,7 +12,7 @@ const SettingsManager = {
         },
         theme: APP_CONFIG.DEFAULT_THEME,
         resultsCount: 'all', // Not in settings UI, but used by visibility calculator
-        maxSearchResults: APP_CONFIG.MAX_SEARCH_RESULTS, // default if not set
+        maxSearchResults: 8, // default if not set
         selectedLocation: null, // Currently selected observer location
         minAltitudeDaily: 35, // Minimum altitude for daily visibility
         minAltitudeYearly: 35, // Minimum altitude for yearly observability
@@ -55,8 +55,8 @@ const SettingsManager = {
     /**
      * Get a specific setting by key
      */
-    getSetting(key) {
-        return this.settings[key] !== undefined ? this.settings[key] : null;
+    getSetting(key, defaultValue = null) {
+        return this.settings[key] !== undefined ? this.settings[key] : defaultValue;
     },
 
     /**
@@ -179,7 +179,7 @@ const SettingsManager = {
      * Get max search results setting
      */
     getMaxSearchResults() {
-        return this.settings.maxSearchResults || APP_CONFIG.MAX_SEARCH_RESULTS;
+        return this.settings.maxSearchResults || 8;
     },
 
     /**
@@ -340,6 +340,15 @@ const SettingsManager = {
      */
     async updateGlobalMinAltitude(altitude) {
         this.settings.globalMinAltitude = altitude;
+        await this.saveSettings();
+    },
+
+    getOptimizerCandidateCount() {
+        return this.settings.optimizerCandidateCount || 23;
+    },
+
+    async setOptimizerCandidateCount(count) {
+        this.settings.optimizerCandidateCount = count;
         await this.saveSettings();
     },
 
