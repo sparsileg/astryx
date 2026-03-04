@@ -8,6 +8,19 @@ const OptimizerView = {
     // In-memory pool from Filter Targets "Send to Optimizer"
     filterTargetsPool: null,
 
+    // Current display mode: 'individual' or 'combinations'
+    displayMode: 'individual',
+
+    // Stored combinations
+    currentCombos: null,
+
+    // Session parameters for coverage calculation
+    currentSession: null,
+
+    // Stored results for persistence across navigation
+    currentResults: null,
+    totalEvaluated: 0,
+
     /**
      * Initialize Target Optimizer view
      */
@@ -23,6 +36,15 @@ const OptimizerView = {
 
         this.updateFilterSourceOption();
         this.attachEventHandlers();
+
+        // Re-render results if we have them from a previous run
+        if (this.currentResults && this.currentResults.length > 0) {
+            if (this.displayMode === 'combinations' && this.currentCombos) {
+                this.renderCombinations(this.currentCombos);
+            } else {
+                this.renderResults(this.currentResults, this.totalEvaluated);
+            }
+        }
 
         console.log('Target Optimizer initialized');
     },
@@ -145,6 +167,9 @@ const OptimizerView = {
         // Store total evaluated count for display
         this.totalEvaluated = candidates.length;
 
+        // Store session for combination coverage calculation
+        this.currentSession = session;
+
         // Render results
         this.renderResults(results, this.totalEvaluated);
     },
@@ -161,16 +186,30 @@ const OptimizerView = {
         // Store results for pruning
         this.currentResults = results.slice();
 
-        const eliminated = totalEvaluated - results.length;
+        // elimination counts now tracked in results._eliminationCounts
+
+        const showToggle = APP_CONFIG.FEATURES.OPTIMIZER_COMBINATIONS;
 
         let html = `
             <div class="card" style="margin-top: 1rem;">
-                <div class="card-header">
+                <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
                     <h3>Suggested Targets</h3>
+                    ${showToggle ? `
+                    <div class="optimizer-mode-toggle">
+                        <button class="btn-sm optimizer-mode-btn ${this.displayMode !== 'combinations' ? 'btn-primary' : 'btn-secondary'}" data-mode="individual">Individual Targets</button>
+                        <button class="btn-sm optimizer-mode-btn ${this.displayMode === 'combinations' ? 'btn-primary' : 'btn-secondary'}" data-mode="combinations">Best Combinations</button>
+                    </div>` : ''}
                 </div>
                 <div class="card-body">
                     <div class="optimizer-results-summary">
-                        <span>Showing ${results.length} of ${totalEvaluated} evaluated &bull; ${eliminated} eliminated</span>
+                        <span>Showing ${results.length} of ${totalEvaluated} evaluated</span>
+                        ${(() => {
+                            const counts = results._eliminationCounts || {};
+                            const parts = Object.entries(counts).map(([reason, count]) => `${count} ${reason.toLowerCase()}`);
+                            return parts.length > 0
+                                ? `<span style="color: var(--text-secondary); font-size: 0.85rem;">${parts.join(' &bull; ')}</span>`
+                                : '';
+                        })()}
                     </div>
                     <div id="optimizer-candidate-list">
         `;
@@ -260,6 +299,201 @@ const OptimizerView = {
                 this.pinCandidate(index);
             });
         });
+
+        // Attach mode toggle listeners
+        container.querySelectorAll('.optimizer-mode-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const mode = e.currentTarget.dataset.mode;
+                this.displayMode = mode;
+                if (mode === 'combinations') {
+                    const combos = OptimizerCalculations.generateCombinations(this.currentResults);
+                    this.currentCombos = combos;
+                    this.renderCombinations(combos);
+                } else {
+                    this.renderResults(this.currentResults, this.totalEvaluated);
+                }
+            });
+        });
+    },
+
+    /**
+     * Render combination results into #optimizer-results
+     * @param {Object} combos - { singles, pairs, triplets } from generateCombinations()
+     */
+    renderCombinations(combos) {
+        const container = document.getElementById('optimizer-results');
+        if (!container) return;
+
+        const allCombos = [
+            ...combos.singles,
+            ...combos.pairs,
+            ...combos.triplets
+        ];
+
+        const nightHours = ((this.currentSession.sessionEndJD - this.currentSession.sessionStartJD) * 24).toFixed(1);
+
+        let html = `
+            <div class="card" style="margin-top: 1rem;">
+                <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                    <h3>Best Combinations</h3>
+                    <div class="optimizer-mode-toggle">
+                        <button class="btn-sm optimizer-mode-btn btn-secondary" data-mode="individual">Individual Targets</button>
+                        <button class="btn-sm optimizer-mode-btn btn-primary" data-mode="combinations">Best Combinations</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="optimizer-combo-list">
+        `;
+
+        const sections = [
+            { label: 'Solo Targets', items: combos.singles },
+            { label: 'Pairs',        items: combos.pairs },
+            { label: 'Triplets',     items: combos.triplets }
+        ];
+
+        sections.forEach(section => {
+            html += `<div class="optimizer-combo-section-header">${section.label}</div>`;
+
+            section.items.forEach((combo, index) => {
+                const globalIndex = allCombos.indexOf(combo);
+
+                // Union of windows: span from earliest start to latest end
+                const unionStartJD = Math.min(...combo.targets.map(t => t.windowStartJD));
+                const unionEndJD   = Math.max(...combo.targets.map(t => t.windowEndJD));
+                const unionHours   = ((unionEndJD - unionStartJD) * 24).toFixed(1);
+
+                let targetsHtml = '';
+                combo.targets.forEach(t => {
+                    const windowStart = jdToDate(t.windowStartJD).toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false});
+                    const windowEnd   = jdToDate(t.windowEndJD).toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false});
+                    const commonDisplay = t.common ? t.common.split(',')[0].trim() : '';
+                    targetsHtml += `
+                        <div class="optimizer-combo-target">
+                            <span class="opt-name">${t.name}</span>
+                            ${commonDisplay ? `<span class="opt-sep">·</span><span class="opt-meta">${commonDisplay}</span>` : ''}
+                            <span class="opt-sep">·</span><span class="opt-meta">Window: ${windowStart} – ${windowEnd} (${t.windowHours.toFixed(1)}h)</span>
+                            <span class="opt-sep">·</span><span class="opt-meta">Peak: ${t.peakAltitude.toFixed(1)}°</span>
+                            <span class="opt-sep">·</span><span class="opt-meta">Score: ${t.scores.composite}</span>
+                        </div>
+                    `;
+                });
+
+                html += `
+                    <div class="optimizer-candidate-card" id="optimizer-combo-${globalIndex}" data-index="${globalIndex}">
+                        <div class="optimizer-candidate-rank">${index + 1}</div>
+                        <div class="optimizer-candidate-body">
+                            <div class="optimizer-candidate-line1" style="justify-content: space-between;">
+                                <div style="display: flex; gap: 0.5rem; align-items: baseline;">
+                                    <span class="opt-meta">Coverage: ${unionHours}h / ${nightHours}h</span>
+                                    <span class="opt-sep">·</span>
+                                    <span class="opt-meta">Combo score: ${combo.comboScore.toFixed(0)}</span>
+                                </div>
+                                <button class="btn-primary btn-sm optimizer-replace-btn" data-index="${globalIndex}" style="flex-shrink: 0;">Replace Pinned Targets</button>
+                            </div>
+                            <div class="optimizer-combo-targets">
+                                ${targetsHtml}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        });
+
+        html += `
+                    </div>
+                </div>
+            </div>
+        `;
+
+        container.innerHTML = html;
+
+        // Attach mode toggle listeners
+        container.querySelectorAll('.optimizer-mode-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const mode = e.currentTarget.dataset.mode;
+                this.displayMode = mode;
+                if (mode === 'individual') {
+                    this.renderResults(this.currentResults, this.totalEvaluated);
+                }
+            });
+        });
+
+        // Attach replace pinned targets listeners
+        container.querySelectorAll('.optimizer-replace-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const index = parseInt(e.currentTarget.dataset.index);
+                this.replacePinnedTargets(index);
+            });
+        });
+    },
+
+    /**
+     * Placeholder for combinations view - Phase 2/3
+     */
+    renderCombinationsPlaceholder() {
+        const container = document.getElementById('optimizer-results');
+        if (!container) return;
+
+        container.innerHTML = `
+            <div class="card" style="margin-top: 1rem;">
+                <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                    <h3>Suggested Targets</h3>
+                    <div class="optimizer-mode-toggle">
+                        <button class="btn-sm optimizer-mode-btn btn-secondary" data-mode="individual">Individual Targets</button>
+                        <button class="btn-sm optimizer-mode-btn btn-primary" data-mode="combinations">Best Combinations</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <p style="color: var(--text-secondary); text-align: center; padding: 2rem;">
+                        Best Combinations coming in next phase.
+                    </p>
+                </div>
+            </div>
+        `;
+
+        container.querySelectorAll('.optimizer-mode-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const mode = e.currentTarget.dataset.mode;
+                this.displayMode = mode;
+                if (mode === 'individual') {
+                    this.renderResults(this.currentResults, this.totalEvaluated);
+                }
+            });
+        });
+    },
+
+    /**
+     * Replace all pinned targets with the targets from a combo
+     * @param {number} index - Index in this.currentCombos
+     */
+    async replacePinnedTargets(index) {
+        const allCombos = [
+            ...this.currentCombos.singles,
+            ...this.currentCombos.pairs,
+            ...this.currentCombos.triplets
+        ];
+        const combo = allCombos[index];
+        if (!combo) return;
+
+        const targetNames = combo.targets.map(t => t.name).join(', ');
+        if (!confirm(`Replace all pinned targets with:\n${targetNames}?`)) return;
+
+        // Unpin all current pinned targets
+        const pinned = DataManager.getPinnedTargets().slice();
+        for (const p of pinned) {
+            await DataManager.unpinTarget(p.name);
+        }
+
+        // Pin combo targets
+        let pinned_count = 0;
+        for (const candidate of combo.targets) {
+            const target = DataManager.getTargets().find(t => t.object === candidate.id);
+            if (!target) continue;
+            await DataManager.pinTarget({ ...target, name: target.object });
+            pinned_count++;
+        }
+
+        UIManager.showToast(`Pinned targets replaced with ${pinned_count} target${pinned_count !== 1 ? 's' : ''}`, 'success');
     },
 
     /**
