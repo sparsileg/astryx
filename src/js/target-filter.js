@@ -121,17 +121,17 @@ const TargetFilter = {
             );
         }
 
-        // Size filter
+        // Size filter - targets with no size data are always included
         if (this.filters.size.value !== null) {
             filtered = filtered.filter(t =>
-                t.size_max && t.size_max >= this.filters.size.value
+                !t.size_max || t.size_max >= this.filters.size.value
             );
         }
 
-        // Magnitude filter
+        // Magnitude filter - targets with no magnitude are always included
         if (this.filters.magnitude.value !== null) {
             filtered = filtered.filter(t =>
-                t.mag && t.mag <= this.filters.magnitude.value
+                !t.mag || t.mag <= this.filters.magnitude.value
             );
         }
 
