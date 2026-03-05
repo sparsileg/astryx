@@ -186,8 +186,8 @@ const OptimizerCalculations = {
             eliminationCounts[e.eliminationReason] = (eliminationCounts[e.eliminationReason] || 0) + 1;
         }
 
-        // Return top N (from settings)
-        const topN = SettingsManager.getSetting('optimizerCandidateCount', 23) || 23;
+        // Return top N candidates for combination generation
+        const topN = APP_CONFIG.TOP_RANKED_TARGETS;
         const topScored = scored.slice(0, topN);
         const belowCutoff = scored.length - topScored.length;
         if (belowCutoff > 0) {

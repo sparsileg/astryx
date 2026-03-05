@@ -26,6 +26,9 @@ const APP_CONFIG = {
     // DSS background image cache duration in ms
     DSS_CACHE_DURATION: 15 * 24 * 60 * 60 * 1000,
 
+    // Number of the top-ranked targets used to generate combinations
+    TOP_RANKED_TARGETS: 37,
+
     // UI constants
     DEFAULT_MIN_ALTITUDE: 30,
     DEFAULT_TIMEZONE: -5,
