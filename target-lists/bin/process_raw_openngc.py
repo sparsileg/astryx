@@ -17,7 +17,7 @@ Features:
 """
 
 # Type field mapping dictionary
-# Map from OpenNGC value to SAC value, which we use for Specula
+# Map from OpenNGC value to SAC value, which we use for Astryx
 TYPE_MAPPINGS = {
    '*': '1STAR',
    '**': '2STAR',

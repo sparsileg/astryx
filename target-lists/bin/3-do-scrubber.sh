@@ -20,7 +20,7 @@
 
 
 EPOCH=$(date +%s)
-TARGET_FILE="specula-targets-${EPOCH}.csv"
+TARGET_FILE="astryx-targets-${EPOCH}.csv"
 
 python bin/scrubber.py \
        --in temp_dso.csv \
@@ -54,7 +54,7 @@ EOF
 # Ensure data folder exists
 mkdir -p ../src/data/
 
-# Move files to Specula data folder
+# Move files to Astryx data folder
 mv "$TARGET_FILE" ../src/data/
 mv targets-meta.json ../src/data/
 

@@ -1,6 +1,6 @@
 /**
  * backup-manager.js
- * Manages backup and restore operations for Specula database
+ * Manages backup and restore operations for Astryx database
  */
 
 const BackupManager = {
@@ -263,7 +263,7 @@ const BackupManager = {
             const backupData = await this.generateBackupData(selectedStores);
 
             // Get filename
-            const filename = document.getElementById('backup-filename')?.value || 'Specula-database';
+            const filename = document.getElementById('backup-filename')?.value || 'Astryx-database';
 
             // Download the backup file
             await this.downloadBackup(backupData, filename);
@@ -523,7 +523,7 @@ const BackupManager = {
             if (messageDiv) {
                 messageDiv.innerHTML = `
                     <p>This backup file (database version <strong>${backupVersion}</strong>) is incompatible
-                    with your current Specula version (database version <strong>${currentVersion}</strong>).</p>
+                    with your current Astryx version (database version <strong>${currentVersion}</strong>).</p>
                 `;
             }
         }, 0);

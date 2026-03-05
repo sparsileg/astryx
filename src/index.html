@@ -785,9 +785,9 @@
     <!-- About Modal Template -->
     <template id="about-template">
       <div class="settings-content">
-        <h4>Specula</h4>
+        <h4>Astryx</h4>
         <p style="color: var(--text-secondary); line-height: 1.6; margin-bottom: 1rem;">
-          <strong>Specula</strong> (Latin: "watchtower" or "observation
+          <strong>Astryx</strong> (Latin: "watchtower" or "observation
           point") - Planning tool for astrophotographers - calculate
           seasonal visibility windows, transit times, and dark sky
           availability for thousands of deep sky targets without the
@@ -1565,7 +1565,7 @@
           <button onclick="location.reload()" style="padding: 0.75rem 1.5rem; background: var(--primary-color); color: var(--primary-text); border: none; border-radius: 6px; cursor: pointer; margin: 0.5rem; font-weight: 500;">
             Reload Application
           </button>
-          <button onclick="localStorage.clear(); indexedDB.deleteDatabase('specula-db'); location.reload()" style="padding: 0.75rem 1.5rem; background: var(--error-color); color: white; border: none; border-radius: 6px; cursor: pointer; margin: 0.5rem; font-weight: 500;">
+          <button onclick="localStorage.clear(); indexedDB.deleteDatabase('astryx-db'); location.reload()" style="padding: 0.75rem 1.5rem; background: var(--error-color); color: white; border: none; border-radius: 6px; cursor: pointer; margin: 0.5rem; font-weight: 500;">
             Clear Data & Reload
           </button>
         </div>
@@ -2141,7 +2141,7 @@
         <!-- Filename -->
         <div class="backup-filename-group">
           <label for="backup-filename" class="backup-filename-label">Filename:</label>
-          <input type="text" id="backup-filename" class="backup-filename-input" value="Specula-v0.9.0-d6-20260114-2103">
+          <input type="text" id="backup-filename" class="backup-filename-input" value="Astryx-v0.9.0-d6-20260114-2103">
         </div>
 
         <!-- Uncompressed Size -->
@@ -2256,7 +2256,7 @@
         </div>
 
         <p style="color: var(--text-secondary); font-size: 0.9rem;">
-          This backup was created with an incompatible version of Specula and cannot be restored.
+          This backup was created with an incompatible version of Astryx and cannot be restored.
         </p>
       </div>
     </template>

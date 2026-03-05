@@ -1414,8 +1414,8 @@ const UIManager = {
         }
 
         try {
-            // Parse version from filename (e.g. specula-targets-1737934800.csv)
-            const versionMatch = file.name.match(/specula-targets-(\d+)\.csv$/);
+            // Parse version from filename (e.g. astryx-targets-1737934800.csv)
+            const versionMatch = file.name.match(/astryx-targets-(\d+)\.csv$/);
             const targetVersion = versionMatch ? versionMatch[1] : null;
             const text = await file.text();
             const parsed = CSVUtils.parseTargetCSV(text);
