@@ -127,10 +127,33 @@ const FOVCanvas = {
         this.ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
         this.ctx.fill();
 
-        // Draw outline
-        this.ctx.strokeStyle = '#ffffff';
-        this.ctx.lineWidth = 1;
+        // Draw layered outline: dark outer, white middle, yellow dashed center
+        // Dark outer
+        this.ctx.beginPath();
+        this.ctx.ellipse(centerX, centerY, radiusX, radiusY, Math.PI / 4, 0, 2 * Math.PI);
+        this.ctx.strokeStyle = '#000000';
+        this.ctx.lineWidth = 5;
+        this.ctx.setLineDash([]);
         this.ctx.stroke();
+
+        // Black middle
+        this.ctx.beginPath();
+        this.ctx.ellipse(centerX, centerY, radiusX, radiusY, Math.PI / 4, 0, 2 * Math.PI);
+        this.ctx.strokeStyle = '#000000';
+        this.ctx.lineWidth = 3;
+        this.ctx.setLineDash([]);
+        this.ctx.stroke();
+
+        // Yellow dashed center (black gaps show white beneath)
+        this.ctx.beginPath();
+        this.ctx.ellipse(centerX, centerY, radiusX, radiusY, Math.PI / 4, 0, 2 * Math.PI);
+        this.ctx.strokeStyle = 'rgba(255, 255, 0, 0.9)';
+        this.ctx.lineWidth = 3;
+        this.ctx.setLineDash([12, 8]);
+        this.ctx.stroke();
+
+        // Reset dash
+        this.ctx.setLineDash([]);
     },
 
     /**
@@ -149,9 +172,31 @@ const FOVCanvas = {
         this.ctx.fillStyle = 'rgba(255, 255, 150, 0.25)'; // Faint yellow, translucent
         this.ctx.fill();
 
-        // Draw outline
-        this.ctx.strokeStyle = 'rgba(255, 255, 150, 0.5)';
-        this.ctx.lineWidth = 1;
+        // Dark outer
+        this.ctx.beginPath();
+        this.ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+        this.ctx.strokeStyle = '#000000';
+        this.ctx.lineWidth = 5;
+        this.ctx.setLineDash([]);
         this.ctx.stroke();
+
+        // Light blue middle
+        this.ctx.beginPath();
+        this.ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+        this.ctx.strokeStyle = '#3377ff';
+        this.ctx.lineWidth = 3;
+        this.ctx.setLineDash([]);
+        this.ctx.stroke();
+
+        // Yellow dashed center
+        this.ctx.beginPath();
+        this.ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+        this.ctx.strokeStyle = 'rgba(255, 255, 0, 0.9)';
+        this.ctx.lineWidth = 3;
+        this.ctx.setLineDash([12, 8]);
+        this.ctx.stroke();
+
+        // Reset dash
+        this.ctx.setLineDash([]);
     }
 };

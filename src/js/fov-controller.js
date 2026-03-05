@@ -401,12 +401,12 @@ const FOVView = {
     /**
      * Get cache key for DSS image
      */
-    getDSSCacheKey(ra, dec, width, height, fovDeg) {
-        return `dss_${ra.toFixed(4)}_${dec.toFixed(4)}_${width}_${height}_${fovDeg.toFixed(4)}`;
+    getDSSCacheKey(ra, dec, fovDeg) {
+        return `dss_${ra.toFixed(4)}_${dec.toFixed(4)}_${fovDeg.toFixed(4)}`;
     },
 
     /**
-     * Get cached DSS image if still valid (< 24 hours old)
+     * Get cached DSS image if still valid
      */
     async getDSSFromCache(key) {
         try {
@@ -479,7 +479,7 @@ const FOVView = {
         // Use the larger FOV dimension for the query
         const fovDeg = Math.max(fovData.fovWidth, fovData.fovHeight);
 
-        const cacheKey = this.getDSSCacheKey(raDeg, decDeg, width, height, fovDeg);
+        const cacheKey = this.getDSSCacheKey(raDeg, decDeg, fovDeg);
 
         // Check cache first
         let dataUrl = await this.getDSSFromCache(cacheKey);
@@ -487,7 +487,7 @@ const FOVView = {
         if (!dataUrl) {
             const url = `https://alasky.u-strasbg.fr/hips-image-services/hips2fits?hips=CDS/P/DSS2/red` +
                 `&ra=${raDeg.toFixed(6)}&dec=${decDeg.toFixed(6)}` +
-                `&fov=${fovDeg.toFixed(6)}&width=${width}&height=${height}` +
+                `&fov=${fovDeg.toFixed(6)}&width=600&height=600` +
                 `&projection=TAN&format=jpg`;
 
             try {
