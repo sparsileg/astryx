@@ -80,6 +80,11 @@ body {
     border-color: var(--primary-color);
 }
 
+.tooltip-host {
+    position: relative;
+    cursor: help;
+}
+
 /* Main Content */
 .main-content {
     flex: 1;
