@@ -236,8 +236,10 @@ const OptimizerView = {
                                 <span class="opt-sep">·</span><span class="opt-meta">${typeDisplay}</span>
                                 <span class="opt-sep">·</span><span class="opt-meta">Min/Max Size: ${target.sizeMin ? target.sizeMin + "'" : '—'}/${target.sizeMax ? target.sizeMax + "'" : '—'}</span>
                             </div>
-                            <button class="btn-primary btn-sm optimizer-dv-btn" data-index="${index}" title="View Daily Visibility" style="flex-shrink: 0;">Daily Visibility</button>
-                            <button class="btn-primary btn-sm optimizer-pin-card-btn" data-index="${index}" title="Add to Pinned Targets" style="flex-shrink: 0;">📌 Pin</button>
+                            <div style="display: flex; gap: 0.25rem; flex-shrink: 0;">
+                                <button class="btn-primary btn-sm optimizer-dv-btn" data-index="${index}" title="View Daily Visibility">Daily Visibility</button>
+                                <button class="btn-primary btn-sm optimizer-pin-card-btn" data-index="${index}" title="Add to Pinned Targets">📌 Pin</button>
+                            </div>
                         </div>
                         <div class="optimizer-candidate-line1">
                             <span class="opt-meta">Window: ${windowStart} – ${windowEnd} (${target.windowHours.toFixed(1)}h)</span>
@@ -547,6 +549,7 @@ const OptimizerView = {
         // Set current target for visibility system
         VisibilityTargets.currentTarget = target;
         VisibilityCalculations.currentTarget = target;
+        UIManager.updateSidebarCurrentTarget(target.object);
 
         // Get location
         const locationName = SettingsManager.getSelectedLocation();
