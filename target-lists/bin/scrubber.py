@@ -782,6 +782,22 @@ def fix_size_order(targets):
     log(f"Fixed size order for {swapped_count} targets")
     return swapped_count
 
+def null_sentinel_magnitudes(targets):
+    """Null out sentinel magnitude values (79.9 and 99.9)."""
+    SENTINELS = {79.9, 99.9}
+    nulled_count = 0
+    for target in targets:
+        for field in ('Mag', 'Subr'):
+            val_str = (target.get(field) or '').strip()
+            if val_str:
+                try:
+                    if float(val_str) in SENTINELS:
+                        target[field] = ''
+                        nulled_count += 1
+                except ValueError:
+                    pass
+    log(f"Nulled sentinel magnitudes for {nulled_count} targets")
+    return nulled_count
 
 
 def main():
@@ -810,6 +826,8 @@ def main():
                         help='Comma-separated list of catalogs to convert to "Extra" virtual catalog (e.g., "Pal,RCW,vdB")')
     parser.add_argument('--keep', dest='keep_catalogues',
                         help='Comma-separated list of catalogues to keep (e.g., "Messier,NGC,IC")')
+    parser.add_argument('--null-sentinels', action='store_true',
+                        help='Null out sentinel magnitude values (79.9 and 99.9)')
     parser.add_argument('--rm-unknown', action='store_true',
                         help='Remove all unknown targets with type OTHER')
     parser.add_argument('--to-stars', action='store_true',
@@ -832,7 +850,7 @@ def main():
     try:
         # Validate arguments
         if not args.create_missing and not args.fill and not args.dupe_size and not args.statistics \
-           and not args.keep_catalogues and not args.dedupe_from_catalogues:
+           and not args.keep_catalogues and not args.dedupe_from_catalogues and not args.null_sentinels:
             print("Error: Must specify at least one operation (--create-missing, --fill, --dupe-size, --dedupe-from, --statistics, or --keep)",
                   file=sys.stderr)
             sys.exit(1)
@@ -885,7 +903,7 @@ def main():
             converted_count = convert_to_extra(targets, args.to_extra)
             log(f"Converted {converted_count} records")
 
-         # 3.75. Remove UNKNOWN type targets
+        # 3.75. Remove UNKNOWN type targets
         if args.rm_unknown:
             log("\nRemoving UNKNOWN type targets...")
             targets = remove_unknown_types(targets)
@@ -900,10 +918,15 @@ def main():
             log("\nConverting star types to Stars...")
             targets = convert_to_stars(targets)
 
+        # 6. Null sentinel magnitude values (after all fill/cross-reference operations)
+        if args.null_sentinels:
+            log("\nNulling sentinel magnitude values...")
+            null_sentinel_magnitudes(targets)
+
         # Write output if we did any modification operations
         if args.create_missing or args.fill or args.dupe_size or \
            args.dedupe_from_catalogues or args.to_extra or \
-           args.rm_unknown or args.to_stars or args.keep_catalogues:
+           args.null_sentinels or args.rm_unknown or args.to_stars or args.keep_catalogues:
             output_dest = args.output_file if args.output_file else "stdout"
             log(f"\nWriting to {output_dest}...")
             write_csv(args.output_file, targets, fieldnames)
