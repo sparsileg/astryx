@@ -35,7 +35,7 @@
             <button id="hamburger-menu-btn" class="hamburger-btn">≡</button>
           </div>
           <div class="theme-selector">
-            <select id="theme-select">
+            <select id="theme-select" class="tooltip-host" data-tooltip-key="sb_theme">
               <option value="dark">Dark</option>
               <option value="light">Light</option>
               <option value="night">Night</option>
@@ -43,26 +43,26 @@
             </select>
           </div>
           <div class="theme-selector" style="margin-top: 0.5rem;">
-            <select id="sidebar-location-select" class="full-width">
+            <select id="sidebar-location-select" class="full-width" class="tooltip-host" data-tooltip-key="sb_location">
               <option value="">Select a location...</option>
             </select>
           </div>
-          <div id="sidebar-current-target">
+          <div id="sidebar-current-target" class="tooltip-host" data-tooltip-key="sb_currentTgt">
             Current Target: None
           </div>
         </div>
 
         <div class="sidebar-content">
           <ul class="nav-list">
-            <li class="nav-item" data-view="target-select">Target Selection</li>
-            <li class="nav-item" data-view="todo">To Do List</li>
-            <li class="nav-item" data-view="daily-visibility">Daily Visibility</li>
-            <li class="nav-item" data-view="yearly-observability">Yearly Observability</li>
-            <li class="nav-item" data-view="fov">Field of View</li>
-            <li class="nav-item" data-view="optimizer">Target Optimizer</li>
-            <li class="nav-item" data-view="seqplan">Sequence Planner</li>
-            <li class="nav-item" data-view="imaging-log">Imaging Log</li>
-            <li class="nav-item" data-view="utilities">Utilities</li>
+            <li class="nav-item" data-view="target-select" class="tooltip-host" data-tooltip-key="sb_tgtSelect">Target Selection</li>
+            <li class="nav-item" data-view="todo" class="tooltip-host" data-tooltip-key="sb_todoList">To Do List</li>
+            <li class="nav-item" data-view="daily-visibility" class="tooltip-host" data-tooltip-key="sb_dailyVis">Daily Visibility</li>
+            <li class="nav-item" data-view="yearly-observability" class="tooltip-host" data-tooltip-key="sb_yearlyObs">Yearly Observability</li>
+            <li class="nav-item" data-view="fov" class="tooltip-host" data-tooltip-key="sb_fov">Field of View</li>
+            <li class="nav-item" data-view="optimizer" class="tooltip-host" data-tooltip-key="sb_tgtOpt">Target Optimizer</li>
+            <li class="nav-item" data-view="seqplan" class="tooltip-host" data-tooltip-key="sb_seqPlanner">Sequence Planner</li>
+            <li class="nav-item" data-view="imaging-log" class="tooltip-host" data-tooltip-key="sb_imgLog">Imaging Log</li>
+            <li class="nav-item" data-view="utilities" class="tooltip-host" data-tooltip-key="sb_utils">Utilities</li>
           </ul>
         </div>
 
@@ -184,13 +184,15 @@
             </div>
             <div class="card-body">
               <div class="form-group">
-                <label for="target-name">Target Name (type to search targets):</label>
+                <label for="target-name" class="tooltip-host"
+                       data-tooltip-key="ts_tgtName">Target Name (type to search targets):</label>
                 <div style="display: flex; gap: 10px; align-items: flex-start;">
                   <div class="target-search-container" style="flex: 1;">
                     <input type="text" id="target-name" class="full-width" placeholder="Search targets...">
                     <div id="target-search-results"></div>
                   </div>
-                  <button id="pin-target-btn" class="btn-secondary" style="white-space: nowrap;">📌 Pin</button>
+                  <button id="pin-target-btn" class="btn-secondary tooltip-host" style="white-space: nowrap;"
+                          data-tooltip-key="ts_PIN">📌 Pin</button>
                 </div>
               </div>
 
@@ -268,7 +270,8 @@
 
               <!-- Catalog Filter -->
               <div class="form-group form-inline" style="margin-bottom: 0.75rem;">
-                <label style="min-width: 90px;">Catalog:</label>
+                <label class="tooltip-host" style="min-width: 90px;"
+                       data-tooltip-key="ts_catalog">Catalog:</label>
                 <div class="target-filter-dropdown" style="flex: 1;">
                   <div class="target-filter-dropdown-trigger" id="target-filter-catalog-trigger">
                     <span id="target-filter-catalog-label">No selection</span>
@@ -286,7 +289,8 @@
 
               <!-- Type Filter -->
               <div class="form-group form-inline" style="margin-bottom: 0.75rem;">
-                <label style="min-width: 90px;">Type:</label>
+                <label class="tooltip-host" style="min-width: 90px;"
+                       data-tooltip-key="ts_type">Type:</label>
                 <div class="target-filter-dropdown" style="flex: 1;">
                   <div class="target-filter-dropdown-trigger" id="target-filter-type-trigger">
                     <span id="target-filter-type-label">No selection</span>
@@ -304,7 +308,8 @@
 
               <!-- Month Filter -->
               <div class="form-group form-inline" style="margin-bottom: 0.75rem;">
-                <label for="target-filter-month" style="min-width: 90px;">Month:</label>
+                <label for="target-filter-month" class="tooltip-host" style="min-width: 90px;"
+                       data-tooltip-key="ts_month">Month:</label>
                 <select id="target-filter-month" style="flex: 1;">
                   <option value="">Any month</option>
                   <option value="1">January</option>
@@ -324,13 +329,15 @@
 
               <!-- Size Filter -->
               <div class="form-group form-inline" style="margin-bottom: 0.75rem;">
-                <label for="target-filter-size" style="min-width: 90px;">Min Size (′):</label>
+                <label for="target-filter-size" class="tooltip-host" style="min-width: 90px;"
+                       data-tooltip-key="ts_minSize">Min Size (′):</label>
                 <input type="number" id="target-filter-size" style="flex: 1;" placeholder="Min..." min="0" step="0.1" value="4.0">
               </div>
 
               <!-- Magnitude Filter -->
               <div class="form-group form-inline" style="margin-bottom: 0.75rem;">
-                <label for="target-filter-magnitude" style="min-width: 90px;">Max Mag:</label>
+                <label for="target-filter-magnitude" class="tooltip-host" style="min-width: 90px;"
+                       data-tooltip-key="ts_limitMag">Limiting Mag:</label>
                 <input type="number" id="target-filter-magnitude" style="flex: 1;" placeholder="Max..." step="0.1" value="14.5">
               </div>
 
@@ -358,10 +365,10 @@
             <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
               <h3>📋 Filter Results</h3>
               <div style="display: flex; flex-direction: column; gap: 0.35rem; align-items: flex-end;">
-                <button id="create-imaging-program-btn" class="btn-primary btn-sm">
+                <button id="create-imaging-program-btn" class="btn-primary btn-sm tooltip-host" data-tooltip-key="ts_createIP">
                   <div>Create Imaging Program</div>
                 </button>
-                <button id="send-to-optimizer-btn" class="btn-primary btn-sm">
+                <button id="send-to-optimizer-btn" class="btn-primary btn-sm tooltip-host" data-tooltip-key="ts_sendOpt">
                   <div>Send to Optimizer</div>
                 </button>
               </div>
@@ -1641,10 +1648,10 @@
           <div class="card-body" id="session-settings-body">
             <!-- Row 1: Date and Start -->
             <div class="seq-plan-session-row-1">
-              <label for="seq-plan-date">Date:</label>
+              <label for="seq-plan-date" class="tooltip-host" data-tooltip-key="sp_startDate">Date:</label>
               <input type="date" id="seq-plan-date">
 
-              <label for="seq-plan-start-time">Start:</label>
+              <label for="seq-plan-start-time" class="tooltip-host" data-tooltip-key="sp_startTime">Start:</label>
               <select id="seq-plan-start-time">
                 <option value="dusk" selected>Dusk</option>
                 <option value="custom">Custom</option>
@@ -1654,10 +1661,10 @@
 
             <!-- Row 2: Location and Min Alt -->
             <div class="seq-plan-session-row-2">
-              <label for="seq-plan-location">Location:</label>
+              <label for="seq-plan-location" class="tooltip-host" data-tooltip-key="sp_location">Location:</label>
               <select id="seq-plan-location"></select>
 
-              <label for="seq-plan-min-altitude">Min Alt:</label>
+              <label for="seq-plan-min-altitude" class="tooltip-host" data-tooltip-key="sp_minAltitude">Min Alt:</label>
               <select id="seq-plan-min-altitude">
                 <option value="5">5°</option>
                 <option value="10">10°</option>
@@ -1673,7 +1680,7 @@
                 <option value="60">60°</option>
               </select>
 
-              <label for="seq-plan-use-horizon">Use Horizon:</label>
+              <label for="seq-plan-use-horizon" class="tooltip-host" data-tooltip-key="sp_horizon">Use Horizon:</label>
               <select id="seq-plan-use-horizon">
                 <option value="yes">Yes</option>
                 <option value="no">No</option>
@@ -1686,12 +1693,12 @@
             <!-- Overhead Settings (formerly separate card) -->
             <!-- Row 1: Autofocus -->
             <div class="seq-plan-overhead-row-1">
-              <label>
+              <label class="tooltip-host" data-tooltip-key="sp_afCheck">
                 <input type="checkbox" id="seq-plan-af-enabled">
                 Autofocus
               </label>
 
-              <label for="seq-plan-af-interval">AF Interval:</label>
+              <label for="seq-plan-af-interval" class="tooltip-host" data-tooltip-key="sp_afInterval">AF Interval:</label>
               <select id="seq-plan-af-interval">
                 <option value="0">0</option>
                 <option value="30" selected>30</option>
@@ -1701,7 +1708,7 @@
               </select>
               <span>min</span>
 
-              <label for="seq-plan-af-duration">AF Duration:</label>
+              <label for="seq-plan-af-duration" class="tooltip-host" data-tooltip-key="sp_afDuration">AF Duration:</label>
               <select id="seq-plan-af-duration">
                 <option value="0">0</option>
                 <option value="1">1</option>
@@ -1715,7 +1722,7 @@
 
             <!-- Row 2: Flip -->
             <div class="seq-plan-overhead-row-2">
-              <label for="seq-plan-flip-pause">Flip Pause:</label>
+              <label for="seq-plan-flip-pause" class="tooltip-host" data-tooltip-key="sp_flipPause">Flip Pause:</label>
               <select id="seq-plan-flip-pause">
                 <option value="1">1</option>
                 <option value="2">2</option>
@@ -1730,7 +1737,7 @@
               </select>
               <span>min</span>
 
-              <label for="seq-plan-flip-duration">Flip Duration:</label>
+              <label for="seq-plan-flip-duration" class="tooltip-host" data-tooltip-key="sp_flipDuration">Flip Duration:</label>
               <select id="seq-plan-flip-duration">
                 <option value="1">1</option>
                 <option value="2" selected>2</option>
@@ -1745,7 +1752,7 @@
               </select>
               <span>min</span>
 
-              <label for="seq-plan-flip-offset">Flip Offset:</label>
+              <label for="seq-plan-flip-offset" class="tooltip-host" data-tooltip-key="sp_flipOffset">Flip Offset:</label>
               <select id="seq-plan-flip-offset">
                 <option value="1">1</option>
                 <option value="2">2</option>
@@ -1763,7 +1770,7 @@
 
             <!-- Row 3: Calibration and Between Subs -->
             <div class="seq-plan-overhead-row-3">
-              <label for="seq-plan-cal-duration">Calibration:</label>
+              <label for="seq-plan-cal-duration" class="tooltip-host" data-tooltip-key="sp_calibration">Calibration:</label>
               <select id="seq-plan-cal-duration">
                 <option value="1">1</option>
                 <option value="2">2</option>
@@ -1774,7 +1781,7 @@
               </select>
               <span>min</span>
 
-              <label for="seq-plan-inter-exposure">Between Subs:</label>
+              <label for="seq-plan-inter-exposure" class="tooltip-host" data-tooltip-key="sp_betweenSubs">Between Subs:</label>
               <select id="seq-plan-inter-exposure">
                 <option value="3">3</option>
                 <option value="6">6</option>
@@ -2019,10 +2026,10 @@
 
             <!-- Row 1: Date and Session Start -->
             <div class="seq-plan-session-row-1">
-              <label for="optimizer-date">Date:</label>
+              <label for="optimizer-date" class="tooltip-host" data-tooltip-key="to_date">Date:</label>
               <input type="date" id="optimizer-date">
 
-              <label for="optimizer-start-time">Start:</label>
+              <label for="optimizer-start-time" class="tooltip-host" data-tooltip-key="to_startTime">Start:</label>
               <select id="optimizer-start-time">
                 <option value="dusk" selected>Dusk</option>
                 <option value="custom">Custom</option>
@@ -2032,13 +2039,14 @@
 
             <!-- Row 2: Source and Execute -->
             <div class="seq-plan-session-row-1" style="margin-top: 0.75rem;">
-              <label for="optimizer-source">Source:</label>
+              <label for="optimizer-source" class="tooltip-host" data-tooltip-key="to_source">Source:</label>
               <select id="optimizer-source">
                 <option value="todo">To Do List</option>
                 <option value="filter" id="optimizer-source-filter" disabled>Filter Targets (none loaded)</option>
               </select>
 
-              <button type="button" class="btn-sm btn-primary" id="optimizer-execute-btn">Find Targets</button>
+              <button type="button" class="btn-sm btn-primary tooltip-host" id="optimizer-execute-btn"
+                      data-tooltip-key="to_findTargets">Find Targets</button>
             </div>
 
           </div>
@@ -2266,6 +2274,7 @@
     <script src="include/jszip.min.js"></script>
     <script src="js/backup-manager.js"></script>
     <script src="js/config.js"></script>
+    <script src="js/tooltips.js"></script>
     <script src="js/help-content.js"></script>
     <script src="js/db-manager.js"></script>
     <script src="js/data-manager.js"></script>

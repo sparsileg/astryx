@@ -117,7 +117,7 @@ const SeqPlanTimeline = {
 
         // Draw imaging blocks first (background layer)
         this.drawImagingBlocks(events, sessionStartJD, sessionEndJD);
-        
+
         // Draw altitude curves within imaging blocks
         if (currentSession) {
             this.drawAltitudeCurves(events, sessionStartJD, sessionEndJD, currentSession);
@@ -133,7 +133,7 @@ const SeqPlanTimeline = {
         this.drawAltitudeViolations(events, sessionStartJD, sessionEndJD);
 
         // Draw horizon violation overlays
-        this.drawHorizonViolations(events, sessionStartJD, sessionEndJD);        
+        this.drawHorizonViolations(events, sessionStartJD, sessionEndJD);
 
         // Draw time axis and labels
         this.drawTimeAxis(sessionStartJD, sessionEndJD);
@@ -189,7 +189,7 @@ const SeqPlanTimeline = {
     drawAltitudeCurves(events, sessionStartJD, sessionEndJD, currentSession) {
         const yOffset = this.LABEL_AREA_HEIGHT;
         const blockHeight = this.BLOCK_HEIGHT;
-        
+
         // Get target data for altitude calculations
         const targets = new Map();
         events.filter(e => e.type === 'imaging').forEach(event => {
@@ -211,29 +211,29 @@ const SeqPlanTimeline = {
                 t.endJD = Math.max(t.endJD, event.endJD);
             }
         });
-        
+
         // Draw altitude curve for each target
         targets.forEach((targetData, targetId) => {
             const x1 = this.jdToX(targetData.startJD, sessionStartJD, sessionEndJD);
             const x2 = this.jdToX(targetData.endJD, sessionStartJD, sessionEndJD);
             const width = x2 - x1;
-            
+
             // Calculate altitude points
             const numPoints = Math.max(20, Math.floor(width / 5));
             const points = [];
-            
+
             for (let i = 0; i <= numPoints; i++) {
                 const jd = targetData.startJD + (targetData.endJD - targetData.startJD) * (i / numPoints);
-                const altitude = getAltitude(jd, targetData.ra, targetData.dec, 
-                                             currentSession.location.latitude, 
+                const altitude = getAltitude(jd, targetData.ra, targetData.dec,
+                                             currentSession.location.latitude,
                                              currentSession.location.longitude);
                 const x = this.jdToX(jd, sessionStartJD, sessionEndJD);
-                
+
                 // Scale altitude to fit within block (0° at bottom, 90° at top)
                 const y = yOffset + blockHeight - (altitude / 90) * (blockHeight - 10) - 5;
                 points.push({ x, y });
             }
-            
+
             // Draw black outline
             this.ctx.strokeStyle = '#000000';
             this.ctx.lineWidth = 3;
@@ -243,7 +243,7 @@ const SeqPlanTimeline = {
                 else this.ctx.lineTo(p.x, p.y);
             });
             this.ctx.stroke();
-            
+
             // Draw white fill
             this.ctx.strokeStyle = '#FFFFFF';
             this.ctx.lineWidth = 1.5;
@@ -462,10 +462,10 @@ const SeqPlanTimeline = {
         this.ctx.beginPath();
         this.ctx.rect(x, legendY, 14, 14);
         this.ctx.clip();
-        
+
         this.ctx.fillStyle = 'rgba(255, 0, 0, 0.15)';
         this.ctx.fillRect(x, legendY, 14, 14);
-        
+
         this.ctx.strokeStyle = 'rgba(255, 0, 0, 0.6)';
         this.ctx.lineWidth = 1.5;
         const spacing = 6;
@@ -481,9 +481,9 @@ const SeqPlanTimeline = {
             this.ctx.lineTo(x + offset - 14, legendY + 14);
             this.ctx.stroke();
         }
-        
+
         this.ctx.restore();
-        
+
         this.ctx.fillStyle = textColor;
         this.ctx.fillText('Altitude violation', x + 20, legendY + 11);
         x += 140;
@@ -493,13 +493,13 @@ const SeqPlanTimeline = {
         this.ctx.beginPath();
         this.ctx.rect(x, legendY, 14, 14);
         this.ctx.clip();
-        
+
         this.ctx.fillStyle = 'rgba(255, 165, 0, 0.3)';
         this.ctx.fillRect(x, legendY, 14, 14);
-        
+
         this.ctx.strokeStyle = 'rgba(255, 140, 0, 0.8)';
         this.ctx.lineWidth = 1.5;
-        
+
         // Draw diagonal lines (single direction)
         for (let offset = -14; offset < 28; offset += spacing) {
             this.ctx.beginPath();
@@ -507,9 +507,9 @@ const SeqPlanTimeline = {
             this.ctx.lineTo(x + offset + 14, legendY);
             this.ctx.stroke();
         }
-        
+
         this.ctx.restore();
-        
+
         this.ctx.fillStyle = textColor;
         this.ctx.fillText('Horizon violation', x + 20, legendY + 11);
         x += 140;
@@ -645,7 +645,7 @@ const SeqPlanTimeline = {
     drawCrosshatch(x, y, width, height) {
         // Save context state
         this.ctx.save();
-        
+
         // Clip to the violation rectangle ONLY
         this.ctx.beginPath();
         this.ctx.rect(x, y, width, height);
@@ -676,7 +676,7 @@ const SeqPlanTimeline = {
             this.ctx.lineTo(x + offset - height, y + height);
             this.ctx.stroke();
         }
-        
+
         // Restore context (removes clipping)
         this.ctx.restore();
     },
@@ -707,7 +707,7 @@ const SeqPlanTimeline = {
     drawDiagonalLines(x, y, width, height) {
         // Save context state
         this.ctx.save();
-        
+
         // Clip to the violation rectangle ONLY
         this.ctx.beginPath();
         this.ctx.rect(x, y, width, height);
@@ -730,9 +730,9 @@ const SeqPlanTimeline = {
             this.ctx.lineTo(x + offset + height, y);
             this.ctx.stroke();
         }
-        
+
         // Restore context (removes clipping)
         this.ctx.restore();
     }
-    
+
 };
