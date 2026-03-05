@@ -1,22 +1,22 @@
 # Tutorial
 
-Specula is a tool to help the astrophotographer develop a target list, plan
+Astryx is a tool to help the astrophotographer develop a target list, plan
 imaging sessions, and maintain an imaging log. It does not require an
 internet connection. It is designed to be easy to use, fast, and
 helpful.
 
 This tutorial will step you through the various functions and capabilities
-available. 
+available.
 
 ## User Interface
 
 ![Target Selection](images/full-target-selection.png "Target Selection")
- 
+
  The User Interface (UI) is divided into two sections. On the left is the
  sidebar that allows you to access the menu, set the theme, set your
  location, and select one of the functions. The right side is the area
  where you enter parameters and view results.
- 
+
 ## Sidebar
 
 Clicking the hamburger menu opens up a menu.
@@ -25,12 +25,12 @@ Clicking the hamburger menu opens up a menu.
       the Target Search, and the global minimum altitude setting. The
       global minimum altitude is the altitude at which you would begin to
       image and so it affects multiple other functions and calculations
-      such as target rise and set times. 
+      such as target rise and set times.
     * Admin Tools >> Calculate Best Months: For the specified location(s), calculates the
       "Best Month" for observing each target and the range of months that
       the target is visible for at least two continuous dark hours. Depending on
       the speed of your computer, this calculation takes between 30 and 60
-      seconds for each location. 
+      seconds for each location.
     * Admin Tools >> Manage Equipment: Add your telescopes, sensors, and filters.
     * Admin Tools >> Manage Observer Locations. Add, edit, or delete
       observer locations. You can add a horizon file to each location if
@@ -50,7 +50,7 @@ Clicking the hamburger menu opens up a menu.
       it.
     * Help: A list of help documents.
     * About: Brief description and acknowledgements.
-    
+
 In the sidebar, click the top dropdown to select the theme style you wish
 to use. Click the next dropdown to select the location you wish to use for
 planning.
@@ -77,7 +77,7 @@ target search section. Additional metadata is displayed by clicking the
 Detail button. From the Detail screen, you can add (or remove) the target
 to your "To Do" list, which is the list of targets that you wish to image
 in the future.
-      
+
 **Filter Targets**. Use the dropdowns to filter the targets based on the
 five criteria of catalog, type, month, minimum angular size, and maximum
 magnitude. The Type catalogs are familiar except for Extra and Minor
@@ -125,7 +125,7 @@ gradient background depicting how dark it will be from noon to noon of the
 specified day. The visibility score takes into account moon illumination,
 angle of the target to the moon, and target altitude.
 
-## Yearly Observability 
+## Yearly Observability
 
 For the selected target, displays a chart of the best times to image the
 target over the next 12 months. After setting the minimum altitude (or
@@ -156,7 +156,7 @@ and an estimated number of exposures per target.
 
 ## Imaging Log
 
-Allows you to keep track of Projects and Programs. 
+Allows you to keep track of Projects and Programs.
 
 ### Projects
 
@@ -203,7 +203,7 @@ targets captured, the ability to see which targets you've imaged for each
 Program. For Manual List programs, you can also view the targets you have
 not yet imaged. And finally, a Project Status summary report.
 
-### Important 
+### Important
 
 Note that Imaging Log data is stored separately from the target
 database. You can backup and restore it from the system menu.
