@@ -325,7 +325,7 @@ const SeqPlanTimeline = {
             // Determine label text for cal/flip
             let label = '';
             if (event.type === 'calibration') label = 'Cal';
-            else if (event.type === 'flip') label = 'Flip+Cal';
+            else if (event.type === 'flip') label = 'Cal'; // 'Flip' drawn separately above
 
             // Determine label row (0 = top row, 1 = bottom row)
             let row = 0;
@@ -355,18 +355,19 @@ const SeqPlanTimeline = {
         for (const pos of positions) {
             const eventX = pos.x;
             const label = pos.label;
-            const labelY = pos.row === 0
-                  ? this.LABEL_AREA_HEIGHT - 30  // Top row
-                  : this.LABEL_AREA_HEIGHT - 10; // Bottom row
 
-            // Draw label just above timeline block
             this.ctx.fillStyle = getComputedStyle(document.documentElement)
                 .getPropertyValue('--text-color').trim();
             this.ctx.font = 'bold 13px sans-serif';
             this.ctx.textAlign = 'center';
-            // Position text just above the timeline block (5-10px above)
+
             const textY = blockTop - 5;
             this.ctx.fillText(label, eventX, textY);
+
+            // For flip events, draw 'Flip' on the line above 'Cal'
+            if (pos.event.type === 'flip') {
+                this.ctx.fillText('Flip', eventX, textY - 15);
+            }
         }
     },
 
