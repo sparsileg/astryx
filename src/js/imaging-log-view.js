@@ -16,9 +16,6 @@ const ImagingLogView = {
     async init() {
         console.log('Initializing Imaging Log View');
 
-        // Set page title
-        document.title = 'Imaging Log';
-
         // Set up tab switching
         const tabButtons = document.querySelectorAll('.imaging-log-tab-btn');
         tabButtons.forEach(btn => {

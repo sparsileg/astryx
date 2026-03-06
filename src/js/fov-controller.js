@@ -25,11 +25,6 @@ const FOVView = {
         appDiv.innerHTML = '';
         const content = template.content.cloneNode(true);
         appDiv.appendChild(content);
-
-        // Set page title
-        document.title = 'Field of View';
-
-        // Initialize
         this.init();
 
         // Dispatch view loaded event
