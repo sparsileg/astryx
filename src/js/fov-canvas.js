@@ -201,6 +201,21 @@ const FOVCanvas = {
     },
 
     /**
+     * Draw fixed N marker at top center, always unrotated
+     */
+    drawFixedNorthMarker() {
+        const cx = this.canvas.width / 2;
+        this.ctx.save();
+        this.ctx.globalCompositeOperation = 'difference';
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.font = 'bold 13px sans-serif';
+        this.ctx.textAlign = 'center';
+        this.ctx.textBaseline = 'top';
+        this.ctx.fillText('N', cx, 6);
+        this.ctx.restore();
+    },
+
+    /**
      * Draw FOV border rectangle
      * @param {number} width - Canvas width
      * @param {number} height - Canvas height
@@ -303,18 +318,6 @@ const FOVCanvas = {
         this.ctx.setLineDash([6, 3]);
         this.ctx.strokeRect(-width / 2, -height / 2, width, height);
         this.ctx.setLineDash([]);
-        this.ctx.restore();
-
-        // North marker — 'N' above the top edge of the box, rotated with it
-        this.ctx.save();
-        this.ctx.translate(cx, cy);
-        this.ctx.rotate(angle);
-        this.ctx.globalCompositeOperation = 'difference';
-        this.ctx.fillStyle = '#ffffff';
-        this.ctx.font = 'bold 13px sans-serif';
-        this.ctx.textAlign = 'center';
-        this.ctx.textBaseline = 'bottom';
-        this.ctx.fillText('N', 0, -height / 2 - 4);
         this.ctx.restore();
 
         // Crosshair at center — difference blend, rotated with box
