@@ -141,17 +141,6 @@ const FOVCalculations = {
             const targetOccupancy = 0.7;
             const targetMaxForCalc = Math.max(targetSizeMax, targetSizeMin);
 
-            // FOV = 2 * arctan(sensor / (2 * focal_length))
-            // Solving for focal_length when we know desired FOV:
-            // focal_length = sensor / (2 * tan(FOV/2))
-
-            // Use the smaller sensor dimension to constrain the larger target dimension
-            const smallerSensor = Math.min(
-                fovWidthArcmin < fovHeightArcmin ?
-                    this.getSensorDimensionFromFOV(fovWidthArcmin, this.effectiveFocalLength) :
-                    this.getSensorDimensionFromFOV(fovHeightArcmin, this.effectiveFocalLength)
-            );
-
             // Simpler approach: ratio of current FOV to target size
             const ratio = minFOV / targetMaxForCalc;
             const recommendedFL = Math.round(this.effectiveFocalLength * ratio * targetOccupancy);
