@@ -267,12 +267,31 @@ const FOVCanvas = {
         const cy = y + height / 2;
         const angle = (this.dragBoxAngle || 0) * Math.PI / 180;
 
-        // Semi-transparent overlay outside the box (unrotated, approximate)
+        // Semi-transparent overlay outside the box — use clipping to cut out rotated box shape
+        this.ctx.save();
         this.ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
-        this.ctx.fillRect(0, 0, this.canvas.width, y);
-        this.ctx.fillRect(0, y + height, this.canvas.width, this.canvas.height - y - height);
-        this.ctx.fillRect(0, y, x, height);
-        this.ctx.fillRect(x + width, y, this.canvas.width - x - width, height);
+        this.ctx.beginPath();
+        // Full canvas rect
+        this.ctx.rect(0, 0, this.canvas.width, this.canvas.height);
+
+        // Subtract rotated box using even-odd rule
+        this.ctx.translate(cx, cy);
+        this.ctx.rotate(angle);
+        this.ctx.rect(-width / 2, -height / 2, width, height);
+        this.ctx.restore();
+        this.ctx.save();
+        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+
+        // Redraw using evenOdd fill rule to punch out the box shape
+        this.ctx.beginPath();
+        this.ctx.rect(0, 0, this.canvas.width, this.canvas.height);
+        this.ctx.save();
+        this.ctx.translate(cx, cy);
+        this.ctx.rotate(angle);
+        this.ctx.rect(-width / 2, -height / 2, width, height);
+        this.ctx.restore();
+        this.ctx.fill('evenodd');
+        this.ctx.restore();
 
         // FOV box border — rotated around center, difference blend
         this.ctx.save();

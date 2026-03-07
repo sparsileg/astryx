@@ -8,6 +8,7 @@ const FOVView = {
     showDSS: false,
     showTarget: true,
     largerMode: false,
+    actualModeState: null,
     dssLockedSize: null,
     lastToastKey: null,
 
@@ -235,7 +236,25 @@ const FOVView = {
                 modeToggle.querySelectorAll('.fov-mode-option').forEach(el => el.classList.remove('active'));
                 option.classList.add('active');
                 this.largerMode = option.dataset.mode === 'larger';
-                if (!this.largerMode) {
+                if (this.largerMode) {
+                    // Save current checkbox states before switching to larger
+                    this.actualModeState = {
+                        showTarget: document.getElementById('fov-show-target')?.checked,
+                        showMoon: document.getElementById('fov-show-moon')?.checked
+                    };
+                    // Uncheck target and moon for larger mode
+                    const showTarget = document.getElementById('fov-show-target');
+                    const showMoon = document.getElementById('fov-show-moon');
+                    if (showTarget) { showTarget.checked = false; this.showTarget = false; }
+                    if (showMoon) { showMoon.checked = false; FOVCanvas.setShowMoon(false); }
+                } else {
+                    // Restore checkbox states when returning to actual
+                    if (this.actualModeState) {
+                        const showTarget = document.getElementById('fov-show-target');
+                        const showMoon = document.getElementById('fov-show-moon');
+                        if (showTarget) { showTarget.checked = this.actualModeState.showTarget; this.showTarget = this.actualModeState.showTarget; }
+                        if (showMoon) { showMoon.checked = this.actualModeState.showMoon; FOVCanvas.setShowMoon(this.actualModeState.showMoon); }
+                    }
                     const el = document.getElementById('fov-center-coords');
                     if (el) el.style.display = 'none';
                     const rc = document.getElementById('fov-rotation-control');
@@ -260,20 +279,52 @@ const FOVView = {
 
         const rotateCCW = document.getElementById('fov-rotate-ccw');
         if (rotateCCW) {
-            rotateCCW.addEventListener('click', () => {
+            let ccwInterval = null;
+            let ccwTimeout = null;
+            const stepCCW = () => {
                 FOVCanvas.dragBoxAngle = ((FOVCanvas.dragBoxAngle - 1) % 360);
                 if (rotInput) rotInput.value = FOVCanvas.dragBoxAngle;
                 if (this.largerMode) this.redrawLargeMode(this.largeFOVData);
+            };
+            const stopCCW = () => {
+                clearTimeout(ccwTimeout);
+                clearInterval(ccwInterval);
+                ccwTimeout = null;
+                ccwInterval = null;
+            };
+            rotateCCW.addEventListener('mousedown', () => {
+                stepCCW();
+                ccwTimeout = setTimeout(() => {
+                    ccwInterval = setInterval(stepCCW, 50);
+                }, 500);
             });
+            rotateCCW.addEventListener('mouseup', stopCCW);
+            rotateCCW.addEventListener('mouseleave', stopCCW);
         }
 
         const rotateCW = document.getElementById('fov-rotate-cw');
         if (rotateCW) {
-            rotateCW.addEventListener('click', () => {
+            let cwInterval = null;
+            let cwTimeout = null;
+            const stepCW = () => {
                 FOVCanvas.dragBoxAngle = ((FOVCanvas.dragBoxAngle + 1) % 360);
                 if (rotInput) rotInput.value = FOVCanvas.dragBoxAngle;
                 if (this.largerMode) this.redrawLargeMode(this.largeFOVData);
+            };
+            const stopCW = () => {
+                clearTimeout(cwTimeout);
+                clearInterval(cwInterval);
+                cwTimeout = null;
+                cwInterval = null;
+            };
+            rotateCW.addEventListener('mousedown', () => {
+                stepCW();
+                cwTimeout = setTimeout(() => {
+                    cwInterval = setInterval(stepCW, 50);
+                }, 500);
             });
+            rotateCW.addEventListener('mouseup', stopCW);
+            rotateCW.addEventListener('mouseleave', stopCW);
         }
 
         // Manage telescopes button
@@ -362,17 +413,42 @@ const FOVView = {
             const targetSizeMax = parseFloat(this.currentTarget.size_max);
             const targetSizeMin = parseFloat(this.currentTarget.size_min);
 
-            // Calculate what percentage of FOV the target occupies (use smaller dimension)
+            // Condition 1: linear — largest target dimension vs smallest FOV dimension
             const fovSmaller = Math.min(fovData.fovWidthArcmin, fovData.fovHeightArcmin);
             const targetLarger = Math.max(targetSizeMax, targetSizeMin);
-            fieldCoverage = (targetLarger / fovSmaller) * 100;
+            const linearPct = (targetLarger / fovSmaller) * 100;
 
-            // Show toast if target fills > 50% of FOV, but only once per unique combination
-            if (fieldCoverage > 50) {
+            // Condition 2: area — ellipse if dimensions differ, rectangle if same
+            const isEllipse = targetSizeMax !== targetSizeMin;
+            const targetArea = isEllipse
+                ? Math.PI * (targetSizeMax / 2) * (targetSizeMin / 2)
+                : targetSizeMax * targetSizeMin;
+            const fovArea = fovData.fovWidthArcmin * fovData.fovHeightArcmin;
+            const areaPct = (targetArea / fovArea) * 100;
+
+            fieldCoverage = areaPct;
+
+            // Toast if either condition triggered — once per unique combination
+            const linearTriggered = linearPct > 70;
+            const areaTriggered = areaPct > 50;
+
+            if (linearTriggered || areaTriggered) {
                 const toastKey = `${telescopeName}|${sensorName}|${this.currentTarget.object}`;
                 if (toastKey !== this.lastToastKey) {
                     this.lastToastKey = toastKey;
-                    UIManager.showToast(`Target occupies ${fieldCoverage.toFixed(0)}% of field of view. Consider a longer focal length for more context.`, 'info', 6000);
+                    // Suggest a focal length that would put the target at ~70% of the smaller FOV dimension
+                    const targetOccupancy = 0.7;
+                    const recommendedFL = Math.round(fovData.effectiveFocalLength * (fovSmaller / targetLarger) * targetOccupancy);
+
+                    let msg = '';
+                    if (linearTriggered && areaTriggered) {
+                        msg = `Target spans ${linearPct.toFixed(0)}% of field width and occupies ${areaPct.toFixed(0)}% of field area. Consider a telescope with ~${recommendedFL}mm effective focal length for more context.`;
+                    } else if (linearTriggered) {
+                        msg = `Target spans ${linearPct.toFixed(0)}% of field width. Consider a telescope with ~${recommendedFL}mm effective focal length for more context.`;
+                    } else {
+                        msg = `Target occupies ${areaPct.toFixed(0)}% of field area. Consider a telescope with ~${recommendedFL}mm effective focal length for more context.`;
+                    }
+                    UIManager.showToast(msg, 'info', 10000);
                 }
             }
         }
@@ -405,20 +481,6 @@ const FOVView = {
             }
         }
 
-        // Check if target fits
-        if (this.currentTarget && this.currentTarget.size_max && this.currentTarget.size_min) {
-            const fitCheck = FOVCalculations.checkTargetFit(
-                this.currentTarget.size_max,
-                this.currentTarget.size_min,
-                fovData.fovWidthArcmin,
-                fovData.fovHeightArcmin
-            );
-
-            if (!fitCheck.fits) {
-                // Show warning modal
-                UIManager.showToast(fitCheck.recommendation, 'warning', 8000);
-            }
-        }
     },
 
     /**
