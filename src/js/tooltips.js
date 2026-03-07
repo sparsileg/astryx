@@ -15,6 +15,7 @@ const TOOLTIPS = {
     sb_currentTgt:  'The currently selected target\nfor analysis operations',
     sb_dailyVis:    'Compute and view the visibility\nof the current target over\na specified time period',
     sb_fov:         'View a simulated or actual DSS\nimage for the current target\nwithin the telescope/sensor\nfield of view',
+    sb_hamburger:   'Various settings and administrative operations',
     sb_imgLog:      'Track and report on imaging\nprojects, sessions, and\ntarget lists',
     sb_location:    'Select the location to use\nduring planning',
     sb_seqPlanner:  'Generate an optimal\nimaging sequence for the\npinned targets for a\nspecified day',
@@ -47,14 +48,13 @@ const TOOLTIPS = {
     to_startTime:   'Start of the imaging session',
     ts_catalog:     'Include objects from the selected\ncatalog(s)',
     ts_createIP:    'Create Imaging Program from\nthe results',
-    ts_limitMag:    'Show objects brighter than this\nvalue (lower number = brighter)',
-    ts_minSize:     'Exclude objects smaller than the\nentered value',
+    ts_limitMag:    'Show objects brighter than this\nvalue (lower number = brighter).\nLeave blank to disable filtering',
+    ts_minSize:     'Exclude objects smaller than the\nentered value. Leave blank to disable\n filtering',
     ts_month:       'Include objects observable in the\nselected month',
     ts_PIN:         'Add current target to the Pinned\nTargets list',
     ts_sendOpt:     'Use the results in the\nTarget Optimizer',
     ts_tgtName:     'Type designator or keywords to\nsearch for object',
-    ts_type:        'Include objects of the selected type(s)',
-    xyz: 'fred'
+    ts_type:        'Include objects of the selected type(s)'
 };
 
 
@@ -132,3 +132,6 @@ tooltipObserver.observe(document.body, {
     childList: true,
     subtree: true
 });
+
+// Apply tooltips to all static elements already in the DOM
+applyTooltips();
