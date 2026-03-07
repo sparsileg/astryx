@@ -1485,7 +1485,7 @@ const UIManager = {
         }
     },
 
-    showToast(message, type = 'info') {
+    showToast(message, type = 'info', duration = 3000) {
         const toast = document.createElement('div');
         toast.className = `toast toast-${type}`;
         toast.textContent = message;
@@ -1495,11 +1495,11 @@ const UIManager = {
         // Trigger animation
         setTimeout(() => toast.classList.add('show'), 10);
 
-        // Remove after 3 seconds
+        // Remove after duration
         setTimeout(() => {
             toast.classList.remove('show');
             setTimeout(() => document.body.removeChild(toast), 300);
-        }, 3000);
+        }, duration);
     },
 
     /**

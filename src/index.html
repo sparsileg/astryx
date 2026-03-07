@@ -58,7 +58,7 @@
             <li class="nav-item tooltip-host" data-view="todo" data-tooltip-key="sb_todoList">To Do List</li>
             <li class="nav-item tooltip-host" data-view="daily-visibility" data-tooltip-key="sb_dailyVis">Daily Visibility</li>
             <li class="nav-item tooltip-host" data-view="yearly-observability" data-tooltip-key="sb_yearlyObs">Yearly Observability</li>
-            <li class="nav-item tooltip-host" data-view="fov" data-tooltip-key="sb_fov">Field of View</li>
+            <li class="nav-item tooltip-host" data-view="fov" data-tooltip-key="sb_fov">Viewfinder</li>
             <li class="nav-item tooltip-host" data-view="optimizer" data-tooltip-key="sb_tgtOpt">Target Optimizer</li>
             <li class="nav-item tooltip-host" data-view="seqplan" data-tooltip-key="sb_seqPlanner">Sequence Planner</li>
             <li class="nav-item tooltip-host" data-view="imaging-log" data-tooltip-key="sb_imgLog">Imaging Log</li>
@@ -956,7 +956,7 @@
     <!-- Field of View Template -->
     <template id="fov-template">
       <div class="fov-view">
-        <h2 style="text-align: center;">🔭 Field of View</h2>
+        <h2 style="text-align: center;">🔭 Viewfinder</h2>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 2rem;">
           <!-- Left Column: Equipment and Settings -->
           <div>
@@ -977,39 +977,48 @@
                 <h3>🔭 Equipment</h3>
               </div>
               <div class="card-body">
-                <div class="form-group">
-                  <label for="fov-telescope-select">Telescope:</label>
-                  <select id="fov-telescope-select" class="full-width">
-                    <option value="">Select telescope...</option>
-                  </select>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem 1rem; align-items: end; margin-bottom: 1rem;">
+                  <div>
+                    <label for="fov-telescope-select">Telescope:</label>
+                    <select id="fov-telescope-select" class="full-width">
+                      <option value="">Select telescope...</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label for="fov-sensor-select">Sensor:</label>
+                    <select id="fov-sensor-select" class="full-width">
+                      <option value="">Select sensor...</option>
+                    </select>
+                  </div>
                 </div>
-                <div class="form-group">
-                  <label for="fov-sensor-select">Sensor:</label>
-                  <select id="fov-sensor-select" class="full-width">
-                    <option value="">Select sensor...</option>
-                  </select>
+                <div style="display: flex; gap: 1.2rem; align-items: center; margin-bottom: 0.5rem;">
+                  <label style="display: flex; align-items: center; gap: 0.3rem; font-size: 0.85rem; cursor: pointer;">
+                    <input type="checkbox" id="fov-show-dss" style="cursor: pointer;">DSS image
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 0.3rem; font-size: 0.85rem; cursor: pointer;">
+                    <input type="checkbox" id="fov-show-target" style="cursor: pointer;">Target size
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 0.3rem; font-size: 0.85rem; cursor: pointer;">
+                    <input type="checkbox" id="fov-show-moon" style="cursor: pointer;">Full moon
+                  </label>
                 </div>
-                <div class="form-group" style="display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
-                  <input type="checkbox" id="fov-show-target" style="cursor: pointer;" checked>
-                  <label for="fov-show-target" style="cursor: pointer; margin-bottom: 0;">Show target outline</label>
-                </div>
-                <div class="form-group" style="display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
-                  <input type="checkbox" id="fov-show-dss" style="cursor: pointer;">
-                  <label for="fov-show-dss" style="cursor: pointer; margin-bottom: 0;">Show DSS background image</label>
-                </div>
-                <div class="form-group" style="display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 0.5rem; margin-bottom: 0;">
-                  <input type="checkbox" id="fov-show-moon" style="cursor: pointer;">
-                  <label for="fov-show-moon" style="cursor: pointer; margin-bottom: 0;">Show full moon for size comparison</label>
+              </div>
+            </div>
+            <!-- Results Card -->
+            <div class="card">
+              <div class="card-body">
+                <div id="fov-results">
+                  <p style="color: var(--text-secondary);">Select telescope and sensor to calculate field of view.</p>
                 </div>
               </div>
             </div>
           </div>
-          <!-- Right Column: Canvas Visualization and Results -->
+          <!-- Right Column: Canvas Visualization -->
           <div>
             <!-- Visualization Card -->
             <div class="card">
               <div class="card-header">
-                <h3>👁️ <div class="fov-mode-toggle" id="fov-mode-toggle">
+                <h3>👁️ Field of View <div class="fov-mode-toggle" id="fov-mode-toggle">
                     <span class="fov-mode-option active"
                           data-mode="actual">Actual</span>
                     <span class="fov-mode-option"
@@ -1035,15 +1044,7 @@
                 </div>
               </div>
             </div>
-            <!-- Results Card -->
-            <div class="card">
-              <div class="card-body">
-                <div id="fov-results">
-                  <p style="color: var(--text-secondary);">Select telescope and sensor to calculate field of view.</p>
-                </div>
-              </div>
             </div>
-          </div>
         </div>
       </div>
     </template>
