@@ -1009,12 +1009,29 @@
             <!-- Visualization Card -->
             <div class="card">
               <div class="card-header">
-                <h3>👁️ Field of View Visualization</h3>
+                <h3>👁️ <div class="fov-mode-toggle" id="fov-mode-toggle">
+                    <span class="fov-mode-option active"
+                          data-mode="actual">Actual</span>
+                    <span class="fov-mode-option"
+                          data-mode="larger">Larger</span>
+                </div></h3>
               </div>
-              <div class="card-body" style="display: flex; justify-content: center; align-items: center; position: relative;">
-                <canvas id="fov-canvas" width="600" height="600" style="max-width: 100%; border: 1px solid var(--border-color);"></canvas>
-                <div id="fov-moon-note" style="position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); color: var(--text-secondary); font-size: 0.9rem; font-style: italic; display: none;">
-                  Full moon outline displayed
+              <div class="card-body" style="display: flex; flex-direction: column; align-items: center; position: relative;">
+                <div style="position: relative;">
+                  <canvas id="fov-canvas" width="600" height="600" style="max-width: 100%; border: 1px solid var(--border-color);"></canvas>
+                  <div id="fov-moon-note" style="position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); color: var(--text-secondary); font-size: 0.9rem; font-style: italic; display: none;">
+                    Full moon outlined displayed
+                  </div>
+                </div>
+                <div id="fov-center-coords" style="display: none; margin-top: 0.5rem; text-align: center; font-family: monospace; font-size: 0.9rem; color: var(--text-color);"></div>
+                <div id="fov-rotation-control" style="display: none; margin-top: 0.5rem; text-align: center;">
+                    <label style="font-size: 0.9rem; color: var(--text-color);">Rotate camera to:&nbsp;
+                        <button id="fov-rotate-ccw" class="btn-secondary btn-sm">↺</button>
+                        <input type="number" id="fov-rotation-input" value="0" min="-180" max="180" step="1"
+                               style="width: 5rem; text-align: center; margin: 0 0.4rem; background: var(--bg-color); color: var(--text-color); border: 1px solid var(--border-color); border-radius: 4px; padding: 0.2rem;">
+                        °
+                        <button id="fov-rotate-cw" class="btn-secondary btn-sm">↻</button>
+                    </label>
                 </div>
               </div>
             </div>

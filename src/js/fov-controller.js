@@ -7,6 +7,7 @@ const FOVView = {
     currentTarget: null,
     showDSS: false,
     showTarget: true,
+    largerMode: false,
     dssLockedSize: null,
     lastToastKey: null,
 
@@ -83,6 +84,14 @@ const FOVView = {
         if (showTargetCheckbox) {
             showTargetCheckbox.checked = false;
             this.showTarget = false;
+        }
+
+        // Restore larger mode toggle visual state
+        const modeToggle = document.getElementById('fov-mode-toggle');
+        if (modeToggle) {
+            modeToggle.querySelectorAll('.fov-mode-option').forEach(el => {
+                el.classList.toggle('active', el.dataset.mode === (this.largerMode ? 'larger' : 'actual'));
+            });
         }
 
         // Load saved selections (will trigger calculate() if equipment is selected)
@@ -217,6 +226,56 @@ const FOVView = {
             });
         }
 
+        // Larger mode toggle
+        const modeToggle = document.getElementById('fov-mode-toggle');
+        if (modeToggle) {
+            modeToggle.addEventListener('click', (e) => {
+                const option = e.target.closest('.fov-mode-option');
+                if (!option) return;
+                modeToggle.querySelectorAll('.fov-mode-option').forEach(el => el.classList.remove('active'));
+                option.classList.add('active');
+                this.largerMode = option.dataset.mode === 'larger';
+                if (!this.largerMode) {
+                    const el = document.getElementById('fov-center-coords');
+                    if (el) el.style.display = 'none';
+                    const rc = document.getElementById('fov-rotation-control');
+                    if (rc) rc.style.display = 'none';
+                    FOVCanvas.dragBoxAngle = 0;
+                    const rotInput = document.getElementById('fov-rotation-input');
+                    if (rotInput) rotInput.value = 0;
+                    FOVCanvas.removeDragListeners();
+                }
+                this.calculate();
+            });
+        }
+
+        // Rotation controls
+        const rotInput = document.getElementById('fov-rotation-input');
+        if (rotInput) {
+            rotInput.addEventListener('input', () => {
+                FOVCanvas.dragBoxAngle = parseFloat(rotInput.value) || 0;
+                if (this.largerMode) this.redrawLargeMode(this.largeFOVData);
+            });
+        }
+
+        const rotateCCW = document.getElementById('fov-rotate-ccw');
+        if (rotateCCW) {
+            rotateCCW.addEventListener('click', () => {
+                FOVCanvas.dragBoxAngle = ((FOVCanvas.dragBoxAngle - 1) % 360);
+                if (rotInput) rotInput.value = FOVCanvas.dragBoxAngle;
+                if (this.largerMode) this.redrawLargeMode(this.largeFOVData);
+            });
+        }
+
+        const rotateCW = document.getElementById('fov-rotate-cw');
+        if (rotateCW) {
+            rotateCW.addEventListener('click', () => {
+                FOVCanvas.dragBoxAngle = ((FOVCanvas.dragBoxAngle + 1) % 360);
+                if (rotInput) rotInput.value = FOVCanvas.dragBoxAngle;
+                if (this.largerMode) this.redrawLargeMode(this.largeFOVData);
+            });
+        }
+
         // Manage telescopes button
         const manageTelBtn = document.getElementById('fov-manage-telescopes-btn');
         if (manageTelBtn) {
@@ -339,7 +398,11 @@ const FOVView = {
 
         // Fetch and render DSS background if enabled
         if (this.showDSS && this.currentTarget) {
-            await this.fetchAndRenderDSS(fovData);
+            if (this.largerMode) {
+                await this.fetchAndRenderDSSLarge(fovData);
+            } else {
+                await this.fetchAndRenderDSS(fovData);
+            }
         }
 
         // Check if target fits
@@ -398,6 +461,48 @@ const FOVView = {
      */
     getDSSCacheKey(ra, dec, fovDeg) {
         return `dss_${ra.toFixed(4)}_${dec.toFixed(4)}_${fovDeg.toFixed(4)}`;
+    },
+
+    /**
+     * Get cache key for larger DSS image (3x FOV)
+     */
+    getDSSLargeCacheKey(ra, dec, fovDeg) {
+        return `dss_${ra.toFixed(4)}_${dec.toFixed(4)}_${fovDeg.toFixed(4)}_3x`;
+    },
+
+    /**
+     * Get cached larger DSS image if still valid (1 day expiry)
+     */
+    async getDSSLargeFromCache(key) {
+        try {
+            const cached = await DBManager.get('dssCache', key);
+            if (!cached) return null;
+            const age = Date.now() - cached.lastAccessed;
+            if (age > 24 * 60 * 60 * 1000) { // 1 day
+                await DBManager.delete('dssCache', key);
+                return null;
+            }
+            await DBManager.put('dssCache', { ...cached, lastAccessed: Date.now() });
+            return cached.dataUrl;
+        } catch (e) {
+            return null;
+        }
+    },
+
+    /**
+     * Store larger DSS image in cache (1 day expiry)
+     */
+    async saveDSSLargeToCache(key, dataUrl) {
+        try {
+            await DBManager.put('dssCache', {
+                id: key,
+                dataUrl: dataUrl,
+                timestamp: Date.now(),
+                lastAccessed: Date.now()
+            });
+        } catch (e) {
+            console.warn('Failed to cache large DSS image:', e);
+        }
     },
 
     /**
@@ -540,8 +645,221 @@ const FOVView = {
                     (moonDiameter * scaleX) / 2,
                     (moonDiameter * scaleY) / 2);
             }
+
+            FOVCanvas.drawCenterCrosshair();
+            this.showActualModeCoords();
         };
         img.src = dataUrl;
+    },
+
+    /**
+     * Fetch and render larger DSS image (3x FOV) for panning mode
+     */
+    async fetchAndRenderDSSLarge(fovData) {
+        if (!this.currentTarget || !this.currentTarget.ra || !this.currentTarget.dec) {
+            console.warn('No target coordinates for large DSS fetch');
+            return;
+        }
+
+        const raDeg = this.currentTarget.ra * 15;
+        const decDeg = this.currentTarget.dec;
+
+        // 3x the FOV
+        const fovDeg = Math.max(fovData.fovWidth, fovData.fovHeight) * 3;
+
+        const cacheKey = this.getDSSLargeCacheKey(raDeg, decDeg, fovDeg);
+
+        let dataUrl = await this.getDSSLargeFromCache(cacheKey);
+
+        if (!dataUrl) {
+            const url = `https://alasky.u-strasbg.fr/hips-image-services/hips2fits?hips=CDS/P/DSS2/red` +
+                `&ra=${raDeg.toFixed(6)}&dec=${decDeg.toFixed(6)}` +
+                `&fov=${fovDeg.toFixed(6)}&width=600&height=600` +
+                `&projection=TAN&format=jpg`;
+
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    console.warn('Large DSS fetch failed:', response.status);
+                    return;
+                }
+                const blob = await response.blob();
+                dataUrl = await new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result);
+                    reader.readAsDataURL(blob);
+                });
+                await this.saveDSSLargeToCache(cacheKey, dataUrl);
+            } catch (e) {
+                console.warn('Large DSS fetch error:', e);
+                return;
+            }
+        }
+
+        // Store for use by canvas drag rendering
+        this.largeDSSDataUrl = dataUrl;
+        this.largeFOVData = fovData;
+
+        const img = new Image();
+        img.onload = () => {
+            FOVCanvas.clear();
+            FOVCanvas.renderBackground(img);
+            FOVCanvas.drawFOVBorder(FOVCanvas.canvas.width, FOVCanvas.canvas.height);
+        };
+        img.src = dataUrl;
+    },
+
+    /**
+     * Fetch and render larger DSS image (3x FOV) for panning mode
+     */
+    async fetchAndRenderDSSLarge(fovData) {
+        if (!this.currentTarget || !this.currentTarget.ra || !this.currentTarget.dec) {
+            console.warn('No target coordinates for large DSS fetch');
+            return;
+        }
+
+        const raDeg = this.currentTarget.ra * 15;
+        const decDeg = this.currentTarget.dec;
+
+        // 3x the FOV
+        const fovDeg = Math.max(fovData.fovWidth, fovData.fovHeight) * 3;
+
+        const cacheKey = this.getDSSLargeCacheKey(raDeg, decDeg, fovDeg);
+
+        let dataUrl = await this.getDSSLargeFromCache(cacheKey);
+
+        if (!dataUrl) {
+            const url = `https://alasky.u-strasbg.fr/hips-image-services/hips2fits?hips=CDS/P/DSS2/red` +
+                `&ra=${raDeg.toFixed(6)}&dec=${decDeg.toFixed(6)}` +
+                `&fov=${fovDeg.toFixed(6)}&width=600&height=600` +
+                `&projection=TAN&format=jpg`;
+
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    console.warn('Large DSS fetch failed:', response.status);
+                    return;
+                }
+                const blob = await response.blob();
+                dataUrl = await new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result);
+                    reader.readAsDataURL(blob);
+                });
+                await this.saveDSSLargeToCache(cacheKey, dataUrl);
+            } catch (e) {
+                console.warn('Large DSS fetch error:', e);
+                return;
+            }
+        }
+
+        // Store for use by canvas drag rendering
+        this.largeDSSDataUrl = dataUrl;
+        this.largeFOVData = fovData;
+
+        const img = new Image();
+        img.onload = () => {
+            FOVCanvas.largeImage = img;
+            FOVCanvas.initDragBox(fovData.fovWidthArcmin, fovData.fovHeightArcmin);
+            FOVCanvas.setupDragListeners(() => {
+                this.redrawLargeMode(fovData);
+            });
+            const rc = document.getElementById('fov-rotation-control');
+            if (rc) rc.style.display = 'block';
+            this.redrawLargeMode(fovData);
+        };
+        img.src = dataUrl;
+    },
+
+    /**
+     * Redraw the large mode canvas: background + drag box
+     */
+    redrawLargeMode(fovData) {
+        FOVCanvas.clear();
+        if (FOVCanvas.largeImage) {
+            FOVCanvas.renderBackground(FOVCanvas.largeImage);
+        }
+        FOVCanvas.drawDragBox();
+        if (typeof this.updateCenterCoords === 'function') {
+            this.updateCenterCoords(fovData);
+        }
+    },
+
+    /**
+     * Calculate and display RA/Dec of drag box center
+     */
+    updateCenterCoords(fovData) {
+        const el = document.getElementById('fov-center-coords');
+        if (!el || !FOVCanvas.dragBox) return;
+
+        // Pixel offset of box center from canvas center
+        const canvasCX = FOVCanvas.canvas.width / 2;
+        const canvasCY = FOVCanvas.canvas.height / 2;
+        const boxCX = FOVCanvas.dragBox.x + FOVCanvas.dragBox.width / 2;
+        const boxCY = FOVCanvas.dragBox.y + FOVCanvas.dragBox.height / 2;
+
+        // The large image is 3x the FOV, so arcsec per pixel = 3x normal
+        const arcSecPerPixelX = (fovData.fovWidthArcmin * 60 * 3) / FOVCanvas.canvas.width;
+        const arcSecPerPixelY = (fovData.fovHeightArcmin * 60 * 3) / FOVCanvas.canvas.height;
+
+        // Offset in arcseconds (positive X = east = increasing RA, positive Y = north = increasing Dec)
+        const offsetX = (boxCX - canvasCX) * arcSecPerPixelX;
+        const offsetY = (canvasCY - boxCY) * arcSecPerPixelY; // Y flipped
+
+        // Target RA/Dec in degrees
+        const targetRA = this.currentTarget.ra * 15; // hours to degrees
+        const targetDec = this.currentTarget.dec;
+
+        // Apply offset (convert arcsec to degrees)
+        const centerRA = targetRA + (offsetX / 3600) / Math.cos(targetDec * Math.PI / 180);
+        const centerDec = targetDec + (offsetY / 3600);
+
+        // Format RA as HH:MM:SS
+        const raNorm = ((centerRA % 360) + 360) % 360;
+        const raHours = raNorm / 15;
+        const raH = Math.floor(raHours);
+        const raM = Math.floor((raHours - raH) * 60);
+        const raS = ((raHours - raH) * 60 - raM) * 60;
+
+        // Format Dec as +DD:MM:SS
+        const decSign = centerDec >= 0 ? '+' : '-';
+        const decAbs = Math.abs(centerDec);
+        const decD = Math.floor(decAbs);
+        const decM = Math.floor((decAbs - decD) * 60);
+        const decS = ((decAbs - decD) * 60 - decM) * 60;
+
+        const raStr = `${String(raH).padStart(2,'0')}h ${String(raM).padStart(2,'0')}m ${raS.toFixed(1).padStart(4,'0')}s`;
+        const decStr = `${decSign}${String(decD).padStart(2,'0')}° ${String(decM).padStart(2,'0')}′ ${decS.toFixed(1).padStart(4,'0')}″`;
+
+        el.textContent = `Center: ${raStr}  /  ${decStr}`;
+        el.style.display = 'block';
+    },
+
+    /**
+     * Display target RA/Dec below canvas in Actual mode
+     */
+    showActualModeCoords() {
+        const el = document.getElementById('fov-center-coords');
+        if (!el || !this.currentTarget) return;
+
+        const raHours = this.currentTarget.ra;
+        const decDeg = this.currentTarget.dec;
+
+        const raH = Math.floor(raHours);
+        const raM = Math.floor((raHours - raH) * 60);
+        const raS = ((raHours - raH) * 60 - raM) * 60;
+
+        const decSign = decDeg >= 0 ? '+' : '-';
+        const decAbs = Math.abs(decDeg);
+        const decD = Math.floor(decAbs);
+        const decM = Math.floor((decAbs - decD) * 60);
+        const decS = ((decAbs - decD) * 60 - decM) * 60;
+
+        const raStr = `${String(raH).padStart(2,'0')}h ${String(raM).padStart(2,'0')}m ${raS.toFixed(1).padStart(4,'0')}s`;
+        const decStr = `${decSign}${String(decD).padStart(2,'0')}° ${String(decM).padStart(2,'0')}′ ${decS.toFixed(1).padStart(4,'0')}″`;
+
+        el.textContent = `Center: ${raStr}  /  ${decStr}`;
+        el.style.display = 'block';
     },
 
     /**

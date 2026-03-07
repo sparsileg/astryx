@@ -6,7 +6,33 @@
     justify-content: center;
 }
 
-
 #todo-rise-chart {
     max-width: 100%;
+}
+
+.fov-mode-toggle {
+    display: inline-flex;
+    background: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    padding: 2px;
+    gap: 0;
+    vertical-align: middle;
+    margin-left: 0.5rem;
+}
+
+.fov-mode-option {
+    padding: 2px 14px;
+    border-radius: 16px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: normal;
+    color: var(--text-secondary);
+    transition: background 0.2s, color 0.2s;
+}
+
+.fov-mode-option.active {
+    background: var(--primary-color);
+    color: var(--bg-color);
+    font-weight: bold;
 }
