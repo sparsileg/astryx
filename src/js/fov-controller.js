@@ -42,7 +42,10 @@ const FOVView = {
         this.showTarget = true;
         this.dssLockedSize = null;
         this.lastToastKey = null;
+        this.largerMode = false;
+        this.actualModeState = null;
         FOVCanvas.dssImage = null;
+        FOVCanvas.dragBoxAngle = 0;
 
         // Initialize canvas
         FOVCanvas.init('fov-canvas');
@@ -94,6 +97,12 @@ const FOVView = {
                 el.classList.toggle('active', el.dataset.mode === (this.largerMode ? 'larger' : 'actual'));
             });
         }
+
+        // Always show rotation control
+        const rc = document.getElementById('fov-rotation-control');
+        if (rc) rc.style.display = 'block';
+        const rotInput = document.getElementById('fov-rotation-input');
+        if (rotInput) rotInput.value = 0;
 
         // Load saved selections (will trigger calculate() if equipment is selected)
         this.loadSavedSelections();
@@ -257,11 +266,6 @@ const FOVView = {
                     }
                     const el = document.getElementById('fov-center-coords');
                     if (el) el.style.display = 'none';
-                    const rc = document.getElementById('fov-rotation-control');
-                    if (rc) rc.style.display = 'none';
-                    FOVCanvas.dragBoxAngle = 0;
-                    const rotInput = document.getElementById('fov-rotation-input');
-                    if (rotInput) rotInput.value = 0;
                     FOVCanvas.removeDragListeners();
                 }
                 this.calculate();
@@ -274,6 +278,7 @@ const FOVView = {
             rotInput.addEventListener('input', () => {
                 FOVCanvas.dragBoxAngle = parseFloat(rotInput.value) || 0;
                 if (this.largerMode) this.redrawLargeMode(this.largeFOVData);
+                else if (this.showDSS && this.currentTarget) this.fetchAndRenderDSS(this.lastFOVData);
             });
         }
 
@@ -285,6 +290,7 @@ const FOVView = {
                 FOVCanvas.dragBoxAngle = ((FOVCanvas.dragBoxAngle - 1) % 360);
                 if (rotInput) rotInput.value = FOVCanvas.dragBoxAngle;
                 if (this.largerMode) this.redrawLargeMode(this.largeFOVData);
+                else if (this.showDSS && this.currentTarget) this.fetchAndRenderDSS(this.lastFOVData);
             };
             const stopCCW = () => {
                 clearTimeout(ccwTimeout);
@@ -310,6 +316,7 @@ const FOVView = {
                 FOVCanvas.dragBoxAngle = ((FOVCanvas.dragBoxAngle + 1) % 360);
                 if (rotInput) rotInput.value = FOVCanvas.dragBoxAngle;
                 if (this.largerMode) this.redrawLargeMode(this.largeFOVData);
+                else if (this.showDSS && this.currentTarget) this.fetchAndRenderDSS(this.lastFOVData);
             };
             const stopCW = () => {
                 clearTimeout(cwTimeout);
@@ -325,6 +332,12 @@ const FOVView = {
             });
             rotateCW.addEventListener('mouseup', stopCW);
             rotateCW.addEventListener('mouseleave', stopCW);
+        }
+
+        // Snapshot button
+        const snapshotBtn = document.getElementById('fov-snapshot-btn');
+        if (snapshotBtn) {
+            snapshotBtn.addEventListener('click', () => this.takeSnapshot());
         }
 
         // Manage telescopes button
@@ -453,7 +466,8 @@ const FOVView = {
             }
         }
 
-        // Display results
+        // Store for rotation redraws and display
+        this.lastFOVData = fovData;
         this.displayResults(fovData, fieldCoverage);
 
         // Prepare target data with numeric sizes for canvas rendering
@@ -675,23 +689,30 @@ const FOVView = {
         // Draw image on canvas
         const img = new Image();
         img.onload = () => {
-            // Redraw: background first, then overlays
             FOVCanvas.clear();
+
+            const width = FOVCanvas.canvas.width;
+            const height = FOVCanvas.canvas.height;
+            const angle = (FOVCanvas.dragBoxAngle || 0) * Math.PI / 180;
+            const scaleX = width / fovData.fovWidthArcmin;
+            const scaleY = height / fovData.fovHeightArcmin;
+
+            // Draw image unrotated (north always up)
             FOVCanvas.renderBackground(img);
 
-            // Redraw target and moon overlays
+            // Rotate overlays around center to show camera orientation
+            FOVCanvas.ctx.save();
+            FOVCanvas.ctx.translate(width / 2, height / 2);
+            FOVCanvas.ctx.rotate(angle);
+            FOVCanvas.ctx.translate(-width / 2, -height / 2);
+
+            FOVCanvas.drawFOVBorder(width, height);
+
             const targetForCanvas = this.currentTarget && this.showTarget ? {
                 ...this.currentTarget,
                 size_max: parseFloat(this.currentTarget.size_max) || 0,
                 size_min: parseFloat(this.currentTarget.size_min) || 0
             } : null;
-
-            const width = FOVCanvas.canvas.width;
-            const height = FOVCanvas.canvas.height;
-            const scaleX = width / fovData.fovWidthArcmin;
-            const scaleY = height / fovData.fovHeightArcmin;
-
-            FOVCanvas.drawFOVBorder(width, height);
 
             if (targetForCanvas && targetForCanvas.size_max && targetForCanvas.size_min) {
                 FOVCanvas.drawTarget(
@@ -709,6 +730,11 @@ const FOVView = {
             }
 
             FOVCanvas.drawCenterCrosshair();
+            FOVCanvas.ctx.restore();
+
+            // Draw fixed N marker always pointing up
+            FOVCanvas.drawFixedNorthMarker();
+
             this.showActualModeCoords();
         };
         img.src = dataUrl;
@@ -842,6 +868,7 @@ const FOVView = {
             FOVCanvas.renderBackground(FOVCanvas.largeImage);
         }
         FOVCanvas.drawDragBox();
+        FOVCanvas.drawFixedNorthMarker();
         if (typeof this.updateCenterCoords === 'function') {
             this.updateCenterCoords(fovData);
         }
@@ -922,6 +949,77 @@ const FOVView = {
 
         el.textContent = `Center: ${raStr}  /  ${decStr}`;
         el.style.display = 'block';
+    },
+
+    /**
+     * Take a snapshot of the current framing and display in a modal
+     */
+    takeSnapshot() {
+        const angle = (FOVCanvas.dragBoxAngle || 0) * Math.PI / 180;
+        const srcCanvas = FOVCanvas.canvas;
+        const w = srcCanvas.width;
+        const h = srcCanvas.height;
+
+        // Create offscreen canvas for the snapshot
+        const snapCanvas = document.createElement('canvas');
+
+        if (this.largerMode && FOVCanvas.dragBox) {
+            const box = FOVCanvas.dragBox;
+            snapCanvas.width = box.width;
+            snapCanvas.height = box.height;
+            const snapCtx = snapCanvas.getContext('2d');
+            const cx = box.x + box.width / 2;
+            const cy = box.y + box.height / 2;
+
+            // Fill black for areas outside image
+            snapCtx.fillStyle = '#000000';
+            snapCtx.fillRect(0, 0, box.width, box.height);
+
+            // Translate to center of snap, rotate opposite to box angle, draw source
+            snapCtx.save();
+            snapCtx.translate(box.width / 2, box.height / 2);
+            snapCtx.rotate(-angle);
+            snapCtx.drawImage(srcCanvas, -cx, -cy);
+            snapCtx.restore();
+        } else {
+            // Actual mode — extract content inside rotated FOV border
+            snapCanvas.width = w;
+            snapCanvas.height = h;
+            const snapCtx = snapCanvas.getContext('2d');
+
+            snapCtx.fillStyle = '#000000';
+            snapCtx.fillRect(0, 0, w, h);
+
+            snapCtx.save();
+            snapCtx.translate(w / 2, h / 2);
+            snapCtx.rotate(-angle);
+            snapCtx.drawImage(srcCanvas, -w / 2, -h / 2);
+            snapCtx.restore();
+        }
+
+        // Show in modal overlay
+        const overlay = document.createElement('div');
+        overlay.style.cssText = `
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); z-index: 99998;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem;
+        `;
+
+        const img = document.createElement('img');
+        img.src = snapCanvas.toDataURL('image/jpeg', 0.92);
+        img.style.cssText = `max-width: 90vw; max-height: 80vh; border: 2px solid var(--border-color); border-radius: 4px;`;
+
+        const closeBtn = document.createElement('button');
+        closeBtn.textContent = 'Close';
+        closeBtn.className = 'btn-primary';
+        closeBtn.addEventListener('click', () => document.body.removeChild(overlay));
+
+        overlay.appendChild(img);
+        overlay.appendChild(closeBtn);
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) document.body.removeChild(overlay);
+        });
+        document.body.appendChild(overlay);
     },
 
     /**
