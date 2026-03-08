@@ -377,6 +377,57 @@ const VisibilityCalculations = {
     },
 
     /**
+     * Assemble skyglowData object for a single date/target/location.
+     * Called directly when navigating to Daily Visibility.
+     */
+    assembleSkyglowData(target, dateStr, locationName, minAltitude, useHorizon) {
+        const location = DataManager.getLocation(locationName);
+        if (!location) return null;
+
+        const dstConfig = SettingsManager.getDSTConfig();
+        const twilight = this.calculateTwilightTimes(
+            dateStr,
+            location.latitude,
+            location.longitude,
+            location.timezone,
+            dstConfig
+        );
+        if (!twilight.duskJD || !twilight.dawnJD) return null;
+
+        const horizonArray = (useHorizon && location.horizon) ? location.horizon : null;
+
+        const dayResult = this.calculateSingleDay(
+            dateStr,
+            twilight.duskJD,
+            twilight.dawnJD,
+            target.object,
+            target.ra,
+            target.dec,
+            location.latitude,
+            location.longitude,
+            location.elevation,
+            location.timezone,
+            minAltitude,
+            dstConfig,
+            horizonArray
+        );
+        if (!dayResult) return null;
+
+        return {
+            ...dayResult,
+            targetName: target.object,
+            commonName: target.common || '',
+            ra: target.ra,
+            dec: target.dec,
+            latitude: location.latitude,
+            longitude: location.longitude,
+            locationName: locationName,
+            minAltitude: minAltitude,
+            useHorizon: useHorizon
+        };
+    },
+
+    /**
      * Display results
      */
     displayResults(resultsData) {

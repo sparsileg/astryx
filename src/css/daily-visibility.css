@@ -1,5 +1,110 @@
-/* daily visibility */
-/* Altitude override indicator */
+/* Daily Visibility */
+
+/* Controls row */
+.dv-controls-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    padding: 4px 4px;
+    margin-top: 12px;
+    margin-bottom: 0;
+}
+
+.dv-controls-row .btn-sm {
+    padding: 1px 5px;
+    border: 3px solid var(--border-color);
+}
+
+#dv-prev-week, #dv-prev-day {
+    margin-right: 0;
+}
+
+#dv-prev-day {
+    margin-right: 2px;
+}
+
+#dv-next-day, #dv-next-week {
+    margin-left: 0;
+}
+
+#dv-next-day {
+    margin-left: 2px;
+}
+
+#dv-next-week {
+    margin-right: 1rem;
+}
+
+#dv-use-horizon {
+    margin-left: 1rem;
+}
+
+.dv-label {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.dv-date-input {
+    font-size: 0.85rem;
+    padding: 2px 4px;
+    background: var(--input-bg);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+}
+
+.dv-select {
+    font-size: 0.85rem;
+    padding: 2px 4px;
+    background: var(--input-bg);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+}
+
+/* Legend */
+.legend-svg {
+    vertical-align: middle;
+}
+
+.legend-dark {
+    background: #000;
+}
+
+.legend-dim {
+    background: #666;
+}
+
+.legend-bright {
+    background: #fff;
+}
+
+#analysis-title {
+    margin-bottom: 0;
+}
+
+#timeline-section {
+    margin-top: 4px;
+}
+
+.timeline-visualization {
+    padding: 4px 1rem;
+}
+
+.timeline-legend {
+    margin: 4px 0;
+}
+
+/* Info cards */
+
+/* Info cards */
+.dv-separation-dawn {
+    margin-top: 15px;
+}
+
+/* Altitude override indicator (kept for modal compatibility) */
 .altitude-override-indicator {
     display: inline-block;
     width: 30px;
@@ -13,29 +118,3 @@
 .altitude-override-indicator.visible {
     visibility: visible;
 }
-
-/* Daily Visibility modal control rows */
-.daily-visibility-row-1 {
-    display: grid;
-    grid-template-columns: 90px 90px 30px 130px 90px 30px ;
-    gap: 0.5rem;
-    align-items: center;
-    margin-bottom: 0.75rem;
-}
-
-.daily-visibility-row-2 {
-    display: grid;
-    grid-template-columns: 80px 110px 30px 120px 170px;
-    gap: 0.5rem;
-    align-items: center;
-    margin-bottom: 0.75rem;
-}
-
-.daily-visibility-row-3 {
-    display: grid;
-    grid-template-columns: 130px 80px;
-    gap: 0.5rem;
-    align-items: center;
-    margin-bottom: 0.75rem;
-}
-

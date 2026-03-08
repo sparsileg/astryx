@@ -259,9 +259,7 @@ const App = {
             TargetSelectionView.render(container, params);
             break;
 
-            /* daily visibility - modal only, no view */
         case 'daily-visibility':
-            // Just open the modal, don't render a view
             UIManager.openDailyVisibilityModal();
             break;
 
