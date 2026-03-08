@@ -423,19 +423,6 @@
     </template>
     <!-- END OF Filter Results Too Many Template -->
 
-    <!-- Results View Template -->
-    <template id="results-template">
-      <div class="results-view">
-        <div class="view-header">
-          <h2 id="results-title">Visibility Results</h2>
-          <button id="results-back-btn" class="btn-secondary">← Back to Target Selection</button>
-        </div>
-
-        <div id="results-cards-container" class="results-cards-container">
-          <!-- Result cards will be populated here -->
-        </div>
-      </div>
-    </template>
 
     <!-- Skyglow Analysis Template -->
     <template id="skyglow-template">
@@ -904,77 +891,6 @@
       </div>
     </template> <!-- end of location-modal-templates -->
 
-    <!-- Daily Visibility Modal Template -->
-    <template id="daily-visibility-template">
-      <div class="daily-visibility-row-1">
-        <label for="modal-use-horizon-daily">Use Horizon</label>
-        <select id="modal-use-horizon-daily">
-          <option value="yes" selected>Yes</option>
-          <option value="no">No</option>
-        </select>
-        <span></span>
-        <label for="modal-min-altitude-daily">Minimum Altitude</label>
-        <select id="modal-min-altitude-daily">
-          <option value="5">5°</option>
-          <option value="10">10°</option>
-          <option value="15">15°</option>
-          <option value="20">20°</option>
-          <option value="25">25°</option>
-          <option value="30">30°</option>
-          <option value="35">35°</option>
-          <option value="40">40°</option>
-          <option value="45">45°</option>
-          <option value="50">50°</option>
-          <option value="55">55°</option>
-          <option value="60">60°</option>
-        </select>
-      </div>
-
-      <div class="daily-visibility-row-2">
-        <label for="modal-start-date">Start Date</label>
-        <input type="date" id="modal-start-date">
-        <span></span>
-        <label for="modal-search-window">Search Window</label>
-        <select id="modal-search-window" class="full-width">
-          <option value="1w-daily" selected>1 week (daily)</option>
-          <option value="2w-daily">2 weeks (daily)</option>
-          <option value="4w-daily">4 weeks (daily)</option>
-          <option value="3m-weekly">3 months (weekly)</option>
-          <option value="12m-weekly">12 months (weekly)</option>
-        </select>
-      </div>
-      <div class="daily-visibility-row-3">
-        <label for="modal-max-results">Results to Display</label>
-        <select id="modal-max-results" class="full-width">
-          <option value="1" selected>1</option>
-          <option value="5">5</option>
-          <option value="all">All</option>
-        </select>
-      </div>
-    </template>
-    <!-- END OF Daily Visibility template -->
-
-    <!-- Yearly Observability Modal Template -->
-    <template id="yearly-observability-template">
-      <div class="form-group form-inline">
-        <label for="modal-min-altitude-yearly">Minimum Altitude:</label>
-        <select id="modal-min-altitude-yearly">
-          <option value="5">5°</option>
-          <option value="10">10°</option>
-          <option value="15">15°</option>
-          <option value="20">20°</option>
-          <option value="25">25°</option>
-          <option value="30">30°</option>
-          <option value="35" selected>35°</option>
-          <option value="40">40°</option>
-          <option value="45">45°</option>
-          <option value="50">50°</option>
-          <option value="55">55°</option>
-          <option value="60">60°</option>
-        </select>
-      </div>
-    </template>
-    <!-- END OF Yearly Observability Modal Template -->
 
     <!-- Field of View Template -->
     <template id="fov-template">
@@ -2318,7 +2234,6 @@
     <script src="js/astro-target.js"></script>
     <script src="js/target-filter.js"></script>
     <script src="js/target-search.js"></script>
-    <script src="js/daily-visibility-view.js"></script>
     <script src="js/yearly-observability-view.js"></script>
     <script src="js/view-visibility/visibility-main.js"></script>
     <script src="js/view-visibility/visibility-calculations.js"></script>
