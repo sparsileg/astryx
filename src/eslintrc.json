@@ -1,0 +1,20 @@
+{
+  "env": {
+    "browser": true,
+    "es2020": true
+  },
+  "parserOptions": {
+    "ecmaVersion": 2020
+  },
+  "rules": {
+    "no-unused-vars": ["warn", { "vars": "local", "args": "none" }],
+    "no-unreachable": "warn",
+    "no-constant-condition": "warn",
+    "no-duplicate-case": "error",
+    "no-empty": "warn",
+    "no-extra-semi": "warn",
+    "no-dupe-keys": "error",
+    "no-dupe-args": "error",
+    "eqeqeq": ["warn", "always", { "null": "ignore" }]
+  }
+}
