@@ -1772,49 +1772,45 @@ const UIManager = {
      * Open Daily Visibility modal
      */
     openDailyVisibilityModal() {
-        console.log('openDailyVisibilityModal called');
-        console.log('VisibilityTargets exists?', typeof VisibilityTargets !== 'undefined');
-        console.log('Current target before load:', VisibilityTargets?.currentTarget);
-
-        // Load last selected target if not already loaded
+        // Ensure a current target is set
         if (typeof VisibilityTargets !== 'undefined') {
             if (!VisibilityTargets.currentTarget) {
-                console.log('No current target, loading from localStorage');
                 VisibilityTargets.loadLastTarget();
-                console.log('Target after load:', VisibilityTargets.currentTarget);
             }
-            // Also sync with VisibilityCalculations
-            if (typeof VisibilityCalculations !== 'undefined' && VisibilityTargets.currentTarget) {
-                VisibilityCalculations.currentTarget = VisibilityTargets.currentTarget;
-                console.log('Synced to VisibilityCalculations');
+            if (!VisibilityTargets.currentTarget) {
+                // Fall back to default target
+                const defaultTarget = DataManager.getTargets().find(t => t.object === APP_CONFIG.DEFAULT_TARGET);
+                if (defaultTarget) VisibilityTargets.currentTarget = defaultTarget;
             }
         }
 
-        console.log('Final target state:', VisibilityTargets?.currentTarget);
-
-        // Set subtitle to current target
-        const subtitle = document.getElementById('modal-subtitle');
-        if (subtitle) {
-            const targetName = VisibilityTargets?.currentTarget?.object;
-            subtitle.textContent = targetName || 'No target selected';
-            subtitle.style.display = 'block';
+        const target = VisibilityTargets?.currentTarget;
+        if (!target) {
+            UIManager.showToast('No target available for Daily Visibility', 'error');
+            return;
         }
 
-        // Open the modal
-        this.openModal('daily-visibility-template', 'Daily Visibility Parameters', (action, modalBody) => {
-            if (action === 'calculate') {
-                this.handleDailyVisibilityCalculate(modalBody);
-            } else if (action === 'cancel') {
-                this.closeModal();
-            }
-        });
-
-        // Add narrow-modal class and initialize
-        const modalContent = document.querySelector('.modal-content');
-        if (modalContent) {
-            modalContent.classList.add('narrow-modal');
+        const locationName = SettingsManager.getSelectedLocation();
+        if (!locationName) {
+            UIManager.showToast('No location selected', 'error');
+            return;
         }
-        setTimeout(() => this.initializeDailyVisibilityModal(), 0);
+
+        const minAltitude = SettingsManager.getGlobalMinAltitude();
+        const useHorizon = true;
+        const dateStr = TimeUtils.formatDateForInput(new Date());
+
+        const skyglowData = VisibilityCalculations.assembleSkyglowData(
+            target, dateStr, locationName, minAltitude, useHorizon
+        );
+
+        if (!skyglowData) {
+            UIManager.showToast('Could not calculate visibility for this date/location', 'error');
+            return;
+        }
+
+        window.skyglowData = skyglowData;
+        window.location.hash = '#skyglow';
     },
 
     /**

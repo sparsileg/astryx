@@ -21,18 +21,18 @@ const SkyglowView = {
         container.innerHTML = '';
         container.appendChild(content);
 
+        // Initialize controls with current values
+        this.initControls();
+        this.attachEventHandlers();
+
         // Check if we have data passed from visibility view
         if (window.skyglowData) {
             this.currentData = window.skyglowData;
             this.performAnalysis(this.currentData);
-        } else if (params && params.date && params.target) {
-            // Try to reconstruct from URL parameters (for sharing/bookmarking)
-            this.showDataEntryForm();
         } else {
-            this.showDataEntryForm();
+            // Reassemble data (e.g. after page refresh)
+            setTimeout(() => this.recalculate(), 0);
         }
-
-        this.attachEventHandlers();
     },
 
     /**
@@ -46,12 +46,71 @@ const SkyglowView = {
      * Attach event handlers
      */
     attachEventHandlers() {
-        const backBtn = document.getElementById('back-to-results-btn');
-        if (backBtn) {
-            backBtn.addEventListener('click', () => {
-                window.location.hash = '#results';
-            });
+        document.getElementById('dv-prev-week')?.addEventListener('click', () => this.shiftDate(-7));
+        document.getElementById('dv-prev-day')?.addEventListener('click', () => this.shiftDate(-1));
+        document.getElementById('dv-next-day')?.addEventListener('click', () => this.shiftDate(1));
+        document.getElementById('dv-next-week')?.addEventListener('click', () => this.shiftDate(7));
+        document.getElementById('dv-date')?.addEventListener('change', () => this.recalculate());
+        document.getElementById('dv-min-altitude')?.addEventListener('change', () => this.recalculate());
+        document.getElementById('dv-use-horizon')?.addEventListener('change', () => this.recalculate());
+    },
+
+    initControls() {
+        const dateInput = document.getElementById('dv-date');
+        if (dateInput) {
+            const dateStr = window.skyglowData?.date || TimeUtils.formatDateForInput(new Date());
+            dateInput.value = dateStr;
         }
+        const minAlt = document.getElementById('dv-min-altitude');
+        if (minAlt) {
+            const altValue = window.skyglowData?.minAltitude ?? SettingsManager.getGlobalMinAltitude();
+            minAlt.value = String(altValue);
+        }
+        const useHorizon = document.getElementById('dv-use-horizon');
+        if (useHorizon) {
+            useHorizon.checked = window.skyglowData?.useHorizon ?? true;
+        }
+    },
+
+    shiftDate(days) {
+        const dateInput = document.getElementById('dv-date');
+        if (!dateInput) return;
+        const parts = dateInput.value.split('-');
+        const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+        d.setDate(d.getDate() + days);
+        dateInput.value = TimeUtils.formatDateForInput(d);
+        this.recalculate();
+    },
+
+    recalculate() {
+        const dateStr = document.getElementById('dv-date')?.value;
+        const minAltitude = parseFloat(document.getElementById('dv-min-altitude')?.value) || SettingsManager.getGlobalMinAltitude();
+        const useHorizon = document.getElementById('dv-use-horizon')?.checked ?? true;
+        const locationName = SettingsManager.getSelectedLocation();
+
+        // Ensure a target is set
+        if (typeof VisibilityTargets !== 'undefined' && !VisibilityTargets.currentTarget) {
+            VisibilityTargets.loadLastTarget();
+        }
+        if (typeof VisibilityTargets !== 'undefined' && !VisibilityTargets.currentTarget) {
+            const defaultTarget = DataManager.getTargets().find(t => t.object === APP_CONFIG.DEFAULT_TARGET);
+            if (defaultTarget) VisibilityTargets.currentTarget = defaultTarget;
+        }
+
+        const target = VisibilityTargets?.currentTarget;
+        if (!target || !locationName || !dateStr) return;
+
+        const skyglowData = VisibilityCalculations.assembleSkyglowData(
+            target, dateStr, locationName, minAltitude, useHorizon
+        );
+        if (!skyglowData) {
+            UIManager.showToast('Could not calculate visibility for this date/location', 'error');
+            return;
+        }
+
+        window.skyglowData = skyglowData;
+        this.currentData = skyglowData;
+        this.performAnalysis(skyglowData);
     },
 
     /**
@@ -180,7 +239,7 @@ const SkyglowView = {
                     minute: '2-digit',
                     timeZone: 'UTC'
                 });
-                
+
                 // Calculate azimuth at peak altitude
                 let peakAzimuth = getAzimuth(maxAltitudeJD, targetRA, targetDEC, latitude, longitude);
                 // Normalize 360° to 0° (both represent north)
@@ -233,7 +292,7 @@ const SkyglowView = {
         }
 
         document.getElementById('target-rise-set').innerHTML = riseSetHTML;
-        
+
         // Display blocked time
         console.log('populateTargetDetails - data.blockedMinutes:', data.blockedMinutes);
         console.log('populateTargetDetails - full data:', data);
@@ -540,40 +599,40 @@ const SkyglowView = {
         const minAltitude = data.minAltitude;
         const altitudeOutline = '5';       // width in pixels
         const altitudeLine = '2';          // width in pixels
-        
+
         if (isNaN(targetRA) || isNaN(targetDEC)) return;
-        
+
         // Check if horizon usage is enabled
         const useHorizon = data?.useHorizon ?? true;
-        
+
         // Get location horizon data (only if enabled)
         const location = DataManager.getLocation(data.locationName);
         const horizonArray = (useHorizon && location) ? location.horizon : null;
-        
+
         // Sample altitude at many points across the timeline
         const numPoints = 200;
         const points = [];
-        
+
         for (let i = 0; i <= numPoints; i++) {
             const fraction = i / numPoints;
             const currentJD = timelineData.timelineStartJD + fraction * (timelineData.timelineEndJD - timelineData.timelineStartJD);
             const altitude = getAltitude(currentJD, targetRA, targetDEC, latitude, longitude);
             const azimuth = getAzimuth(currentJD, targetRA, targetDEC, latitude, longitude);
-            
+
             // Check if target is visible (above both min altitude and horizon)
             const isVisible = isAboveHorizon(altitude, azimuth, minAltitude, horizonArray);
-            
+
             // Convert altitude (0-90°) to Y position (bottom to top of timeline)
             const yPosition = this.TIMELINE_HEIGHT - (altitude / 90) * this.TIMELINE_HEIGHT;
             const xPosition = fraction * 100; // Percentage
-            
-            points.push({ 
-                x: xPosition, 
+
+            points.push({
+                x: xPosition,
                 y: Math.max(0, Math.min(this.TIMELINE_HEIGHT, yPosition)),
                 isVisible: isVisible
             });
         }
-        
+
         // Create SVG overlay
         const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         svg.style.position = 'absolute';
@@ -584,14 +643,14 @@ const SkyglowView = {
         svg.style.pointerEvents = 'none';
         svg.setAttribute('viewBox', '0 0 100 ' + this.TIMELINE_HEIGHT);
         svg.setAttribute('preserveAspectRatio', 'none');
-        
+
         // Create path segments (break path when not visible)
         let currentSegment = [];
         const segments = [];
-        
+
         for (let i = 0; i < points.length; i++) {
             const point = points[i];
-            
+
             if (point.isVisible) {
                 currentSegment.push(point);
             } else {
@@ -602,20 +661,20 @@ const SkyglowView = {
                 }
             }
         }
-        
+
         // Add final segment if any
         if (currentSegment.length > 0) {
             segments.push(currentSegment);
         }
-        
+
         // Draw each segment
         segments.forEach(segment => {
             if (segment.length < 2) return; // Need at least 2 points for a line
-            
+
             const pathData = segment.map((p, i) => {
                 return `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`;
             }).join(' ');
-            
+
             // Draw black outline (thicker)
             const outlinePath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
             outlinePath.setAttribute('d', pathData);
@@ -624,7 +683,7 @@ const SkyglowView = {
             outlinePath.setAttribute('stroke-width', altitudeOutline);
             outlinePath.setAttribute('vector-effect', 'non-scaling-stroke');
             svg.appendChild(outlinePath);
-            
+
             // Draw white line (on top)
             const linePath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
             linePath.setAttribute('d', pathData);
@@ -634,7 +693,7 @@ const SkyglowView = {
             linePath.setAttribute('vector-effect', 'non-scaling-stroke');
             svg.appendChild(linePath);
         });
-        
+
         timeline.appendChild(svg);
     },
 
@@ -647,44 +706,44 @@ const SkyglowView = {
         const useHorizon = data?.useHorizon ?? true; // Default to true
         const location = DataManager.getLocation(data.locationName);
         const horizonArray = (useHorizon && location) ? location.horizon : null;
-        
+
         const targetRA = data.ra;
         const targetDEC = data.dec;
         const latitude = data.latitude;
         const longitude = data.longitude;
-        
+
         if (isNaN(targetRA) || isNaN(targetDEC)) return;
-        
+
         // Get timeline bounds from the timeline div
         const timelineStartJD = parseFloat(timeline.dataset.startJd);
         const timelineEndJD = parseFloat(timeline.dataset.endJd);
-        
+
         if (isNaN(timelineStartJD) || isNaN(timelineEndJD)) return;
-        
+
         // Sample points across timeline
         const numPoints = 200;
         const points = [];
-        
+
         for (let i = 0; i <= numPoints; i++) {
             const fraction = i / numPoints;
             const currentJD = timelineStartJD + fraction * (timelineEndJD - timelineStartJD);
-            
+
             // Calculate azimuth at this time
             const azimuth = getAzimuth(currentJD, targetRA, targetDEC, latitude, longitude);
-            
+
             // Get horizon elevation at this azimuth
             const horizonElevation = getHorizonElevationAtAzimuth(azimuth, horizonArray);
-            
+
             // Effective minimum is the higher of minAltitude or horizon
             const effectiveMin = Math.max(minAltitude, horizonElevation);
-            
+
             // Convert to Y position
             const yPosition = this.TIMELINE_HEIGHT - (effectiveMin / 90) * this.TIMELINE_HEIGHT;
             const xPosition = fraction * 100;
-            
+
             points.push({ x: xPosition, y: Math.max(0, Math.min(this.TIMELINE_HEIGHT, yPosition)) });
         }
-        
+
         // Create SVG for min altitude line
         const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         svg.style.position = 'absolute';
@@ -695,12 +754,12 @@ const SkyglowView = {
         svg.style.pointerEvents = 'none';
         svg.setAttribute('viewBox', '0 0 100 ' + this.TIMELINE_HEIGHT);
         svg.setAttribute('preserveAspectRatio', 'none');
-        
+
         // Create path
         const pathData = points.map((p, i) => {
             return `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`;
         }).join(' ');
-        
+
         // Draw black outline (thicker)
         const outlinePath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
         outlinePath.setAttribute('d', pathData);
@@ -717,7 +776,7 @@ const SkyglowView = {
         path.setAttribute('stroke-width', '2');
         path.setAttribute('stroke-dasharray', '5,5'); // Dashed line
         path.setAttribute('vector-effect', 'non-scaling-stroke');
-        
+
         svg.appendChild(path);
         timeline.appendChild(svg);
     },

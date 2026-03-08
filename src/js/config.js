@@ -59,6 +59,9 @@ const APP_CONFIG = {
         { azimuth: 270, elevation: 0 }
     ],
 
+    // Default target (used when no current target is selected)
+    DEFAULT_TARGET: 'M 42',
+
     // Feature flags
     FEATURES: {
         OPTIMIZER_COMBINATIONS: true  // Issue #38 - combination mode for target optimizer
