@@ -413,79 +413,6 @@ const VisibilityCalculations = {
         return totalHours;
     },
 
-
-    /**
-     * Get type-specific configuration for observability scoring
-     */
-    getTypeConfiguration(type) {
-        const normalizedType = (type || '').toUpperCase();
-        const configs = {
-            '1STAR': { altitude: 40, transitWeight: 0.75, darkHoursWeight: 0.25 },
-            '2STAR': { altitude: 40, transitWeight: 0.75, darkHoursWeight: 0.25 },
-            'ASTER': { altitude: 40, transitWeight: 0.75, darkHoursWeight: 0.25 },
-            'BRTNB': { altitude: 30, transitWeight: 0.55, darkHoursWeight: 0.45 },
-            'CL+NB': { altitude: 30, transitWeight: 0.60, darkHoursWeight: 0.40 },
-            'DRKNB': { altitude: 40, transitWeight: 0.70, darkHoursWeight: 0.30 },
-            'GALCL': { altitude: 40, transitWeight: 0.65, darkHoursWeight: 0.35 },
-            'GALXY': { altitude: 40, transitWeight: 0.70, darkHoursWeight: 0.30 },
-            'GLOCL': { altitude: 40, transitWeight: 0.65, darkHoursWeight: 0.35 },
-            'OPNCL': { altitude: 40, transitWeight: 0.65, darkHoursWeight: 0.35 },
-            'PLNNB': { altitude: 30, transitWeight: 0.60, darkHoursWeight: 0.40 },
-            'REFNB': { altitude: 40, transitWeight: 0.70, darkHoursWeight: 0.30 },
-            'SNREM': { altitude: 30, transitWeight: 0.55, darkHoursWeight: 0.45 }
-        };
-        return configs[normalizedType] || { altitude: 30, transitWeight: 0.60, darkHoursWeight: 0.40 };
-    },
-
-    /**
-     * Calculate local hour when target transits (crosses meridian)
-     */
-    calculateTransitHour(date, ra, dec, latitude, longitude, timezone) {
-        // Calculate local sidereal time at midnight
-        const midnightLocal = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0);
-        const jd = TimeUtils.dateToJD(midnightLocal);
-        const lst0 = getLST(jd, longitude);
-
-        // Target transits when LST = RA
-        // Hour angle H = LST - RA
-        // When H = 0, target transits
-        let transitLST = ra;
-
-        // Calculate hours from midnight to transit
-        let hoursSinceMidnight = transitLST - lst0;
-
-        // Normalize to 0-24 range
-        while (hoursSinceMidnight < 0) hoursSinceMidnight += 24;
-        while (hoursSinceMidnight >= 24) hoursSinceMidnight -= 24;
-
-        return hoursSinceMidnight;
-    },
-
-    /**
-     * Calculate total accumulated dark hours above threshold
-     */
-    calculateTotalDarkHours(date, ra, dec, latitude, longitude, timezone, minAltitude) {
-        const isDST = SettingsManager.isDSTActive(date, timezone);
-        const duskJD = findAstronomicalDusk(date, latitude, longitude, timezone, isDST);
-        const dawnJD = findNextAstronomicalDawn(date, latitude, longitude, timezone, isDST);
-
-        if (!duskJD || !dawnJD) {
-            return 0;
-        }
-
-        const step = 10 / 1440; // 10 minutes in JD
-        let totalHours = 0;
-
-        for (let jd = duskJD; jd <= dawnJD; jd += step) {
-            const altitude = getAltitude(jd, ra, dec, latitude, longitude);
-            if (altitude >= minAltitude) {
-                totalHours += (step * 24);
-            }
-        }
-
-        return totalHours;
-    },
-
     /**
      * Calculate altitude at midnight for each day starting from January 1st
      */
@@ -622,18 +549,12 @@ const VisibilityCalculations = {
         // Find day with maximum altitude for reference (skip null values)
         let maxAltitude = -999;
         let maxAltitudeDate = null;
-        let minAltitude = 999;
-        let minAltitudeDate = null;
 
         data.forEach((d) => {
             if (d.targetAltitude !== null) {
                 if (d.targetAltitude > maxAltitude) {
                     maxAltitude = d.targetAltitude;
                     maxAltitudeDate = d.date;
-                }
-                if (d.targetAltitude < minAltitude) {
-                    minAltitude = d.targetAltitude;
-                    minAltitudeDate = d.date;
                 }
             }
         });

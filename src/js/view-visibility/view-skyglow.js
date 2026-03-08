@@ -46,13 +46,32 @@ const SkyglowView = {
      * Attach event handlers
      */
     attachEventHandlers() {
-        document.getElementById('dv-prev-week')?.addEventListener('click', () => this.shiftDate(-7));
-        document.getElementById('dv-prev-day')?.addEventListener('click', () => this.shiftDate(-1));
-        document.getElementById('dv-next-day')?.addEventListener('click', () => this.shiftDate(1));
-        document.getElementById('dv-next-week')?.addEventListener('click', () => this.shiftDate(7));
+        this._addRepeatButton('dv-prev-week', -7);
+        this._addRepeatButton('dv-prev-day',  -1);
+        this._addRepeatButton('dv-next-day',   1);
+        this._addRepeatButton('dv-next-week',  7);
         document.getElementById('dv-date')?.addEventListener('change', () => this.recalculate());
         document.getElementById('dv-min-altitude')?.addEventListener('change', () => this.recalculate());
         document.getElementById('dv-use-horizon')?.addEventListener('change', () => this.recalculate());
+    },
+
+    _addRepeatButton(id, days) {
+        const btn = document.getElementById(id);
+        if (!btn) return;
+        let holdTimer = null;
+        let repeatTimer = null;
+        btn.addEventListener('click', () => this.shiftDate(days));
+        btn.addEventListener('mousedown', () => {
+            holdTimer = setTimeout(() => {
+                repeatTimer = setInterval(() => this.shiftDate(days), 333);
+            }, 500);
+        });
+        const cancel = () => {
+            clearTimeout(holdTimer);
+            clearInterval(repeatTimer);
+        };
+        btn.addEventListener('mouseup', cancel);
+        btn.addEventListener('mouseleave', cancel);
     },
 
     initControls() {
@@ -566,7 +585,6 @@ const SkyglowView = {
 
         // Start at noon (12:00)
         let currentHour = 12;
-        let currentJD = timelineData.timelineStartJD;
 
         // Generate labels for each hour from noon to noon (24 hours)
         for (let i = 0; i <= 24; i++) {
