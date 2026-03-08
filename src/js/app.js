@@ -118,10 +118,6 @@ const App = {
                         UIManager.openDailyVisibilityModal();
                         return;
                     }
-                    if (view === 'yearly-observability') {
-                        UIManager.openYearlyObservabilityModal();
-                        return;
-                    }
 
                     // If clicking on visibility while already on visibility, hide yearly observability container
                     if (view === 'target-select' && window.location.hash === '#target-select') {
@@ -257,15 +253,6 @@ const App = {
         case 'target-select':
             this.currentView = TargetSelectionView;
             TargetSelectionView.render(container, params);
-            break;
-
-        case 'daily-visibility':
-            UIManager.openDailyVisibilityModal();
-            break;
-
-        case 'results':
-            this.currentView = ResultsView;
-            ResultsView.render(container, params);
             break;
 
         case 'skyglow':

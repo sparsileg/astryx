@@ -4,172 +4,6 @@
  */
 
 const VisibilityCalculations = {
-    currentResults: [],
-
-    /**
-     * Get inputs from daily visibility form
-     */
-    getInputs() {
-        // Try modal elements first, fall back to main view elements
-        const searchWindowEl = document.getElementById('modal-search-window') || document.getElementById('search-window');
-        const maxResultsEl = document.getElementById('modal-max-results') || document.getElementById('max-results');
-        const startDateEl = document.getElementById('modal-start-date') || document.getElementById('start-date');
-        const minAltitudeEl = document.getElementById('modal-min-altitude-daily') || document.getElementById('min-altitude');
-
-        const searchWindow = searchWindowEl?.value || '1w-daily';
-        const maxResults = maxResultsEl?.value || '1';
-
-        // Parse search window
-        let numDays, stepDays;
-        switch(searchWindow) {
-        case '1w-daily':
-            numDays = 7;
-            stepDays = 1;
-            break;
-        case '2w-daily':
-            numDays = 14;
-            stepDays = 1;
-            break;
-        case '4w-daily':
-            numDays = 28;
-            stepDays = 1;
-            break;
-        case '3m-weekly':
-            numDays = 90;
-            stepDays = 7;
-            break;
-        case '12m-weekly':
-            numDays = 365;
-            stepDays = 7;
-            break;
-        default:
-            numDays = 28;
-            stepDays = 1;
-        }
-
-        // Get location from sidebar dropdown
-        const locationName = SettingsManager.getSelectedLocation();
-        const location = DataManager.getLocation(locationName);
-
-        return {
-            obsDate: startDateEl?.value || '',
-            numDays: numDays,
-            stepDays: stepDays,
-            maxResults: maxResults === 'all' ? Infinity : parseInt(maxResults),
-            targetName: this.currentTarget ? this.currentTarget.object : '',
-            locationName: locationName,
-            ra: this.currentTarget ? this.currentTarget.ra : null,
-            dec: this.currentTarget ? this.currentTarget.dec : null,
-            latitude: location ? location.latitude : null,
-            longitude: location ? location.longitude : null,
-            elevation: location ? location.elevation : null,
-            timezone: location ? location.timezone : null,
-            minAltitude: parseFloat(minAltitudeEl?.value) || 35
-        };
-    },
-
-    /**
-     * Calculate target visibility
-     */
-    calculate(providedInputs = null) {
-        console.log('=== calculate() called ===');
-
-        // Use provided inputs or get from DOM
-        const inputs = providedInputs || this.getInputs();
-        console.log('Inputs:', inputs);
-
-        this.currentLocationName = inputs.locationName;
-        const validation = VisibilityUI.validateCalculationInputs(inputs);
-        console.log('Validation result:', validation);
-
-        if (!validation.valid) {
-            console.log('Validation FAILED:', validation.error);
-            UIManager.showToast(validation.error, 'error');
-            return;
-        }
-
-        console.log('Validation PASSED, continuing with calculation...');
-
-        // Get DST settings
-        const dstConfig = SettingsManager.getDSTConfig();
-
-        // Calculate visibility for requested number of days
-        const results = [];
-        // Parse date as local date, not UTC
-        const dateParts = inputs.obsDate.split('-');
-        const startDate = new Date(
-            parseInt(dateParts[0]),
-            parseInt(dateParts[1]) - 1,
-            parseInt(dateParts[2])
-        );
-
-        for (let dayOffset = 0; dayOffset < inputs.numDays; dayOffset += inputs.stepDays) {
-            const currentDate = new Date(startDate);
-            currentDate.setDate(startDate.getDate() + dayOffset);
-            const dateStr = TimeUtils.formatDateForInput(currentDate);
-
-            // Calculate astronomical twilight times for this date
-            const twilightTimes = this.calculateTwilightTimes(
-                dateStr,
-                inputs.latitude,
-                inputs.longitude,
-                inputs.timezone,
-                dstConfig
-            );
-
-            // Get horizon array if useHorizon is enabled
-            const location = DataManager.getLocation(inputs.locationName);
-            const horizonArray = (this.useHorizon && location) ? location.horizon : null;
-
-            const result = this.calculateSingleDay(
-                dateStr,
-                twilightTimes.duskJD,
-                twilightTimes.dawnJD,
-                inputs.targetName,
-                inputs.ra,
-                inputs.dec,
-                inputs.latitude,
-                inputs.longitude,
-                inputs.elevation,
-                inputs.timezone,
-                inputs.minAltitude,
-                dstConfig,
-                horizonArray
-            );
-
-            if (result) {
-                result.locationName = inputs.locationName;
-                result.useHorizon = this.useHorizon !== undefined ? this.useHorizon : true;
-                results.push(result);
-
-                // Stop if we've reached max results
-                if (results.length >= inputs.maxResults) {
-                    break;
-                }
-            }
-        }
-
-        this.currentResults = results;
-
-        // Prepare results object for display
-        const resultsData = {
-            targetName: inputs.targetName,
-            commonName: this.currentTarget ? this.currentTarget.common : '',
-            locationName: inputs.locationName,
-            ra: inputs.ra,
-            dec: inputs.dec,
-            latitude: inputs.latitude,
-            longitude: inputs.longitude,
-            elevation: inputs.elevation,
-            timezone: inputs.timezone,
-            isDSTActive: SettingsManager.isDSTActive(new Date(), inputs.timezone),
-            minAltitude: inputs.minAltitude,
-            useHorizon: this.useHorizon !== undefined ? this.useHorizon : true,
-            results: results
-        };
-
-        this.displayResults(resultsData);
-    },
 
     /**
      * Calculate astronomical twilight times for a given date
@@ -427,26 +261,7 @@ const VisibilityCalculations = {
         };
     },
 
-    /**
-     * Display results
-     */
-    displayResults(resultsData) {
-        console.log('=== displayResults called ===');
-        console.log('Results data:', resultsData);
-        console.log('Setting window.visibilityResults');
 
-        // Store results for the results view
-        window.visibilityResults = resultsData;
-
-        console.log('window.visibilityResults set to:', window.visibilityResults);
-        console.log('Current hash before change:', window.location.hash);
-        console.log('Navigating to #results');
-
-        // Navigate to results view
-        window.location.hash = '#results';
-
-        console.log('Hash set to:', window.location.hash);
-    },
 
     /**
      * Get inputs for yearly calculation
@@ -457,7 +272,7 @@ const VisibilityCalculations = {
         const location = DataManager.getLocation(locationName);
 
         // Try modal element first, fall back to main view element, then default
-        const minAltitudeInput = document.getElementById('yearly-min-altitude') || document.getElementById('modal-min-altitude-yearly') || document.getElementById('min-altitude');
+        const minAltitudeInput = document.getElementById('yearly-min-altitude') || document.getElementById('min-altitude');
         const minAltitude = minAltitudeInput ? parseFloat(minAltitudeInput.value) : 35;
 
         // Safely get checkbox values if they exist, otherwise use defaults
