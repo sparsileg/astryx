@@ -59,6 +59,9 @@ const App = {
             // Display version numbers
             await App.updateVersionDisplay();
 
+            // Initialize auto-backup timer (resume if pending from last session)
+            await BackupManager.initAutoBackup();
+
             // Auto-calculate Best Months for selected location if needed
             const selectedLocation = SettingsManager.getSelectedLocation();
             if (selectedLocation && !UIManager.locationHasBestMonths(selectedLocation)) {
@@ -84,11 +87,9 @@ const App = {
         const metaVersion = String(meta.version);
 
         if (currentVersion && Number(currentVersion) >= Number(metaVersion)) {
-            console.log(`Target database is current (version ${currentVersion})`);
             return;
         }
 
-        console.log(`Target database update available: ${currentVersion || 'none'} → ${metaVersion}`);
         const loaded = await DataManager.fetchAndLoadTargets(meta);
         if (loaded) {
             TargetFilter.initialize();

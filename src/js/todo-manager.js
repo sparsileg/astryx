@@ -19,7 +19,6 @@ const ToDoManager = {
     async loadToDoList() {
         try {
             this.toDoList = await DBManager.getAll(APP_CONFIG.STORES.TODO_TARGETS);
-            console.log(`Loaded ${this.toDoList.length} targets in To Do list`);
         } catch (error) {
             console.error('Error loading To Do list:', error);
             this.toDoList = [];
@@ -75,7 +74,6 @@ const ToDoManager = {
      */
     async addToToDoList(targetId) {
         if (this.isInToDoList(targetId)) {
-            console.log(`Target ${targetId} already in To Do list`);
             return;
         }
 
@@ -93,8 +91,6 @@ const ToDoManager = {
         await DBManager.put(APP_CONFIG.STORES.TODO_TARGETS, entry);
         this.toDoList.push(entry);
 
-        console.log(`Added ${targetId} to To Do list`);
-
         // Dispatch event
         document.dispatchEvent(new CustomEvent('todo-list-updated'));
     },
@@ -105,14 +101,11 @@ const ToDoManager = {
      */
     async removeFromToDoList(targetId) {
         if (!this.isInToDoList(targetId)) {
-            console.log(`Target ${targetId} not in To Do list`);
             return;
         }
 
         await DBManager.delete(APP_CONFIG.STORES.TODO_TARGETS, targetId);
         this.toDoList = this.toDoList.filter(entry => entry.targetId !== targetId);
-
-        console.log(`Removed ${targetId} from To Do list`);
 
         // Dispatch event
         document.dispatchEvent(new CustomEvent('todo-list-updated'));
@@ -130,7 +123,6 @@ const ToDoManager = {
         }
 
         this.toDoList = [];
-        console.log('Cleared To Do list');
 
         // Dispatch event
         document.dispatchEvent(new CustomEvent('todo-list-updated'));
