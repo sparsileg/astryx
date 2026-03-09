@@ -782,6 +782,19 @@ def fix_size_order(targets):
     log(f"Fixed size order for {swapped_count} targets")
     return swapped_count
 
+
+def remove_no_size(targets):
+    """Remove targets where both Size_min and Size_max are blank."""
+    before = len(targets)
+    targets = [
+        t for t in targets
+        if (t.get('Size_min') or '').strip() or (t.get('Size_max') or '').strip()
+    ]
+    removed = before - len(targets)
+    log(f"Removed {removed} targets with no size data")
+    return targets
+
+
 def null_sentinel_magnitudes(targets):
     """Null out sentinel magnitude values (79.9 and 99.9)."""
     SENTINELS = {79.9, 99.9}
@@ -829,7 +842,9 @@ def main():
     parser.add_argument('--null-sentinels', action='store_true',
                         help='Null out sentinel magnitude values (79.9 and 99.9)')
     parser.add_argument('--rm-unknown', action='store_true',
-                        help='Remove all unknown targets with type OTHER')
+                        help='Remove targets with UNKNOWN type')
+    parser.add_argument('--rm-no-size', action='store_true',
+                        help='Remove targets where both Size_min and Size_max are blank')
     parser.add_argument('--to-stars', action='store_true',
                         help='Convert 1STAR, 2STAR, and ASTER types to Stars with appropriate Common names')
     parser.add_argument('--statistics', action='store_true',
@@ -908,6 +923,11 @@ def main():
             log("\nRemoving UNKNOWN type targets...")
             targets = remove_unknown_types(targets)
 
+        # 3.8. Remove targets with no size data
+        if args.rm_no_size:
+            log("\nRemoving targets with no size data...")
+            targets = remove_no_size(targets)
+
         # 4. Filter catalogues after all processing
         if args.keep_catalogues:
             log(f"\nFiltering to keep only: {args.keep_catalogues}")
@@ -926,7 +946,7 @@ def main():
         # Write output if we did any modification operations
         if args.create_missing or args.fill or args.dupe_size or \
            args.dedupe_from_catalogues or args.to_extra or \
-           args.null_sentinels or args.rm_unknown or args.to_stars or args.keep_catalogues:
+           args.null_sentinels or args.rm_unknown or args.rm_no_size or args.to_stars or args.keep_catalogues:
             output_dest = args.output_file if args.output_file else "stdout"
             log(f"\nWriting to {output_dest}...")
             write_csv(args.output_file, targets, fieldnames)

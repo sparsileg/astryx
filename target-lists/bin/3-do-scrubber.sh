@@ -32,6 +32,7 @@ python bin/scrubber.py \
        --dupe-size \
        --to-extra "Pal,RCW,vdB" \
        --null-sentinels \
+       --rm-no-size \
        --rm-unknown \
        --to-stars \
        --keep "Abell,Arp,Barnard,Caldwell,Extra,Exotic,IC,LDN,Messier,Minor Planet,NGC,Sharpless"
