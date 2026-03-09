@@ -285,7 +285,7 @@ const DataManager = {
 
     async fetchTargetMeta() {
         try {
-            const response = await fetch(APP_CONFIG.TARGET_DATA_PATH + 'targets-meta.json');
+            const response = await fetch(APP_CONFIG.TARGET_DATA_PATH + 'targets-meta.json?v=' + Date.now());
             if (!response.ok) {
                 console.warn('targets-meta.json not found or unavailable');
                 return null;
