@@ -135,7 +135,48 @@ const TargetFilter = {
             );
         }
 
-        return filtered;
+        return this.deduplicateByOther(filtered);
+    },
+
+    /**
+     * Deduplicate filter results by cross-reference (Other field).
+     * When two targets refer to each other, keep only the one from the
+     * preferred catalog. Unlisted catalogs are treated as lowest priority.
+     */
+    deduplicateByOther(targets) {
+        const pref = APP_CONFIG.CATALOG_PREFERENCE;
+        const rank = (t) => {
+            const i = pref.indexOf(t.catalogue);
+            return i === -1 ? pref.length : i;
+        };
+
+        // Build a set of object names in the result set
+        const inResults = new Set(targets.map(t => t.object));
+
+        // Build map of object → target for quick lookup
+        const byObject = new Map(targets.map(t => [t.object, t]));
+
+        // Track which objects to drop
+        const drop = new Set();
+
+        for (const target of targets) {
+            if (drop.has(target.object)) continue;
+
+            const others = (target.other || '').split(',').map(s => s.trim()).filter(Boolean);
+            for (const other of others) {
+                if (inResults.has(other) && !drop.has(other)) {
+                    const rival = byObject.get(other);
+                    if (rank(target) <= rank(rival)) {
+                        drop.add(rival.object);
+                    } else {
+                        drop.add(target.object);
+                        break;
+                    }
+                }
+            }
+        }
+
+        return targets.filter(t => !drop.has(t.object));
     },
 
     /**
