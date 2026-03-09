@@ -89,7 +89,7 @@ const App = {
         const currentVersion = storedVersion ? String(storedVersion) : null;
         const metaVersion = String(meta.version);
 
-        if (currentVersion === metaVersion) {
+        if (currentVersion && Number(currentVersion) >= Number(metaVersion)) {
             console.log(`Target database is current (version ${currentVersion})`);
             return;
         }
