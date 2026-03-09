@@ -65,7 +65,10 @@ const APP_CONFIG = {
     // Feature flags
     FEATURES: {
         OPTIMIZER_COMBINATIONS: true  // Issue #38 - combination mode for target optimizer
-    }
+    },
+
+    // Preferred catalog order for deduplication (Issue #54)
+    CATALOG_PREFERENCE: ['Messier','NGC','IC','Sharpless','Caldwell','Barnard','Arp','Abell']
 };
 
 /**
