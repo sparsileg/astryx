@@ -599,13 +599,30 @@
             </select>
           </div>
         </div>
-        <!-- Row 3: Automatic Backups (full width) -->
-        <div style="display: flex; align-items: center; gap: 0.5rem;">
-          <label for="auto-backup-enabled" style="margin-bottom: 0;
-          display: inline;" class="tooltip-host" data-tooltip-key="set_autoBU">Automatic backups on change</label>
-          <input type="checkbox" id="auto-backup-enabled">
+        <!-- Row 3: Filter defaults - Min Size | Max Magnitude -->
+        <div class="settings-two-col">
+          <div class="form-group form-inline">
+            <label for="filter-min-size" class="tooltip-host" data-tooltip-key="set_filterMinSize">Min Target Size (arcmin)</label>
+            <input type="text" id="filter-min-size" style="width: 5rem;">
+          </div>
+          <div class="form-group form-inline">
+            <label for="filter-max-mag" class="tooltip-host" data-tooltip-key="set_filterMaxMag">Max Magnitude</label>
+            <input type="text" id="filter-max-mag" style="width: 5rem;">
+          </div>
         </div>
-        <!-- Row 4: Custom DST dates (conditional) -->
+        <!-- Row 4: Automatic Backups | Minutes before backup -->
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <label for="auto-backup-enabled" style="margin-bottom: 0; display: inline;" class="tooltip-host" data-tooltip-key="set_autoBU">Automatic backups on change</label>
+          <input type="checkbox" id="auto-backup-enabled">
+          <label for="backup-delay-minutes" style="margin-bottom: 0; display: inline; margin-left: 1rem;" class="tooltip-host" data-tooltip-key="set_backupDelay">Minutes before backup</label>
+          <select id="backup-delay-minutes">
+            <option value="1">1</option>
+            <option value="5">5</option>
+            <option value="20">20</option>
+            <option value="60" selected>60</option>
+          </select>
+        </div>
+        <!-- Row 5: Custom DST dates (conditional) -->
         <div id="custom-dates" style="display: none;">
           <div class="settings-two-col" style="margin-top: 0.5rem;">
             <div class="form-group">

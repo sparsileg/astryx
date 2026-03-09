@@ -1241,7 +1241,6 @@ const ImagingLogView = {
                 e.stopPropagation();
                 const programId = parseInt(btn.getAttribute('data-program-id'));
                 const action = btn.getAttribute('data-action');
-                console.log('Program ID:', programId, 'Action:', action);
 
                 if (action === 'delete') {
                     await this.handleDeleteProgram(programId);
@@ -1577,16 +1576,12 @@ const ImagingLogView = {
 
         // If editing existing program
         if (programId) {
-            console.log('Loading program:', programId);
             const program = await ImagingLogManager.getProgram(programId);
-            console.log('Program loaded:', program);
-
             if (program) {
                 document.getElementById('program-name').value = program.name;
 
                 // Detect program mode
                 if (ImagingLogManager.isProgramPatternBased(program)) {
-                    console.log('Pattern-based program detected');
                     const prefixField = document.getElementById('program-catalog-prefix');
                     const maxField = document.getElementById('program-max-number');
 
@@ -1599,7 +1594,6 @@ const ImagingLogView = {
                     document.getElementById('program-catalog-prefix').value = program.catalogPrefix;
                     document.getElementById('program-max-number').value = program.maxNumber;
                 } else {
-                    console.log('Manual list program detected');
                     manualRadio.checked = true;
                     document.getElementById('program-targets').value = program.targetDesignations.join('\n');
                 }

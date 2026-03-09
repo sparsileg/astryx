@@ -1205,10 +1205,27 @@ const UIManager = {
             minAltSelect.value = SettingsManager.getGlobalMinAltitude();
         }
 
+        // Filter defaults
+        const filterMinSizeInput = document.getElementById('filter-min-size');
+        if (filterMinSizeInput) {
+            filterMinSizeInput.value = SettingsManager.getFilterMinSize();
+        }
+
+        const filterMaxMagInput = document.getElementById('filter-max-mag');
+        if (filterMaxMagInput) {
+            filterMaxMagInput.value = SettingsManager.getFilterMaxMag();
+        }
+
         // Auto-backup toggle
         const autoBackupCheckbox = document.getElementById('auto-backup-enabled');
         if (autoBackupCheckbox) {
             autoBackupCheckbox.checked = SettingsManager.getAutoBackupEnabled();
+        }
+
+        // Backup delay
+        const backupDelaySelect = document.getElementById('backup-delay-minutes');
+        if (backupDelaySelect) {
+            backupDelaySelect.value = SettingsManager.getBackupDelayMinutes();
         }
 
         // Optimizer candidate count
@@ -1246,6 +1263,33 @@ const UIManager = {
 
         const autoBackup = modalBody.querySelector('#auto-backup-enabled')?.checked ?? true;
         await SettingsManager.setAutoBackupEnabled(autoBackup);
+
+        const backupDelay = modalBody.querySelector('#backup-delay-minutes')?.value;
+        if (backupDelay) {
+            await SettingsManager.setBackupDelayMinutes(parseInt(backupDelay));
+        }
+
+        const filterMinSizeRaw = modalBody.querySelector('#filter-min-size')?.value.trim();
+        if (filterMinSizeRaw !== undefined && filterMinSizeRaw !== '') {
+            const filterMinSize = parseFloat(filterMinSizeRaw);
+            if (isNaN(filterMinSize) || filterMinSize < 0.1 || filterMinSize > 999) {
+                this.showToast('Min Target Size must be between 0.1 and 999', 'error');
+                modalBody.querySelector('#filter-min-size').focus();
+                return;
+            }
+            await SettingsManager.setFilterMinSize(filterMinSize);
+        }
+
+        const filterMaxMagRaw = modalBody.querySelector('#filter-max-mag')?.value.trim();
+        if (filterMaxMagRaw !== undefined && filterMaxMagRaw !== '') {
+            const filterMaxMag = parseFloat(filterMaxMagRaw);
+            if (isNaN(filterMaxMag) || filterMaxMag < -5 || filterMaxMag > 20) {
+                this.showToast('Max Magnitude must be between -5 and 20', 'error');
+                modalBody.querySelector('#filter-max-mag').focus();
+                return;
+            }
+            await SettingsManager.setFilterMaxMag(filterMaxMag);
+        }
 
         const optimizerCount = modalBody.querySelector('#optimizer-candidate-count')?.value;
         if (optimizerCount) {
@@ -1322,8 +1366,7 @@ const UIManager = {
 
     async markDataChanged() {
         if (!SettingsManager.getAutoBackupEnabled()) return;
-        const dtg = TimeUtils.nowDTG();
-        await SettingsManager.setLastChangeTimestamp(dtg);
+        await SettingsManager.setLastChangeTimestamp(Date.now());
         BackupManager.scheduleAutoBackup();
     },
 

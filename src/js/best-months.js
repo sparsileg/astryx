@@ -99,7 +99,6 @@ const BestMonths = {
 
             // Write in batches of 100 to avoid blocking
             if (processedCount % 100 === 0) {
-                console.log(`Writing batch of 100 targets (${processedCount}/${totalTargets})...`);
                 await DBManager.putBulk(APP_CONFIG.STORES.TARGETS, targets.slice(processedCount - 100, processedCount));
             }
         }
@@ -107,7 +106,6 @@ const BestMonths = {
         // Write any remaining targets (less than 100)
         const remainder = processedCount % 100;
         if (remainder > 0) {
-            console.log(`Writing final ${remainder} targets...`);
             await DBManager.putBulk(APP_CONFIG.STORES.TARGETS, targets.slice(processedCount - remainder, processedCount));
         }
 
@@ -139,19 +137,19 @@ const BestMonths = {
         console.log('Pre-calculating twilight times for 365 days...');
         const twilightCache = new Map();
         const startDate = new Date(new Date().getFullYear(), 0, 1);
-        
+
         for (let dayOffset = 0; dayOffset < 365; dayOffset++) {
             const date = new Date(startDate);
             date.setDate(startDate.getDate() + dayOffset);
             const isDST = SettingsManager.isDSTActive(date, location.timezone);
-            
+
             twilightCache.set(dayOffset, {
                 duskJD: findAstronomicalDusk(date, location.latitude, location.longitude, location.timezone, isDST),
                 dawnJD: findNextAstronomicalDawn(date, location.latitude, location.longitude, location.timezone, isDST),
                 date: date
             });
         }
-        
+
         console.log('Twilight cache complete');
         return twilightCache;
     },

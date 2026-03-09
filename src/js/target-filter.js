@@ -375,10 +375,14 @@ const TargetFilter = {
 
         // Set default values for size and magnitude if not already set
         if (this.filters.size.value === null) {
-            this.filters.size.value = APP_CONFIG.DEFAULT_MIN_SIZE;
+            this.filters.size.value = SettingsManager.getFilterMinSize();
+            const sizeInput = document.getElementById('target-filter-size');
+            if (sizeInput) sizeInput.value = this.filters.size.value;
         }
         if (this.filters.magnitude.value === null) {
-            this.filters.magnitude.value = APP_CONFIG.DEFAULT_MAX_MAG;
+            this.filters.magnitude.value = SettingsManager.getFilterMaxMag();
+            const magInput = document.getElementById('target-filter-magnitude');
+            if (magInput) magInput.value = this.filters.magnitude.value;
         }
 
         // Apply filters automatically on initialization
@@ -961,14 +965,14 @@ const TargetFilter = {
 
         const sizeInput = document.getElementById('target-filter-size');
         if (sizeInput) {
-            sizeInput.value = APP_CONFIG.DEFAULT_MIN_SIZE;
-            this.filters.size.value = APP_CONFIG.DEFAULT_MIN_SIZE;
+            sizeInput.value = SettingsManager.getFilterMinSize();
+            this.filters.size.value = SettingsManager.getFilterMinSize();
         }
 
         const magInput = document.getElementById('target-filter-magnitude');
         if (magInput) {
-            magInput.value = APP_CONFIG.DEFAULT_MAX_MAG;
-            this.filters.magnitude.value = APP_CONFIG.DEFAULT_MAX_MAG;
+            magInput.value = SettingsManager.getFilterMaxMag();
+            this.filters.magnitude.value = SettingsManager.getFilterMaxMag();
         }
 
         // Clear results display

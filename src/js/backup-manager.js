@@ -208,23 +208,53 @@ const BackupManager = {
         if (this._autoBackupTimer) {
             clearTimeout(this._autoBackupTimer);
         }
-        // Schedule backup after 60 seconds
+
+        // Schedule backup after the configured delay
+        const delayMs = SettingsManager.getBackupDelayMinutes() * 60000;
         this._autoBackupTimer = setTimeout(() => {
             this.executeAutoBackup();
-        }, 60000);
+        }, delayMs);
+    },
+
+    /**
+     * Called on app init — check if a backup was pending when app last closed
+     */
+    async initAutoBackup() {
+        if (!SettingsManager.getAutoBackupEnabled()) return;
+
+        const lastChange = SettingsManager.getLastChangeTimestamp();
+        if (!lastChange) return;
+
+        // Don't fire if a backup has already been made after the last change
+        const lastBackup = SettingsManager.getSetting('lastBackupTimestamp');
+        if (lastBackup && String(lastBackup) >= String(lastChange)) return;
+
+        const delayMs = SettingsManager.getBackupDelayMinutes() * 60000;
+        const elapsed = Date.now() - Number(lastChange);
+        const remaining = delayMs - elapsed;
+
+        if (remaining <= 0) {
+            // Delay already elapsed — clear the pending flag, don't fire on cold start
+            await SettingsManager.saveSetting('lastBackupTimestamp', Date.now());
+            return;
+        } else {
+            // Resume the countdown from where it left off
+            this._autoBackupTimer = setTimeout(() => {
+                this.executeAutoBackup();
+            }, remaining);
+        }
     },
 
     async executeAutoBackup() {
         if (!SettingsManager.getAutoBackupEnabled()) return;
 
         try {
-            const dtg = SettingsManager.getLastChangeTimestamp() || TimeUtils.nowDTG();
+            const dtg = TimeUtils.nowDTG();
             const filename = `${APP_CONFIG.APP_NAME}-v${APP_CONFIG.APP_VERSION}-d${APP_CONFIG.DB_VERSION}-${dtg}`;
 
-            // removed 'pinnedTargets'
             const selectedStores = [
                 'settings', 'locations', 'telescopes', 'sensors', 'filters',
-                'toDoTargets', 'imagingProjects', 'imagingSessions', 'imagingPrograms'
+                'pinnedTargets', 'toDoTargets', 'imagingProjects', 'imagingSessions', 'imagingPrograms'
             ];
 
             const backupData = await this.generateBackupData(selectedStores);
@@ -243,6 +273,7 @@ const BackupManager = {
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
 
+            await SettingsManager.saveSetting('lastBackupTimestamp', TimeUtils.nowDTG());
             UIManager.showToast('Auto-backup saved', 'success');
         } catch (error) {
             console.error('Auto-backup failed:', error);
@@ -810,8 +841,6 @@ const BackupManager = {
             // Restore single item (settings)
             await DBManager.put(mapping.storeName, data);
         }
-
-        console.log(`Restored ${storeKey}: ${mapping.isArray ? data.length : 1} items`);
     }
 
 };

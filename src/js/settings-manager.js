@@ -352,6 +352,33 @@ const SettingsManager = {
         await this.saveSettings();
     },
 
+    getFilterMinSize() {
+        return this.settings.filterMinSize !== undefined ? this.settings.filterMinSize : APP_CONFIG.DEFAULT_MIN_SIZE;
+    },
+
+    async setFilterMinSize(value) {
+        this.settings.filterMinSize = value;
+        await this.saveSettings();
+    },
+
+    getFilterMaxMag() {
+        return this.settings.filterMaxMag !== undefined ? this.settings.filterMaxMag : APP_CONFIG.DEFAULT_MAX_MAG;
+    },
+
+    async setFilterMaxMag(value) {
+        this.settings.filterMaxMag = value;
+        await this.saveSettings();
+    },
+
+    getBackupDelayMinutes() {
+        return this.settings.backupDelayMinutes !== undefined ? this.settings.backupDelayMinutes : 60;
+    },
+
+    async setBackupDelayMinutes(minutes) {
+        this.settings.backupDelayMinutes = minutes;
+        await this.saveSettings();
+    },
+
     getAutoBackupEnabled() {
         return this.settings.autoBackupEnabled !== false;
     },

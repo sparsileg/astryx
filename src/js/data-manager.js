@@ -98,8 +98,6 @@ const DataManager = {
      * Called when a location is deleted
      */
     async cleanupLocationDataFromTargets(locationName) {
-        console.log(`Cleaning up best month data for location: ${locationName}`);
-
         let cleanedCount = 0;
 
         for (const target of this.targetDatabase) {
@@ -135,8 +133,6 @@ const DataManager = {
                 cleanedCount++;
             }
         }
-
-        console.log(`Cleaned best month data from ${cleanedCount} targets`);
 
         // Reload targets to refresh in-memory data
         await this.loadTargets();
@@ -250,7 +246,6 @@ const DataManager = {
 
     async fetchAndLoadTargets(meta) {
         try {
-            console.log(`Fetching target file: ${meta.filename} (version ${meta.version})`);
             const response = await fetch(APP_CONFIG.TARGET_DATA_PATH + meta.filename);
             if (!response.ok) {
                 console.warn('Target CSV file not found or unavailable');
@@ -607,7 +602,6 @@ const DataManager = {
             this.sensors = {};
             this.filters = {};
 
-            console.log('All data cleared successfully');
             return true;
         } catch (error) {
             console.error('Error clearing data:', error);

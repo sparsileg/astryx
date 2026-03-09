@@ -299,7 +299,6 @@ const SeqPlanView = {
 
         // Use Horizon toggle
         document.getElementById('seq-plan-use-horizon').addEventListener('change', () => {
-            console.log('Use Horizon changed to:', document.getElementById('seq-plan-use-horizon').value);
             this.debouncedGenerate();
         });
 
@@ -369,7 +368,6 @@ const SeqPlanView = {
      * Generate imaging plan
      */
     async generatePlan() {
-        console.log('Generating plan...');
         this.isInitializing = true;
 
         // Validate inputs
@@ -498,8 +496,6 @@ const SeqPlanView = {
         const locationName = document.getElementById('seq-plan-location').value;
         const location = DataManager.getLocations()[locationName];
         const minAlt = parseInt(document.getElementById('seq-plan-min-altitude').value);
-
-        console.log('Building session config - Min Altitude from slider:', minAlt);
 
         return {
             date: date,
@@ -1156,7 +1152,6 @@ const SeqPlanView = {
      * Recalculate plan keeping current target order
      */
     async recalculateWithoutOptimization() {
-        console.log('=== recalculateWithoutOptimization called ===');
         if (!this.currentSession || this.calculatedResults.length === 0) return;
 
         // Save settings
