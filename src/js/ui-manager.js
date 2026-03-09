@@ -1359,7 +1359,7 @@ const UIManager = {
         const currentVersion = storedVersion ? String(storedVersion) : null;
         const metaVersion = String(meta.version);
 
-        if (currentVersion === metaVersion) {
+        if (currentVersion && Number(currentVersion) >= Number(metaVersion)) {
             this.showToast('Target database is already up to date', 'success');
             return;
         }
@@ -1368,6 +1368,7 @@ const UIManager = {
         const loaded = await DataManager.fetchAndLoadTargets(meta);
         if (loaded) {
             TargetFilter.initialize();
+            await App.updateVersionDisplay();
             this.showToast('Target database updated - reloading...', 'success');
             setTimeout(() => location.reload(), 1500);
         } else {
@@ -1414,6 +1415,7 @@ const UIManager = {
             if (parsed.targets.length > 0) {
                 const count = await DataManager.importTargets(parsed.targets, targetVersion);
                 TargetFilter.initialize();
+                await App.updateVersionDisplay();
                 this.showToast(`Successfully imported ${count} target(s)`, 'success');
 
                 if (parsed.errors.length === 0) {

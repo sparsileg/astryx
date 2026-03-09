@@ -57,13 +57,7 @@ const App = {
             }
 
             // Display version numbers
-            const appVersionText = document.getElementById('app-version');
-            if (appVersionText) {
-                const targetVersion = await DataManager.getTargetVersion();
-                appVersionText.textContent += `v${APP_CONFIG.APP_VERSION} `;
-                appVersionText.textContent += `d${APP_CONFIG.DB_VERSION} `;
-                appVersionText.textContent += `t${targetVersion || 'none'}`;
-            }
+            await App.updateVersionDisplay();
 
             // Auto-calculate Best Months for selected location if needed
             const selectedLocation = SettingsManager.getSelectedLocation();
@@ -99,6 +93,16 @@ const App = {
         if (loaded) {
             TargetFilter.initialize();
             setTimeout(() => location.reload(), 500);
+        }
+    },
+
+    async updateVersionDisplay() {
+        const appVersionText = document.getElementById('app-version');
+        if (appVersionText) {
+            const targetVersion = await DataManager.getTargetVersion();
+            appVersionText.textContent = `v${APP_CONFIG.APP_VERSION} `;
+            appVersionText.textContent += `d${APP_CONFIG.DB_VERSION} `;
+            appVersionText.textContent += `t${targetVersion || 'none'}`;
         }
     },
 
