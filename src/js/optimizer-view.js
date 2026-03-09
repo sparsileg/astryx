@@ -555,59 +555,22 @@ const OptimizerView = {
         const locationName = SettingsManager.getSelectedLocation();
         const loc = DataManager.getLocations()[locationName];
 
-        // Build inputs — single day, straight to chart
-        const inputs = {
-            obsDate:      document.getElementById('optimizer-date').value,
-            numDays:      1,
-            stepDays:     1,
-            maxResults:   1,
-            targetName:   target.object,
-            locationName: locationName,
-            ra:           target.ra,
-            dec:          target.dec,
-            latitude:     loc.latitude,
-            longitude:    loc.longitude,
-            elevation:    loc.elevation,
-            timezone:     loc.timezone,
-            minAltitude:  SettingsManager.getGlobalMinAltitude()
-        };
+        // Build skyglowData directly using assembleSkyglowData
+        const dateStr = document.getElementById('optimizer-date').value;
+        const minAltitude = SettingsManager.getGlobalMinAltitude();
+        const useHorizon = true;
 
-        // Calculate single day — results stored in window.visibilityResults
-        VisibilityCalculations.calculate(inputs);
+        const skyglowData = VisibilityCalculations.assembleSkyglowData(
+            target, dateStr, locationName, minAltitude, useHorizon
+        );
 
-        // After calculate, pull the single result and build skyglowData directly
-        setTimeout(() => {
-            const vr = window.visibilityResults;
-            if (!vr || !vr.results || vr.results.length === 0) {
-                UIManager.showToast('No visibility data for this target on this date', 'warning');
-                return;
-            }
-            const result = vr.results[0];
+        if (!skyglowData) {
+            UIManager.showToast('No visibility data for this target on this date', 'warning');
+            return;
+        }
 
-            window.skyglowData = {
-                date: result.date,
-                targetName: vr.targetName,
-                commonName: vr.commonName || '',
-                locationName: vr.locationName,
-                ra: vr.ra,
-                dec: vr.dec,
-                latitude: vr.latitude,
-                longitude: vr.longitude,
-                elevation: vr.elevation,
-                timezone: vr.timezone,
-                isDSTActive: vr.isDSTActive,
-                minAltitude: vr.minAltitude,
-                duskJD: result.duskJD,
-                dawnJD: result.dawnJD,
-                riseJD: result.riseJD,
-                setJD: result.setJD,
-                moonRiseSet: result.moonRiseSet,
-                useHorizon: vr.useHorizon !== undefined ? vr.useHorizon : true,
-                blockedMinutes: result.blockedMinutes
-            };
-
-            window.location.hash = '#skyglow';
-        }, 100);
+        window.skyglowData = skyglowData;
+        window.location.hash = '#skyglow';
     },
 
     /**
