@@ -547,9 +547,7 @@ const OptimizerView = {
         }
 
         // Set current target for visibility system
-        VisibilityTargets.currentTarget = target;
-        VisibilityCalculations.currentTarget = target;
-        UIManager.updateSidebarCurrentTarget(target.object);
+        VisibilityTargets.select(target);
 
         // Get location
         const locationName = SettingsManager.getSelectedLocation();
