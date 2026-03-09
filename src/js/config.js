@@ -11,7 +11,7 @@
 const APP_CONFIG = {
     APP_NAME: 'Astryx',
     APP_TITLE: 'Astryx - Astrophotography Planning Tool',
-    APP_VERSION: '0.12.0',
+    APP_VERSION: '0.13.0',
     DB_NAME: 'astryx-db',
     DB_VERSION: 7,
     TARGET_DATA_PATH: './data/',
