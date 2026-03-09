@@ -102,29 +102,30 @@ const ImagingLogView = {
         const searchQuery = document.getElementById('imaging-log-project-search')?.value.toLowerCase() || '';
         const statusFilter = document.getElementById('imaging-log-project-status-filter')?.value || '';
 
-        let filteredProjects = projects.filter(project => {
-            // Search filter
-            if (searchQuery) {
+        let filteredProjects;
+
+        if (searchQuery) {
+            // Search always scans all projects, ignoring status filter
+            filteredProjects = projects.filter(project => {
                 const nameMatch = project.name.toLowerCase().includes(searchQuery);
                 const targetMatch = project.targetDesignations.some(designation =>
                     designation.toLowerCase().includes(searchQuery)
                 );
-                if (!nameMatch && !targetMatch) return false;
-            }
-
-            // Status filter
-            if (statusFilter) {
-                if (statusFilter === 'all-but-completed') {
-                    if (project.status === 'Completed') {
+                return nameMatch || targetMatch;
+            });
+        } else {
+            // No search — apply status filter to displayed list
+            filteredProjects = projects.filter(project => {
+                if (statusFilter) {
+                    if (statusFilter === 'all-but-completed') {
+                        if (project.status === 'Completed') return false;
+                    } else if (project.status !== statusFilter) {
                         return false;
                     }
-                } else if (project.status !== statusFilter) {
-                    return false;
                 }
-            }
-
-            return true;
-        });
+                return true;
+            });
+        }
 
         // Apply sort
         const sortValue = document.getElementById('imaging-log-project-sort')?.value || 'modified-desc';
