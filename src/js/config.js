@@ -11,9 +11,9 @@
 const APP_CONFIG = {
     APP_NAME: 'Astryx',
     APP_TITLE: 'Astryx - Astrophotography Planning Tool',
-    APP_VERSION: '0.13.0',
+    APP_VERSION: '0.14.0',
     DB_NAME: 'astryx-db',
-    DB_VERSION: 7,
+    DB_VERSION: 8,
     TARGET_DATA_PATH: './data/',
     DEFAULT_THEME: 'Matrix',
 
@@ -49,7 +49,8 @@ const APP_CONFIG = {
         IMAGING_PROJECTS: 'imagingProjects',
         IMAGING_SESSIONS: 'imagingSessions',
         IMAGING_PROGRAMS: 'imagingPrograms',
-        DSS_CACHE: 'dssCache'
+        DSS_CACHE: 'dssCache',
+        TUTORIAL_PROGRESS: 'tutorialProgress'
     },
 
     NOTIONAL_HORIZON: [
