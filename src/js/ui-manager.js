@@ -1531,6 +1531,24 @@ const UIManager = {
         }, duration);
     },
 
+    formatRA(decimalHours) {
+        const h = Math.floor(decimalHours);
+        const mTotal = (decimalHours - h) * 60;
+        const m = Math.floor(mTotal);
+        const s = ((mTotal - m) * 60).toFixed(1);
+        return `${String(h).padStart(2,'0')}h ${String(m).padStart(2,'0')}m ${String(s).padStart(4,'0')}s (${Number(decimalHours).toFixed(4)}h)`;
+    },
+
+    formatDec(decimalDeg) {
+        const sign = decimalDeg < 0 ? '−' : '+';
+        const abs = Math.abs(decimalDeg);
+        const d = Math.floor(abs);
+        const mTotal = (abs - d) * 60;
+        const m = Math.floor(mTotal);
+        const s = ((mTotal - m) * 60).toFixed(1);
+        return `${sign}${String(d).padStart(2,'0')}° ${String(m).padStart(2,'0')}′ ${String(s).padStart(4,'0')}″ (${Number(decimalDeg).toFixed(4)}°)`;
+    },
+
     /**
      * Open target detail modal
      */
@@ -1635,8 +1653,8 @@ const UIManager = {
 
         document.getElementById('detail-other').textContent = target.other || '—';
         document.getElementById('detail-catalogue').textContent = target.catalogue || '—';
-        document.getElementById('detail-ra').textContent = target.ra || '—';
-        document.getElementById('detail-dec').textContent = target.dec || '—';
+        document.getElementById('detail-ra').textContent = target.ra != null ? UIManager.formatRA(target.ra) : '—';
+        document.getElementById('detail-dec').textContent = target.dec != null ? UIManager.formatDec(target.dec) : '—';
         document.getElementById('detail-const').textContent = target.constellation ? (CONSTELLATIONS[target.constellation] || target.constellation) : '—';
         document.getElementById('detail-size-max').textContent = target.size_max ? `${target.size_max}'` : '—';
         document.getElementById('detail-size-min').textContent = target.size_min ? `${target.size_min}'` : '—';
