@@ -122,14 +122,67 @@ const TimeUtils = {
      */
     nowDTG() {
         const now = new Date();
-        const dtg = now.getFullYear() + 
-              String(now.getMonth() + 1).padStart(2, '0') + 
+        const dtg = now.getFullYear() +
+              String(now.getMonth() + 1).padStart(2, '0') +
               String(now.getDate()).padStart(2, '0') + '-' +
-              String(now.getHours()).padStart(2, '0') + 
-              String(now.getMinutes()).padStart(2, '0') + 
+              String(now.getHours()).padStart(2, '0') +
+              String(now.getMinutes()).padStart(2, '0') +
               String(now.getSeconds()).padStart(2, '0');
         return dtg;
+    },
+
+    /**
+     * Current Julian epoch as decimal year (e.g. 2025.2)
+     */
+    currentEpoch() {
+        const now = new Date();
+        const start = new Date(Date.UTC(now.getUTCFullYear(), 0, 1));
+        const end = new Date(Date.UTC(now.getUTCFullYear() + 1, 0, 1));
+        return now.getUTCFullYear() + (now - start) / (end - start);
+    },
+
+    /**
+     * Precess J2000 RA/Dec to a target epoch using IAU rigorous precession.
+     * @param {number} ra  - J2000 RA in decimal hours
+     * @param {number} dec - J2000 Dec in decimal degrees
+     * @param {number} toEpoch - target epoch as decimal year (default: current)
+     * @returns {{ra: number, dec: number, epochLabel: string}}
+     */
+    precessFromJ2000(ra, dec, toEpoch = null) {
+        const epoch = toEpoch ?? this.currentEpoch();
+        const T = (epoch - 2000.0) / 100.0; // Julian centuries from J2000
+
+        // IAU 1976 precession constants (arcseconds)
+        const zeta  = (2306.2181 + 1.39656 * T) * T + 0.30188 * T * T + 0.017998 * T * T * T;
+        const z     = (2306.2181 + 1.39656 * T) * T + 1.09468 * T * T + 0.018203 * T * T * T;
+        const theta = (2004.3109 - 0.85330 * T) * T - 0.42665 * T * T - 0.041775 * T * T * T;
+
+        // Convert to radians
+        const toRad = Math.PI / 648000; // arcsec to radians
+        const zetaR  = zeta  * toRad;
+        const zR     = z     * toRad;
+        const thetaR = theta * toRad;
+
+        // Input in radians
+        const ra0  = ra * 15 * Math.PI / 180; // hours -> degrees -> radians
+        const dec0 = dec * Math.PI / 180;
+
+        // Rotation
+        const A = Math.cos(dec0) * Math.sin(ra0 + zetaR);
+        const B = Math.cos(thetaR) * Math.cos(dec0) * Math.cos(ra0 + zetaR) - Math.sin(thetaR) * Math.sin(dec0);
+        const C = Math.sin(thetaR) * Math.cos(dec0) * Math.cos(ra0 + zetaR) + Math.cos(thetaR) * Math.sin(dec0);
+
+        let raOut  = (Math.atan2(A, B) + zR) * 180 / Math.PI / 15; // radians -> hours
+        const decOut = Math.asin(C) * 180 / Math.PI;
+
+        // Normalize RA to [0, 24)
+        raOut = ((raOut % 24) + 24) % 24;
+
+        return {
+            ra: raOut,
+            dec: decOut,
+            epochLabel: `J${epoch.toFixed(1)}`
+        };
     }
 
 };
-
