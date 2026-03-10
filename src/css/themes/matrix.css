@@ -5,30 +5,30 @@
     --card-bg: #001100;
     --card-hover: #002200;
     --input-bg: #001100;
-    
+
     /* Text Colors */
     --text-color: #00ff00;
     --text-secondary: #00aa00;
     --primary-text: #000000;
-    
+
     /* Primary Colors */
     --primary-color: #00ff00;
     --primary-hover: #00cc00;
-    
+
     /* Secondary Colors */
     --secondary-color: #002200;
     --secondary-hover: #003300;
-    
+
     /* Border Colors */
     --border-color: #004400;
     --border-color-light: #002200;
-    
+
     /* Status Colors */
     --success-color: #00ff00;
     --warning-color: #ffaa00;
     --error-color: #ff0000;
     --error-hover: #cc0000;
-    
+
     /* Focus Ring */
     --focus-ring: rgba(0, 255, 0, 0.3);
 }
@@ -91,3 +91,7 @@ body {
     filter: drop-shadow(0 0 15px rgba(0, 255, 0, 0.6));
 }
 
+.tutorial-modal,
+.tutorial-callout {
+    box-shadow: 0 0 24px rgba(0, 255, 0, 0.3), 0 0 0 1px var(--primary-color);
+}

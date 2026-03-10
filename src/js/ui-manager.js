@@ -73,25 +73,47 @@ const UIManager = {
                 }
             });
 
+            // Populate tutorials submenu dynamically
+            const tutorialsSubmenu = document.getElementById('tutorials-submenu');
+            if (tutorialsSubmenu && typeof TUTORIAL_REGISTRY !== 'undefined') {
+                Object.values(TUTORIAL_REGISTRY.tutorials).forEach(tutorial => {
+                    const item = document.createElement('div');
+                    item.className = 'menu-item submenu-item';
+                    item.dataset.action = `tutorial-${tutorial.id}`;
+                    item.innerHTML = `<span class="menu-icon">▶</span>${tutorial.title}`;
+                    tutorialsSubmenu.appendChild(item);
+                });
+            }
+
             // Handle menu item clicks
             hamburgerMenu.querySelectorAll('.menu-item').forEach(item => {
                 item.addEventListener('click', (e) => {
                     const action = item.dataset.action;
-
                     // Handle cascading menus
                     if (action === 'admin-tools') {
                         e.stopPropagation();
                         this.toggleAdminToolsSubmenu();
                         return;
                     }
-
+                    // Handle tutorials submenu toggle
+                    if (action === 'tutorials') {
+                        e.stopPropagation();
+                        this.toggleTutorialsSubmenu();
+                        return;
+                    }
+                    // Handle tutorial launches
+                    if (action.startsWith('tutorial-')) {
+                        const tutorialId = action.replace('tutorial-', '');
+                        TutorialEngine.start(tutorialId);
+                        this.closeHamburgerMenu();
+                        return;
+                    }
                     // Handle submenu items - don't close menu yet
                     if (item.classList.contains('submenu-item')) {
                         this.handleHamburgerAction(action);
                         this.closeHamburgerMenu();
                         return;
                     }
-
                     // Handle regular menu items
                     this.handleHamburgerAction(action);
                     this.closeHamburgerMenu();
@@ -106,7 +128,18 @@ const UIManager = {
     toggleAdminToolsSubmenu() {
         const parent = document.querySelector('[data-action="admin-tools"]');
         const submenu = document.getElementById('admin-tools-submenu');
+        if (parent && submenu) {
+            parent.classList.toggle('expanded');
+            submenu.classList.toggle('expanded');
+        }
+    },
 
+    /**
+     * Toggle Tutorials submenu
+     */
+    toggleTutorialsSubmenu() {
+        const parent = document.querySelector('[data-action="tutorials"]');
+        const submenu = document.getElementById('tutorials-submenu');
         if (parent && submenu) {
             parent.classList.toggle('expanded');
             submenu.classList.toggle('expanded');
@@ -175,6 +208,9 @@ const UIManager = {
             break;
         case 'clear-all-targets':
             this.clearAllTargets();
+            break;
+        case 'tutorials':
+            // Submenu is populated dynamically — no action needed here
             break;
         case 'help':
             this.openHelpListModal();
@@ -806,9 +842,7 @@ const UIManager = {
 
         this.showToast(`Location "${name}" saved successfully`, 'success');
         this.markDataChanged();
-        this.clearLocationForm();
-        this.populateManageLocationsModal();
-
+        this.closeModal();
         // Notify other components to refresh their location lists
         document.dispatchEvent(new CustomEvent('locations-updated'));
     },
@@ -1965,6 +1999,7 @@ const UIManager = {
 
         // Dispatch event for dropdown refresh
         document.dispatchEvent(new CustomEvent('telescopes-updated'));
+        this.closeModal();
     },
 
     /**
@@ -2080,6 +2115,7 @@ const UIManager = {
 
         // Dispatch event for dropdown refresh
         document.dispatchEvent(new CustomEvent('sensors-updated'));
+        this.closeModal();
     },
 
     /**

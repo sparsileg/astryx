@@ -58,6 +58,15 @@ const DBManager = {
                     db.createObjectStore(APP_CONFIG.STORES.TARGETS, { keyPath: 'object' });
                 }
 
+                // Version 8: Add tutorial progress store
+                if (oldVersion < 8) {
+                    console.log('Upgrading database to version 8...');
+                    if (!db.objectStoreNames.contains(APP_CONFIG.STORES.TUTORIAL_PROGRESS)) {
+                        db.createObjectStore(APP_CONFIG.STORES.TUTORIAL_PROGRESS, { keyPath: 'id' });
+                        console.log('Created tutorialProgress store');
+                    }
+                }
+
                 // Version 7: Add DSS image cache store
                 if (oldVersion < 7) {
                     console.log('Upgrading database to version 7...');
