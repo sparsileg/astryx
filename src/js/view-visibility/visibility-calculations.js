@@ -677,6 +677,25 @@ const VisibilityCalculations = {
             peakAltitudeStr = `Peak altitude of ${altitudeData.maxAltitude.toFixed(1)}°`;
         }
 
+        // Format best month and observable range
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                            'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const selectedLocation = SettingsManager.getSelectedLocation();
+        const currentTarget = this.currentTarget;
+        let bestMonthStr = '';
+        if (currentTarget && selectedLocation) {
+            const bestMonth = currentTarget.bestMonth?.[selectedLocation];
+            const visibilityStart = currentTarget.visibilityStart?.[selectedLocation];
+            const visibilityEnd = currentTarget.visibilityEnd?.[selectedLocation];
+            if (bestMonth) {
+                bestMonthStr = `Best month: ${monthNames[bestMonth - 1]}`;
+                if (visibilityStart) {
+                    let endMonth = visibilityEnd > 12 ? visibilityEnd - 12 : visibilityEnd;
+                    bestMonthStr += ` · Observable: ${monthNames[visibilityStart - 1]}–${monthNames[endMonth - 1]}`;
+                }
+            }
+        }
+
         // Populate header if container exists
         if (headerContainer) {
             const currentMinAlt = inputs.minAltitude || 35;
@@ -688,7 +707,9 @@ const VisibilityCalculations = {
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                 <div>
                     <h2 style="margin: 0; color: var(--text-primary);">${inputs.targetName}${inputs.targetCommonName ? ' (' + inputs.targetCommonName + ')' : ''}</h2>
-                    <p style="margin: 0.25rem 0 0 0; color: var(--text-secondary); font-size: 0.9rem;">${peakAltitudeStr}</p>
+                    <p style="margin: 0.25rem 0 0 0; color: var(--text-secondary); font-size: 0.9rem;">
+                        ${peakAltitudeStr}${bestMonthStr ? ' &nbsp;·&nbsp; ' + bestMonthStr : ''}
+                    </p>
                     <div class="form-inline" style="margin-top: 0.5rem;">
                         <label for="yearly-min-altitude" style="font-size: 0.9rem; color: var(--text-secondary); margin-right: 0.5rem;">Minimum Altitude:</label>
                         <select id="yearly-min-altitude">${altOptions}</select>
