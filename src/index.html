@@ -650,59 +650,66 @@
     <!-- Manage Locations Modal Template -->
     <template id="manage-locations-template">
       <div class="settings-content">
-        <p style="color: var(--text-secondary); line-height: 1.6; margin-bottom: 1.5rem;">
+        <p style="color: var(--text-secondary); line-height: 1.6; margin-bottom: 1rem;">
           Add, edit, or delete observer locations. Each location stores coordinates, timezone, and observing conditions.
         </p>
-        <!-- Location List -->
-        <div class="form-group">
-          <label>Existing Locations</label>
-          <div id="location-list" style="max-height: 300px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 4px;">
-            <!-- Locations will be populated here -->
-          </div>
-        </div>
         <!-- Add/Edit Location Form -->
-        <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color);">
-          <h4 id="location-form-title">Add New Location</h4>
-          <div class="form-group">
-            <label for="manage-location-name">Location Name*</label>
-            <input type="text" id="manage-location-name" placeholder="e.g., Home, Dark Site, etc.">
+        <div style="padding-bottom: 1rem; border-bottom: 1px solid var(--border-color);">
+          <h4 id="location-form-title" style="margin-bottom: 0.75rem;">Add New Location</h4>
+          <!-- Row 1: Name, Timezone, Bortle -->
+          <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 0.75rem;">
+            <div class="form-group">
+              <label for="manage-location-name">Location Name*</label>
+              <input type="text" id="manage-location-name" placeholder="e.g., Home, Dark Site, etc.">
+            </div>
+            <div class="form-group">
+              <label for="manage-timezone">Timezone Offset (hrs)*</label>
+              <input type="number" id="manage-timezone" step="1" placeholder="e.g., -5 for EST" min="-12" max="14">
+            </div>
+            <div class="form-group">
+              <label for="manage-bortle">Bortle Scale*</label>
+              <select id="manage-bortle">
+                <option value="1">1 - Excellent dark sky</option>
+                <option value="2">2 - Typical truly dark site</option>
+                <option value="3">3 - Rural sky</option>
+                <option value="4">4 - Rural/suburban transition</option>
+                <option value="5">5 - Suburban sky</option>
+                <option value="6">6 - Bright suburban sky</option>
+                <option value="7">7 - Suburban/urban transition</option>
+                <option value="8">8 - City sky</option>
+                <option value="9">9 - Inner-city sky</option>
+              </select>
+            </div>
           </div>
-          <div class="form-group">
-            <label for="manage-latitude">Latitude (°)*</label>
-            <input type="number" id="manage-latitude" step="0.000001" placeholder="e.g., 39.296739" min="-90" max="90">
+          <!-- Row 2: Latitude, Longitude, Elevation -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem;">
+            <div class="form-group">
+              <label for="manage-latitude">Latitude (°)*</label>
+              <input type="number" id="manage-latitude" step="0.000001" placeholder="e.g., 39.296739" min="-90" max="90">
+            </div>
+            <div class="form-group">
+              <label for="manage-longitude">Longitude (°)*</label>
+              <input type="number" id="manage-longitude" step="0.000001" placeholder="e.g., -78.198136" min="-180" max="180">
+            </div>
+            <div class="form-group">
+              <label for="manage-elevation">Elevation (m)*</label>
+              <input type="number" id="manage-elevation" step="1" placeholder="e.g., 233" min="0" max="9000">
+            </div>
           </div>
-          <div class="form-group">
-            <label for="manage-longitude">Longitude (°)*</label>
-            <input type="number" id="manage-longitude" step="0.000001" placeholder="e.g., -78.198136" min="-180" max="180">
-          </div>
-          <div class="form-group">
-            <label for="manage-elevation">Elevation (m)*</label>
-            <input type="number" id="manage-elevation" step="1" placeholder="e.g., 233" min="0" max="9000">
-          </div>
-          <div class="form-group">
-            <label for="manage-timezone">Timezone Offset (hours)*</label>
-            <input type="number" id="manage-timezone" step="1" placeholder="e.g., -5 for EST" min="-12" max="14">
-          </div>
-          <div class="form-group">
-            <label for="manage-bortle">Bortle Scale*</label>
-            <select id="manage-bortle">
-              <option value="1">1 - Excellent dark sky</option>
-              <option value="2">2 - Typical truly dark site</option>
-              <option value="3">3 - Rural sky</option>
-              <option value="4">4 - Rural/suburban transition</option>
-              <option value="5">5 - Suburban sky</option>
-              <option value="6">6 - Bright suburban sky</option>
-              <option value="7">7 - Suburban/urban transition</option>
-              <option value="8">8 - City sky</option>
-              <option value="9">9 - Inner-city sky</option>
-            </select>
-          </div>
+          <!-- Horizon Profile -->
           <div class="form-group">
             <label for="manage-horizon">Horizon Profile</label>
             <textarea id="manage-horizon" rows="8" placeholder="Paste Stellarium horizon.txt here (azimuth elevation, one per line)&#10;Example:&#10;0 0&#10;90 5&#10;180 3&#10;270 0"></textarea>
             <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.25rem;">
               Format: azimuth elevation (space-separated, one point per line). Minimum 4 points required.
             </div>
+          </div>
+        </div>
+        <!-- Location List -->
+        <div class="form-group" style="margin-top: 1rem;">
+          <label>Existing Locations</label>
+          <div id="location-list" style="max-height: 200px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 4px;">
+            <!-- Locations will be populated here -->
           </div>
         </div>
       </div>
@@ -998,20 +1005,20 @@
                 </div>
                 <div id="fov-center-coords" style="display: none; margin-top: 0.5rem; text-align: center; font-family: monospace; font-size: 0.9rem; color: var(--text-color);"></div>
                 <div id="fov-rotation-control" style="display: none; margin-top: 0.5rem; text-align: center;">
-                    <label style="font-size: 0.9rem; color: var(--text-color);">Rotate camera to:&nbsp;
-                        <button id="fov-rotate-ccw" class="btn-secondary btn-sm">↺</button>
-                        <input type="number" id="fov-rotation-input" value="0" min="-180" max="180" step="1"
-                               style="width: 5rem; text-align: center; margin: 0 0.4rem; background: var(--bg-color); color: var(--text-color); border: 1px solid var(--border-color); border-radius: 4px; padding: 0.2rem;">
-                        °
-                        <button id="fov-rotate-cw" class="btn-secondary btn-sm">↻</button>
-                    </label>
+                  <label style="font-size: 0.9rem; color: var(--text-color);">Rotate camera to:&nbsp;
+                    <button id="fov-rotate-ccw" class="btn-secondary btn-sm">↺</button>
+                    <input type="number" id="fov-rotation-input" value="0" min="-180" max="180" step="1"
+                           style="width: 5rem; text-align: center; margin: 0 0.4rem; background: var(--bg-color); color: var(--text-color); border: 1px solid var(--border-color); border-radius: 4px; padding: 0.2rem;">
+                    °
+                    <button id="fov-rotate-cw" class="btn-secondary btn-sm">↻</button>
+                  </label>
                 </div>
                 <div style="margin-top: 0.5rem; text-align: center;">
                   <button id="fov-snapshot-btn" class="btn-primary btn-sm">📷 Snapshot</button>
                 </div>
               </div>
             </div>
-            </div>
+          </div>
         </div>
       </div>
     </template>
