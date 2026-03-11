@@ -729,9 +729,11 @@ const UIManager = {
         this.showToast(`Location "${locationName}" deleted`, 'success');
         this.markDataChanged();
         this.populateManageLocationsModal();
-
-        // Notify other components to refresh their location lists
         document.dispatchEvent(new CustomEvent('locations-updated'));
+        setTimeout(() => {
+            const mc = document.querySelector('.modal-content');
+            if (mc) mc.scrollTop = 0;
+        }, 150);
     },
 
     /**
@@ -1937,6 +1939,8 @@ const UIManager = {
 
         if (telescopeNames.length === 0) {
             listDiv.innerHTML = '<p style="color: var(--text-secondary); font-style: italic;">No telescopes defined yet.</p>';
+            const mc = document.querySelector('.modal-content');
+            if (mc) mc.scrollTop = 0;
             return;
         }
 
@@ -1958,6 +1962,9 @@ const UIManager = {
                 </div>
             `;
         }).join('');
+
+        const mc = document.querySelector('.modal-content');
+        if (mc) mc.scrollTop = 0;
     },
 
     /**
@@ -1996,9 +2003,11 @@ const UIManager = {
 
         // Refresh list
         this.refreshTelescopeList();
-
-        // Dispatch event for dropdown refresh
         document.dispatchEvent(new CustomEvent('telescopes-updated'));
+        setTimeout(() => {
+            const mc = document.querySelector('.modal-content');
+            if (mc) mc.scrollTop = 0;
+        }, 150);
         this.closeModal();
     },
 
@@ -2045,15 +2054,14 @@ const UIManager = {
     refreshSensorList() {
         const listDiv = document.getElementById('sensor-list');
         if (!listDiv) return;
-
         const sensors = DataManager.getSensors();
         const sensorNames = Object.keys(sensors);
-
         if (sensorNames.length === 0) {
             listDiv.innerHTML = '<p style="color: var(--text-secondary); font-style: italic;">No sensors defined yet.</p>';
+            const mc = document.querySelector('.modal-content');
+            if (mc) mc.scrollTop = 0;
             return;
         }
-
         listDiv.innerHTML = sensorNames.map(name => {
             const sensor = sensors[name];
             return `
@@ -2071,6 +2079,8 @@ const UIManager = {
                 </div>
             `;
         }).join('');
+        const mc = document.querySelector('.modal-content');
+        if (mc) mc.scrollTop = 0;
     },
 
     /**
@@ -2112,9 +2122,11 @@ const UIManager = {
 
         // Refresh list
         this.refreshSensorList();
-
-        // Dispatch event for dropdown refresh
         document.dispatchEvent(new CustomEvent('sensors-updated'));
+        setTimeout(() => {
+            const mc = document.querySelector('.modal-content');
+            if (mc) mc.scrollTop = 0;
+        }, 150);
         this.closeModal();
     },
 
@@ -2163,15 +2175,14 @@ const UIManager = {
     refreshFilterList() {
         const listDiv = document.getElementById('filters-list');
         if (!listDiv) return;
-
         const filters = DataManager.getFilters();
         const filterNames = Object.keys(filters).sort();
-
         if (filterNames.length === 0) {
             listDiv.innerHTML = '<p style="color: var(--text-secondary); font-style: italic;">No filters defined yet.</p>';
+            const mc = document.querySelector('.modal-content');
+            if (mc) mc.scrollTop = 0;
             return;
         }
-
         listDiv.innerHTML = filterNames.map(name => {
             return `
                 <div class="info-card" style="padding: 1rem; margin-bottom: 0.75rem;">
@@ -2182,6 +2193,8 @@ const UIManager = {
                 </div>
             `;
         }).join('');
+        const mc = document.querySelector('.modal-content');
+        if (mc) mc.scrollTop = 0;
     },
 
     /**
@@ -2210,9 +2223,11 @@ const UIManager = {
 
         // Refresh list
         this.refreshFilterList();
-
-        // Dispatch event for dropdown refresh
         document.dispatchEvent(new CustomEvent('filters-updated'));
+        setTimeout(() => {
+            const mc = document.querySelector('.modal-content');
+            if (mc) mc.scrollTop = 0;
+        }, 150);
     },
 
     /**
