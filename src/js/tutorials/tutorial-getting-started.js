@@ -123,7 +123,7 @@ const TUTORIAL_GETTING_STARTED = {
             id: 'complete',
             type: 'modal',
             title: "You're all set!",
-            body: "Astryx now knows your location and equipment. You're ready to start planning your imaging sessions.",
+            body: "Astryx now knows your location, telescope, and sensor. With this information you can start searching for your next astrophotography target. You're ready to start planning your imaging sessions!",
             target: null,
             position: 'center',
             waitFor: 'next',
