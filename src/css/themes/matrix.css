@@ -91,7 +91,12 @@ body {
     filter: drop-shadow(0 0 15px rgba(0, 255, 0, 0.6));
 }
 
+:root {
+    --tutorial-accent: #00ffff;
+    --tutorial-accent-text: #000000;
+}
+
 .tutorial-modal,
 .tutorial-callout {
-    box-shadow: 0 0 24px rgba(0, 255, 0, 0.3), 0 0 0 1px var(--primary-color);
+    box-shadow: 0 0 24px rgba(0, 255, 255, 0.4), 0 0 0 1px var(--tutorial-accent);
 }

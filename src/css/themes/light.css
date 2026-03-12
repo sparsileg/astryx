@@ -69,3 +69,14 @@ body {
         saturate(1.2)
         brightness(1.2);
 }
+
+
+:root {
+    --tutorial-accent: #e67c00;
+    --tutorial-accent-text: #ffffff;
+}
+
+.tutorial-modal,
+.tutorial-callout {
+    box-shadow: 0 0 24px rgba(230, 124, 0, 0.4), 0 0 0 1px var(--tutorial-accent);
+}

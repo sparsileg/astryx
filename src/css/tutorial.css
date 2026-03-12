@@ -26,9 +26,9 @@
     position: fixed;
     z-index: 9100;
     background: var(--card-bg);
-    border: 1px solid var(--primary-color);
+    border: 1px solid var(--tutorial-accent);
     border-radius: 8px;
-    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.8), 0 0 0 1px var(--primary-color);
+    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.8), 0 0 0 1px var(--tutorial-accent);
 }
 
 .tutorial-modal-header {
@@ -37,20 +37,20 @@
     align-items: center;
     padding: 0.3rem 1rem;
     border-bottom: 1px solid var(--border-color);
-    background: var(--primary-color);
+    background: var(--tutorial-accent);
     border-radius: 7px 7px 0 0;
 }
 
 .tutorial-modal-title {
     font-size: 1rem;
     font-weight: 600;
-    color: var(--bg-color);
+    color: var(--tutorial-accent-text);
     margin: 0;
 }
 
 .tutorial-modal-progress {
     font-size: 0.75rem;
-    color: var(--bg-color);
+    color: var(--tutorial-accent-text);
     white-space: nowrap;
     opacity: 0.8;
 }
@@ -78,9 +78,9 @@
     position: fixed;
     z-index: 9100;
     background: var(--card-bg);
-    border: 1px solid var(--primary-color);
+    border: 1px solid var(--tutorial-accent);
     border-radius: 8px;
-    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.8), 0 0 0 1px var(--primary-color);
+    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.8), 0 0 0 1px var(--tutorial-accent);
     width: 300px;
     max-width: 50vw;
     pointer-events: all;
@@ -89,14 +89,14 @@
 .tutorial-callout-header {
     padding: 0.2rem 0.75rem;
     border-bottom: 1px solid var(--border-color);
-    background: var(--primary-color);
+    background: var(--tutorial-accent);
     border-radius: 7px 7px 0 0;
 }
 
 .tutorial-callout-title {
     font-size: 0.9rem;
     font-weight: 600;
-    color: var(--bg-color);
+    color: var(--tutorial-accent-text);
     margin: 0;
 }
 
@@ -123,7 +123,7 @@
     position: fixed;
     z-index: 9050;
     border-radius: 4px;
-    box-shadow: 0 0 0 4px var(--primary-color);
+    box-shadow: 0 0 0 4px var(--tutorial-accent);
     pointer-events: none;
 }
 
@@ -134,8 +134,8 @@
 .tutorial-btn-next {
     padding: 0.35rem 0.9rem;
     font-size: 0.85rem;
-    background: var(--primary-color);
-    color: var(--bg-color);
+    background: var(--tutorial-accent);
+    color: var(--tutorial-accent-text);
     border: none;
     border-radius: 4px;
     cursor: pointer;
