@@ -31,7 +31,6 @@ const TOOLTIPS = {
     set_filterMaxMag: 'Default maximum magnitude\nfor the Target Filter.\nValid range: -5 to 20',
     set_filterMinSize: 'Default minimum target size (arcminutes)\nfor the Target Filter.\nValid range: 0.1 to 999',
     set_minAlt:     'Global minimum altitude for analysis\noperations - can be overriden\nin some cases',
-    set_searchRes:  'Number of search results to show\nduring Target Search',
     sp_afCheck:     'Check to enable autofocus events',
     sp_afDuration:  'Duration of an autofocus event',
     sp_afInterval:  'Interval between autofocus events',
