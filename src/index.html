@@ -272,7 +272,7 @@
           <!-- Target Filter Section -->
           <div class="card card-no-margin">
             <div class="card-header">
-              <h3>🔍 Filter Targets</h3>
+              <h3 id="filter-targets-label">🔍 Filter Targets</h3>
             </div>
             <div class="card-body">
 
@@ -317,7 +317,7 @@
               <!-- Month Filter -->
               <div class="form-group form-inline" style="margin-bottom: 0.75rem;">
                 <label for="target-filter-month" class="tooltip-host" style="min-width: 90px;"
-                       data-tooltip-key="ts_month">Month:</label>
+                       data-tooltip-key="ts_month">Visibility:</label>
                 <select id="target-filter-month" style="flex: 1;">
                   <option value="">Any month</option>
                   <option value="1">January</option>
@@ -371,7 +371,7 @@
           <!-- Filter Results Card -->
           <div class="card card-no-margin">
             <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
-              <h3>📋 Filter Results</h3>
+              <h3 id="filter-results-label">📋 Filter Results</h3>
               <div style="display: flex; flex-direction: column; gap: 0.35rem; align-items: flex-end;">
                 <button id="create-imaging-program-btn" class="btn-primary btn-sm tooltip-host" data-tooltip-key="ts_createIP">
                   <div>Create Imaging Program</div>
@@ -2253,11 +2253,11 @@
     <script src="js/help-content.js"></script>
     <script src="js/db-manager.js"></script>
     <script src="js/data-manager.js"></script>
+    <script src="js/ui-manager.js"></script>
     <script src="js/imaging-log-manager.js"></script>
     <script src="js/settings-manager.js"></script>
     <script src="js/todo-manager.js"></script>
     <script src="js/best-months.js"></script>
-    <script src="js/ui-manager.js"></script>
     <script src="js/utils-time.js"></script>
     <script src="js/utils-csv.js"></script>
     <script src="js/astro-core.js"></script>
@@ -2284,6 +2284,8 @@
     <script src="js/optimizer-calculations.js"></script>
     <script src="js/optimizer-view.js"></script>
     <script src="js/tutorials/tutorial-getting-started.js"></script>
+    <script src="js/tutorials/tutorial-target-search.js"></script>
+    <script src="js/tutorials/tutorial-target-filtering.js"></script>
     <script src="js/tutorials/tutorial-registry.js"></script>
     <script src="js/tutorials/tutorial-engine.js"></script>
     <script src="js/app.js"></script>

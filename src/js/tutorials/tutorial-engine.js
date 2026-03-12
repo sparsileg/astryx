@@ -38,6 +38,7 @@ const TutorialEngine = {
     },
 
     advance(delayed = false) {
+        console.log('advance: _panelEl before teardown:', this._panelEl);
         this._teardown();
         this._currentStepIndex++;
         const tutorial = this._currentTutorial;
@@ -46,7 +47,7 @@ const TutorialEngine = {
         } else {
             this._saveProgress(tutorial.id, this._currentStepIndex, false);
             if (delayed) {
-                setTimeout(() => this._showStep(this._currentStepIndex), 300);
+                setTimeout(() => this._showStep(this._currentStepIndex), 600);
             } else {
                 this._showStep(this._currentStepIndex);
             }
@@ -101,7 +102,7 @@ const TutorialEngine = {
             </div>
         `;
 
-        panel.querySelector('.tutorial-btn-next').addEventListener('click', () => this.advance());
+        panel.querySelector('.tutorial-btn-next').addEventListener('click', () => { console.log('Next clicked, step:', this._currentStepIndex); this.advance(); });
         panel.querySelector('.tutorial-btn-exit').addEventListener('click', () => this.exit());
 
         document.body.appendChild(panel);
@@ -193,6 +194,8 @@ const TutorialEngine = {
 
         document.body.appendChild(panel);
         this._panelEl = panel;
+
+        if (step.width) panel.style.width = step.width;
 
         // Position callout relative to target
         this._positionCallout(panel, targetEl, step.position);
