@@ -80,7 +80,7 @@ const UIManager = {
                     const item = document.createElement('div');
                     item.className = 'menu-item submenu-item';
                     item.dataset.action = `tutorial-${tutorial.id}`;
-                    item.innerHTML = `<span class="menu-icon">▶</span>${tutorial.title}`;
+                    item.innerHTML = tutorial.title;
                     tutorialsSubmenu.appendChild(item);
                 });
             }
@@ -170,10 +170,12 @@ const UIManager = {
     closeHamburgerMenu() {
         const hamburgerBtn = document.getElementById('hamburger-menu-btn');
         const hamburgerMenu = document.getElementById('hamburger-menu');
-
         if (hamburgerBtn && hamburgerMenu) {
             hamburgerBtn.classList.remove('active');
             hamburgerMenu.classList.remove('active');
+            // Collapse all submenus
+            hamburgerMenu.querySelectorAll('.menu-submenu.expanded').forEach(el => el.classList.remove('expanded'));
+            hamburgerMenu.querySelectorAll('.menu-parent.expanded').forEach(el => el.classList.remove('expanded'));
         }
     },
 

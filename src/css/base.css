@@ -1469,10 +1469,9 @@ input[type="number"] {
     max-height: 400px;
 }
 
-/* Submenu items */
 .submenu-item {
-    padding-left: 3rem !important;
-    font-size: 0.95em;
+    padding: 7px 16px 7px 3.25rem !important;
+    font-size: 0.8em;
 }
 
 .submenu-item:hover {
