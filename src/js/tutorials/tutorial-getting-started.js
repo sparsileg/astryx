@@ -7,7 +7,7 @@ const TUTORIAL_GETTING_STARTED = {
     id: 'getting-started',
     title: 'Getting Started with Astryx',
     version: 2,
-    nextTutorial: null,
+    nextTutorial: 'settings',
     steps: [
         {
             id: 'welcome',
