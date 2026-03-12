@@ -6,7 +6,7 @@
 const TUTORIAL_GETTING_STARTED = {
     id: 'getting-started',
     title: 'Getting Started with Astryx',
-    version: 1,
+    version: 2,
     nextTutorial: null,
     steps: [
         {
@@ -95,7 +95,7 @@ const TUTORIAL_GETTING_STARTED = {
             title: 'Now Add Your Sensor',
             body: "Now let's add your sensor. Open the hamburger menu (☰) → Admin Tools → Manage Equipment. Click Next when the form is open.",
             target: null,
-            position: top,
+            position: 'top',
             waitFor: 'next',
             highlight: false
         },

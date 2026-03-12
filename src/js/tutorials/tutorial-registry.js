@@ -13,6 +13,8 @@
 const TUTORIAL_REGISTRY = {
     version: '1.0',
     tutorials: {
-        'getting-started': TUTORIAL_GETTING_STARTED
+        'getting-started': TUTORIAL_GETTING_STARTED,
+        'target-search':    TUTORIAL_TARGET_SEARCH,
+        'target-filtering': TUTORIAL_TARGET_FILTERING
     }
 };
