@@ -198,6 +198,7 @@
                   <div class="target-search-container" style="flex: 1;">
                     <input type="text" id="target-name" class="full-width" placeholder="Search targets...">
                     <div id="target-search-results"></div>
+                    <div id="target-search-results-count" style="font-size: 0.75rem; color: var(--text-secondary); padding: 0.25rem 0;"></div>
                   </div>
                   <button id="pin-target-btn" class="btn-secondary tooltip-host" style="white-space: nowrap;"
                           data-tooltip-key="ts_PIN">📌 Pin</button>
@@ -563,7 +564,7 @@
     <!-- Settings Modal Template -->
     <template id="settings-template">
       <div class="settings-content">
-        <!-- Row 1: DST Mode | Target Search Results -->
+        <!-- Row 1: DST Mode | Min Altitude -->
         <div class="settings-two-col">
           <div class="form-group form-inline">
             <label for="dst-mode" class="tooltip-host" data-tooltip-key="set_DST">DST Mode</label>
@@ -574,21 +575,6 @@
               <option value="never">Never Active</option>
             </select>
           </div>
-          <div class="form-group form-inline">
-            <label for="max-search-results" class="tooltip-host" data-tooltip-key="set_searchRes">Target Search Results</label>
-            <select id="max-search-results">
-              <option value="1">1</option>
-              <option value="2">2</option>
-              <option value="3">3</option>
-              <option value="5">5</option>
-              <option value="8">8</option>
-              <option value="13">13</option>
-              <option value="21">21</option>
-            </select>
-          </div>
-        </div>
-        <!-- Row 2: Global Min Altitude | Optimizer Candidate Count -->
-        <div class="settings-two-col">
           <div class="form-group form-inline">
             <label for="global-min-altitude" class="tooltip-host" data-tooltip-key="set_minAlt">Min Altitude</label>
             <select id="global-min-altitude">

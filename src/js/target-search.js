@@ -6,6 +6,10 @@
 const VisibilityTargets = {
     searchTimeout: null,
     currentTarget: null, // Track the selected target
+    allResults: [],
+    displayedCount: 0,
+    isLoading: false,
+    scrollHandler: null,
 
     /**
      * Initialize target functionality
@@ -105,29 +109,55 @@ const VisibilityTargets = {
             // Both match same way, maintain order
             return 0;
         });
-        this.displayResults(results.slice(0, APP_CONFIG.MAX_SEARCH_RESULTS));
+        this.allResults = results;
+        this.displayedCount = 0;
+        this.displayResults();
     },
 
 
     /**
-     * Display search results
+     * Display search results — initial render, then lazy load on scroll
      */
-    displayResults(results) {
+    displayResults() {
         const resultsDiv = document.getElementById('target-search-results');
+        const countDiv = document.getElementById('target-search-results-count');
         if (!resultsDiv) return;
 
-        if (results.length === 0) {
+        resultsDiv.innerHTML = '';
+        if (countDiv) countDiv.textContent = '';
+
+        if (this.allResults.length === 0) {
             resultsDiv.innerHTML = '<div style="padding: 0.75rem; color: var(--text-secondary);">No targets found</div>';
             resultsDiv.style.display = 'block';
             return;
         }
 
-        resultsDiv.innerHTML = '';
-        results.forEach(target => {
+        resultsDiv.style.display = 'block';
+        this.loadMoreResults();
+        this.attachScrollListener();
+    },
+
+    /**
+     * Load and display next batch of results
+     */
+    loadMoreResults() {
+        if (this.isLoading) return;
+        if (this.displayedCount >= this.allResults.length) return;
+
+        this.isLoading = true;
+        const resultsDiv = document.getElementById('target-search-results');
+        const countDiv = document.getElementById('target-search-results-count');
+        if (!resultsDiv) { this.isLoading = false; return; }
+
+        const batchSize = this.displayedCount === 0 ? INITIAL_RESULTS_BATCH : LAZY_LOAD_BATCH_SIZE;
+        const start = this.displayedCount;
+        const end = Math.min(start + batchSize, this.allResults.length);
+        const batch = this.allResults.slice(start, end);
+
+        batch.forEach(target => {
             const resultDiv = document.createElement('div');
             resultDiv.className = 'target-result';
 
-            // Build display strings - no links in search results
             let commonNameDisplay = '—';
             if (target.common) {
                 commonNameDisplay = target.common.split(',').map(n => n.trim()).join(', ');
@@ -136,17 +166,45 @@ const VisibilityTargets = {
             const typeConst = `${target.type || 'Unknown type'} in ${target.constellation || 'Unknown'}`;
 
             resultDiv.innerHTML = `
-            <div class="target-name">${target.object}</div>
-            <div class="target-coords">${commonNameDisplay}</div>
-            <div class="target-details">${otherInfo}</div>
-            <div class="target-details">${typeConst}</div>
-        `;
+                <div class="target-name">${target.object}</div>
+                <div class="target-coords">${commonNameDisplay}</div>
+                <div class="target-details">${otherInfo}</div>
+                <div class="target-details">${typeConst}</div>
+            `;
 
             resultDiv.addEventListener('click', () => this.select(target));
             resultsDiv.appendChild(resultDiv);
         });
 
-        resultsDiv.style.display = 'block';
+        this.displayedCount = end;
+
+        if (countDiv) {
+            countDiv.textContent = `Showing ${this.displayedCount} of ${this.allResults.length} results`;
+        }
+
+        this.isLoading = false;
+    },
+
+    /**
+     * Attach scroll listener for lazy loading
+     */
+    attachScrollListener() {
+        const resultsDiv = document.getElementById('target-search-results');
+        if (!resultsDiv) return;
+
+        if (this.scrollHandler) {
+            resultsDiv.removeEventListener('scroll', this.scrollHandler);
+        }
+
+        this.scrollHandler = () => {
+            const scrollPosition = resultsDiv.scrollTop + resultsDiv.clientHeight;
+            const scrollHeight = resultsDiv.scrollHeight;
+            if (scrollPosition >= scrollHeight - 100) {
+                this.loadMoreResults();
+            }
+        };
+
+        resultsDiv.addEventListener('scroll', this.scrollHandler);
     },
 
     /**
