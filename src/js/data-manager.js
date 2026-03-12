@@ -178,9 +178,8 @@ const DataManager = {
     /**
      * Search targets by query
      */
-    searchTargets(query, maxResults) {
+    searchTargets(query) {
         const lowerQuery = query.toLowerCase().trim();
-        const limit = maxResults !== undefined ? maxResults : SettingsManager.getMaxSearchResults();
 
         // Check if query is catalog+number without space (e.g., "M31", "NGC7000")
         // Pattern: letters followed by numbers with no space
@@ -196,20 +195,27 @@ const DataManager = {
             const otherLower = target.other ? target.other.toLowerCase() : '';
 
             // Search with original query
+            // For catalogue-style queries, skip the other field to avoid
+            // returning unrelated objects that merely reference this designation
+            const isCatalogueQuery = !!match || /^[a-z]+\s+\d+$/i.test(lowerQuery);
+
+            // Search with original query
             const matchesOriginal =
                   objectLower.includes(lowerQuery) ||
                   commonLower.includes(lowerQuery) ||
-                  otherLower.includes(lowerQuery);
+                  (!isCatalogueQuery && otherLower.includes(lowerQuery));
 
             // Also search with spaced version if it exists
             const matchesSpaced = spacedQuery && (
                 objectLower.includes(spacedQuery) ||
                     commonLower.includes(spacedQuery) ||
-                    otherLower.includes(spacedQuery)
+                    (!isCatalogueQuery && otherLower.includes(spacedQuery))
             );
 
             return matchesOriginal || matchesSpaced;
-        }).slice(0, limit);
+        }).filter((target, index, arr) =>
+            arr.findIndex(t => t.object === target.object) === index
+        );
     },
 
     /**

@@ -1227,13 +1227,6 @@ const UIManager = {
                 }
             });
         }
-        // maximum number of target search results
-        const maxSearchInput = document.getElementById('max-search-results');
-        if (maxSearchInput) {
-            const validSearchValues = ['1', '2', '3', '5', '8', '13', '21'];
-            const savedValue = String(SettingsManager.getMaxSearchResults());
-            maxSearchInput.value = validSearchValues.includes(savedValue) ? savedValue : '8';
-        }
 
         // Global minimum altitude
         const minAltSelect = document.getElementById('global-min-altitude');
@@ -1286,11 +1279,6 @@ const UIManager = {
             }
         }
         await SettingsManager.updateDSTConfig(config);
-
-        const maxSearch = modalBody.querySelector('#max-search-results')?.value;
-        if (maxSearch) {
-            await SettingsManager.updateMaxSearchResults(parseInt(maxSearch));
-        }
 
         const minAlt = modalBody.querySelector('#global-min-altitude')?.value;
         if (minAlt) {
