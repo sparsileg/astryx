@@ -1,7 +1,7 @@
 /**
  * tutorial-target-search.js
  * "Searching for Targets" tutorial definition.
- * Covers: running a search, reading results cards, pinning a target,
+ * Covers: running a search, reading results panel, pinning a target,
  * and adding a target to the To Do list.
  *
  * Modal — use when there's no specific element to point at (introductions,
@@ -49,17 +49,17 @@ const TUTORIAL_TARGET_SEARCH = {
             id: 'run-search',
             type: 'callout',
             title: 'Run a Search',
-            body: 'Type something in the search bar now — try <em>M 101</em>. Click on the result you want and it will become the Current Target, indicated in the highlighted area in the left navigation panel. This means that you can use multiple analysis tools on that target without having to search for it again. Click Next once you have selected one of the results and it appears as the Current Target.',
+            body: 'Type something in the search bar now — try <em>M 101</em>. Click on the result you want and it will become the Current Target, indicated in the highlighted area in the left navigation panel. This means that you can use multiple analysis tools on that target without having to search for it again.<br><br>Click Next once you have selected one of the results and it appears as the Current Target.',
             target: '#target-name',
             position: 'right',
             waitFor: 'next',
             highlight: true
         },
         {
-            id: 'result-card',
+            id: 'result-panel',
             type: 'callout',
-            title: 'Reading a Result Card',
-            body: 'Once you have selected the current target, a short summary card appears, as well as a <strong>Detail</strong> button. The summary provides a few attributes of the selected target.',
+            title: 'Reading the Result Panel',
+            body: 'Once you have selected the current target, a short summary panel appears, as well as a <strong>Detail</strong> button. The summary provides a few attributes of the selected target.',
             target: '#target-info-display',
             position: 'right',
             waitFor: 'next',
@@ -76,15 +76,15 @@ const TUTORIAL_TARGET_SEARCH = {
             highlight: true
         },
         {
-            id: 'details-card',
+            id: 'details-panel',
             type: 'callout',
-            title: 'Reading the Detail Card',
-            body: 'The Detail card shows a variety of information about the object including various designations, location, size and magnitude, and visibility indicators for your current location.',
+            title: 'Reading the Detail Panel',
+            body: 'The Detail panel shows a variety of information about the object including various designations, location, size and magnitude, and visibility indicators for your current location.',
             width: '450px',
             target: '#modal-close',
             position: 'left',
             waitFor: 'next',
-            highlight: true
+            highlight: false
         },
         {
             id: 'todo-intro',
@@ -100,7 +100,7 @@ const TUTORIAL_TARGET_SEARCH = {
             id: 'todo-confirmed',
             type: 'callout',
             title: 'Added to To Do',
-            body: 'The target is now on your To Do list. Note that the button text has changed to remove it from the list. Access the list any time from <strong>To Do List</strong> in the left navigation panel. Close the Detail view and click Next to continue.',
+            body: 'The target is now on your To Do list. Note that the button text has changed to remove it from the list. Access the list any time from <strong>To Do List</strong> in the left navigation panel.<br><br>Close the Detail view and click Next to continue.',
             target: null,
             position: 'right',
             waitFor: 'next',
@@ -110,7 +110,7 @@ const TUTORIAL_TARGET_SEARCH = {
             id: 'pin-intro',
             type: 'callout',
             title: 'Pinning Targets',
-            body: 'Pinning a target saves it to your Pinned list so you can find it quickly later. They appear in the Pinned Targets card on this view and typically are the next targets you want to image. Pinned targets are used by the Sequence Planner when generating an imaging session for a given night.',
+            body: 'Selecting the <strong>Pin</strong> button saves the <strong>Current Target</strong> to your <strong>Pinned Targets</strong> list so you can find it quickly later. They appear in the <strong>Pinned Targets</strong> panel on this view and typically are the next targets you want to image. <strong>Pinned Targets</strong> are used by the <strong>Sequence Planner</strong> when generating an imaging session for a given night.',
             target: '#pin-target-btn',
             position: 'right',
             waitFor: 'next',
@@ -130,11 +130,21 @@ const TUTORIAL_TARGET_SEARCH = {
             id: 'pin-confirmed',
             type: 'callout',
             title: 'Target Pinned',
-            body: 'The target is now in your Pinned list. Click Next to continue.',
+            body: 'The target is now in your <strong>Pinned Targets</strong> list.',
             target: null,
             position: 'right',
             waitFor: 'next',
             highlight: false
+        },
+        {
+            id: 'target-source',
+            type: 'callout',
+            title: 'Select Target Source',
+            body: 'You can choose between your To Do list and the entire target database to filter.',
+            target: 'target-selection-source',
+            position: 'bottom',
+            waitFor: 'next',
+            highlight: true
         },
         {
             id: 'complete',

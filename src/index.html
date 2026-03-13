@@ -39,8 +39,8 @@
             <select id="theme-select" class="tooltip-host" data-tooltip-key="sb_theme">
               <option value="dark">Dark</option>
               <option value="light">Light</option>
-              <option value="night">Night</option>
               <option value="matrix">Matrix</option>
+              <option value="night">Night</option>
             </select>
           </div>
           <div class="theme-selector" style="margin-top: 0.5rem;">
@@ -55,15 +55,24 @@
 
         <div class="sidebar-content">
           <ul class="nav-list">
-            <li class="nav-item tooltip-host" data-view="target-select" data-tooltip-key="sb_tgtSelect">Target Selection</li>
-            <li class="nav-item tooltip-host" data-view="todo" data-tooltip-key="sb_todoList">To Do List</li>
-            <li class="nav-item tooltip-host" data-view="daily-visibility" data-tooltip-key="sb_dailyVis">Daily Visibility</li>
-            <li class="nav-item tooltip-host" data-view="yearly-observability" data-tooltip-key="sb_yearlyObs">Yearly Observability</li>
-            <li class="nav-item tooltip-host" data-view="fov" data-tooltip-key="sb_fov">Viewfinder</li>
-            <li class="nav-item tooltip-host" data-view="optimizer" data-tooltip-key="sb_tgtOpt">Target Optimizer</li>
-            <li class="nav-item tooltip-host" data-view="seqplan" data-tooltip-key="sb_seqPlanner">Sequence Planner</li>
-            <li class="nav-item tooltip-host" data-view="imaging-log" data-tooltip-key="sb_imgLog">Imaging Log</li>
-            <li class="nav-item tooltip-host" data-view="utilities" data-tooltip-key="sb_utils">Utilities</li>
+            <li class="nav-item tooltip-host"
+                id="siderbar-target-selection" data-view="target-select" data-tooltip-key="sb_tgtSelect">Target Selection</li>
+            <li class="nav-item tooltip-host"
+                id="sidebar-to-do-list" data-view="todo" data-tooltip-key="sb_todoList">To Do List</li>
+            <li class="nav-item tooltip-host"
+                id="sidebar-daily-visibility" data-view="daily-visibility" data-tooltip-key="sb_dailyVis">Daily Visibility</li>
+            <li class="nav-item tooltip-host"
+                id="sidebar-yearly-observability" data-view="yearly-observability" data-tooltip-key="sb_yearlyObs">Yearly Observability</li>
+            <li class="nav-item tooltip-host"
+                id="sidebar-viewfinder" data-view="fov" data-tooltip-key="sb_fov">Viewfinder</li>
+            <li class="nav-item tooltip-host"
+                id="sidebar-target-optimizer" data-view="optimizer" data-tooltip-key="sb_tgtOpt">Target Optimizer</li>
+            <li class="nav-item tooltip-host"
+                id="sidebar-sequence-planner" data-view="seqplan" data-tooltip-key="sb_seqPlanner">Sequence Planner</li>
+            <li class="nav-item tooltip-host"
+                id="sidebar-imaging-log" data-view="imaging-log" data-tooltip-key="sb_imgLog">Imaging Log</li>
+            <li class="nav-item tooltip-host"
+                id="sidebar-utilities" data-view="utilities" data-tooltip-key="sb_utils">Utilities</li>
           </ul>
         </div>
 
@@ -163,7 +172,7 @@
     <template id="ts-visibility-template">
       <div class="visibility-view">
         <div style="display: flex; justify-content: center; align-items: center; gap: 2rem; margin-bottom: 1rem;">
-          <h2 style="margin: 0;">🌟 Target Selection</h2>
+          <h2 id="target-selection-source" style="margin: 0;">🌟 Target Selection</h2>
           <div style="display: flex; gap: 1rem; align-items: center; font-size: 0.9rem;">
             <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
               <input type="radio" name="target-filter-scope" value="all" checked>
@@ -2265,6 +2274,7 @@
     <script src="js/optimizer-view.js"></script>
     <script src="js/tutorials/tutorial-getting-started.js"></script>
     <script src="js/tutorials/tutorial-settings.js"></script>
+    <script src="js/tutorials/tutorial-sidebar.js"></script>
     <script src="js/tutorials/tutorial-target-search.js"></script>
     <script src="js/tutorials/tutorial-target-filtering.js"></script>
     <script src="js/tutorials/tutorial-registry.js"></script>
