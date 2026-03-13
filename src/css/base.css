@@ -82,7 +82,7 @@ body {
 
 .tooltip-host {
     position: relative;
-    cursor: help;
+    cursor: default;
 }
 
 /* Main Content */

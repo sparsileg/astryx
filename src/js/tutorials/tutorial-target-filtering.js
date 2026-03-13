@@ -11,7 +11,7 @@
 
 const TUTORIAL_TARGET_FILTERING = {
     id: 'target-filtering',
-    title: 'Filtering Search Results',
+    title: 'Filter Targets',
     version: 2,
     nextTutorial: null,
     steps: [
