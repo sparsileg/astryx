@@ -1,0 +1,164 @@
+/* To Do List View Styles */
+.todo-type-card {
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    background: var(--card-bg);
+}
+
+.todo-type-card h3 {
+    margin: 0 0 0.75rem 0;
+    color: var(--text-primary);
+    font-size: 1.1rem;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 0.5rem;
+}
+
+.todo-targets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    line-height: 1.8;
+}
+
+.todo-target-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+}
+
+.todo-target-link {
+    color: var(--accent-color);
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.todo-target-link:hover {
+    text-decoration: underline;
+}
+
+.btn-remove-todo {
+    background: var(--danger-color, #ef4444);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 0.15rem 0.5rem;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.btn-remove-todo:hover {
+    opacity: 0.8;
+}
+
+.todo-view-header {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 2rem;
+    margin-bottom: 1rem;
+}
+
+.todo-view-header h2 {
+    margin: 0;
+}
+
+.todo-sort-container {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.todo-sort-label {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.todo-sort-select {
+    padding: 0.4rem 0.8rem;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background: var(--input-bg);
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+.todo-empty-message {
+    text-align: center;
+    padding: 3rem;
+    color: var(--text-secondary);
+}
+
+.todo-empty-title {
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+}
+
+.todo-type-card {
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    background: var(--card-bg);
+}
+
+.todo-type-card h3 {
+    margin: 0 0 0.75rem 0;
+    color: var(--text-primary);
+    font-size: 1.1rem;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 0.5rem;
+}
+
+.todo-targets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    line-height: 1.8;
+}
+
+.todo-target-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.todo-target-link {
+    color: var(--accent-color);
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.todo-target-link:hover {
+    text-decoration: underline;
+}
+
+.btn-remove-todo {
+    background: var(--danger-color, #ef4444);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 0.15rem 0.5rem;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.btn-remove-todo:hover {
+    opacity: 0.8;
+}
+
+/* highlighting pinned targets in the todo lists */
+
+.todo-target-pinned {
+    background-color: rgba(251, 191, 36, 0.2); /* Gold tint */
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-weight: 500;
+}
+
+/* END OF highlighting pinned targets in the todo lists */

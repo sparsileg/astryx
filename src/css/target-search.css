@@ -1,0 +1,115 @@
+/* Target Search */
+.target-search-container {
+    position: relative;
+}
+
+#target-search-results {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    max-height: 300px;
+    overflow-y: auto;
+    z-index: 100;
+    margin-top: 4px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.target-result {
+    padding: 0.75rem;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border-color);
+    transition: background 0.2s;
+}
+
+.target-result:last-child {
+    border-bottom: none;
+}
+
+.target-result:hover {
+    background: var(--card-hover);
+}
+
+.target-name {
+    color: var(--primary-color);
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+}
+
+.target-coords {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    margin-bottom: 0.25rem;
+}
+
+.target-details {
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+}
+
+/* Target Details Display */
+#target-details-display {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+}
+
+#target-details-display .detail-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--border-color-light);
+}
+
+#target-details-display .detail-row:last-child {
+    border-bottom: none;
+}
+
+#target-details-display .detail-label {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+#target-details-display .detail-value {
+    color: var(--text-color);
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
+/* Pinned Targets */
+#pinned-targets-display {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+/* Target details display */
+.target-details-box {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    padding: 0.75rem;
+    background: var(--card-hover);
+    border-radius: 6px;
+    font-size: 0.85rem;
+}
+
+.target-detail-item {
+    /* Container for each detail field */
+}
+
+.target-detail-label {
+    color: var(--text-secondary);
+}
+
+.target-detail-value {
+    color: var(--text-color);
+    font-weight: 500;
+}
