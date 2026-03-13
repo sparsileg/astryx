@@ -208,12 +208,6 @@ body {
     margin-bottom: 1.5rem;
 }
 
-.card-header {
-    margin-bottom: 1rem;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid var(--border-color);
-}
-
 .card-header h2 {
     color: var(--text-color);
     font-size: 1.3rem;
@@ -222,22 +216,6 @@ body {
 
 .card-body {
     color: var(--text-color);
-}
-
-/* Info Card */
-.info-card {
-    background: var(--card-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    padding: 1.5rem;
-    margin-bottom: 1.5rem;
-    overflow: visible;
-}
-
-.info-card h3 {
-    color: var(--primary-color);
-    margin-bottom: 1rem;
-    font-size: 1.1rem;
 }
 
 /* Modal */
@@ -303,6 +281,7 @@ body {
     color: var(--text-primary);
     transition: all 0.2s;
 }
+
 .close-btn:hover {
     background: var(--text-secondary);
     color: var(--bg-color);
@@ -356,97 +335,6 @@ body {
     background: var(--error-color);
 }
 
-/* Target Search */
-.target-search-container {
-    position: relative;
-}
-
-#target-search-results {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    background: var(--card-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    max-height: 300px;
-    overflow-y: auto;
-    z-index: 100;
-    margin-top: 4px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-}
-
-.target-result {
-    padding: 0.75rem;
-    cursor: pointer;
-    border-bottom: 1px solid var(--border-color);
-    transition: background 0.2s;
-}
-
-.target-result:last-child {
-    border-bottom: none;
-}
-
-.target-result:hover {
-    background: var(--card-hover);
-}
-
-.target-name {
-    color: var(--primary-color);
-    font-weight: 500;
-    margin-bottom: 0.25rem;
-}
-
-.target-coords {
-    color: var(--text-secondary);
-    font-size: 0.85rem;
-    margin-bottom: 0.25rem;
-}
-
-.target-details {
-    color: var(--text-secondary);
-    font-size: 0.8rem;
-}
-
-/* Target Details Display */
-#target-details-display {
-    margin-top: 1rem;
-    padding: 1rem;
-    background: var(--card-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-}
-
-#target-details-display .detail-row {
-    display: flex;
-    justify-content: space-between;
-    padding: 0.5rem 0;
-    border-bottom: 1px solid var(--border-color-light);
-}
-
-#target-details-display .detail-row:last-child {
-    border-bottom: none;
-}
-
-#target-details-display .detail-label {
-    color: var(--text-secondary);
-    font-size: 0.9rem;
-}
-
-#target-details-display .detail-value {
-    color: var(--text-color);
-    font-weight: 500;
-    font-size: 0.9rem;
-}
-
-/* Pinned Targets */
-#pinned-targets-display {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    margin-top: 0.5rem;
-}
-
 /* Location Management */
 .location-item {
     display: flex;
@@ -493,90 +381,6 @@ body {
     background: var(--error-hover);
 }
 
-/* Skyglow Timeline */
-.timeline-container {
-    position: relative;
-    width: 100%;
-    height: 200px;
-    margin: 2rem 0;
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    overflow: hidden;
-}
-
-.timeline-gradient {
-    width: 100%;
-    height: 100%;
-    display: block;
-}
-
-.timeline-marker {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    width: 2px;
-    background: transparent;
-    border-left: 2px dashed currentColor;
-    pointer-events: none;
-}
-
-.timeline-marker-label {
-    position: absolute;
-    top: 10px;
-    left: 5px;
-    font-size: 0.75rem;
-    font-weight: 500;
-    white-space: nowrap;
-    padding: 2px 6px;
-    background: rgba(0, 0, 0, 0.7);
-    border-radius: 3px;
-}
-
-.timeline-labels {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 30px;
-    display: flex;
-    align-items: flex-end;
-    padding: 0 5px;
-}
-
-.timeline-label {
-    position: absolute;
-    font-size: 0.75rem;
-    color: var(--text-secondary);
-    transform: translateX(-50%);
-}
-
-/* Skyglow Info */
-.skyglow-details {
-    margin: 1.5rem 0;
-}
-
-.detail-item {
-    display: flex;
-    justify-content: space-between;
-    padding: 0.75rem 0;
-    border-bottom: 1px solid var(--border-color);
-}
-
-.detail-item:last-child {
-    border-bottom: none;
-}
-
-.detail-label {
-    color: var(--text-secondary);
-    font-size: 0.9rem;
-}
-
-.detail-value {
-    color: var(--text-color);
-    font-weight: 500;
-    font-size: 0.9rem;
-}
-
 /* Scrollbar styling */
 ::-webkit-scrollbar {
     width: 8px;
@@ -612,37 +416,20 @@ body {
 }
 
 .mb-1 { margin-bottom: 0.5rem; }
+
 .mb-2 { margin-bottom: 1rem; }
+
 .mb-3 { margin-bottom: 1.5rem; }
+
 .mb-4 { margin-bottom: 2rem; }
 
 .mt-1 { margin-top: 0.5rem; }
+
 .mt-2 { margin-top: 1rem; }
+
 .mt-3 { margin-top: 1.5rem; }
+
 .mt-4 { margin-top: 2rem; }
-
-/* Responsive */
-@media (max-width: 768px) {
-    .sidebar {
-        width: 100%;
-        min-width: auto;
-        border-right: none;
-        border-bottom: 1px solid var(--border-color);
-    }
-
-    .app-container {
-        flex-direction: column;
-    }
-
-    .form-row {
-        grid-template-columns: 1fr;
-    }
-}
-
-/* Visibility View Layout */
-.visibility-view h2 {
-    margin-bottom: 1.0rem;
-}
 
 .ts-two-col-grid {
     display: grid;
@@ -669,31 +456,6 @@ body {
 
 .form-horizontal label {
     margin-bottom: 0;
-}
-
-/* Target details display */
-.target-details-box {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.5rem;
-    margin-bottom: 1rem;
-    padding: 0.75rem;
-    background: var(--card-hover);
-    border-radius: 6px;
-    font-size: 0.85rem;
-}
-
-.target-detail-item {
-    /* Container for each detail field */
-}
-
-.target-detail-label {
-    color: var(--text-secondary);
-}
-
-.target-detail-value {
-    color: var(--text-color);
-    font-weight: 500;
 }
 
 /* Full width inputs/selects */
@@ -735,214 +497,6 @@ input[type="number"] {
     padding: 0.25rem 0;
 }
 
-/* Info Cards Grid */
-.info-cards-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 1.5rem;
-    margin: 0;
-}
-
-.info-card {
-    background: var(--card-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    padding: 1.5rem;
-}
-
-.info-card h3 {
-    margin: 0 0 1rem 0;
-    color: var(--text-primary);
-    font-size: 1.1rem;
-    border-bottom: 2px solid var(--accent-primary);
-    padding-bottom: 0.5rem;
-}
-
-.info-card-content {
-    color: var(--text-secondary);
-}
-
-.info-section {
-    margin: 1rem 0;
-}
-
-.info-label {
-    font-size: 0.9rem;
-    color: var(--text-secondary);
-    margin-bottom: 0.25rem;
-}
-
-.info-value {
-    font-size: 1.1rem;
-    color: var(--text-primary);
-    font-weight: 500;
-}
-
-.info-subtext {
-    font-size: 0.85rem;
-    color: var(--text-secondary);
-    margin-top: 0.25rem;
-}
-
-.moon-phase-display {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1rem;
-}
-
-.moon-emoji {
-    font-size: 3rem;
-}
-
-/* Timeline Section */
-#timeline-section {
-    margin-top: 2rem;
-}
-
-.timeline-legend {
-    display: flex;
-    gap: 2rem;
-    justify-content: center;
-    margin: 1rem 0;
-    font-size: 0.9rem;
-    color: var(--text-secondary);
-}
-
-.timeline-visualization {
-    position: relative;
-    background: var(--card-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    padding: 1rem;
-    margin: 1rem 0;
-    min-height: 150px;
-}
-
-.timeline-marker {
-    position: absolute;
-    top: 0;
-    transform: translateX(-50%);
-    text-align: center;
-    z-index: 10;
-}
-
-.marker-icon {
-    padding: 0.25rem 0.5rem;
-    border-radius: 4px;
-    font-size: 1.2rem;
-    margin-bottom: 0.25rem;
-}
-
-.marker-time {
-    font-size: 0.75rem;
-    font-weight: 600;
-}
-
-.timeline-labels-row {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 0.5rem;
-    font-size: 0.85rem;
-    color: var(--text-secondary);
-}
-
-.timeline-label {
-    position: absolute;
-    transform: translateX(-50%);
-    font-size: 0.75rem;
-}
-
-.gradient-legend {
-    display: flex;
-    justify-content: center;
-    gap: 2rem;
-    margin-top: 1rem;
-}
-
-.legend-item {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.85rem;
-}
-
-.legend-color {
-    width: 30px;
-    height: 20px;
-    border: 1px solid var(--border-color);
-    border-radius: 3px;
-}
-
-.gradient-legend #legend-target-altitude {
-    width: 30px;
-    height: 5px;
-    background: #ffffff;
-    border: 1px solid #000000;
-    border-radius: 1px;
-}
-
-.gradient-legend #legend-minimum-altitude {
-    width: 30px;
-    height: 5px;
-    background: repeating-linear-gradient(to right, #ffffff 0, #ffffff 5px, transparent 5px, transparent 10px);
-    border: 1px solid #000000;
-    border-radius: 1px;
-}
-
-/* Timeline marker styling */
-.time-marker::before {
-    content: attr(data-icon);
-    position: absolute;
-    top: 5px;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 20px;
-    background: rgba(0, 0, 0, 0.8);
-    padding: 4px;
-    border-radius: 4px;
-    white-space: nowrap;
-    width: 50px;
-    text-align: center;
-    box-sizing: border-box;
-}
-
-.time-marker::after {
-    content: attr(data-time);
-    position: absolute;
-    top: 35px;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 14px;
-    color: #ffc107;
-    white-space: nowrap;
-    background: rgba(0, 0, 0, 0.9);
-    padding: 3px 6px;
-    border-radius: 3px;
-    border: 1px solid rgba(255, 193, 7, 0.3);
-    width: 50px;
-    text-align: center;
-    box-sizing: border-box;
-}
-
-/* Moon icons - 1 up from bottom position */
-.time-marker[data-icon*="🌙"]::before {
-    top: 95px;
-}
-
-.time-marker[data-icon*="🌙"]::after {
-    top: 125px;
-}
-
-/* Target icons - bottom position */
-.time-marker[data-icon*="✨"]::before {
-    top: 190px;
-}
-
-.time-marker[data-icon*="✨"]::after {
-    top: 220px;
-}
-
 /* Make info cards more compact */
 .info-cards-grid {
     display: grid;
@@ -958,36 +512,6 @@ input[type="number"] {
     padding: 1rem;
 }
 
-.info-card h3 {
-    margin: 0 0 0.75rem 0;
-    color: var(--text-primary);
-    font-size: 1rem;
-}
-
-/* Moon phase display - more compact */
-.moon-phase-display {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0.75rem;
-}
-
-.moon-emoji {
-    font-size: 2.5rem;
-}
-
-/* Section labels larger */
-.info-section {
-    margin: 0.75rem 0;
-}
-
-.info-label {
-    font-size: 1rem;
-    font-weight: 500;
-    color: var(--text-primary);
-    margin-bottom: 0.25rem;
-}
-
 .info-value {
     font-size: 0.9rem;
     color: var(--text-secondary);
@@ -998,60 +522,6 @@ input[type="number"] {
     font-size: 0.85rem;
     color: var(--text-secondary);
     margin-top: 0.25rem;
-}
-
-/* Separation on same line */
-#separation-dusk, #separation-dawn {
-    display: inline;
-    margin-left: 0.25rem;
-}
-
-#separation-dusk-desc, #separation-dawn-desc {
-    display: block;
-    margin-top: 0.25rem;
-}
-
-/* Center gradient title */
-#timeline-section h3 {
-    text-align: center;
-    margin-bottom: 0;
-}
-
-/* Larger icon legend */
-.timeline-legend {
-    display: flex;
-    gap: 2rem;
-    justify-content: center;
-    margin: 1rem 0;
-    font-size: 1rem;
-    color: var(--text-secondary);
-}
-
-.timeline-legend span {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.timeline-legend span::before {
-    font-size: 1.3rem;
-}
-
-/* Timeline section - full width */
-#timeline-section {
-    margin-top: 2rem;
-    width: 100%;
-}
-
-.timeline-visualization {
-    position: relative;
-    background: var(--card-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    padding: 1rem;
-    margin: 1rem 0;
-    min-height: 150px;
-    width: 100%;
 }
 
 /* Info card text sizing and spacing to match original */
@@ -1066,31 +536,6 @@ input[type="number"] {
     color: var(--text-color);
 }
 
-/* Moon Details card */
-.moon-phase-display {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 10px;
-}
-
-#moon-phase-name {
-    font-size: 1.15em;
-    font-weight: normal;
-    color: var(--text-color);
-    margin-bottom: 2px;
-}
-
-#moon-illumination {
-    font-size: 0.88em;
-    color: var(--text-secondary);
-}
-
-.moon-emoji {
-    font-size: 2.8em;
-    line-height: 1;
-}
-
 /* Section labels and values */
 .info-section {
     margin-top: 10px;
@@ -1101,42 +546,6 @@ input[type="number"] {
     font-weight: 600;
     color: var(--text-color);
     margin-bottom: 3px;
-}
-
-#target-altitude,
-.info-subtext {
-    font-size: 0.88em;
-    color: var(--text-secondary);
-    margin-bottom: 2px;
-    line-height: 1.3;
-}
-
-#moon-rise-set,
-#target-rise-set,
-.info-value {
-    font-size: 0.88em;
-    color: var(--text-secondary);
-    line-height: 1.4;
-}
-
-/* Separation card - inline display */
-#separation-dusk,
-#separation-dawn {
-    font-size: 1em;
-    color: var(--text-color);
-}
-
-#separation-dusk .info-label,
-#separation-dawn .info-label {
-    font-weight: normal;
-}
-
-#separation-dusk-desc,
-#separation-dawn-desc {
-    font-size: 0.88em;
-    color: var(--text-secondary);
-    margin-top: 2px;
-    line-height: 1.3;
 }
 
 /* Target info display styling */
@@ -1327,12 +736,6 @@ input[type="number"] {
     display: none;
 }
 
-.analyze-skyglow-btn {
-    min-width: 150px;
-    white-space: nowrap;
-    flex-shrink: 0;
-}
-
 /* View Header */
 .view-header {
     display: flex;
@@ -1433,7 +836,6 @@ input[type="number"] {
   word-break: break-word;
 }
 
-
 /* Cascading Hamburger Menu Styles - ADD TO base.css */
 
 /* Menu parent with arrow */
@@ -1528,261 +930,6 @@ input[type="number"] {
                  0 0 32px var(--primary-color);
 }
 
-/*
- ========================================================
-Help file markup
-*/
-
-/* Markdown content styling */
-.markdown-content {
-    line-height: 1.6;
-}
-
-.markdown-content h1 {
-    font-size: 1.8em;
-    margin-top: 1.5rem;
-    margin-bottom: 0.75rem;
-    font-weight: 600;
-    border-bottom: 2px solid var(--border-color);
-    padding-bottom: 0.3rem;
-}
-
-.markdown-content h1:first-child {
-    margin-top: 0;
-}
-
-.markdown-content h2 {
-    font-size: 1.4em;
-    margin-top: 1.5rem;
-    margin-bottom: 0.6rem;
-    font-weight: 600;
-}
-
-.markdown-content h3 {
-    font-size: 1.2em;
-    margin-top: 1.2rem;
-    margin-bottom: 0.5rem;
-    font-weight: 600;
-}
-
-.markdown-content p {
-    margin-bottom: 1rem;
-}
-
-.markdown-content ul, .markdown-content ol {
-    margin-bottom: 1rem;
-    padding-left: 2rem;
-}
-
-.markdown-content li {
-    margin-bottom: 0.4rem;
-    line-height: 1.6;
-}
-
-.markdown-content ul {
-    list-style-type: disc;
-}
-
-.markdown-content ul ul {
-    list-style-type: circle;
-}
-
-.markdown-content code {
-    background: var(--card-bg);
-    padding: 0.2rem 0.4rem;
-    border-radius: 3px;
-    font-family: 'Courier New', monospace;
-    font-size: 0.9em;
-}
-
-.markdown-content pre {
-    background: var(--card-bg);
-    padding: 1rem;
-    border-radius: 6px;
-    overflow-x: auto;
-    margin-bottom: 1rem;
-}
-
-.markdown-content pre code {
-    background: none;
-    padding: 0;
-}
-
-.markdown-content strong {
-    font-weight: 600;
-}
-
-.markdown-content em {
-    font-style: italic;
-}
-
-.markdown-content blockquote {
-    border-left: 4px solid var(--primary-color);
-    padding-left: 1rem;
-    margin: 1rem 0;
-    color: var(--text-secondary);
-}
-
-/* END OF Help file markup */
-
-
-/* To Do List View Styles */
-.todo-type-card {
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    padding: 1rem;
-    margin-bottom: 1rem;
-    background: var(--card-bg);
-}
-
-.todo-type-card h3 {
-    margin: 0 0 0.75rem 0;
-    color: var(--text-primary);
-    font-size: 1.1rem;
-    border-bottom: 1px solid var(--border-color);
-    padding-bottom: 0.5rem;
-}
-
-.todo-targets {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    line-height: 1.8;
-}
-
-.todo-target-item {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    width: 100%;
-}
-
-.todo-target-link {
-    color: var(--accent-color);
-    text-decoration: none;
-    cursor: pointer;
-}
-
-.todo-target-link:hover {
-    text-decoration: underline;
-}
-
-.btn-remove-todo {
-    background: var(--danger-color, #ef4444);
-    color: white;
-    border: none;
-    border-radius: 4px;
-    padding: 0.15rem 0.5rem;
-    font-size: 0.75rem;
-    cursor: pointer;
-    transition: opacity 0.2s;
-}
-
-.btn-remove-todo:hover {
-    opacity: 0.8;
-}
-
-/* To Do List View Styles */
-.todo-view-header {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 2rem;
-    margin-bottom: 1rem;
-}
-
-.todo-view-header h2 {
-    margin: 0;
-}
-
-.todo-sort-container {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.todo-sort-label {
-    color: var(--text-secondary);
-    font-size: 0.9rem;
-}
-
-.todo-sort-select {
-    padding: 0.4rem 0.8rem;
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
-    background: var(--input-bg);
-    color: var(--text-primary);
-    font-size: 0.9rem;
-    cursor: pointer;
-}
-
-.todo-empty-message {
-    text-align: center;
-    padding: 3rem;
-    color: var(--text-secondary);
-}
-
-.todo-empty-title {
-    font-size: 1.2rem;
-    margin-bottom: 1rem;
-}
-
-.todo-type-card {
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    padding: 1rem;
-    margin-bottom: 1rem;
-    background: var(--card-bg);
-}
-
-.todo-type-card h3 {
-    margin: 0 0 0.75rem 0;
-    color: var(--text-primary);
-    font-size: 1.1rem;
-    border-bottom: 1px solid var(--border-color);
-    padding-bottom: 0.5rem;
-}
-
-.todo-targets {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    line-height: 1.8;
-}
-
-.todo-target-item {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.todo-target-link {
-    color: var(--accent-color);
-    text-decoration: none;
-    cursor: pointer;
-}
-
-.todo-target-link:hover {
-    text-decoration: underline;
-}
-
-.btn-remove-todo {
-    background: var(--danger-color, #ef4444);
-    color: white;
-    border: none;
-    border-radius: 4px;
-    padding: 0.15rem 0.5rem;
-    font-size: 0.75rem;
-    cursor: pointer;
-    transition: opacity 0.2s;
-}
-
-.btn-remove-todo:hover {
-    opacity: 0.8;
-}
-
-/* END OF To Do List View Styles */
-
 /* Rise Time Chart View */
 .todo-view-header-with-toggle {
     display: flex;
@@ -1833,16 +980,6 @@ Help file markup
 
 /* END OF Rise Time Chart View */
 
-/* highlighting pinned targets in the todo lists */
-
-.todo-target-pinned {
-    background-color: rgba(251, 191, 36, 0.2); /* Gold tint */
-    padding: 2px 6px;
-    border-radius: 3px;
-    font-weight: 500;
-}
-
-/* END OF highlighting pinned targets in the todo lists */
 
 .card-header:has(#seq-plan-af-note) {
     display: flex;

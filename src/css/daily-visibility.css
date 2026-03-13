@@ -1,5 +1,73 @@
 /* Daily Visibility */
 
+/* Skyglow Timeline */
+.timeline-container {
+    position: relative;
+    width: 100%;
+    height: 200px;
+    margin: 2rem 0;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.timeline-gradient {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.timeline-marker-label {
+    position: absolute;
+    top: 10px;
+    left: 5px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    white-space: nowrap;
+    padding: 2px 6px;
+    background: rgba(0, 0, 0, 0.7);
+    border-radius: 3px;
+}
+
+.timeline-labels {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 30px;
+    display: flex;
+    align-items: flex-end;
+    padding: 0 5px;
+}
+
+
+/* Skyglow Info */
+.skyglow-details {
+    margin: 1.5rem 0;
+}
+
+.detail-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.detail-item:last-child {
+    border-bottom: none;
+}
+
+.detail-label {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.detail-value {
+    color: var(--text-color);
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
 /* Controls row */
 .dv-controls-row {
     display: flex;
@@ -85,18 +153,6 @@
     margin-bottom: 0;
 }
 
-#timeline-section {
-    margin-top: 4px;
-}
-
-.timeline-visualization {
-    padding: 4px 1rem;
-}
-
-.timeline-legend {
-    margin: 4px 0;
-}
-
 /* Info cards */
 
 /* Info cards */
@@ -117,4 +173,239 @@
 
 .altitude-override-indicator.visible {
     visibility: visible;
+}
+
+/* ============================================================
+   Daily Visibility View Styles
+   ============================================================ */
+
+.visibility-view h2 {
+    margin-bottom: 1.0rem;
+}
+
+.timeline-marker {
+    position: absolute;
+    top: 0;
+    transform: translateX(-50%);
+    text-align: center;
+    z-index: 10;
+}
+
+.marker-icon {
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 1.2rem;
+    margin-bottom: 0.25rem;
+}
+
+.marker-time {
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.timeline-labels-row {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.timeline-label {
+    position: absolute;
+    transform: translateX(-50%);
+    font-size: 0.75rem;
+}
+
+.gradient-legend {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    margin-top: 1rem;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+}
+
+.legend-color {
+    width: 30px;
+    height: 20px;
+    border: 1px solid var(--border-color);
+    border-radius: 3px;
+}
+
+.gradient-legend #legend-target-altitude {
+    width: 30px;
+    height: 5px;
+    background: #ffffff;
+    border: 1px solid #000000;
+    border-radius: 1px;
+}
+
+.gradient-legend #legend-minimum-altitude {
+    width: 30px;
+    height: 5px;
+    background: repeating-linear-gradient(to right, #ffffff 0, #ffffff 5px, transparent 5px, transparent 10px);
+    border: 1px solid #000000;
+    border-radius: 1px;
+}
+
+.time-marker::before {
+    content: attr(data-icon);
+    position: absolute;
+    top: 5px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 20px;
+    background: rgba(0, 0, 0, 0.8);
+    padding: 4px;
+    border-radius: 4px;
+    white-space: nowrap;
+    width: 50px;
+    text-align: center;
+    box-sizing: border-box;
+}
+
+.time-marker::after {
+    content: attr(data-time);
+    position: absolute;
+    top: 35px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 14px;
+    color: #ffc107;
+    white-space: nowrap;
+    background: rgba(0, 0, 0, 0.9);
+    padding: 3px 6px;
+    border-radius: 3px;
+    border: 1px solid rgba(255, 193, 7, 0.3);
+    width: 50px;
+    text-align: center;
+    box-sizing: border-box;
+}
+
+.time-marker[data-icon*="🌙"]::before {
+    top: 95px;
+}
+
+.time-marker[data-icon*="🌙"]::after {
+    top: 125px;
+}
+
+.time-marker[data-icon*="✨"]::before {
+    top: 190px;
+}
+
+.time-marker[data-icon*="✨"]::after {
+    top: 220px;
+}
+
+#separation-dusk, #separation-dawn {
+    display: inline;
+    margin-left: 0.25rem;
+    font-size: 1em;
+    color: var(--text-color);
+}
+
+#separation-dusk-desc, #separation-dawn-desc {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: 0.88em;
+    color: var(--text-secondary);
+    line-height: 1.3;
+}
+
+#timeline-section h3 {
+    text-align: center;
+    margin-bottom: 0;
+}
+
+.timeline-legend {
+    display: flex;
+    gap: 2rem;
+    justify-content: center;
+    margin: 1rem 0;
+    font-size: 1rem;
+    color: var(--text-secondary);
+}
+
+.timeline-legend span {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.timeline-legend span::before {
+    font-size: 1.3rem;
+}
+
+#timeline-section {
+    margin-top: 2rem;
+    width: 100%;
+}
+
+.timeline-visualization {
+    position: relative;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1rem;
+    margin: 1rem 0;
+    min-height: 150px;
+    width: 100%;
+}
+
+.moon-phase-display {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 10px;
+}
+
+#moon-phase-name {
+    font-size: 1.15em;
+    font-weight: normal;
+    color: var(--text-color);
+    margin-bottom: 2px;
+}
+
+#moon-illumination {
+    font-size: 0.88em;
+    color: var(--text-secondary);
+}
+
+.moon-emoji {
+    font-size: 2.8em;
+    line-height: 1;
+}
+
+#target-altitude,
+.info-subtext {
+    font-size: 0.88em;
+    color: var(--text-secondary);
+    margin-bottom: 2px;
+    line-height: 1.3;
+}
+
+#moon-rise-set,
+#target-rise-set,
+.info-value {
+    font-size: 0.88em;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+#separation-dusk .info-label,
+#separation-dawn .info-label {
+    font-weight: normal;
+}
+
+.analyze-skyglow-btn {
+    min-width: 150px;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
