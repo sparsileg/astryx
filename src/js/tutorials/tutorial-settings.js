@@ -12,7 +12,7 @@ const TUTORIAL_SETTINGS = {
     id: 'settings',
     title: 'Configuring Settings',
     version: 1,
-    nextTutorial: 'sidebar',
+    nextTutorial: 'admin-tools',
     steps: [
         {
             id: 'welcome',
