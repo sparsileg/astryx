@@ -11,7 +11,44 @@
  *  <label class="tooltip-host" data-tooltip-key="limitingMagnitude">Limiting Magnitude</label>
  */
 
+/**
+ * bm: best month
+ * it: import targets
+ * mf: manage filters
+ * ml: manage locations
+ * ms: manage sensors
+ * mt: manage telescopes
+ * sb: sidebar
+ * set: settings
+ * sp: sequence planner
+ * to: target optimizer
+ * ts: target selection
+ */
+
 const TOOLTIPS = {
+    bm_location:    'The observing location for which you wish\nto compute the Best Month and month visibility',
+    it_selectTgt:   'Select the desired target database file\nin Astryx CSV format',
+    mf_filtName:    'Preferred name for the new filter',
+    mf_savedFilt:   'List of the existing filters',
+    ml_bortle:      'Bortle scale number of the new location',
+    ml_elev:        'Elevation in meters of the new location',
+    ml_existing:    'List of existing observation locations',
+    ml_horizProf:   'Horizon profile of the new location. One point\nper line in Azimuth Elevation order, where\nAzimuth is in integer degrees and Elevation\nis in integer degrees',
+    ml_lat:         'Latitude of the new location\nin decimal degrees',
+    ml_locName:     'Preferred name for the new location',
+    ml_lon:         'Longitude of the new location\nin decimal degrees',
+    ml_tzOffset:    'Timezone offset of the new\nlocation in hours, where west is\nnegative and east is positive',
+    ms_sensName:    'Preferred name for the new sensor',
+    ms_pixX:        'Pixel size in micrometers for the X-axis',
+    ms_pixY:        'Pixel size in micrometers for the Y-axis',
+    ms_resX:        'Resolution in pixels for the X-axis',
+    ms_resY:        'Resolution in pixels for the Y-axis',
+    ms_savedSens:   'List of the existing sensors',
+    mt_aperture:    'Aperture in millimeters of the new telescope',
+    mt_fl:          'Focal length in millimeters of the new telescope',
+    mt_multiplier:  'The power of the flattener, reducer, or barlow',
+    mt_saved:       'List of the existing telescopes',
+    mt_telName:     'Preferred name for the new telescope',
     sb_currentTgt:  'The currently selected target\nfor analysis operations',
     sb_dailyVis:    'Compute and view the visibility\nof the current target over\na specified time period',
     sb_fov:         'View a DSS image for the current\ntarget within the specified\nfield of view',
@@ -56,7 +93,8 @@ const TOOLTIPS = {
     ts_PIN:         'Add current target to the Pinned\nTargets list',
     ts_sendOpt:     'Use the results in the\nTarget Optimizer',
     ts_tgtName:     'Type designator or keywords to\nsearch for object',
-    ts_type:        'Include objects of the selected type(s)'
+    ts_type:        'Include objects of the selected type(s)',
+    xxxxxxx:        ''
 };
 
 
@@ -93,22 +131,33 @@ tooltipEl.style.cssText = `
 `;
 document.body.appendChild(tooltipEl);
 
+let tooltipTimer = null;
+let mouseX = 0;
+let mouseY = 0;
+
 document.addEventListener('mouseover', (e) => {
     const host = e.target.closest('[data-tooltip]');
     if (!host) return;
-    tooltipEl.textContent = host.getAttribute('data-tooltip');
-    tooltipEl.style.display = 'block';
+    tooltipTimer = setTimeout(() => {
+        tooltipEl.textContent = host.getAttribute('data-tooltip');
+        tooltipEl.style.left = (mouseX + 12) + 'px';
+        tooltipEl.style.top  = (mouseY + 12) + 'px';
+        tooltipEl.style.display = 'block';
+    }, 500);
 });
 
 document.addEventListener('mousemove', (e) => {
+    mouseX = e.clientX;
+    mouseY = e.clientY;
     if (tooltipEl.style.display === 'none') return;
-    tooltipEl.style.left = (e.clientX + 12) + 'px';
-    tooltipEl.style.top  = (e.clientY + 12) + 'px';
+    tooltipEl.style.left = (mouseX + 12) + 'px';
+    tooltipEl.style.top  = (mouseY + 12) + 'px';
 });
 
 document.addEventListener('mouseout', (e) => {
     const host = e.target.closest('[data-tooltip]');
     if (!host) return;
+    clearTimeout(tooltipTimer);
     tooltipEl.style.display = 'none';
 });
 

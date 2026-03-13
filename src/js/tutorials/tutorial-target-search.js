@@ -11,7 +11,7 @@
 
 const TUTORIAL_TARGET_SEARCH = {
     id: 'target-search',
-    title: 'Searching for Targets',
+    title: 'Target Search',
     version: 2,
     nextTutorial: 'target-filtering',
     steps: [
