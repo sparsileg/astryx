@@ -65,7 +65,13 @@ const APP_CONFIG = {
 
     // Feature flags
     FEATURES: {
-        OPTIMIZER_COMBINATIONS: true  // Issue #38 - combination mode for target optimizer
+        OPTIMIZER_COMBINATIONS: true,  // Issue #38 - combination mode for target optimizer
+        CLOUD_COVER: true              // Issue #81 - cloud cover strip on daily visibility timeline (experimental)
+    },
+
+    // External data APIs
+    APIS: {
+        OPEN_METEO: 'https://api.open-meteo.com/v1/forecast?latitude={LAT}&longitude={LON}&hourly=cloudcover_low,cloudcover_mid,cloudcover_high&timezone=auto&forecast_days=3'
     },
 
     // Preferred catalog order for deduplication (Issue #54)

@@ -43,6 +43,156 @@ const SkyglowView = {
     },
 
     /**
+     * Fetch cloud cover data from Open-Meteo for today or tomorrow only.
+     * Returns parsed object with low/mid/high arrays (24 values, noon-to-noon)
+     * or null if date is out of range or fetch fails.
+     * Issue #81
+     */
+    async fetchCloudData(latitude, longitude, dateStr) {
+        // Only fetch for today or tomorrow
+        const today = new Date();
+        const todayStr = TimeUtils.formatDateForInput(today);
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const tomorrowStr = TimeUtils.formatDateForInput(tomorrow);
+
+        if (dateStr !== todayStr && dateStr !== tomorrowStr) {
+            return null;
+        }
+
+        try {
+            const url = APP_CONFIG.APIS.OPEN_METEO
+                .replace('{LAT}', latitude)
+                .replace('{LON}', longitude);
+
+            const response = await fetch(url);
+            if (!response.ok) return null;
+
+            const json = await response.json();
+            const times = json.hourly.time;
+            const low   = json.hourly.cloudcover_low;
+            const mid   = json.hourly.cloudcover_mid;
+            const high  = json.hourly.cloudcover_high;
+
+            // Find the index of noon on the requested date
+            const noonStr = `${dateStr}T12:00`;
+            const noonIndex = times.indexOf(noonStr);
+            if (noonIndex === -1) return null;
+
+            // Extract 24 hours starting at noon (indices noonIndex to noonIndex+23)
+            // We need 25 values (0-24) for gradient stops — repeat last value for stop 24
+            const slice = (arr) => {
+                const s = arr.slice(noonIndex, noonIndex + 24);
+                if (s.length < 24) return null;
+                s.push(s[s.length - 1]); // repeat final value for stop 24
+                return s;
+            };
+
+            const lowSlice  = slice(low);
+            const midSlice  = slice(mid);
+            const highSlice = slice(high);
+
+            if (!lowSlice || !midSlice || !highSlice) return null;
+
+            return { low: lowSlice, mid: midSlice, high: highSlice };
+
+        } catch (e) {
+            console.warn('Cloud cover fetch failed:', e);
+            return null;
+        }
+    },
+
+    /**
+     * Convert 25 hourly cloud cover values (0-100) into a smooth CSS linear-gradient.
+     * Uses amber colour scheme: black (0%) → rgb(200,112,0) (100%).
+     * Stops are placed at equal intervals (0%, 4.167%, 8.333% ... 100%).
+     * Issue #81
+     */
+    assembleCloudGradient(values) {
+        const stops = values.map((v, i) => {
+            const pct = (i / 24) * 100;
+            const intensity = Math.round((v / 100) * 200);
+            const intensityMid = Math.round((v / 100) * 112);
+            return `rgb(${intensity},${intensityMid},0) ${pct.toFixed(3)}%`;
+        });
+        return `linear-gradient(to right, ${stops.join(', ')})`;
+    },
+
+    /**
+     * Render the cloud cover strip at the top of the timeline container.
+     * Three bands: high (top), mid (middle), low (bottom).
+     * If cloudData is null, renders an unavailable message instead.
+     * Issue #81
+     */
+    renderCloudStrip(container, cloudData) {
+        // Remove any existing strip
+        const existing = container.querySelector('.cloud-cover-strip, .cloud-unavailable');
+        if (existing) existing.remove();
+
+        if (!cloudData) {
+            const unavailable = document.createElement('div');
+            unavailable.className = 'cloud-unavailable';
+            unavailable.textContent = 'Cloud forecast unavailable for this date';
+            container.insertBefore(unavailable, container.firstChild);
+            return;
+        }
+
+        const strip = document.createElement('div');
+        strip.className = 'cloud-cover-strip';
+        strip.id = 'cloud-cover-strip';
+
+        // Determine which side has more clear space for the forecast label
+        // duskPct = left margin, (100 - dawnPct) = right margin
+        const duskPct = cloudData.duskPct !== undefined ? cloudData.duskPct : 50;
+        const dawnPct = cloudData.dawnPct !== undefined ? cloudData.dawnPct : 50;
+        const leftSpace  = duskPct;
+        const rightSpace = 100 - dawnPct;
+        const labelOnRight = rightSpace > leftSpace;
+
+        const bands = [
+            { label: 'H', values: cloudData.high },
+            { label: 'M', values: cloudData.mid  },
+            { label: 'L', values: cloudData.low  }
+        ];
+
+        bands.forEach((band, i) => {
+            // Gap between bands (not before first)
+            if (i > 0) {
+                const gap = document.createElement('div');
+                gap.className = 'cloud-band-gap';
+                strip.appendChild(gap);
+            }
+
+            const bandDiv = document.createElement('div');
+            bandDiv.className = 'cloud-band';
+            bandDiv.style.background = this.assembleCloudGradient(band.values);
+
+            const label = document.createElement('div');
+            label.className = 'cloud-band-label';
+            label.textContent = band.label;
+            bandDiv.appendChild(label);
+
+            // Add forecast description text to H band only
+            if (band.label === 'H') {
+                const desc = document.createElement('div');
+                desc.className = 'cloud-band-label cloud-band-desc';
+                desc.textContent = 'High, medium, and low cloud cover forecasts';
+                if (labelOnRight) {
+                    desc.style.left  = 'auto';
+                    desc.style.right = '4px';
+                } else {
+                    desc.style.left = '18px'; // offset past the H label
+                }
+                bandDiv.appendChild(desc);
+            }
+
+            strip.appendChild(bandDiv);
+        });
+
+        container.insertBefore(strip, container.firstChild);
+    },
+
+    /**
      * Attach event handlers
      */
     attachEventHandlers() {
@@ -443,6 +593,7 @@ const SkyglowView = {
         timelineDiv.style.height = this.TIMELINE_HEIGHT + 'px';
         timelineDiv.style.borderRadius = '8px';
         timelineDiv.style.margin = '0';
+        timelineDiv.style.marginTop = APP_CONFIG.FEATURES.CLOUD_COVER ? '40px' : '0';
         timelineDiv.style.border = '1px solid rgba(255, 255, 255, 0.2)';
         timelineDiv.style.background = '#666666'; // Default background
 
@@ -464,6 +615,23 @@ const SkyglowView = {
         // After creating the gradient and markers, add the altitude curve
         this.drawTargetAltitudeCurve(timelineDiv, timelineData, data);
         this.drawMinimumAltitudeLine(timelineDiv, data.minAltitude, data);
+
+        // Cloud cover strip — Issue #81
+        if (APP_CONFIG.FEATURES.CLOUD_COVER) {
+            const location = DataManager.getLocation(data.locationName);
+            if (location) {
+                const duskPct = timelineData.jdToTimelinePercent(timelineData.duskJD) ?? 50;
+                const dawnPct = timelineData.jdToTimelinePercent(timelineData.dawnJD) ?? 50;
+                this.fetchCloudData(location.latitude, location.longitude, data.date)
+                    .then(cloudData => {
+                        if (cloudData) {
+                            cloudData.duskPct = duskPct;
+                            cloudData.dawnPct = dawnPct;
+                        }
+                        this.renderCloudStrip(container, cloudData);
+                    });
+            }
+        }
     },
 
     /**

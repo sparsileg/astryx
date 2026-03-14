@@ -13,7 +13,7 @@
 const TUTORIAL_DAILY_VISIBILITY = {
     id: 'daily-visibility',
     title: 'Daily Visibility',
-    version: 1,
+    version: 2,
     nextTutorial: null,
     steps: [
 
@@ -137,8 +137,17 @@ const TUTORIAL_DAILY_VISIBILITY = {
             waitFor: 'next',
             highlight: true
         },
-
-        // --- Info cards ---
+        {
+            id: 'cloud-cover-strip',
+            type: 'callout',
+            title: 'Cloud Cover Forecast',
+            body: 'The three narrow bands at the top of the timeline show a cloud cover forecast for today and tomorrow, courtesy of <em>Open-Meteo</em>. The top band is high cloud, the middle is mid-level cloud, and the bottom is low cloud.<br><br>Each band uses an amber colour scale — black means clear skies, bright amber means fully overcast. The forecast is only available for today and tomorrow; other dates will show a unavailable message.',
+            target: '#cloud-cover-strip',
+            position: 'bottom',
+            width: '420px',
+            waitFor: 'next',
+            highlight: true
+        },
         {
             id: 'info-cards-intro',
             type: 'callout',
