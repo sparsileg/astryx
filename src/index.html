@@ -59,7 +59,7 @@
         <div class="sidebar-content">
           <ul class="nav-list">
             <li class="nav-item tooltip-host"
-                id="siderbar-target-selection" data-view="target-select" data-tooltip-key="sb_tgtSelect">Target Selection</li>
+                id="sidebar-target-selection" data-view="target-select" data-tooltip-key="sb_tgtSelect">Target Selection</li>
             <li class="nav-item tooltip-host"
                 id="sidebar-to-do-list" data-view="todo" data-tooltip-key="sb_todoList">To Do List</li>
             <li class="nav-item tooltip-host"
@@ -176,7 +176,7 @@
       <div class="visibility-view">
         <div style="display: flex; justify-content: center; align-items: center; gap: 2rem; margin-bottom: 1rem;">
           <h2 id="target-selection-source" style="margin: 0;">🌟 Target Selection</h2>
-          <div style="display: flex; gap: 1rem; align-items: center; font-size: 0.9rem;">
+          <div id="target-source-radio" style="display: flex; gap: 1rem; align-items: center; font-size: 0.9rem;">
             <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
               <input type="radio" name="target-filter-scope" value="all" checked>
               <span>All Targets</span>
@@ -192,7 +192,7 @@
         <div class="ts-two-col-grid">
 
           <!-- Target Selection Section -->
-          <div class="card card-no-margin">
+          <div id="target-search-panel" class="card card-no-margin">
             <div class="card-header">
               <h3>🎯 Target Search</h3>
             </div>
@@ -201,14 +201,12 @@
                 <label for="target-name" class="tooltip-host"
                        data-tooltip-key="ts_tgtName">Target Name (type to search targets):</label>
                 <div style="display: flex; gap: 10px; align-items: flex-start;">
-                  <div class="target-search-container" style="flex: 1;">
-                    <input type="text" id="target-name" class="full-width" placeholder="Search targets...">
-                    <div id="target-search-results"></div>
-                    <div id="target-search-results-count" style="font-size: 0.75rem; color: var(--text-secondary); padding: 0.25rem 0;"></div>
-                  </div>
+                  <input type="text" id="target-name" class="full-width" placeholder="Search targets...">
                   <button id="pin-target-btn" class="btn-secondary tooltip-host" style="white-space: nowrap;"
                           data-tooltip-key="ts_PIN">📌 Pin</button>
                 </div>
+                <div id="target-search-results"></div>
+                <div id="target-search-results-count" style="font-size: 0.75rem; color: var(--text-secondary); padding: 0.25rem 0;"></div>
               </div>
 
               <!-- Target Info Display -->
@@ -277,7 +275,7 @@
           </div>
 
           <!-- Target Filter Section -->
-          <div class="card card-no-margin">
+          <div id="target-filter-panel" class="card card-no-margin">
             <div class="card-header">
               <h3 id="filter-targets-label">🔍 Filter Targets</h3>
             </div>
@@ -379,7 +377,7 @@
           <div class="card card-no-margin">
             <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
               <h3 id="filter-results-label">📋 Filter Results</h3>
-              <div style="display: flex; flex-direction: column; gap: 0.35rem; align-items: flex-end;">
+              <div id="filter-results-options" style="display: flex; flex-direction: column; gap: 0.35rem; align-items: flex-end;">
                 <button id="create-imaging-program-btn" class="btn-primary btn-sm tooltip-host" data-tooltip-key="ts_createIP">
                   <div>Create Imaging Program</div>
                 </button>

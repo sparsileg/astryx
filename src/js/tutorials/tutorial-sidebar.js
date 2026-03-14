@@ -1,7 +1,7 @@
 /**
  * tutorial-sidebar.js
  * "The Sidebar" tutorial definition.
- * Covers: hamburger menu, location, theme, current target, and all nav items.
+ * Covers: system menu, location, theme, current target, and all nav items.
  *
  * Modal — use when there's no specific element to point at (introductions,
  * transitions, instructions to navigate somewhere)
@@ -32,7 +32,7 @@ const TUTORIAL_SIDEBAR = {
             target: '.sidebar',
             position: 'right',
             waitFor: 'next',
-            highlight: true
+            highlight: 'flash'
         },
         {
             id: 'header',
@@ -45,10 +45,10 @@ const TUTORIAL_SIDEBAR = {
             highlight: true
         },
         {
-            id: 'hamburger',
+            id: 'system',
             type: 'callout',
-            title: 'Hamburger Menu',
-            body: 'The hamburger menu (☰) provides access to settings, administrative operations, and information about Astryx. Click it now to see the options.',
+            title: 'System Menu',
+            body: 'The system menu (☰) provides access to settings, administrative operations, and information about Astryx. Click it now to see the options.',
             target: '#hamburger-menu-btn',
             position: 'left',
             width: '170px',
@@ -69,7 +69,7 @@ const TUTORIAL_SIDEBAR = {
             id: 'location',
             type: 'callout',
             title: 'Observer Location',
-            body: 'Select the location from which your imaging will take place. All visibility and observability calculations use this location. You can manage locations from Hamburger Menu → Admin Tools → Manage Observer Locations.<br><br>If you add a new location, the first time you select it here, the <em>Best Month</em> calculation will automagically execute.',
+            body: 'Select the location from which your imaging will take place. All visibility and observability calculations use this location. You can manage locations from the system menu → Admin Tools → Manage Observer Locations.<br><br>If you add a new location, the first time you select it here, the <em>Best Month</em> calculation will automagically execute.',
             target: '#sidebar-location-select',
             position: 'right',
             waitFor: 'next',
@@ -79,7 +79,7 @@ const TUTORIAL_SIDEBAR = {
             id: 'current-target',
             type: 'callout',
             title: 'Current Target',
-            body: 'Displays the currently selected target. Once the <strong>Current Target</strong> is set set, all analysis tools operate on the target. You set the <strong>Current Target</strong> by selecting a result from <strong>Target Search</strong>, <strong>Filter Targets</strong>, or the <strong>Pinned Targets</strong> list.',
+            body: 'Displays the currently selected target. Once the <strong>Current Target</strong> is set, all analysis tools operate on the target. You set the <strong>Current Target</strong> by selecting a result from <strong>Target Search</strong>, <strong>Filter Targets</strong>, or the <strong>Pinned Targets</strong> list.',
             target: '#sidebar-current-target',
             position: 'right',
             waitFor: 'next',
@@ -89,7 +89,7 @@ const TUTORIAL_SIDEBAR = {
             id: 'target-selection',
             type: 'callout',
             title: 'Target Selection',
-            body: 'Search and filter the target database of thousands of deep-sky objects. Pin targets for quick access and add them to your To Do list from the Detail panel.<br><br>Once you create a <strong>To Do List</strong>, you can select to use it for searches and filters instead of the entire target database.',
+            body: 'Search and filter the target database of thousands of deep-sky objects. Pin targets for quick access or add them to your To Do list from the Detail panel.<br><br>Once you create a <strong>To Do List</strong>, you can use it for searches and filters instead of the entire target database.',
             target: '#siderbar-target-selection',
             position: 'right',
             waitFor: 'next',
@@ -109,7 +109,7 @@ const TUTORIAL_SIDEBAR = {
             id: 'daily-visibility',
             type: 'callout',
             title: 'Daily Visibility',
-            body: 'The visibility chart analyzes the entire night based on a combination of sky darkness, target altitude, and moon proximity. The graphical view gives you an at-a-glance understanding of the best imaging windows.',
+            body: 'The visibility chart analyzes the entire night based on a combination of sky darkness, target altitude, and moon proximity. The graphical view gives you an immediate understanding of the best imaging windows.',
             target: '#sidebar-daily-visibility',
             position: 'right',
             waitFor: 'next',
@@ -129,7 +129,7 @@ const TUTORIAL_SIDEBAR = {
             id: 'viewfinder',
             type: 'callout',
             title: 'Viewfinder',
-            body: 'View a DSS sky survey image of the current target overlaid with your field of view based on the selected telescope and sensor. Rotation tools help you best frame your target.',
+            body: 'View a DSS sky survey image of the current target overlaid with your field of view based on the selected telescope and sensor. Rotation tools help you frame your target.',
             target: '#sidebar-viewfinder',
             position: 'right',
             waitFor: 'next',
@@ -139,7 +139,7 @@ const TUTORIAL_SIDEBAR = {
             id: 'target-optimizer',
             type: 'callout',
             title: 'Target Optimizer',
-            body: 'Based on your location and equipment, <strong>Target Optimizer</strong> generates a ranked set of individual targets and target combinations best suited for imaging on a specified night. You can use your <strong>To Do List</strong> as the source or also select the result of <strong>Filter Targets</strong>.<br><br>Use the <strong>Send to Optimzer</strong> button in the <strong>Filter Targets</strong> results to copy the results for use in the optimizer.',
+            body: 'Based on your location and equipment, <strong>Target Optimizer</strong> generates a ranked set of individual targets and target combinations best suited for imaging on a specified night. You can use your <strong>To Do List</strong> as the source or also select the result of <strong>Filter Targets</strong>.<br><br>Use the <strong>Send to Optimizer</strong> button in the <strong>Filter Targets</strong> results to copy the results for use in the optimizer.',
             target: '#sidebar-target-optimizer',
             position: 'right',
             waitFor: 'next',
@@ -149,7 +149,7 @@ const TUTORIAL_SIDEBAR = {
             id: 'sequence-planner',
             type: 'callout',
             title: 'Sequence Planner',
-            body: 'Using your <strong>Pinned Targets</strong>, the <strong>Sequence Planner</strong> generates an optimal imaging sequence for a specified night, including timing, duration, and ordering recommendations.<br><br>It takes into account overhead times associated with autofocusing, calibration, and meridian flips.',
+            body: 'Using your <strong>Pinned Targets</strong>, the <strong>Sequence Planner</strong> generates an optimal imaging sequence for a specified night, including timing, duration, and ordering recommendations.<br><br>It takes into account overhead times associated with autofocusing, calibration, and meridian flips, as well as target and moon positioning.',
             target: '#sidebar-sequence-planner',
             position: 'right',
             waitFor: 'next',

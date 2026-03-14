@@ -26,24 +26,25 @@ const TUTORIAL_TARGET_FILTERING = {
             highlight: false
         },
         {
-            id: 'open-search',
-            type: 'modal',
+            id: 'open-target-selection',
+            type: 'callout',
             title: 'Open Target Selection',
-            body: 'Click <strong>Target Selection</strong> in the left navigation panel if it is not already open. Click Next when you can see the <strong>Filter Targets</strong> panel.',
-            target: null,
-            position: 'center',
-            waitFor: 'next',
-            highlight: false
+            body: 'Click <strong>Target Selection</strong> in the left navigation panel to open the search view.',
+            target: '#sidebar-target-selection',
+            position: 'right',
+            waitFor: 'click',
+            highlight: true
         },
+
         {
             id: 'filter-targets-overview',
             type: 'callout',
             title: 'Filter Targets Overview',
             body: 'The filter panel groups controls by Catalog, Object Type, Visibility, Size, and Magnitude. You can set any combination and the results dynamically update each time you make a change. Click <strong>Next</strong> to advance.',
-            target: '#filter-targets-label',
+            target: '#target-filter-panel',
             position: 'left',
             waitFor: 'next',
-            highlight: false
+            highlight: true
         },
         {
             id: 'filter-catalog',
@@ -79,7 +80,7 @@ const TUTORIAL_TARGET_FILTERING = {
             id: 'filter-size',
             type: 'callout',
             title: 'Filter by Angular Size',
-            body: 'Use the size range to match targets to your field of view. Set a minimum size to avoid objects that are too small for your focal length, or a maximum to avoid objects that overfill the frame.',
+            body: 'Use the size range to match targets to your field of view. Set a minimum size to avoid objects that are too small for your focal length.',
             target: '#target-filter-size',
             position: 'left',
             waitFor: 'next',
@@ -130,7 +131,7 @@ const TUTORIAL_TARGET_FILTERING = {
             type: 'callout',
             title: 'Filter Results Options',
             body: 'The <strong>Filter Results</strong> panel also has the <em>Create Imaging Program</em> and <em>Send to Optimizer</em> buttons. Those will be explained in later tutorials. Hit <strong>Next</strong> to advance.',
-            target: 'create-imaging-program-btn',
+            target: '#filter-results-options',
             position: 'left',
             waitFor: 'next',
             highlight: true
@@ -139,9 +140,9 @@ const TUTORIAL_TARGET_FILTERING = {
             id: 'target-source',
             type: 'callout',
             title: 'Select Target Source',
-            body: 'You can choose between your To Do list and the entire target database to filter.',
-            target: 'target-selection-source',
-            position: 'bottom',
+            body: 'You can filter the entire target database or restrict filtering to your To Do list.',
+            target: '#target-source-radio',
+            position: 'left',
             waitFor: 'next',
             highlight: true
         },

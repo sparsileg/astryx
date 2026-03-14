@@ -19,21 +19,21 @@ const TUTORIAL_TARGET_SEARCH = {
             id: 'welcome',
             type: 'modal',
             title: 'Searching for Targets',
-            body: 'This tutorial walks you through finding deep-sky objects, reading the results, pinning favourites, and adding targets to your To Do list. It takes about 5 minutes.',
+            body: 'This tutorial walks you through finding deep-sky objects, reading the results, pinning favorites, and adding targets to your To Do list. It takes about 5 minutes.',
             target: null,
             position: 'center',
             waitFor: 'next',
             highlight: false
         },
         {
-            id: 'open-search',
-            type: 'modal',
+            id: 'open-target-selection',
+            type: 'callout',
             title: 'Open Target Selection',
-            body: 'Click <strong>Target Selection</strong> in the left navigation panel to open the search view. Click Next when it is open.',
-            target: null,
-            position: 'center',
-            waitFor: 'next',
-            highlight: false
+            body: 'Click <strong>Target Selection</strong> in the left navigation panel to open the search view.',
+            target: '#sidebar-target-selection',
+            position: 'right',
+            waitFor: 'click',
+            highlight: true
         },
         {
             id: 'search-bar',
@@ -80,9 +80,9 @@ const TUTORIAL_TARGET_SEARCH = {
             type: 'callout',
             title: 'Reading the Detail Panel',
             body: 'The Detail panel shows a variety of information about the object including various designations, location, size and magnitude, and visibility indicators for your current location.',
-            width: '450px',
             target: '#modal-close',
             position: 'left',
+            width: '450px',
             waitFor: 'next',
             highlight: false
         },
@@ -100,11 +100,11 @@ const TUTORIAL_TARGET_SEARCH = {
             id: 'todo-confirmed',
             type: 'callout',
             title: 'Added to To Do',
-            body: 'The target is now on your To Do list. Note that the button text has changed to remove it from the list. Access the list any time from <strong>To Do List</strong> in the left navigation panel.<br><br>Close the Detail view and click Next to continue.',
-            target: null,
-            position: 'right',
-            waitFor: 'next',
-            highlight: false
+            body: 'The target is now on your To Do list. Note that the button text has changed so you can remove it from the list later. Access the list any time from <strong>To Do List</strong> in the left navigation panel.<br><br>Click the Close button to continue.',
+            target: '#modal-close',
+            position: 'left',
+            waitFor: 'click',
+            highlight: true
         },
         {
             id: 'pin-intro',
@@ -131,18 +131,18 @@ const TUTORIAL_TARGET_SEARCH = {
             type: 'callout',
             title: 'Target Pinned',
             body: 'The target is now in your <strong>Pinned Targets</strong> list.',
-            target: null,
-            position: 'right',
+            target: '#pinned-targets-display',
+            position: 'top',
             waitFor: 'next',
-            highlight: false
+            highlight: 'flash'
         },
         {
             id: 'target-source',
             type: 'callout',
             title: 'Select Target Source',
-            body: 'You can choose between your To Do list and the entire target database to filter.',
-            target: 'target-selection-source',
-            position: 'bottom',
+            body: 'You can use the entire target database or restrict searches to your To Do list.',
+            target: '#target-source-radio',
+            position: 'left',
             waitFor: 'next',
             highlight: true
         },

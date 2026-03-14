@@ -160,13 +160,18 @@ const TutorialEngine = {
         if (step.highlight && targetEl) {
             const rect = targetEl.getBoundingClientRect();
             const highlight = document.createElement('div');
-            highlight.className = 'tutorial-highlight';
+            if (step.highlight === 'flash') {
+                highlight.className = 'tutorial-highlight-flash';
+                highlight.addEventListener('animationend', () => highlight.remove(), { once: true });
+            } else {
+                highlight.className = 'tutorial-highlight';
+                this._highlightEl = highlight;
+            }
             highlight.style.top    = `${rect.top - 4}px`;
             highlight.style.left   = `${rect.left - 4}px`;
             highlight.style.width  = `${rect.width + 8}px`;
             highlight.style.height = `${rect.height + 8}px`;
             document.body.appendChild(highlight);
-            this._highlightEl = highlight;
         }
 
         // Panel
