@@ -13,6 +13,7 @@
 const TUTORIAL_REGISTRY = {
     version: '1.0',
     tutorials: {
+        'daily-visibility': TUTORIAL_DAILY_VISIBILITY,
         'getting-started':  TUTORIAL_GETTING_STARTED,
         'settings':         TUTORIAL_SETTINGS,
         'admin-tools':      TUTORIAL_ADMIN_TOOLS,

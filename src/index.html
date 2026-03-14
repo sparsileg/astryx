@@ -493,14 +493,14 @@
             <div class="legend-item">
               <div class="legend-color legend-bright"></div><span>Bright</span>
             </div>
-            <div class="legend-item">
+            <div class="legend-item" id="dv-legend-tgt-altitude">
               <svg width="40" height="20" class="legend-svg">
                 <line x1="0" y1="10" x2="40" y2="10" stroke="#000000" stroke-width="5" />
                 <line x1="0" y1="10" x2="40" y2="10" stroke="#FFFFFF" stroke-width="2" />
               </svg>
               <span>Target altitude</span>
             </div>
-            <div class="legend-item">
+            <div class="legend-item" id="dv-legend-min-altitude">
               <svg width="40" height="20" class="legend-svg">
                 <line x1="0" y1="10" x2="40" y2="10" stroke="#000000" stroke-width="3" />
                 <line x1="0" y1="10" x2="40" y2="10" stroke="rgba(255, 255, 0, 0.5)" stroke-width="2" stroke-dasharray="5,5" />
@@ -512,15 +512,12 @@
           <!-- Three Information Cards (matching original) -->
           <div id="info-cards-container" class="info-cards-grid" style="display: none;">
             <!-- Moon Details Card -->
-            <div class="info-card">
+            <div class="info-card" id="dv-moon-details">
               <h3>Moon Details</h3>
               <div class="info-card-content">
-                <div class="moon-phase-display">
-                  <div>
-                    <div id="moon-phase-name" class="info-value"></div>
-                    <div id="moon-illumination" class="info-subtext"></div>
-                  </div>
-                  <div id="moon-phase-emoji" class="moon-emoji"></div>
+                <div class="info-section">
+                  <div id="moon-phase-name" class="info-value"></div>
+                  <div id="moon-illumination" class="info-subtext"></div>
                 </div>
                 <div class="info-section">
                   <div class="info-label">Rise-Set Times</div>
@@ -530,25 +527,20 @@
             </div>
 
             <!-- Target Details Card -->
-            <div class="info-card">
+            <div class="info-card" id="dv-target-details">
               <h3>Target Details</h3>
               <div class="info-card-content">
-                <div class="target-details-layout">
-                  <div class="target-details-content">
-                    <div class="info-section">
-                      <div id="target-altitude" class="info-subtext"></div>
-                      <div id="target-rise-set" class="info-value"></div>
-                      <div id="target-blocked" class="info-value"></div>
-                      <div id="target-peak-altitude" class="info-value"></div>
-                    </div>
-                  </div>
-                  <div class="target-icon-display">✨</div>
+                <div class="info-section">
+                  <div id="target-altitude" class="info-subtext"></div>
+                  <div id="target-rise-set" class="info-value"></div>
+                  <div id="target-blocked" class="info-value"></div>
+                  <div id="target-peak-altitude" class="info-value"></div>
                 </div>
               </div>
             </div>
 
             <!-- Target-Moon Separation Card -->
-            <div class="info-card">
+            <div class="info-card" id="dv-moon-separation">
               <h3>Target-Moon Separation</h3>
               <div class="info-card-content">
                 <div class="info-section">
@@ -2273,6 +2265,7 @@
     <script src="js/utilities-view.js"></script>
     <script src="js/optimizer-calculations.js"></script>
     <script src="js/optimizer-view.js"></script>
+    <script src="js/tutorials/tutorial-daily-visibility.js"></script>
     <script src="js/tutorials/tutorial-getting-started.js"></script>
     <script src="js/tutorials/tutorial-settings.js"></script>
     <script src="js/tutorials/tutorial-sidebar.js"></script>
