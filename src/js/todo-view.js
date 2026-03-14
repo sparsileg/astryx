@@ -824,6 +824,15 @@ const ToDoView = {
                 if (target) {
                     // Save as last selected target (for when user navigates to Target Selection)
                     localStorage.setItem('lastSelectedTarget', JSON.stringify(target));
+                    // Update current target for all analysis tools — Issue #79
+                    if (typeof VisibilityTargets !== 'undefined') {
+                        VisibilityTargets.currentTarget = target;
+                    }
+                    if (typeof VisibilityCalculations !== 'undefined') {
+                        VisibilityCalculations.currentTarget = target;
+                    }
+                    // Update sidebar current target display — Issue #79
+                    UIManager.updateSidebarCurrentTarget(target.object);
                     UIManager.openObjectDetailModal(target);
                 }
             });
