@@ -442,7 +442,7 @@ const SkyglowView = {
         timelineDiv.style.position = 'relative';
         timelineDiv.style.height = this.TIMELINE_HEIGHT + 'px';
         timelineDiv.style.borderRadius = '8px';
-        timelineDiv.style.margin = '10px 0 20px 0';
+        timelineDiv.style.margin = '0';
         timelineDiv.style.border = '1px solid rgba(255, 255, 255, 0.2)';
         timelineDiv.style.background = '#666666'; // Default background
 
@@ -548,11 +548,11 @@ const SkyglowView = {
             marker.className = 'time-marker';
             marker.style.position = 'absolute';
             marker.style.top = '0px';
-            marker.style.width = '7px';
+            marker.style.width = '5px';
             marker.style.height = this.TIMELINE_HEIGHT + 'px';
             marker.style.background = 'linear-gradient(to bottom, transparent 90%, rgba(255, 193, 7, 1) 90%)';
             marker.style.left = position + '%';
-            marker.style.transform = 'translateX(-1px)';
+            marker.style.transform = 'translateX(-50%)';
             marker.style.zIndex = '10';
             marker.setAttribute('data-icon', icon);
             marker.setAttribute('data-time', timeString);
@@ -576,7 +576,7 @@ const SkyglowView = {
         labelsContainer.innerHTML = '';
         labelsContainer.style.display = 'flex';
         labelsContainer.style.justifyContent = 'space-between';
-        labelsContainer.style.margin = '10px 0 15px 0';
+        labelsContainer.style.margin = '17px 0 10px 0';
         labelsContainer.style.fontSize = '12px';
         labelsContainer.style.color = '#b0b0b0';
         labelsContainer.style.position = 'relative';
