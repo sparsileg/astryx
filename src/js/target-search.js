@@ -158,18 +158,15 @@ const VisibilityTargets = {
             const resultDiv = document.createElement('div');
             resultDiv.className = 'target-result';
 
-            let commonNameDisplay = '—';
-            if (target.common) {
-                commonNameDisplay = target.common.split(',').map(n => n.trim()).join(', ');
-            }
-            const otherInfo = target.other || '—';
-            const typeConst = `${target.type || 'Unknown type'} in ${target.constellation || 'Unknown'}`;
+            const typeDisplay = target.type ? (OBJECT_TYPES[target.type] || target.type) : 'Unknown type';
+            const constellation = target.constellation ? (CONSTELLATIONS[target.constellation] || target.constellation) : '';
 
             resultDiv.innerHTML = `
-                <div class="target-name">${target.object}</div>
-                <div class="target-coords">${commonNameDisplay}</div>
-                <div class="target-details">${otherInfo}</div>
-                <div class="target-details">${typeConst}</div>
+                <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                    <div class="target-name">${target.object}</div>
+                    <div style="font-size: 0.85rem; color: var(--text-secondary);">${typeDisplay}</div>
+                </div>
+                <div style="font-size: 0.85rem; color: var(--text-secondary);">${constellation}</div>
             `;
 
             resultDiv.addEventListener('click', () => this.select(target));

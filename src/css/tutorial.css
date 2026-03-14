@@ -127,6 +127,21 @@
     pointer-events: none;
 }
 
+@keyframes tutorial-flash {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0; }
+}
+
+.tutorial-highlight-flash {
+    position: fixed;
+    z-index: 9050;
+    border-radius: 4px;
+    box-shadow: 0 0 0 4px var(--tutorial-accent);
+    pointer-events: none;
+    animation: tutorial-flash 0.5s ease-in-out 4;
+    animation-fill-mode: forwards;
+}
+
 /* ============================================================
    Buttons — reuse app conventions
    ============================================================ */

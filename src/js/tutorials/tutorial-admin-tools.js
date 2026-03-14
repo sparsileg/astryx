@@ -28,11 +28,11 @@ const TUTORIAL_ADMIN_TOOLS = {
         },
         {
             id: 'admin-submenu',
-            type: 'modal',
+            type: 'callout',
             title: 'Admin Tools Menu',
-            body: 'The Admin Tools submenu contains six utilities for managing your data and equipment. We will walk through each one.',
-            target: null,
-            position: 'center',
+            body: 'Open the <strong>Admin Tools</strong> submenu from the system menu. The <strong>Admin Tools</strong> submenu contains six utilities for managing your data and equipment. We will walk through each one.',
+            target: '#admin-tools-submenu',
+            position: 'right',
             waitFor: 'next',
             highlight: false
         },
@@ -139,7 +139,7 @@ const TUTORIAL_ADMIN_TOOLS = {
             target: '#telescope-list',
             position: 'top',
             waitFor: 'next',
-            highlight: true
+            highlight: 'flash'
         },
         {
             id: 'telescopes-close',
@@ -230,7 +230,7 @@ const TUTORIAL_ADMIN_TOOLS = {
             target: '#location-list',
             position: 'top',
             waitFor: 'next',
-            highlight: true
+            highlight: 'flash'
         },
         {
             id: 'location-close',
@@ -257,7 +257,7 @@ const TUTORIAL_ADMIN_TOOLS = {
             id: 'admin-submenu-2',
             type: 'modal',
             title: 'Database Operations',
-            body: 'Open the hamburger menu (☰) and expand <strong>Admin Tools</strong> again. The bottom three items — <strong>Clear All Targets</strong>, <strong>Check for Target Updates</strong>, and <strong>Merge New Targets</strong> — manage the target database.',
+            body: 'Open the system menu (☰) and expand <strong>Admin Tools</strong> again. The bottom three items — <strong>Clear All Targets</strong>, <strong>Check for Target Updates</strong>, and <strong>Merge New Targets</strong> — manage the target database.',
             target: null,
             position: 'center',
             waitFor: 'next',
@@ -267,7 +267,7 @@ const TUTORIAL_ADMIN_TOOLS = {
             id: 'clear-all-targets',
             type: 'modal',
             title: 'Clear All Targets',
-            body: '<strong>Clear All Targets</strong> permanently removes every target from the database. Use this only when performing a full database replacement. You will be prompted to confirm before any data is deleted.<br><br>Before using this operation, we strongly recommend that you do a target database backup using the <strong>Backup</strong> command located in the <strong>Admin Tools</strong> menu.',
+            body: '<strong>Clear All Targets</strong> permanently removes every target from the database. Use this only when performing a full database replacement. You will be prompted to confirm before any data is deleted.<br><br>Before using this operation, we strongly recommend that you do a target database backup using the <strong>Backup</strong> command located in the system menu.',
             target: null,
             position: 'center',
             waitFor: 'next',
@@ -287,7 +287,7 @@ const TUTORIAL_ADMIN_TOOLS = {
             id: 'import-targets',
             type: 'modal',
             title: 'Import Target Database',
-            body: 'This operation is intended to be used when using Astryx in local mode. <strong>Import Target Database</strong> reads an Astryx CSV file and adds new targets without removing your existing data. Use this to update to a newer database while preserving your pinned targets, to-do list, and imaging logs.',
+            body: 'This operation is intended to be used when using Astryx in local mode - it will not work when running from <em>astryx.tools</em>. <strong>Import Target Database</strong> reads an Astryx CSV file and adds new targets without removing your existing data. Use this to update to a newer database while preserving your pinned targets, to-do list, and imaging logs.',
             target: null,
             position: 'center',
             waitFor: 'next',

@@ -26,13 +26,14 @@ const TUTORIAL_SETTINGS = {
         },
         {
             id: 'open-settings',
-            type: 'modal',
+            type: 'callout',
             title: 'Open Settings',
-            body: 'Open the hamburger menu (☰ top right) and click <strong>Settings</strong>. Click Next when the Settings panel is open.',
-            target: null,
-            position: 'center',
+            body: 'Open the system menu (☰) in the top right of the sidebar header and click <strong>Settings</strong>. Click Next when the Settings panel is open.',
+            target: '#hamburger-menu-btn',
+            position: 'left',
+            width: '175px',
             waitFor: 'next',
-            highlight: false
+            highlight: true
         },
         {
             id: 'dst-mode',
