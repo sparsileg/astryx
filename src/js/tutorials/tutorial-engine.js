@@ -121,7 +121,7 @@ const TutorialEngine = {
 
         const margin = 16;
         const pw = panel.offsetWidth;
-        const ph = panel.offsetHeight;
+        const ph = Math.min(panel.offsetHeight, window.innerHeight - margin * 2);
 
         switch (position) {
         case 'top':
@@ -130,7 +130,7 @@ const TutorialEngine = {
             panel.style.transform = 'translateX(-50%)';
             break;
         case 'bottom':
-            panel.style.top = `${window.innerHeight - ph - margin}px`;
+            panel.style.top = `${Math.max(margin, window.innerHeight - ph - margin)}px`;
             panel.style.left = '50%';
             panel.style.transform = 'translateX(-50%)';
             break;
@@ -275,7 +275,7 @@ const TutorialEngine = {
         }
 
         // Clamp to viewport
-        const margin = 8;
+        const margin = 16;
         top  = Math.max(margin, Math.min(top,  window.innerHeight - ph - margin));
         left = Math.max(margin, Math.min(left, window.innerWidth  - pw - margin));
 

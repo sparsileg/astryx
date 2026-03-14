@@ -200,7 +200,8 @@ const SkyglowView = {
         document.getElementById('moon-phase-name').textContent = moonPhase.phaseName;
         document.getElementById('moon-illumination').textContent =
             `${moonPhase.illumination.toFixed(1)}% illuminated`;
-        document.getElementById('moon-phase-emoji').textContent = moonPhase.phaseEmoji;
+        const moonCard = document.getElementById('dv-moon-details');
+        if (moonCard) moonCard.dataset.emoji = moonPhase.phaseEmoji;
 
         // Moon rise/set times
         let riseSetHTML = '';

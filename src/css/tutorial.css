@@ -29,6 +29,8 @@
     border: 1px solid var(--tutorial-accent);
     border-radius: 8px;
     box-shadow: 0 12px 48px rgba(0, 0, 0, 0.8), 0 0 0 1px var(--tutorial-accent);
+    max-height: calc(100vh - 32px);
+    overflow-y: auto;
 }
 
 .tutorial-modal-header {
@@ -84,6 +86,8 @@
     width: 300px;
     max-width: 50vw;
     pointer-events: all;
+    max-height: calc(100vh - 32px);
+    overflow-y: auto;
 }
 
 .tutorial-callout-header {
