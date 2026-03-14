@@ -17,6 +17,7 @@ const TUTORIAL_REGISTRY = {
         'settings':         TUTORIAL_SETTINGS,
         'admin-tools':      TUTORIAL_ADMIN_TOOLS,
         'sidebar':          TUTORIAL_SIDEBAR,
+        'todo':             TUTORIAL_TODO,
         'target-search':    TUTORIAL_TARGET_SEARCH,
         'target-filtering': TUTORIAL_TARGET_FILTERING
     }

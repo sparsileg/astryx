@@ -13,7 +13,7 @@ const TUTORIAL_TARGET_FILTERING = {
     id: 'target-filtering',
     title: 'Filter Targets',
     version: 2,
-    nextTutorial: null,
+    nextTutorial: 'tutorial-todo',
     steps: [
         {
             id: 'welcome',
