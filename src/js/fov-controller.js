@@ -126,9 +126,10 @@ const FOVView = {
         });
 
         // Refresh event for when telescopes are added/deleted
-        document.addEventListener('telescopes-updated', () => {
-            this.populateTelescopeDropdown();
-        });
+        if (!this._telescopesHandler) {
+            this._telescopesHandler = () => this.populateTelescopeDropdown();
+            document.addEventListener('telescopes-updated', this._telescopesHandler);
+        }
     },
 
     /**
@@ -149,9 +150,10 @@ const FOVView = {
         });
 
         // Refresh event for when sensors are added/deleted
-        document.addEventListener('sensors-updated', () => {
-            this.populateSensorDropdown();
-        });
+        if (!this._sensorsHandler) {
+            this._sensorsHandler = () => this.populateSensorDropdown();
+            document.addEventListener('sensors-updated', this._sensorsHandler);
+        }
     },
 
     /**
@@ -1048,7 +1050,7 @@ const FOVView = {
         this.dssLockedSize = null;
     },
 
-    /**
+/**
      * Clear results and canvas
      */
     clearResults() {
@@ -1056,7 +1058,20 @@ const FOVView = {
         if (resultsDiv) {
             resultsDiv.innerHTML = '<p style="color: var(--text-secondary);">Select telescope and sensor to calculate field of view.</p>';
         }
-
         FOVCanvas.clear();
+    },
+
+    /**
+     * Cleanup when view is destroyed
+     */
+    destroy() {
+        if (this._telescopesHandler) {
+            document.removeEventListener('telescopes-updated', this._telescopesHandler);
+            this._telescopesHandler = null;
+        }
+        if (this._sensorsHandler) {
+            document.removeEventListener('sensors-updated', this._sensorsHandler);
+            this._sensorsHandler = null;
+        }
     }
 };

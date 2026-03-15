@@ -36,9 +36,10 @@ const ToDoView = {
         this.renderToDoList();
 
         // Listen for updates
-        document.addEventListener('todo-list-updated', () => {
-            this.renderToDoList();
-        });
+        if (!this._todoUpdatedHandler) {
+            this._todoUpdatedHandler = () => this.renderToDoList();
+            document.addEventListener('todo-list-updated', this._todoUpdatedHandler);
+        }
     },
 
     /**
@@ -852,6 +853,9 @@ const ToDoView = {
      * Cleanup when view is destroyed
      */
     destroy() {
-        // Remove event listeners if needed
+        if (this._todoUpdatedHandler) {
+            document.removeEventListener('todo-list-updated', this._todoUpdatedHandler);
+            this._todoUpdatedHandler = null;
+        }
     }
 };

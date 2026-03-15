@@ -516,11 +516,14 @@ const TargetFilter = {
         }
 
         // Close dropdowns when clicking outside
-        document.addEventListener('click', () => {
-            document.querySelectorAll('.target-filter-dropdown').forEach(dd => {
-                dd.classList.remove('open');
-            });
-        });
+        if (!this._documentClickHandler) {
+            this._documentClickHandler = () => {
+                document.querySelectorAll('.target-filter-dropdown').forEach(dd => {
+                    dd.classList.remove('open');
+                });
+            };
+            document.addEventListener('click', this._documentClickHandler);
+        }
 
         // Catalog checkbox changes
         const catalogMenu = document.getElementById('target-filter-catalog-menu');
@@ -986,6 +989,15 @@ const TargetFilter = {
         this.selectAllTypes();
 
         UIManager.showToast('Filters reset', 'success');
-    }
+    },
 
+/**
+     * Cleanup UI listeners — call when view is destroyed
+     */
+    destroyUI() {
+        if (this._documentClickHandler) {
+            document.removeEventListener('click', this._documentClickHandler);
+            this._documentClickHandler = null;
+        }
+    }
 };

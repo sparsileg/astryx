@@ -60,5 +60,6 @@ const TargetSelectionView = {
      */
     destroy() {
         document.removeEventListener('targets-updated', VisibilityTargets.initializeSearch);
+        TargetFilter.destroyUI();
     }
 };
