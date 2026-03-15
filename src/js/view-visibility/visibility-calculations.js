@@ -1067,14 +1067,7 @@ const VisibilityCalculations = {
 
         // Append SVG to container
         container.innerHTML = '';
-        svg.style.transition = 'opacity 0.15s ease, transform 0.15s ease';
-        svg.style.opacity = '0';
-        svg.style.transform = 'scaleY(0.98)';
         container.appendChild(svg);
-        requestAnimationFrame(() => {
-            svg.style.opacity = '1';
-            svg.style.transform = 'scaleY(1)';
-        });
 
         // Render legend below the graph in the legend container
         this.renderLegend(inputs, altitudeData);
