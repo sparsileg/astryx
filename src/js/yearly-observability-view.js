@@ -4,6 +4,8 @@
  */
 
 const YearlyObservabilityView = {
+    _resizeObserver: null,
+
     /**
      * Render the yearly observability view
      */
@@ -51,6 +53,38 @@ const YearlyObservabilityView = {
                 }
                 VisibilityCalculations.calculateYearly();
             }, 100);
+        }
+
+// Re-render graph on resize without recalculating — Issue #87
+        const graphContainer = container.querySelector('#yearly-observability-graph');
+        if (graphContainer && typeof ResizeObserver !== 'undefined') {
+            if (this._resizeObserver) {
+                this._resizeObserver.disconnect();
+                this._resizeObserver = null;
+            }
+            let resizeTimer = null;
+            this._resizeObserver = new ResizeObserver(() => {
+                clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(() => {
+                    const cached = window.lastYearlyObservabilityGraphData;
+                    if (cached) {
+                        VisibilityCalculations.renderYearlyObservabilityGraph(
+                            cached.altitudeData, cached.inputs
+                        );
+                    }
+                }, 200);
+            });
+            this._resizeObserver.observe(graphContainer);
+        }
+    },
+
+    /**
+     * Cleanup when view is destroyed
+     */
+    destroy() {
+        if (this._resizeObserver) {
+            this._resizeObserver.disconnect();
+            this._resizeObserver = null;
         }
     }
 };

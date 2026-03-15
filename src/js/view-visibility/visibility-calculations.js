@@ -786,7 +786,9 @@ const VisibilityCalculations = {
         const textSecondary = computedStyle.getPropertyValue('--text-secondary').trim();
         const borderColor = computedStyle.getPropertyValue('--border-color').trim();
 
-        const width = 1100;
+        // Use actual container width for responsive rendering — Issue #87
+        const containerWidth = container.clientWidth || 1100;
+        const width = Math.max(400, containerWidth - 32); // 32 = container padding (1rem each side)
         const height = 310;
         const padding = { top: 20, right: 20, bottom: 40, left: 20 };
         const graphWidth = width - padding.left - padding.right;
@@ -794,9 +796,8 @@ const VisibilityCalculations = {
 
         // Create SVG
         const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        svg.setAttribute('width', '100%');
+        svg.setAttribute('width', width);
         svg.setAttribute('height', height);
-        svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
         svg.style.display = 'block';
 
         // Background
@@ -837,13 +838,17 @@ const VisibilityCalculations = {
             gridLine.setAttribute('stroke-width', '1');
             graphGroup.appendChild(gridLine);
 
+            // Scale font size with width — Issue #87
+            const fontSize = Math.max(12, Math.round(width / 60));
+            const yearFontSize = Math.max(13, Math.round(width / 55));
+
             // Month label at bottom of graph, aligned with grid line
             const monthLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
             monthLabel.setAttribute('x', padding.left + x);
-            monthLabel.setAttribute('y', height - 15);
+            monthLabel.setAttribute('y', height - 16);
             monthLabel.setAttribute('text-anchor', 'middle');
             monthLabel.setAttribute('fill', textSecondary);
-            monthLabel.setAttribute('font-size', '18');
+            monthLabel.setAttribute('font-size', fontSize);
             monthLabel.textContent = months[monthIndex];
             svg.appendChild(monthLabel);
 
@@ -851,10 +856,10 @@ const VisibilityCalculations = {
             if (i === 0 || monthIndex === 0) {
                 const yearLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
                 yearLabel.setAttribute('x', padding.left + x);
-                yearLabel.setAttribute('y', height + 10);
+                yearLabel.setAttribute('y', height - 2);
                 yearLabel.setAttribute('text-anchor', 'middle');
                 yearLabel.setAttribute('fill', textColor);
-                yearLabel.setAttribute('font-size', '20');
+                yearLabel.setAttribute('font-size', yearFontSize);
                 yearLabel.setAttribute('font-weight', '500');
                 yearLabel.textContent = currentYear;
                 svg.appendChild(yearLabel);
@@ -899,10 +904,17 @@ const VisibilityCalculations = {
             altitudeData.data.forEach((point) => {
                 const stop = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
                 const position = (point.dayIndex / 365) * 100;
-                // Convert score (0-1) to grayscale (0-255) where higher score = darker (better)
-                const grayValue = Math.round(255 * (1 - point.observabilityScore));
+                // Force white when target is below minimum altitude — Issue #88
+                let stopColor;
+                if (point.targetAltitude === null || point.targetAltitude < inputs.minAltitude) {
+                    stopColor = 'rgb(255,255,255)';
+                } else {
+                    // Convert score (0-1) to grayscale (0-255) where higher score = darker (better)
+                    const grayValue = Math.round(255 * (1 - point.observabilityScore));
+                    stopColor = `rgb(${grayValue},${grayValue},${grayValue})`;
+                }
                 stop.setAttribute('offset', `${position}%`);
-                stop.setAttribute('stop-color', `rgb(${grayValue}, ${grayValue}, ${grayValue})`);
+                stop.setAttribute('stop-color', stopColor);
                 linearGradient.appendChild(stop);
             });
 
@@ -923,13 +935,25 @@ const VisibilityCalculations = {
         // Draw minimum altitude line if requested (after gradient so it's visible)
         if (inputs.showMinAltitude) {
             const minAltY = graphHeight - (inputs.minAltitude / 90) * graphHeight;
+
+            // Black outline — solid, no dash — Issue #87
+            const minAltOutline = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            minAltOutline.setAttribute('x1', 0);
+            minAltOutline.setAttribute('y1', minAltY);
+            minAltOutline.setAttribute('x2', graphWidth);
+            minAltOutline.setAttribute('y2', minAltY);
+            minAltOutline.setAttribute('stroke', '#000000');
+            minAltOutline.setAttribute('stroke-width', '5');
+            graphGroup.appendChild(minAltOutline);
+
+            // Yellow dashed line on top — matches Daily Visibility style — Issue #87
             const minAltLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
             minAltLine.setAttribute('x1', 0);
             minAltLine.setAttribute('y1', minAltY);
             minAltLine.setAttribute('x2', graphWidth);
             minAltLine.setAttribute('y2', minAltY);
-            minAltLine.setAttribute('stroke', '#ef5350');
-            minAltLine.setAttribute('stroke-width', '2');
+            minAltLine.setAttribute('stroke', 'rgba(255,255,0,0.5)');
+            minAltLine.setAttribute('stroke-width', '3');
             minAltLine.setAttribute('stroke-dasharray', '5,5');
             graphGroup.appendChild(minAltLine);
         }
@@ -961,8 +985,8 @@ const VisibilityCalculations = {
 
                 const moonCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
                 moonCircle.setAttribute('cx', x);
-                moonCircle.setAttribute('cy', 10); // 10px from top
-                moonCircle.setAttribute('r', 4); // 4px radius
+                moonCircle.setAttribute('cy', 10); // delta-y from top in pixels
+                moonCircle.setAttribute('r', 7);   // radius in pixels
                 moonCircle.setAttribute('fill', '#ffd700'); // Gold/yellow color
                 moonCircle.setAttribute('stroke', '#000000');
                 moonCircle.setAttribute('stroke-width', '0.5');
@@ -1004,19 +1028,19 @@ const VisibilityCalculations = {
                     return `${i === 0 ? 'M' : 'L'} ${point.x} ${point.y}`;
                 }).join(' ');
 
-                // Black outline for target
+                // Black outline for target — Issue #87
                 const targetOutline = document.createElementNS('http://www.w3.org/2000/svg', 'path');
                 targetOutline.setAttribute('d', targetPath);
                 targetOutline.setAttribute('fill', 'none');
                 targetOutline.setAttribute('stroke', '#000000');
-                targetOutline.setAttribute('stroke-width', '3');
+                targetOutline.setAttribute('stroke-width', '5');
                 graphGroup.appendChild(targetOutline);
 
-                // Orange/coral line on top
+                // White line on top — matches Daily Visibility style — Issue #87
                 const targetLine = document.createElementNS('http://www.w3.org/2000/svg', 'path');
                 targetLine.setAttribute('d', targetPath);
                 targetLine.setAttribute('fill', 'none');
-                targetLine.setAttribute('stroke', '#ff6b6b');
+                targetLine.setAttribute('stroke', '#FFFFFF');
                 targetLine.setAttribute('stroke-width', '2');
                 graphGroup.appendChild(targetLine);
             });
@@ -1043,7 +1067,14 @@ const VisibilityCalculations = {
 
         // Append SVG to container
         container.innerHTML = '';
+        svg.style.transition = 'opacity 0.15s ease, transform 0.15s ease';
+        svg.style.opacity = '0';
+        svg.style.transform = 'scaleY(0.98)';
         container.appendChild(svg);
+        requestAnimationFrame(() => {
+            svg.style.opacity = '1';
+            svg.style.transform = 'scaleY(1)';
+        });
 
         // Render legend below the graph in the legend container
         this.renderLegend(inputs, altitudeData);
@@ -1072,8 +1103,9 @@ const VisibilityCalculations = {
 
             const targetLine = document.createElement('div');
             targetLine.style.width = '30px';
-            targetLine.style.height = '2px';
-            targetLine.style.background = '#ff6b6b';
+            targetLine.style.height = '5px';
+            targetLine.style.background = '#000000';
+            targetLine.style.borderTop = '2px solid #FFFFFF';
             targetItem.appendChild(targetLine);
 
             const targetLabel = document.createElement('span');
@@ -1094,9 +1126,9 @@ const VisibilityCalculations = {
 
             const minAltLine = document.createElement('div');
             minAltLine.style.width = '30px';
-            minAltLine.style.height = '2px';
-            minAltLine.style.borderTop = '2px dashed #ef5350';
-            minAltLine.style.background = 'none';
+            minAltLine.style.height = '5px';
+            minAltLine.style.background = '#000000';
+            minAltLine.style.borderTop = '2px dashed rgba(255,255,0,0.8)';
             minAltItem.appendChild(minAltLine);
 
             const minAltLabel = document.createElement('span');
