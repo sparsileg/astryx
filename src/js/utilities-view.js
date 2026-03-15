@@ -13,10 +13,11 @@ const UtilitiesView = {
         this.renderDustMoteCalculator();
 
         // Listen for location updates
-        document.addEventListener('locations-updated', () => {
+        this._locationsHandler = () => {
             this.renderWeatherForecasts();
             this.renderLightPollutionInfo();
-        });
+        };
+        document.addEventListener('locations-updated', this._locationsHandler);
     },
 
     /**
@@ -208,6 +209,16 @@ const UtilitiesView = {
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
+    },
+
+    /**
+     * Cleanup when view is destroyed
+     */
+    destroy() {
+        if (this._locationsHandler) {
+            document.removeEventListener('locations-updated', this._locationsHandler);
+            this._locationsHandler = null;
+        }
     }
 
 };
