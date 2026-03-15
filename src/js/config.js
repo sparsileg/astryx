@@ -5,13 +5,17 @@
  */
 
 /**
- * APP_VERSION can be anything
+ * APP_VERSION is x.y.z, where
+ *   x — only for complete redesigns or database schema breaks that require migration
+ *   y — new features (like cloud cover strip, imaging log)
+ *   z — bug fixes, UI tweaks, tutorial updates
+ *
  * DB_VERSION must be an integer
  */
 const APP_CONFIG = {
     APP_NAME: 'Astryx',
     APP_TITLE: 'Astryx - Astrophotography Planning Tool',
-    APP_VERSION: '0.17.0',
+    APP_VERSION: '0.17.2',
     DB_NAME: 'astryx-db',
     DB_VERSION: 8,
     TARGET_DATA_PATH: './data/',
