@@ -34,28 +34,29 @@ const SeqPlanView = {
         this.setupCollapsibleSections();
         SeqPlanTimeline.init();
 
-        // Add window resize listener to redraw timeline
-        let resizeTimer;
-        const redrawTimeline = () => {
-            clearTimeout(resizeTimer);
-            resizeTimer = setTimeout(() => {
-                // Only redraw if we have a plan generated
-                if (this.calculatedResults && this.calculatedResults.length > 0 && this.currentSession) {
-                    const events = SeqPlanCalculations.generateTimelineEvents(
-                        this.calculatedResults,
-                        this.currentSession
-                    );
-                    SeqPlanTimeline.render(events, this.currentSession.sessionStartJD, this.currentSession.sessionEndJD, this.currentSession);
-                }
-            }, 250);
-        };
-
-        window.addEventListener('resize', redrawTimeline);
+        // Add window resize listener to redraw timeline — guard against accumulation
+        if (!this.resizeListenerAdded) {
+            let resizeTimer;
+            this._redrawTimeline = () => {
+                clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(() => {
+                    if (this.calculatedResults && this.calculatedResults.length > 0 && this.currentSession) {
+                        const events = SeqPlanCalculations.generateTimelineEvents(
+                            this.calculatedResults,
+                            this.currentSession
+                        );
+                        SeqPlanTimeline.render(events, this.currentSession.sessionStartJD, this.currentSession.sessionEndJD, this.currentSession);
+                    }
+                }, 250);
+            };
+            window.addEventListener('resize', this._redrawTimeline);
+            this.resizeListenerAdded = true;
+        }
 
         // Watch for sidebar collapse/expand using MutationObserver
         const sidebar = document.querySelector('.sidebar');
         if (sidebar) {
-            const observer = new MutationObserver((mutations) => {
+            this._mutationObserver = new MutationObserver((mutations) => {
                 mutations.forEach((mutation) => {
                     if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
                         // Sidebar class changed - wait for CSS transition to complete
@@ -72,7 +73,7 @@ const SeqPlanView = {
                 });
             });
 
-            observer.observe(sidebar, {
+            this._mutationObserver.observe(sidebar, {
                 attributes: true,
                 attributeFilter: ['class']
             });
@@ -139,14 +140,12 @@ const SeqPlanView = {
             select.value = globalLocation;
         }
 
-        document.addEventListener('pinned-targets-updated', () => {
-            this.loadPinnedTargets();
-        });
-
-        // Listen for location updates
-        document.addEventListener('locations-updated', () => {
-            this.populateLocationDropdown();
-        });
+        if (!this._pinnedTargetsHandler) {
+            this._pinnedTargetsHandler = () => this.loadPinnedTargets();
+            this._locationsHandler = () => this.populateLocationDropdown();
+            document.addEventListener('pinned-targets-updated', this._pinnedTargetsHandler);
+            document.addEventListener('locations-updated', this._locationsHandler);
+        }
 
         // Sync seq-plan location when sidebar location changes
         const sidebarSelect = document.getElementById('sidebar-location-select');
@@ -265,16 +264,6 @@ const SeqPlanView = {
                     this.debouncedRecalculate(); // Recalculate without optimization
                 });
             }
-        });
-
-        // Listen for pinned targets updates
-        document.addEventListener('pinned-targets-updated', () => {
-            this.loadPinnedTargets();
-        });
-
-        // Listen for location updates
-        document.addEventListener('locations-updated', () => {
-            this.populateLocationDropdown();
         });
 
         // Min altitude dropdown override styling
@@ -1271,6 +1260,28 @@ const SeqPlanView = {
                 }
             });
         });
-    }
+    },
 
+    /**
+     * Cleanup when view is destroyed
+     */
+    destroy() {
+        if (this._redrawTimeline) {
+            window.removeEventListener('resize', this._redrawTimeline);
+            this._redrawTimeline = null;
+            this.resizeListenerAdded = false;
+        }
+        if (this._pinnedTargetsHandler) {
+            document.removeEventListener('pinned-targets-updated', this._pinnedTargetsHandler);
+            this._pinnedTargetsHandler = null;
+        }
+        if (this._locationsHandler) {
+            document.removeEventListener('locations-updated', this._locationsHandler);
+            this._locationsHandler = null;
+        }
+        if (this._mutationObserver) {
+            this._mutationObserver.disconnect();
+            this._mutationObserver = null;
+        }
+    }
 };
