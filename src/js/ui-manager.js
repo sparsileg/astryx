@@ -11,7 +11,7 @@ const UIManager = {
      */
     init() {
         this.setupThemeSelector();
-        this.setupHamburgerMenu();
+        this.setupSystemMenu();
         this.setupModalCloseHandlers();
         this.initializeSidebarLocationDropdown();
     },
@@ -48,28 +48,28 @@ const UIManager = {
     },
 
     /**
-     * Setup hamburger menu
+     * Setup system menu
      */
-    setupHamburgerMenu() {
-        const hamburgerBtn = document.getElementById('hamburger-menu-btn');
-        const hamburgerMenu = document.getElementById('hamburger-menu');
+    setupSystemMenu() {
+        const systemBtn = document.getElementById('system-menu-btn');
+        const systemMenu = document.getElementById('system-menu');
 
-        if (hamburgerBtn && hamburgerMenu) {
-            hamburgerBtn.addEventListener('click', (e) => {
+        if (systemBtn && systemMenu) {
+            systemBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                const isActive = hamburgerMenu.classList.contains('active');
+                const isActive = systemMenu.classList.contains('active');
 
                 if (isActive) {
-                    this.closeHamburgerMenu();
+                    this.closeSystemMenu();
                 } else {
-                    this.openHamburgerMenu();
+                    this.openSystemMenu();
                 }
             });
 
             // Close when clicking outside
             document.addEventListener('click', (e) => {
-                if (!hamburgerMenu.contains(e.target) && !hamburgerBtn.contains(e.target)) {
-                    this.closeHamburgerMenu();
+                if (!systemMenu.contains(e.target) && !systemBtn.contains(e.target)) {
+                    this.closeSystemMenu();
                 }
             });
 
@@ -86,7 +86,7 @@ const UIManager = {
             }
 
             // Handle menu item clicks
-            hamburgerMenu.querySelectorAll('.menu-item').forEach(item => {
+            systemMenu.querySelectorAll('.menu-item').forEach(item => {
                 item.addEventListener('click', (e) => {
                     const action = item.dataset.action;
                     // Handle cascading menus
@@ -105,18 +105,18 @@ const UIManager = {
                     if (action.startsWith('tutorial-')) {
                         const tutorialId = action.replace('tutorial-', '');
                         TutorialEngine.start(tutorialId);
-                        this.closeHamburgerMenu();
+                        this.closeSystemMenu();
                         return;
                     }
                     // Handle submenu items - don't close menu yet
                     if (item.classList.contains('submenu-item')) {
-                        this.handleHamburgerAction(action);
-                        this.closeHamburgerMenu();
+                        this.handleSystemAction(action);
+                        this.closeSystemMenu();
                         return;
                     }
                     // Handle regular menu items
-                    this.handleHamburgerAction(action);
-                    this.closeHamburgerMenu();
+                    this.handleSystemAction(action);
+                    this.closeSystemMenu();
                 });
             });
         }
@@ -147,42 +147,42 @@ const UIManager = {
     },
 
     /**
-     * Open hamburger menu
+     * Open system menu
      */
-    openHamburgerMenu() {
-        const hamburgerBtn = document.getElementById('hamburger-menu-btn');
-        const hamburgerMenu = document.getElementById('hamburger-menu');
+    openSystemMenu() {
+        const systemBtn = document.getElementById('system-menu-btn');
+        const systemMenu = document.getElementById('system-menu');
 
-        if (hamburgerBtn && hamburgerMenu) {
-            hamburgerBtn.classList.add('active');
-            hamburgerMenu.classList.add('active');
+        if (systemBtn && systemMenu) {
+            systemBtn.classList.add('active');
+            systemMenu.classList.add('active');
 
             // Position menu below button
-            const rect = hamburgerBtn.getBoundingClientRect();
-            hamburgerMenu.style.top = `${rect.bottom + 5}px`;
-            hamburgerMenu.style.left = `${rect.left}px`;
+            const rect = systemBtn.getBoundingClientRect();
+            systemMenu.style.top = `${rect.bottom + 5}px`;
+            systemMenu.style.left = `${rect.left}px`;
         }
     },
 
     /**
-     * Close hamburger menu
+     * Close system menu
      */
-    closeHamburgerMenu() {
-        const hamburgerBtn = document.getElementById('hamburger-menu-btn');
-        const hamburgerMenu = document.getElementById('hamburger-menu');
-        if (hamburgerBtn && hamburgerMenu) {
-            hamburgerBtn.classList.remove('active');
-            hamburgerMenu.classList.remove('active');
+    closeSystemMenu() {
+        const systemBtn = document.getElementById('system-menu-btn');
+        const systemMenu = document.getElementById('system-menu');
+        if (systemBtn && systemMenu) {
+            systemBtn.classList.remove('active');
+            systemMenu.classList.remove('active');
             // Collapse all submenus
-            hamburgerMenu.querySelectorAll('.menu-submenu.expanded').forEach(el => el.classList.remove('expanded'));
-            hamburgerMenu.querySelectorAll('.menu-parent.expanded').forEach(el => el.classList.remove('expanded'));
+            systemMenu.querySelectorAll('.menu-submenu.expanded').forEach(el => el.classList.remove('expanded'));
+            systemMenu.querySelectorAll('.menu-parent.expanded').forEach(el => el.classList.remove('expanded'));
         }
     },
 
     /**
-     * Handle hamburger menu actions
+     * Handle system menu actions
      */
-    handleHamburgerAction(action) {
+    handleSystemAction(action) {
         switch (action) {
         case 'settings':
             this.openSettingsModal();

@@ -49,7 +49,7 @@ const TUTORIAL_SIDEBAR = {
             type: 'callout',
             title: 'System Menu',
             body: 'The system menu (☰) provides access to settings, administrative operations, and information about Astryx. Click it now to see the options.',
-            target: '#hamburger-menu-btn',
+            target: '#system-menu-btn',
             position: 'left',
             width: '170px',
             waitFor: 'next',

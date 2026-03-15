@@ -99,8 +99,8 @@
 
 /* end of toggle sidebar styles */
 
-/* Hamburger Menu Button */
-.hamburger-btn {
+/* System Menu Button */
+.system-btn {
     background: none;
     border: none;
     cursor: pointer;
@@ -118,16 +118,16 @@
     z-index: 20;
 }
 
-.hamburger-btn:hover {
+.system-btn:hover {
     background: var(--card-hover);
 }
 
-.hamburger-btn.active {
+.system-btn.active {
     background: var(--card-hover);
 }
 
-/* Hamburger Dropdown Menu */
-.hamburger-menu {
+/* System Dropdown Menu */
+.system-menu {
     position: fixed;
     background: var(--card-bg);
     border: 1px solid var(--border-color);
@@ -141,7 +141,7 @@
     transition: all 0.2s ease;
 }
 
-.hamburger-menu.active {
+.system-menu.active {
     opacity: 1;
     visibility: visible;
     transform: translateY(0);

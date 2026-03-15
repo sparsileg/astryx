@@ -1205,7 +1205,7 @@ available.
 
 ## Sidebar
 
-Clicking the hamburger menu opens up a menu.
+Clicking the system menu opens up a menu.
 
     * Settings: Set Daylight Saving Time mode, Maximum Search Results for
       the Target Search, and the global minimum altitude setting. The

@@ -52,7 +52,7 @@ const TOOLTIPS = {
     sb_currentTgt:  'The currently selected target\nfor analysis operations',
     sb_dailyVis:    'Compute and view the visibility\nof the current target over\na specified time period',
     sb_fov:         'View a DSS image for the current\ntarget within the specified\nfield of view',
-    sb_hamburger:   'Various settings and administrative operations',
+    sb_system:      'Menu for various settings and administrative operations',
     sb_imgLog:      'Track and report on imaging\nprojects, sessions, and\ntarget lists',
     sb_location:    'Select the location from which\nimaging will take place',
     sb_seqPlanner:  'Generate an optimal\nimaging sequence for the\npinned targets for a\nspecified day',
