@@ -120,7 +120,12 @@ const App = {
                 if (view) {
                     // Handle modal-based nav items
                     if (view === 'daily-visibility') {
-                        UIManager.openDailyVisibilityModal();
+                        UIManager.createDailyVisibilityChart();
+                        return;
+                    }
+
+                    if (view === 'yearly-observability') {
+                        UIManager.createYearlyObservabilityChart();
                         return;
                     }
 

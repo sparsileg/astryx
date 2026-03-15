@@ -1852,9 +1852,9 @@ const UIManager = {
     },
 
     /**
-     * Open Daily Visibility modal
+     * Create Daily Visibility chart
      */
-    openDailyVisibilityModal() {
+    createDailyVisibilityChart() {
         // Ensure a current target is set
         if (typeof VisibilityTargets !== 'undefined') {
             if (!VisibilityTargets.currentTarget) {
@@ -1896,6 +1896,36 @@ const UIManager = {
         window.location.hash = '#skyglow';
     },
 
+
+    /**
+     * Pre-calculate yearly observability data then navigate to the view
+     */
+    createYearlyObservabilityChart() {
+        // Ensure a target is set
+        if (typeof VisibilityTargets !== 'undefined') {
+            if (!VisibilityTargets.currentTarget) {
+                VisibilityTargets.loadLastTarget();
+            }
+            if (!VisibilityTargets.currentTarget) {
+                const defaultTarget = DataManager.getTargets().find(t => t.object === APP_CONFIG.DEFAULT_TARGET);
+                if (defaultTarget) VisibilityTargets.currentTarget = defaultTarget;
+            }
+        }
+
+        if (typeof VisibilityCalculations !== 'undefined') {
+            if (typeof VisibilityTargets !== 'undefined' && VisibilityTargets.currentTarget) {
+                VisibilityCalculations.currentTarget = VisibilityTargets.currentTarget;
+            }
+            // Pre-calculate and store before navigating — eliminates blink
+            const inputs = VisibilityCalculations.getYearlyInputs();
+            if (inputs.targetName && !isNaN(inputs.ra) && !isNaN(inputs.dec)) {
+                const altitudeData = VisibilityCalculations.calculateYearlyAltitudeData(inputs);
+                window.lastYearlyObservabilityGraphData = { altitudeData, inputs };
+            }
+        }
+
+        window.location.hash = '#yearly-observability';
+    },
 
     /**
      * Open Manage Telescopes modal
