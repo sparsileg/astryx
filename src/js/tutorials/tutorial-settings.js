@@ -29,7 +29,7 @@ const TUTORIAL_SETTINGS = {
             type: 'callout',
             title: 'Open Settings',
             body: 'Open the system menu (☰) in the top right of the sidebar header and click <strong>Settings</strong>. Click Next when the Settings panel is open.',
-            target: '#hamburger-menu-btn',
+            target: '#system-menu-btn',
             position: 'left',
             width: '175px',
             waitFor: 'next',
