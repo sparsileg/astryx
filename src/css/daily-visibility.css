@@ -505,7 +505,7 @@ background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/s
     top: 0;
     left: 0;
     right: 0;
-    height: 40px;
+    height: 137px;
     z-index: 5;
     border-radius: 8px 8px 0 0;
     overflow: hidden;
@@ -514,20 +514,19 @@ background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/s
 .cloud-band {
     position: relative;
     width: 100%;
-    height: 12px;
+    height: 45px;
 }
 
 .cloud-band-gap {
     width: 100%;
-    height: 2px;
-    background: rgba(0, 0, 0, 0.5);
+    height: 1px;
+    background: rgba(128, 128, 128, 0.3);
 }
 
 .cloud-band-label {
     position: absolute;
     left: 4px;
-    top: 50%;
-    transform: translateY(-50%);
+    bottom: 2px;
     font-family: monospace;
     font-size: 9px;
     font-weight: 600;
@@ -535,6 +534,13 @@ background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/s
     z-index: 6;
     line-height: 1;
     pointer-events: none;
+    background: rgba(0, 0, 0, 0.8);
+    padding: 1px 3px;
+    border-radius: 2px;
+}
+
+.cloud-band-label-title {
+    font-size: 15px;
 }
 
 .cloud-band-desc {
@@ -548,7 +554,7 @@ background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/s
     top: 0;
     left: 0;
     right: 0;
-    height: 40px;
+    height: 137px;
     display: flex;
     align-items: center;
     justify-content: center;

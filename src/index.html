@@ -440,14 +440,13 @@
     <!-- Skyglow Analysis Template -->
     <template id="skyglow-template">
       <div class="view-header">
-        <h1>🌙 Daily Visibility</h1>
+        <div style="display: flex; align-items: baseline; gap: 0.5rem;">
+          <h1>🌙 Daily Visibility</h1>
+          <span id="analysis-title" style="font-size: 2.0rem; color: var(--text-secondary);"></span>
+        </div>
       </div>
       <div id="skyglow-content">
         <div id="skyglow-message"></div>
-
-        <div id="analysis-header" style="display: none;">
-          <h2 id="analysis-title"></h2>
-        </div>
 
         <div class="dv-controls-row">
           <label class="dv-label">Date</label>
