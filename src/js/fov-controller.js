@@ -216,7 +216,8 @@ const FOVView = {
         if (showMoonCheckbox) {
             showMoonCheckbox.addEventListener('change', (e) => {
                 FOVCanvas.setShowMoon(e.target.checked);
-                this.calculate();
+                if (this.largerMode) this.redrawLargeMode(this.largeFOVData);
+                else this.calculate();
             });
         }
 
@@ -225,7 +226,8 @@ const FOVView = {
         if (showTargetCheckbox) {
             showTargetCheckbox.addEventListener('change', (e) => {
                 this.showTarget = e.target.checked;
-                this.calculate();
+                if (this.largerMode) this.redrawLargeMode(this.largeFOVData);
+                else this.calculate();
             });
         }
 
@@ -234,7 +236,8 @@ const FOVView = {
         if (showCrosshairCheckbox) {
             showCrosshairCheckbox.addEventListener('change', (e) => {
                 FOVCanvas.showCrosshair = e.target.checked;
-                this.calculate();
+                if (this.largerMode) this.redrawLargeMode(this.largeFOVData);
+                else this.calculate();
             });
         }
 
@@ -254,7 +257,7 @@ const FOVView = {
             });
         }
 
-        // Larger mode toggle
+        // Wider mode toggle
         const modeToggle = document.getElementById('fov-mode-toggle');
         if (modeToggle) {
             modeToggle.addEventListener('click', (e) => {
@@ -264,12 +267,14 @@ const FOVView = {
                 option.classList.add('active');
                 this.largerMode = option.dataset.mode === 'larger';
                 if (this.largerMode) {
-                    // Save current checkbox states before switching to larger
+                    // Clear any previous offset center when entering Wider mode — Issue #96
+                    this._offsetCenter = null;
+                    // Save current checkbox states before switching to wider
                     this.actualModeState = {
                         showTarget: document.getElementById('fov-show-target')?.checked,
                         showMoon: document.getElementById('fov-show-moon')?.checked
                     };
-                    // Uncheck target and moon for larger mode
+                    // Uncheck target and moon for wider mode
                     const showTarget = document.getElementById('fov-show-target');
                     const showMoon = document.getElementById('fov-show-moon');
                     if (showTarget) { showTarget.checked = false; this.showTarget = false; }
@@ -282,8 +287,51 @@ const FOVView = {
                         if (showTarget) { showTarget.checked = this.actualModeState.showTarget; this.showTarget = this.actualModeState.showTarget; }
                         if (showMoon) { showMoon.checked = this.actualModeState.showMoon; FOVCanvas.setShowMoon(this.actualModeState.showMoon); }
                     }
-                    const el = document.getElementById('fov-center-coords');
-                    if (el) el.style.display = 'none';
+
+                    // Capture new center from drag box position — Issue #96
+                    const coordsEl = document.getElementById('fov-center-coords');
+                    if (FOVCanvas.dragBox && this.largeFOVData) {
+                        const canvasCX = FOVCanvas.canvas.width / 2;
+                        const canvasCY = FOVCanvas.canvas.height / 2;
+                        const boxCX = FOVCanvas.dragBox.x + FOVCanvas.dragBox.width / 2;
+                        const boxCY = FOVCanvas.dragBox.y + FOVCanvas.dragBox.height / 2;
+
+                        const arcSecPerPixelX = (this.largeFOVData.fovWidthArcmin * 60 * 3) / FOVCanvas.canvas.width;
+                        const arcSecPerPixelY = (this.largeFOVData.fovHeightArcmin * 60 * 3) / FOVCanvas.canvas.height;
+
+                        const offsetX = (canvasCX - boxCX) * arcSecPerPixelX;
+                        const offsetY = (canvasCY - boxCY) * arcSecPerPixelY;
+
+                        const targetRA  = this.currentTarget.ra * 15;
+                        const targetDec = this.currentTarget.dec;
+
+                        const centerRA  = targetRA + (offsetX / 3600) / Math.cos(targetDec * Math.PI / 180);
+                        const centerDec = targetDec + (offsetY / 3600);
+
+                        this._offsetCenter = { raDeg: centerRA, decDeg: centerDec };
+
+                        // Update center coords display — Issue #96
+                        if (coordsEl) {
+                            const raNorm = ((centerRA % 360) + 360) % 360;
+                            const raHours = raNorm / 15;
+                            const raH = Math.floor(raHours);
+                            const raM = Math.floor((raHours - raH) * 60);
+                            const raS = ((raHours - raH) * 60 - raM) * 60;
+                            const decSign = centerDec >= 0 ? '+' : '-';
+                            const decAbs = Math.abs(centerDec);
+                            const decD = Math.floor(decAbs);
+                            const decM = Math.floor((decAbs - decD) * 60);
+                            const decS = ((decAbs - decD) * 60 - decM) * 60;
+                            const raStr = `${String(raH).padStart(2,'0')}h ${String(raM).padStart(2,'0')}m ${raS.toFixed(1).padStart(4,'0')}s`;
+                            const decStr = `${decSign}${String(decD).padStart(2,'0')}° ${String(decM).padStart(2,'0')}′ ${decS.toFixed(1).padStart(4,'0')}″`;
+                            coordsEl.textContent = `Center: ${raStr} / ${decStr}`;
+                            coordsEl.style.display = 'block';
+                        }
+                    } else {
+                        this._offsetCenter = null;
+                        if (coordsEl) coordsEl.style.display = 'none';
+                    }
+
                     FOVCanvas.removeDragListeners();
                 }
                 this.calculate();
@@ -662,9 +710,10 @@ const FOVView = {
             return;
         }
 
-        // Convert RA from hours to degrees
-        const raDeg = this.currentTarget.ra * 15;
-        const decDeg = this.currentTarget.dec;
+        // Use offset center from Wider mode drag box if available — Issue #96
+        const raDeg = this._offsetCenter ? this._offsetCenter.raDeg : this.currentTarget.ra * 15;
+        const decDeg = this._offsetCenter ? this._offsetCenter.decDeg : this.currentTarget.dec;
+        console.log('fetchAndRenderDSS — raDeg:', raDeg, 'decDeg:', decDeg, 'offset:', !!this._offsetCenter);
 
         const canvas = FOVCanvas.canvas;
         const width = canvas.width;
@@ -758,64 +807,7 @@ const FOVView = {
         img.src = dataUrl;
     },
 
-    /**
-     * Fetch and render larger DSS image (3x FOV) for panning mode
-     */
-    async fetchAndRenderDSSLarge(fovData) {
-        if (!this.currentTarget || !this.currentTarget.ra || !this.currentTarget.dec) {
-            console.warn('No target coordinates for large DSS fetch');
-            return;
-        }
-
-        const raDeg = this.currentTarget.ra * 15;
-        const decDeg = this.currentTarget.dec;
-
-        // 3x the FOV
-        const fovDeg = Math.max(fovData.fovWidth, fovData.fovHeight) * 3;
-
-        const cacheKey = this.getDSSLargeCacheKey(raDeg, decDeg, fovDeg);
-
-        let dataUrl = await this.getDSSLargeFromCache(cacheKey);
-
-        if (!dataUrl) {
-            const url = `${APP_CONFIG.APIS.DSS}` +
-                `&ra=${raDeg.toFixed(6)}&dec=${decDeg.toFixed(6)}` +
-                `&fov=${fovDeg.toFixed(6)}&width=600&height=600` +
-                `&projection=TAN&format=jpg`;
-
-            try {
-                const response = await fetch(url);
-                if (!response.ok) {
-                    console.warn('Large DSS fetch failed:', response.status);
-                    return;
-                }
-                const blob = await response.blob();
-                dataUrl = await new Promise((resolve) => {
-                    const reader = new FileReader();
-                    reader.onload = () => resolve(reader.result);
-                    reader.readAsDataURL(blob);
-                });
-                await this.saveDSSLargeToCache(cacheKey, dataUrl);
-            } catch (e) {
-                console.warn('Large DSS fetch error:', e);
-                return;
-            }
-        }
-
-        // Store for use by canvas drag rendering
-        this.largeDSSDataUrl = dataUrl;
-        this.largeFOVData = fovData;
-
-        const img = new Image();
-        img.onload = () => {
-            FOVCanvas.clear();
-            FOVCanvas.renderBackground(img);
-            FOVCanvas.drawFOVBorder(FOVCanvas.canvas.width, FOVCanvas.canvas.height);
-        };
-        img.src = dataUrl;
-    },
-
-    /**
+/**
      * Fetch and render larger DSS image (3x FOV) for panning mode
      */
     async fetchAndRenderDSSLarge(fovData) {
@@ -910,7 +902,7 @@ const FOVView = {
         const arcSecPerPixelY = (fovData.fovHeightArcmin * 60 * 3) / FOVCanvas.canvas.height;
 
         // Offset in arcseconds (positive X = east = increasing RA, positive Y = north = increasing Dec)
-        const offsetX = (boxCX - canvasCX) * arcSecPerPixelX;
+        const offsetX = (canvasCX - boxCX) * arcSecPerPixelX;
         const offsetY = (canvasCY - boxCY) * arcSecPerPixelY; // Y flipped
 
         // Target RA/Dec in degrees
@@ -949,8 +941,9 @@ const FOVView = {
         const el = document.getElementById('fov-center-coords');
         if (!el || !this.currentTarget) return;
 
-        const raHours = this.currentTarget.ra;
-        const decDeg = this.currentTarget.dec;
+        // Use offset center if available, otherwise use target center — Issue #96
+        const raHours = this._offsetCenter ? this._offsetCenter.raDeg / 15 : this.currentTarget.ra;
+        const decDeg = this._offsetCenter ? this._offsetCenter.decDeg : this.currentTarget.dec;
 
         const raH = Math.floor(raHours);
         const raM = Math.floor((raHours - raH) * 60);
