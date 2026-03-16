@@ -13,14 +13,15 @@
 const TUTORIAL_REGISTRY = {
     version: '1.0',
     tutorials: {
+        'admin-tools':          TUTORIAL_ADMIN_TOOLS,
         'daily-visibility':     TUTORIAL_DAILY_VISIBILITY,
         'getting-started':      TUTORIAL_GETTING_STARTED,
         'settings':             TUTORIAL_SETTINGS,
-        'admin-tools':          TUTORIAL_ADMIN_TOOLS,
         'sidebar':              TUTORIAL_SIDEBAR,
-        'todo':                 TUTORIAL_TODO,
-        'target-search':        TUTORIAL_TARGET_SEARCH,
         'target-filtering':     TUTORIAL_TARGET_FILTERING,
+        'target-search':        TUTORIAL_TARGET_SEARCH,
+        'todo':                 TUTORIAL_TODO,
+        'viewfinder':           TUTORIAL_VIEWFINDER,
         'yearly-observability': TUTORIAL_YEARLY_OBSERVABILITY,
     }
 };

@@ -930,7 +930,7 @@
                 <h3>🔭 Equipment</h3>
               </div>
               <div class="card-body">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem 1rem; align-items: end; margin-bottom: 1rem;">
+                <div id="fov-telescope-sensor" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem 1rem; align-items: end; margin-bottom: 1rem;">
                   <div>
                     <label for="fov-telescope-select">Telescope:</label>
                     <select id="fov-telescope-select" class="full-width">
@@ -974,7 +974,7 @@
             <!-- Visualization Card -->
             <div class="card">
               <div class="card-header">
-                <h3>👁️ Field of View <div class="fov-mode-toggle" id="fov-mode-toggle">
+                <h3 id="fov-mode-toggle-container">👁️ Field of View <div class="fov-mode-toggle" id="fov-mode-toggle">
                     <span class="fov-mode-option active"
                           data-mode="actual">Actual</span>
                     <span class="fov-mode-option"
@@ -2276,6 +2276,7 @@
     <script src="js/tutorials/tutorial-target-filtering.js"></script>
     <script src="js/tutorials/tutorial-target-search.js"></script>
     <script src="js/tutorials/tutorial-todo.js"></script>
+    <script src="js/tutorials/tutorial-viewfinder.js"></script>
     <script src="js/tutorials/tutorial-yearly-observability.js"></script>
     <script src="js/tutorials/tutorial-registry.js"></script>
     <script src="js/tutorials/tutorial-engine.js"></script>
