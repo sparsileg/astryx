@@ -1678,7 +1678,7 @@
         <h2>Sequence Planner</h2>
 
         <!-- Session Settings Card (with Overhead Settings merged) -->
-        <div class="card">
+        <div class="card" id="seqplan-session-settings">
           <div class="card-header seqplan-ss-header" data-collapse-target="session-settings-body">
             <h3>Session Settings</h3>
             <span style="margin-left: 1rem; font-size: 0.85rem; color: var(--text-secondary);">
@@ -1732,112 +1732,114 @@
             <hr style="margin: 1rem 0; border: none; border-top: 1px solid var(--border-color);">
 
             <!-- Overhead Settings (formerly separate card) -->
-            <!-- Row 1: Autofocus -->
-            <div class="seq-plan-overhead-row-1">
-              <label class="tooltip-host" data-tooltip-key="sp_afCheck">
-                <input type="checkbox" id="seq-plan-af-enabled">
-                Autofocus
-              </label>
+            <div id="seqplan-overhead-settings">
+              <!-- Row 1: Autofocus -->
+              <div class="seq-plan-overhead-row-1">
+                <label class="tooltip-host" data-tooltip-key="sp_afCheck">
+                  <input type="checkbox" id="seq-plan-af-enabled">
+                  Autofocus
+                </label>
 
-              <label for="seq-plan-af-interval" class="tooltip-host" data-tooltip-key="sp_afInterval">AF Interval:</label>
-              <select id="seq-plan-af-interval">
-                <option value="0">0</option>
-                <option value="30" selected>30</option>
-                <option value="60">60</option>
-                <option value="90">90</option>
-                <option value="120">120</option>
-              </select>
-              <span>min</span>
+                <label for="seq-plan-af-interval" class="tooltip-host" data-tooltip-key="sp_afInterval">AF Interval:</label>
+                <select id="seq-plan-af-interval">
+                  <option value="0">0</option>
+                  <option value="30" selected>30</option>
+                  <option value="60">60</option>
+                  <option value="90">90</option>
+                  <option value="120">120</option>
+                </select>
+                <span>min</span>
 
-              <label for="seq-plan-af-duration" class="tooltip-host" data-tooltip-key="sp_afDuration">AF Duration:</label>
-              <select id="seq-plan-af-duration">
-                <option value="0">0</option>
-                <option value="1">1</option>
-                <option value="2" selected>2</option>
-                <option value="3">3</option>
-                <option value="4">4</option>
-                <option value="5">5</option>
-              </select>
-              <span>min</span>
-            </div>
+                <label for="seq-plan-af-duration" class="tooltip-host" data-tooltip-key="sp_afDuration">AF Duration:</label>
+                <select id="seq-plan-af-duration">
+                  <option value="0">0</option>
+                  <option value="1">1</option>
+                  <option value="2" selected>2</option>
+                  <option value="3">3</option>
+                  <option value="4">4</option>
+                  <option value="5">5</option>
+                </select>
+                <span>min</span>
+              </div>
 
-            <!-- Row 2: Flip -->
-            <div class="seq-plan-overhead-row-2">
-              <label for="seq-plan-flip-pause" class="tooltip-host" data-tooltip-key="sp_flipPause">Flip Pause:</label>
-              <select id="seq-plan-flip-pause">
-                <option value="1">1</option>
-                <option value="2">2</option>
-                <option value="3">3</option>
-                <option value="4" selected>4</option>
-                <option value="5">5</option>
-                <option value="6">6</option>
-                <option value="7">7</option>
-                <option value="8">8</option>
-                <option value="9">9</option>
-                <option value="10">10</option>
-              </select>
-              <span>min</span>
+              <!-- Row 2: Flip -->
+              <div class="seq-plan-overhead-row-2">
+                <label for="seq-plan-flip-pause" class="tooltip-host" data-tooltip-key="sp_flipPause">Flip Pause:</label>
+                <select id="seq-plan-flip-pause">
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                  <option value="4" selected>4</option>
+                  <option value="5">5</option>
+                  <option value="6">6</option>
+                  <option value="7">7</option>
+                  <option value="8">8</option>
+                  <option value="9">9</option>
+                  <option value="10">10</option>
+                </select>
+                <span>min</span>
 
-              <label for="seq-plan-flip-duration" class="tooltip-host" data-tooltip-key="sp_flipDuration">Flip Duration:</label>
-              <select id="seq-plan-flip-duration">
-                <option value="1">1</option>
-                <option value="2" selected>2</option>
-                <option value="3">3</option>
-                <option value="4">4</option>
-                <option value="5">5</option>
-                <option value="6">6</option>
-                <option value="7">7</option>
-                <option value="8">8</option>
-                <option value="9">9</option>
-                <option value="10">10</option>
-              </select>
-              <span>min</span>
+                <label for="seq-plan-flip-duration" class="tooltip-host" data-tooltip-key="sp_flipDuration">Flip Duration:</label>
+                <select id="seq-plan-flip-duration">
+                  <option value="1">1</option>
+                  <option value="2" selected>2</option>
+                  <option value="3">3</option>
+                  <option value="4">4</option>
+                  <option value="5">5</option>
+                  <option value="6">6</option>
+                  <option value="7">7</option>
+                  <option value="8">8</option>
+                  <option value="9">9</option>
+                  <option value="10">10</option>
+                </select>
+                <span>min</span>
 
-              <label for="seq-plan-flip-offset" class="tooltip-host" data-tooltip-key="sp_flipOffset">Flip Offset:</label>
-              <select id="seq-plan-flip-offset">
-                <option value="1">1</option>
-                <option value="2">2</option>
-                <option value="3">3</option>
-                <option value="4">4</option>
-                <option value="5">5</option>
-                <option value="6">6</option>
-                <option value="7">7</option>
-                <option value="8">8</option>
-                <option value="9">9</option>
-                <option value="10">10</option>
-              </select>
-              <span>min</span>
-            </div>
+                <label for="seq-plan-flip-offset" class="tooltip-host" data-tooltip-key="sp_flipOffset">Flip Offset:</label>
+                <select id="seq-plan-flip-offset">
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                  <option value="4">4</option>
+                  <option value="5">5</option>
+                  <option value="6">6</option>
+                  <option value="7">7</option>
+                  <option value="8">8</option>
+                  <option value="9">9</option>
+                  <option value="10">10</option>
+                </select>
+                <span>min</span>
+              </div>
 
-            <!-- Row 3: Calibration and Between Subs -->
-            <div class="seq-plan-overhead-row-3">
-              <label for="seq-plan-cal-duration" class="tooltip-host" data-tooltip-key="sp_calibration">Calibration:</label>
-              <select id="seq-plan-cal-duration">
-                <option value="1">1</option>
-                <option value="2">2</option>
-                <option value="3">3</option>
-                <option value="4">4</option>
-                <option value="5" selected>5</option>
-                <option value="6">6</option>
-              </select>
-              <span>min</span>
+              <!-- Row 3: Calibration and Between Subs -->
+              <div class="seq-plan-overhead-row-3">
+                <label for="seq-plan-cal-duration" class="tooltip-host" data-tooltip-key="sp_calibration">Calibration:</label>
+                <select id="seq-plan-cal-duration">
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3">3</option>
+                  <option value="4">4</option>
+                  <option value="5" selected>5</option>
+                  <option value="6">6</option>
+                </select>
+                <span>min</span>
 
-              <label for="seq-plan-inter-exposure" class="tooltip-host" data-tooltip-key="sp_betweenSubs">Between Subs:</label>
-              <select id="seq-plan-inter-exposure">
-                <option value="3">3</option>
-                <option value="6">6</option>
-                <option value="9" selected>9</option>
-                <option value="12">12</option>
-                <option value="15">15</option>
-              </select>
-              <span>sec</span>
+                <label for="seq-plan-inter-exposure" class="tooltip-host" data-tooltip-key="sp_betweenSubs">Between Subs:</label>
+                <select id="seq-plan-inter-exposure">
+                  <option value="3">3</option>
+                  <option value="6">6</option>
+                  <option value="9" selected>9</option>
+                  <option value="12">12</option>
+                  <option value="15">15</option>
+                </select>
+                <span>sec</span>
+              </div>
             </div>
           </div>
         </div>
         <!-- End of merged Session Settings card -->
 
         <!-- Target Allocation Card - NEW STRUCTURE FOR PHASE 2 -->
-        <div class="card">
+        <div class="card" id="seqplan-target-allocation">
           <div class="card-header">
             <h3>Target Allocation</h3>
             <button id="seq-plan-reset-btn" class="btn-secondary" style="margin-left: auto;">Reset & Optimize</button>
@@ -2267,6 +2269,7 @@
     <script src="js/tutorials/tutorial-daily-visibility.js"></script>
     <script src="js/tutorials/tutorial-getting-started.js"></script>
     <script src="js/tutorials/tutorial-settings.js"></script>
+    <script src="js/tutorials/tutorial-sequence-planner.js"></script>
     <script src="js/tutorials/tutorial-sidebar.js"></script>
     <script src="js/tutorials/tutorial-target-filtering.js"></script>
     <script src="js/tutorials/tutorial-target-optimizer.js"></script>
