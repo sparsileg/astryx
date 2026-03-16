@@ -7,6 +7,7 @@ const FOVCanvas = {
     canvas: null,
     ctx: null,
     showMoon: false,
+    showCrosshair: false,
     dssImage: null,
     largeMode: false,
     dragBox: null,       // {x, y, width, height} in canvas pixels
@@ -321,31 +322,33 @@ const FOVCanvas = {
         this.ctx.restore();
 
         // Crosshair at center — difference blend, rotated with box
-        const armLen = 14;
-        const gapLen = 4;
-        this.ctx.save();
-        this.ctx.translate(cx, cy);
-        this.ctx.rotate(angle);
-        this.ctx.globalCompositeOperation = 'difference';
-        this.ctx.strokeStyle = '#ffffff';
-        this.ctx.lineWidth = 2;
-        this.ctx.beginPath();
-        this.ctx.moveTo(-armLen, 0);
-        this.ctx.lineTo(-gapLen, 0);
-        this.ctx.moveTo(gapLen, 0);
-        this.ctx.lineTo(armLen, 0);
-        this.ctx.moveTo(0, -armLen);
-        this.ctx.lineTo(0, -gapLen);
-        this.ctx.moveTo(0, gapLen);
-        this.ctx.lineTo(0, armLen);
-        this.ctx.stroke();
+        if (this.showCrosshair) {
+            const armLen = 14;
+            const gapLen = 4;
+            this.ctx.save();
+            this.ctx.translate(cx, cy);
+            this.ctx.rotate(angle);
+            this.ctx.globalCompositeOperation = 'difference';
+            this.ctx.strokeStyle = '#ffffff';
+            this.ctx.lineWidth = 2;
+            this.ctx.beginPath();
+            this.ctx.moveTo(-armLen, 0);
+            this.ctx.lineTo(-gapLen, 0);
+            this.ctx.moveTo(gapLen, 0);
+            this.ctx.lineTo(armLen, 0);
+            this.ctx.moveTo(0, -armLen);
+            this.ctx.lineTo(0, -gapLen);
+            this.ctx.moveTo(0, gapLen);
+            this.ctx.lineTo(0, armLen);
+            this.ctx.stroke();
 
-        // Center dot
-        this.ctx.beginPath();
-        this.ctx.arc(0, 0, 2.5, 0, 2 * Math.PI);
-        this.ctx.fillStyle = '#ffffff';
-        this.ctx.fill();
-        this.ctx.restore();
+            // Center dot
+            this.ctx.beginPath();
+            this.ctx.arc(0, 0, 2.5, 0, 2 * Math.PI);
+            this.ctx.fillStyle = '#ffffff';
+            this.ctx.fill();
+            this.ctx.restore();
+        }
     },
 
     /**
