@@ -795,8 +795,9 @@ const TargetFilter = {
                 <div class="target-name">${target.object}</div>
                 <div style="font-size: 0.85rem; color: var(--text-secondary);">${typeDisplay}</div>
             </div>
-            <div style="font-size: 0.85rem; color: var(--text-secondary);">
-                ${commonNameDisplay}${commonNameDisplay && constellation ? ', ' : ''}${constellation}
+            <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                <div style="font-size: 0.85rem; color: var(--text-secondary);">${commonNameDisplay}</div>
+                <div style="font-size: 0.85rem; color: var(--text-secondary);">${constellation}</div>
             </div>
         `;
 
