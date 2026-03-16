@@ -90,6 +90,13 @@ const FOVView = {
             this.showTarget = false;
         }
 
+        // Crosshair defaults to off
+        const showCrosshairCheckbox = document.getElementById('fov-show-crosshair');
+        if (showCrosshairCheckbox) {
+            showCrosshairCheckbox.checked = false;
+            FOVCanvas.showCrosshair = false;
+        }
+
         // Restore larger mode toggle visual state
         const modeToggle = document.getElementById('fov-mode-toggle');
         if (modeToggle) {
@@ -218,6 +225,15 @@ const FOVView = {
         if (showTargetCheckbox) {
             showTargetCheckbox.addEventListener('change', (e) => {
                 this.showTarget = e.target.checked;
+                this.calculate();
+            });
+        }
+
+        // Crosshair toggle
+        const showCrosshairCheckbox = document.getElementById('fov-show-crosshair');
+        if (showCrosshairCheckbox) {
+            showCrosshairCheckbox.addEventListener('change', (e) => {
+                FOVCanvas.showCrosshair = e.target.checked;
                 this.calculate();
             });
         }
@@ -663,7 +679,7 @@ const FOVView = {
         let dataUrl = await this.getDSSFromCache(cacheKey);
 
         if (!dataUrl) {
-            const url = `https://alasky.u-strasbg.fr/hips-image-services/hips2fits?hips=CDS/P/DSS2/red` +
+            const url = `${APP_CONFIG.APIS.DSS}` +
                 `&ra=${raDeg.toFixed(6)}&dec=${decDeg.toFixed(6)}` +
                 `&fov=${fovDeg.toFixed(6)}&width=600&height=600` +
                 `&projection=TAN&format=jpg`;
@@ -731,7 +747,7 @@ const FOVView = {
                     (moonDiameter * scaleY) / 2);
             }
 
-            FOVCanvas.drawCenterCrosshair();
+            if (FOVCanvas.showCrosshair) FOVCanvas.drawCenterCrosshair();
             FOVCanvas.ctx.restore();
 
             // Draw fixed N marker always pointing up
@@ -762,7 +778,7 @@ const FOVView = {
         let dataUrl = await this.getDSSLargeFromCache(cacheKey);
 
         if (!dataUrl) {
-            const url = `https://alasky.u-strasbg.fr/hips-image-services/hips2fits?hips=CDS/P/DSS2/red` +
+            const url = `${APP_CONFIG.APIS.DSS}` +
                 `&ra=${raDeg.toFixed(6)}&dec=${decDeg.toFixed(6)}` +
                 `&fov=${fovDeg.toFixed(6)}&width=600&height=600` +
                 `&projection=TAN&format=jpg`;
@@ -819,7 +835,7 @@ const FOVView = {
         let dataUrl = await this.getDSSLargeFromCache(cacheKey);
 
         if (!dataUrl) {
-            const url = `https://alasky.u-strasbg.fr/hips-image-services/hips2fits?hips=CDS/P/DSS2/red` +
+            const url = `${APP_CONFIG.APIS.DSS}` +
                 `&ra=${raDeg.toFixed(6)}&dec=${decDeg.toFixed(6)}` +
                 `&fov=${fovDeg.toFixed(6)}&width=600&height=600` +
                 `&projection=TAN&format=jpg`;

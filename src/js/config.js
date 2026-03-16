@@ -75,7 +75,8 @@ const APP_CONFIG = {
 
     // External data APIs
     APIS: {
-        OPEN_METEO: 'https://api.open-meteo.com/v1/forecast?latitude={LAT}&longitude={LON}&hourly=cloudcover,cloudcover_low,cloudcover_mid,cloudcover_high,windspeed_10m,temperature_2m,dewpoint_2m&timezone=auto&forecast_days=7'
+        OPEN_METEO: 'https://api.open-meteo.com/v1/forecast?latitude={LAT}&longitude={LON}&hourly=cloudcover,cloudcover_low,cloudcover_mid,cloudcover_high,windspeed_10m,temperature_2m,dewpoint_2m&timezone=auto&forecast_days=7',
+        DSS: 'https://alasky.u-strasbg.fr/hips-image-services/hips2fits?hips=CDS/P/DSS2/color'
     },
 
     // Preferred catalog order for deduplication (Issue #54)
