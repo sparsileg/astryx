@@ -75,7 +75,7 @@ const APP_CONFIG = {
 
     // External data APIs
     APIS: {
-        OPEN_METEO: 'https://api.open-meteo.com/v1/forecast?latitude={LAT}&longitude={LON}&hourly=cloudcover_low,cloudcover_mid,cloudcover_high&timezone=auto&forecast_days=3'
+        OPEN_METEO: 'https://api.open-meteo.com/v1/forecast?latitude={LAT}&longitude={LON}&hourly=cloudcover,cloudcover_low,cloudcover_mid,cloudcover_high,windspeed_10m,temperature_2m,dewpoint_2m&timezone=auto&forecast_days=7'
     },
 
     // Preferred catalog order for deduplication (Issue #54)

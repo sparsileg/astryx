@@ -43,86 +43,155 @@ const SkyglowView = {
     },
 
     /**
-     * Fetch cloud cover data from Open-Meteo for today or tomorrow only.
-     * Returns parsed object with low/mid/high arrays (24 values, noon-to-noon)
-     * or null if date is out of range or fetch fails.
-     * Issue #81
+     * Fetch weather data from Open-Meteo.
+     * Caches 7 days of data per location for up to 1 hour.
+     * Returns sliced 25-value arrays for the requested noon-to-noon window,
+     * or null if date is outside today through today+4, or fetch fails.
+     * Issue #81 / #93
      */
     async fetchCloudData(latitude, longitude, dateStr) {
-        // Only fetch for today or tomorrow
+        // Only display for today through today+4
         const today = new Date();
         const todayStr = TimeUtils.formatDateForInput(today);
-        const tomorrow = new Date(today);
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        const tomorrowStr = TimeUtils.formatDateForInput(tomorrow);
+        const maxDate = new Date(today);
+        maxDate.setDate(today.getDate() + 4);
+        const maxDateStr = TimeUtils.formatDateForInput(maxDate);
 
-        if (dateStr !== todayStr && dateStr !== tomorrowStr) {
+        if (dateStr < todayStr || dateStr > maxDateStr) {
             return null;
         }
 
-        try {
-            const url = APP_CONFIG.APIS.OPEN_METEO
-                .replace('{LAT}', latitude)
-                .replace('{LON}', longitude);
+        // Check cache — keyed by lat/lon, valid for 1 hour
+        const cacheKey = `${latitude}_${longitude}`;
+        const cache = window._openMeteoCache;
+        const now = Date.now();
+        const ONE_HOUR = 60 * 60 * 1000;
 
-            const response = await fetch(url);
-            if (!response.ok) return null;
-
-            const json = await response.json();
-            const times = json.hourly.time;
-            const low   = json.hourly.cloudcover_low;
-            const mid   = json.hourly.cloudcover_mid;
-            const high  = json.hourly.cloudcover_high;
-
-            // Find the index of noon on the requested date
-            const noonStr = `${dateStr}T12:00`;
-            const noonIndex = times.indexOf(noonStr);
-            if (noonIndex === -1) return null;
-
-            // Extract 24 hours starting at noon (indices noonIndex to noonIndex+23)
-            // We need 25 values (0-24) for gradient stops — repeat last value for stop 24
-            const slice = (arr) => {
-                const s = arr.slice(noonIndex, noonIndex + 24);
-                if (s.length < 24) return null;
-                s.push(s[s.length - 1]); // repeat final value for stop 24
-                return s;
-            };
-
-            const lowSlice  = slice(low);
-            const midSlice  = slice(mid);
-            const highSlice = slice(high);
-
-            if (!lowSlice || !midSlice || !highSlice) return null;
-
-            return { low: lowSlice, mid: midSlice, high: highSlice };
-
-        } catch (e) {
-            console.warn('Cloud cover fetch failed:', e);
-            return null;
+        let json;
+        if (cache && cache.key === cacheKey && (now - cache.fetchedAt) < ONE_HOUR) {
+            json = cache.data;
+        } else {
+            try {
+                const url = APP_CONFIG.APIS.OPEN_METEO
+                    .replace('{LAT}', latitude)
+                    .replace('{LON}', longitude);
+                const response = await fetch(url);
+                if (!response.ok) return null;
+                json = await response.json();
+                window._openMeteoCache = { key: cacheKey, data: json, fetchedAt: now };
+            } catch (e) {
+                console.warn('Weather fetch failed:', e);
+                return null;
+            }
         }
+
+        // Slice noon-to-noon window for requested date
+        const times = json.hourly.time;
+        const noonStr = `${dateStr}T12:00`;
+        const noonIndex = times.indexOf(noonStr);
+        if (noonIndex === -1) return null;
+
+        const slice = (arr) => {
+            const s = arr.slice(noonIndex, noonIndex + 24);
+            if (s.length < 24) return null;
+            s.push(s[s.length - 1]);
+            return s;
+        };
+
+        const cloudSlice = slice(json.hourly.cloudcover);
+        const lowSlice   = slice(json.hourly.cloudcover_low);
+        const midSlice   = slice(json.hourly.cloudcover_mid);
+        const highSlice  = slice(json.hourly.cloudcover_high);
+        const windSlice  = slice(json.hourly.windspeed_10m);
+        const tempSlice  = slice(json.hourly.temperature_2m);
+        const dewSlice   = slice(json.hourly.dewpoint_2m);
+
+        if (!cloudSlice || !lowSlice || !midSlice || !highSlice || !windSlice || !tempSlice || !dewSlice) return null;
+
+        const spreadSlice = tempSlice.map((t, i) => Math.max(0, t - dewSlice[i]));
+
+        return {
+            cloud: cloudSlice,
+            low: lowSlice, mid: midSlice, high: highSlice,
+            wind: windSlice,
+            spread: spreadSlice
+        };
     },
 
     /**
-     * Convert 25 hourly cloud cover values (0-100) into a smooth CSS linear-gradient.
-     * Uses amber colour scheme: black (0%) → rgb(200,112,0) (100%).
-     * Stops are placed at equal intervals (0%, 4.167%, 8.333% ... 100%).
-     * Issue #81
+     * Convert 25 hourly values into a smooth CSS linear-gradient.
+     * Issue #81 / #93
      */
-    assembleCloudGradient(values) {
+    assembleGradient(values, colorFn) {
         const stops = values.map((v, i) => {
             const pct = (i / 24) * 100;
-            const intensity = Math.round((v / 100) * 200);
-            const intensityMid = Math.round((v / 100) * 112);
-            return `rgb(${intensity},${intensityMid},0) ${pct.toFixed(3)}%`;
+            return `${colorFn(v)} ${pct.toFixed(3)}%`;
         });
         return `linear-gradient(to right, ${stops.join(', ')})`;
     },
 
     /**
-     * Render the cloud cover strip at the top of the timeline container.
-     * Three bands: high (top), mid (middle), low (bottom).
+     * Amber gradient for cloud cover: black (0%) → rgb(200,112,0) (100%)
+     * Issue #93
+     */
+    cloudColor(v) {
+        const r = Math.round((v / 100) * 200);
+        const g = Math.round((v / 100) * 112);
+        return `rgb(${r},${g},0)`;
+    },
+
+    /**
+     * Blue gradient for dew point spread risk.
+     * Spread >= 10°C = black (safe), spread <= 3°C = light blue (risky).
+     * Inverted: low spread = high risk = more color.
+     * Issue #93
+     */
+    dewColor(spread) {
+        // Clamp spread 0-10, invert so 0=max risk, 10=no risk
+        const risk = Math.max(0, Math.min(10, 10 - spread)) / 10; // 0=safe, 1=risky
+        const r = Math.round(risk * 150);
+        const g = Math.round(risk * 150);
+        const b = Math.round(risk * 230);
+        return `rgb(${r},${g},${b})`;
+    },
+
+    /**
+     * Build wind speed SVG area chart for a strip.
+     * Dynamic scale: rounds max wind up to next 5mph.
+     * Strip height = 45px.
+     * Issue #93
+     */
+    buildWindSVG(values, width) {
+        const HEIGHT = 45;
+        const maxVal = Math.max(...values);
+        const MAX_WIND = Math.max(5, Math.ceil(maxVal / 5) * 5);
+        const PAD = 3; // pixels from top
+
+        const points = values.map((v, i) => {
+            const x = (i / 24) * width;
+            const y = HEIGHT - PAD - Math.min(1, v / MAX_WIND) * (HEIGHT - PAD * 2);
+            return `${x},${y}`;
+        }).join(' ');
+
+        const lastX = ((values.length - 1) / 24) * width;
+        const polygon = `${points} ${lastX},${HEIGHT} 0,${HEIGHT}`;
+
+        return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${HEIGHT}" style="display:block;position:absolute;top:0;left:0;">
+            <polygon points="${polygon}" fill="rgba(255,255,0,0.8)"/>
+            <polyline points="${points}" fill="none" stroke="#000000" stroke-width="4" stroke-linejoin="round"/>
+            <polyline points="${points}" fill="none" stroke="#ffff00" stroke-width="2" stroke-linejoin="round"/>
+            <!-- Max wind label background -->
+            <rect x="2" y="2" width="44" height="14" fill="rgba(0,0,0,0.8)" rx="2"/>
+            <!-- Max wind value -->
+            <text x="4" y="12" font-family="monospace" font-size="12" fill="#ffff00">${MAX_WIND}mph</text>
+        </svg>`;
+    },
+
+    /**
+     * Render the weather strips at the top of the timeline container.
+     * Three strips: Clouds (amber gradient), Wind (yellow line), Dew (blue gradient).
      * If cloudData is null, renders an unavailable message instead.
-     * Issue #81
+     * Issue #81 / #93
      */
     renderCloudStrip(container, cloudData) {
         // Remove any existing strip
@@ -141,22 +210,25 @@ const SkyglowView = {
         strip.className = 'cloud-cover-strip';
         strip.id = 'cloud-cover-strip';
 
-        // Determine which side has more clear space for the forecast label
-        // duskPct = left margin, (100 - dawnPct) = right margin
-        const duskPct = cloudData.duskPct !== undefined ? cloudData.duskPct : 50;
-        const dawnPct = cloudData.dawnPct !== undefined ? cloudData.dawnPct : 50;
-        const leftSpace  = duskPct;
-        const rightSpace = 100 - dawnPct;
-        const labelOnRight = rightSpace > leftSpace;
-
         const bands = [
-            { label: 'H', values: cloudData.high },
-            { label: 'M', values: cloudData.mid  },
-            { label: 'L', values: cloudData.low  }
+            {
+                label: 'Clouds',
+                type: 'gradient',
+                background: this.assembleGradient(cloudData.cloud, v => this.cloudColor(v))
+            },
+            {
+                label: 'Wind',
+                type: 'wind',
+                wind: cloudData.wind
+            },
+            {
+                label: 'Dew',
+                type: 'gradient',
+                background: this.assembleGradient(cloudData.spread, v => this.dewColor(v))
+            }
         ];
 
         bands.forEach((band, i) => {
-            // Gap between bands (not before first)
             if (i > 0) {
                 const gap = document.createElement('div');
                 gap.className = 'cloud-band-gap';
@@ -165,31 +237,35 @@ const SkyglowView = {
 
             const bandDiv = document.createElement('div');
             bandDiv.className = 'cloud-band';
-            bandDiv.style.background = this.assembleCloudGradient(band.values);
+
+            if (band.type === 'gradient') {
+                bandDiv.style.background = band.background;
+            } else if (band.type === 'wind') {
+                bandDiv.style.background = '#000000';
+                bandDiv.style.position = 'relative';
+                // SVG drawn after append when width is known
+                bandDiv.dataset.windBand = 'true';
+            }
 
             const label = document.createElement('div');
-            label.className = 'cloud-band-label';
+            label.className = 'cloud-band-label cloud-band-label-title';
             label.textContent = band.label;
             bandDiv.appendChild(label);
-
-            // Add forecast description text to H band only
-            if (band.label === 'H') {
-                const desc = document.createElement('div');
-                desc.className = 'cloud-band-label cloud-band-desc';
-                desc.textContent = 'High, medium, and low cloud cover forecasts';
-                if (labelOnRight) {
-                    desc.style.left  = 'auto';
-                    desc.style.right = '4px';
-                } else {
-                    desc.style.left = '18px'; // offset past the H label
-                }
-                bandDiv.appendChild(desc);
-            }
 
             strip.appendChild(bandDiv);
         });
 
         container.insertBefore(strip, container.firstChild);
+
+        // Draw wind SVG now that the band is in the DOM and has a width
+        const windBand = strip.querySelector('[data-wind-band]');
+        if (windBand && cloudData.wind) {
+            const w = windBand.offsetWidth || 800;
+            windBand.innerHTML += this.buildWindSVG(cloudData.wind, w);
+            // Re-append label on top of SVG
+            const lbl = windBand.querySelector('.cloud-band-label');
+            if (lbl) windBand.appendChild(lbl);
+        }
     },
 
     /**
@@ -306,7 +382,6 @@ const SkyglowView = {
         if (messageDiv) messageDiv.style.display = 'none';
 
         // Show analysis sections
-        document.getElementById('analysis-header').style.display = 'block';
         document.getElementById('info-cards-container').style.display = 'grid';
         document.getElementById('timeline-section').style.display = 'block';
 
@@ -323,12 +398,11 @@ const SkyglowView = {
             year: 'numeric'
         });
 
-        // Build title with common name in parentheses if available
-        let titleText = data.targetName;
+        // Build title — target name and common name only, no date
+        let titleText = '· ' + data.targetName;
         if (data.commonName && data.commonName.trim()) {
             titleText += ` (${data.commonName})`;
         }
-        titleText += `, ${dateStr}`;
 
         document.getElementById('analysis-title').textContent = titleText;
 
@@ -593,7 +667,7 @@ const SkyglowView = {
         timelineDiv.style.height = this.TIMELINE_HEIGHT + 'px';
         timelineDiv.style.borderRadius = '8px';
         timelineDiv.style.margin = '0';
-        timelineDiv.style.marginTop = APP_CONFIG.FEATURES.CLOUD_COVER ? '40px' : '0';
+        timelineDiv.style.marginTop = APP_CONFIG.FEATURES.CLOUD_COVER ? '137px' : '0';
         timelineDiv.style.border = '1px solid rgba(255, 255, 255, 0.2)';
         timelineDiv.style.background = '#666666'; // Default background
 

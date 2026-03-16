@@ -13,7 +13,7 @@
 const TUTORIAL_DAILY_VISIBILITY = {
     id: 'daily-visibility',
     title: 'Daily Visibility',
-    version: 2,
+    version: 3,
     nextTutorial: null,
     steps: [
 
@@ -140,11 +140,11 @@ const TUTORIAL_DAILY_VISIBILITY = {
         {
             id: 'cloud-cover-strip',
             type: 'callout',
-            title: 'Cloud Cover Forecast',
-            body: 'The three narrow bands at the top of the timeline show a cloud cover forecast for today and tomorrow. The top band is high cloud, the middle is mid-level cloud, and the bottom is low cloud.<br><br>Each band uses an amber colour scale — black means clear skies, bright amber means fully overcast. The forecast is only available for today and tomorrow; other dates will show an unavailable message.',
+            title: 'Weather Forecast Strips',
+            body: 'Three forecast strips appear at the top of the timeline, courtesy of <em>Open-Meteo</em>, for today through the next four days. Other dates show an unavailable message.<br><br><strong>Clouds</strong> — amber gradient showing total cloud cover. Black means clear skies, bright amber means fully overcast.<br><br><strong>Wind</strong> — yellow area chart showing wind speed. The scale maximum is shown at the top left and adjusts to the night\'s conditions.<br><br><strong>Dew</strong> — blue gradient showing dew point risk. Black means a safe spread between temperature and dew point; bright blue means conditions are approaching dew formation.',
             target: '#cloud-cover-strip',
             position: 'bottom',
-            width: '420px',
+            width: '440px',
             waitFor: 'next',
             highlight: true
         },
