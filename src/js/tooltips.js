@@ -91,7 +91,7 @@ const TOOLTIPS = {
     sp_afDuration:  'Duration of an autofocus event',
     sp_afInterval:  'Interval between autofocus events',
     sp_betweenSubs: 'Average duration in seconds between subs',
-    sp_calibration: 'Duration of a calibration',
+    sp_calibration: 'Duration of a guiding calibration',
     sp_flipDuration:'Duration of the actual meridian flip',
     sp_flipOffset:  'How many minutes after the target\npasses meridian before the mount starts\nto flip',
     sp_flipPause:   'How long imaging pauses before\nthe mount begins the meridian flip',
