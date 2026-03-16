@@ -19,6 +19,7 @@ const TUTORIAL_REGISTRY = {
         'settings':             TUTORIAL_SETTINGS,
         'sidebar':              TUTORIAL_SIDEBAR,
         'target-filtering':     TUTORIAL_TARGET_FILTERING,
+        'target-optimizer':     TUTORIAL_TARGET_OPTIMIZER,
         'target-search':        TUTORIAL_TARGET_SEARCH,
         'todo':                 TUTORIAL_TODO,
         'viewfinder':           TUTORIAL_VIEWFINDER,
