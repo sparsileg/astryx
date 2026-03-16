@@ -388,7 +388,7 @@ const OptimizerView = {
                                 <div style="display: flex; gap: 0.5rem; align-items: baseline;">
                                     <span class="opt-meta">Coverage: ${unionHours}h / ${nightHours}h</span>
                                     <span class="opt-sep">·</span>
-                                    <span class="opt-meta">Combo score: ${combo.comboScore.toFixed(0)}</span>
+                                    <span class="opt-meta">Avg score: ${combo.comboScore.toFixed(0)}</span>
                                 </div>
                                 <button class="btn-primary btn-sm optimizer-replace-btn" data-index="${globalIndex}" style="flex-shrink: 0;">Replace Pinned Targets</button>
                             </div>

@@ -8,7 +8,7 @@ const OPTIMIZER_WEIGHTS = {
     windowDuration:   0.30,
     peakAltitude:     0.25,
     transitCentering: 0.15,
-    moonSeparation:   0.35
+    moonSeparation:   0.30
 };
 
 const OptimizerCalculations = {
@@ -224,8 +224,8 @@ const OptimizerCalculations = {
                 const b = scoredCandidates[j];
                 combos.push({
                     targets: [a, b],
-                    comboScore: (a.scores.composite * a.windowHours) +
-                                (b.scores.composite * b.windowHours)
+                    comboScore: ((a.scores.composite * a.windowHours) +
+                                 (b.scores.composite * b.windowHours)) / 2
                 });
             }
         }
@@ -239,9 +239,9 @@ const OptimizerCalculations = {
                     const c = scoredCandidates[k];
                     combos.push({
                         targets: [a, b, c],
-                        comboScore: (a.scores.composite * a.windowHours) +
-                                    (b.scores.composite * b.windowHours) +
-                                    (c.scores.composite * c.windowHours)
+                        comboScore: ((a.scores.composite * a.windowHours) +
+                                     (b.scores.composite * b.windowHours) +
+                                     (c.scores.composite * c.windowHours)) / 3
                     });
                 }
             }

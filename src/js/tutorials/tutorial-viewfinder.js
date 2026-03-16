@@ -135,6 +135,7 @@ const TUTORIAL_VIEWFINDER = {
             body: 'Use the rotation controls to simulate rotating your camera on the focuser. The sensor frame rotates while the sky image stays north-up — exactly as it works at the telescope.<br><br>Rotate to find the angle that best frames your target, avoids a bright star at the corner, or aligns the long axis of a galaxy with your sensor. Type an angle directly into the field, or use the ↺ and ↻ buttons — hold them down for continuous rotation.',
             target: '#fov-rotation-control',
             position: 'left',
+            width: '400px',
             waitFor: 'next',
             highlight: true
         },
@@ -182,7 +183,7 @@ const TUTORIAL_VIEWFINDER = {
             id: 'snapshot',
             type: 'callout',
             title: 'Snapshot',
-            body: 'Takes a snapshot of the current canvas, cropped and rotated to match your camera orientation, and displays it in a full-screen overlay.<br><br>In Actual mode the snapshot shows exactly what your sensor sees at the current rotation. If the frame has been rotated, there will be black corners in the snapshot.<br><br>In Wider mode it crops the image to show only the content inside the draggable frame (your FOV), rotated to match the frame angle.<br><br>Use snapshots to record your planned framing, compare different rotation angles, or share a preview of your intended composition.',
+            body: 'Takes a snapshot of the current canvas, cropped and rotated to match your camera orientation, and displays it in a full-screen overlay. Use snapshots to record your planned framing, compare different rotation angles, or share a preview of your intended composition.<br><br>In Actual mode the snapshot shows exactly what your sensor sees at the current rotation. If the frame has been rotated, there will be black corners in the snapshot.<br><br>In Wider mode it crops the image to show only the content inside the draggable frame (your FOV), rotated to match the frame angle.',
             target: '#fov-snapshot-btn',
             position: 'left',
             width: '450px',
