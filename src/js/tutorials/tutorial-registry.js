@@ -16,6 +16,7 @@ const TUTORIAL_REGISTRY = {
         'admin-tools':          TUTORIAL_ADMIN_TOOLS,
         'daily-visibility':     TUTORIAL_DAILY_VISIBILITY,
         'getting-started':      TUTORIAL_GETTING_STARTED,
+        'imaging-projects':     TUTORIAL_IMAGING_PROJECTS,
         'sequence-planner':     TUTORIAL_SEQUENCE_PLANNER,
         'settings':             TUTORIAL_SETTINGS,
         'sidebar':              TUTORIAL_SIDEBAR,

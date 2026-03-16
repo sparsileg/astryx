@@ -200,7 +200,7 @@ const ImagingLogView = {
                 <div class="project-card-meta" onclick="ImagingLogView.toggleProjectSessions(${project.id})">
                     <span>Targets: ${project.targetDesignations.length}</span>
                     <span>Sessions: ${sessions.length}</span>
-                    ${integrationHTML ? `<span>${integrationHTML}</span>` : '<span>Integration: -</span>'}
+                    ${integrationHTML ? `<span class="imaging-session-integration">${integrationHTML}</span>` : '<span>Integration: -</span>'}
                     <span class="project-status-badge ${statusClass}">${project.status}</span>
                     <span>Modified: ${lastModified}</span>
                 </div>
@@ -209,7 +209,7 @@ const ImagingLogView = {
                 <div class="project-sessions-toggle" onclick="ImagingLogView.toggleProjectSessions(${project.id})">
                     <span class="sessions-chevron" id="chevron-${project.id}">▶</span>
                     <span class="sessions-label">Imaging Sessions</span>
-                    <button class="btn-primary btn-sm"
+                    <button class="btn-primary btn-sm add-session-btn"
                             id="add-session-btn-${project.id}"
                             style="display: none; margin-left: auto;"
                             onclick="event.stopPropagation(); ImagingLogView.showSessionModal(null, ${project.id})">
