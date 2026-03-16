@@ -159,13 +159,15 @@ const UtilitiesView = {
         const fRatio = parseFloat(document.getElementById('dust-focal-ratio').value);
         const pixelSize = parseFloat(document.getElementById('dust-pixel-size').value);
         const spotPixels = parseFloat(document.getElementById('dust-spot-pixels').value);
-        const resultDiv = document.getElementById('dust-mote-result');
-
-        if (!resultDiv) return;
 
         if (isNaN(fRatio) || isNaN(pixelSize) || isNaN(spotPixels) ||
             fRatio <= 0 || pixelSize <= 0 || spotPixels <= 0) {
-            resultDiv.innerHTML = '<p style="color: var(--error-color);">Please enter valid values for all fields.</p>';
+            const r05 = document.getElementById('dust-result-05');
+            const r15 = document.getElementById('dust-result-15');
+            const sum = document.getElementById('dust-mote-summary');
+            if (r05) r05.textContent = '—';
+            if (r15) r15.textContent = '—';
+            if (sum)  sum.textContent = '—';
             return;
         }
 
@@ -180,26 +182,12 @@ const UtilitiesView = {
             distanceMm: (spotDiameterMm * fRatio / dust).toFixed(1)
         }));
 
-        resultDiv.innerHTML = `
-            <table class="session-table">
-                <thead>
-                    <tr>
-                        <th>Dust Size (mm)</th>
-                        <th>Est. Distance from Sensor (mm)</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${distances.map(d => `
-                        <tr>
-                            <td>${d.dustMm}</td>
-                            <td>${d.distanceMm}</td>
-                        </tr>
-                    `).join('')}
-                </tbody>
-            </table>
-            <p style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-secondary);">
-                Spot diameter: ${spotDiameterMm.toFixed(3)} mm &nbsp;•&nbsp; f/${fRatio}
-            </p>`;
+        const result05 = document.getElementById('dust-result-05');
+        const result15 = document.getElementById('dust-result-15');
+        const summary  = document.getElementById('dust-mote-summary');
+        if (result05) result05.textContent = distances[0].distanceMm;
+        if (result15) result15.textContent = distances[1].distanceMm;
+        if (summary)  summary.textContent  = `Spot diameter: ${spotDiameterMm.toFixed(3)} mm  •  f/${fRatio}`;
     },
 
     /**
