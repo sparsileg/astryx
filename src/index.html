@@ -1226,213 +1226,219 @@
 
       <!-- Equipment -->
       <div class="settings-section">
-        <h4>Equipment</h4>
+        <div id="new-session-equipment">
+          <h4>Equipment</h4>
 
-        <div class="form-row" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 1rem;">
-          <div class="form-group">
-            <label for="session-date">Date *</label>
-            <input type="date" id="session-date">
+          <div class="form-row" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 1rem;">
+            <div class="form-group">
+              <label for="session-date">Date *</label>
+              <input type="date" id="session-date">
+            </div>
+
+            <div class="form-group">
+              <label for="session-location">Location *</label>
+              <select id="session-location"></select>
+            </div>
+
+            <div class="form-group">
+              <label for="session-telescope">Telescope *</label>
+              <select id="session-telescope"></select>
+            </div>
+
+            <div class="form-group">
+              <label for="session-sensor">Sensor *</label>
+              <select id="session-sensor"></select>
+            </div>
+
+            <div class="form-group" style="position: relative;">
+              <label for="session-filter">Filter *</label>
+              <select id="session-filter"></select>
+              <input type="text"
+                     id="session-filter-new-input"
+                     placeholder="Enter filter name and press Enter..."
+                     style="display: none; position: absolute; top: 1.75rem; left: 0; right: 0; z-index: 10;">
+            </div>
           </div>
 
-          <div class="form-group">
-            <label for="session-location">Location *</label>
-            <select id="session-location"></select>
-          </div>
+          <div class="form-row" style="display: grid; grid-template-columns: 0.92fr 1.16fr 0.92fr 1fr 1fr; gap: 1rem;">
+            <div class="form-group">
+              <label for="session-rotation">Rotation (°) <span class="tooltip-icon tooltip-host" data-tooltip-key="ilog_sessionRotation">?</span></label>
+              <input type="number"
+                     id="session-rotation"
+                     step="0.1"
+                     placeholder="e.g., 45.3">
+            </div>
 
-          <div class="form-group">
-            <label for="session-telescope">Telescope *</label>
-            <select id="session-telescope"></select>
-          </div>
+            <div class="form-group">
+              <label for="session-temp-setpoint">Temp Setpoint (°C) <span class="tooltip-icon tooltip-host" data-tooltip-key="ilog_sessionTemp">?</span></label>
+              <input type="number"
+                     id="session-temp-setpoint"
+                     min="-40"
+                     max="0"
+                     value="-20"
+                     placeholder="-20">
+            </div>
 
-          <div class="form-group">
-            <label for="session-sensor">Sensor *</label>
-            <select id="session-sensor"></select>
-          </div>
+            <div class="form-group">
+              <label for="session-bin">Bin</label>
+              <select id="session-bin">
+                <option value="1x1" selected>1x1</option>
+                <option value="2x2">2x2</option>
+                <option value="3x3">3x3</option>
+                <option value="4x4">4x4</option>
+              </select>
+            </div>
 
-          <div class="form-group" style="position: relative;">
-            <label for="session-filter">Filter *</label>
-            <select id="session-filter"></select>
-            <input type="text"
-                   id="session-filter-new-input"
-                   placeholder="Enter filter name and press Enter..."
-                   style="display: none; position: absolute; top: 1.75rem; left: 0; right: 0; z-index: 10;">
-          </div>
-        </div>
+            <div class="form-group">
+              <label for="session-gain">Gain <span class="tooltip-icon tooltip-host" data-tooltip-key="ilog_sessionGain">?</span></label>
+              <input type="number"
+                     id="session-gain"
+                     min="0"
+                     max="999"
+                     value="100"
+                     placeholder="100">
+            </div>
 
-        <div class="form-row" style="display: grid; grid-template-columns: 0.92fr 1.16fr 0.92fr 1fr 1fr; gap: 1rem;">
-          <div class="form-group">
-            <label for="session-rotation">Rotation (°) <span class="tooltip-icon tooltip-host" data-tooltip-key="ilog_sessionRotation">?</span></label>
-            <input type="number"
-                   id="session-rotation"
-                   step="0.1"
-                   placeholder="e.g., 45.3">
-          </div>
-
-          <div class="form-group">
-            <label for="session-temp-setpoint">Temp Setpoint (°C) <span class="tooltip-icon tooltip-host" data-tooltip-key="ilog_sessionTemp">?</span></label>
-            <input type="number"
-                   id="session-temp-setpoint"
-                   min="-40"
-                   max="0"
-                   value="-20"
-                   placeholder="-20">
-          </div>
-
-          <div class="form-group">
-            <label for="session-bin">Bin</label>
-            <select id="session-bin">
-              <option value="1x1" selected>1x1</option>
-              <option value="2x2">2x2</option>
-              <option value="3x3">3x3</option>
-              <option value="4x4">4x4</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label for="session-gain">Gain <span class="tooltip-icon tooltip-host" data-tooltip-key="ilog_sessionGain">?</span></label>
-            <input type="number"
-                   id="session-gain"
-                   min="0"
-                   max="999"
-                   value="100"
-                   placeholder="100">
-          </div>
-
-          <div class="form-group">
-            <label for="session-offset">Offset <span class="tooltip-icon tooltip-host" data-tooltip-key="ilog_sessionOffset">?</span></label>
-            <input type="number"
-                   id="session-offset"
-                   min="0"
-                   max="255"
-                   value="70"
-                   placeholder="25">
+            <div class="form-group">
+              <label for="session-offset">Offset <span class="tooltip-icon tooltip-host" data-tooltip-key="ilog_sessionOffset">?</span></label>
+              <input type="number"
+                     id="session-offset"
+                     min="0"
+                     max="255"
+                     value="70"
+                     placeholder="25">
+            </div>
           </div>
         </div>
       </div>
 
       <!-- Moon & Conditions -->
       <div class="settings-section">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
-          <h4 style="margin: 0;">Moon & Conditions</h4>
-          <button type="button"
-                  class="btn-secondary btn-sm tooltip-host"
-                  id="session-calc-moon-btn"
-                  data-tooltip-key="ilog_sessionCalcMoon">
-            Calculate Moon Data <span class="tooltip-icon">?</span>
-          </button>
-        </div>
-
-        <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 1rem;">
-          <div class="form-group">
-            <label for="session-moon-set">Moon Set</label>
-            <input type="time" id="session-moon-set">
+        <div id="new-session-conditions">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+            <h4 style="margin: 0;">Moon & Conditions</h4>
+            <button type="button"
+                    class="btn-secondary btn-sm tooltip-host"
+                    id="session-calc-moon-btn"
+                    data-tooltip-key="ilog_sessionCalcMoon">
+              Calculate Moon Data <span class="tooltip-icon">?</span>
+            </button>
           </div>
 
-          <div class="form-group">
-            <label for="session-moon-rise">Moon Rise</label>
-            <input type="time" id="session-moon-rise">
+          <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 1rem;">
+            <div class="form-group">
+              <label for="session-moon-set">Moon Set</label>
+              <input type="time" id="session-moon-set">
+            </div>
+
+            <div class="form-group">
+              <label for="session-moon-rise">Moon Rise</label>
+              <input type="time" id="session-moon-rise">
+            </div>
+
+            <div class="form-group">
+              <label for="session-moon-illumination">Illumination (%)</label>
+              <input type="number"
+                     id="session-moon-illumination"
+                     min="0"
+                     max="100"
+                     placeholder="0-100">
+            </div>
+
+            <div class="form-group">
+              <label for="session-angle-from-moon">Angle from Moon (°)</label>
+              <input type="number"
+                     id="session-angle-from-moon"
+                     min="0"
+                     max="180"
+                     placeholder="0-180">
+            </div>
           </div>
 
-          <div class="form-group">
-            <label for="session-moon-illumination">Illumination (%)</label>
-            <input type="number"
-                   id="session-moon-illumination"
-                   min="0"
-                   max="100"
-                   placeholder="0-100">
-          </div>
-
-          <div class="form-group">
-            <label for="session-angle-from-moon">Angle from Moon (°)</label>
-            <input type="number"
-                   id="session-angle-from-moon"
-                   min="0"
-                   max="180"
-                   placeholder="0-180">
-          </div>
-        </div>
-
-        <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 1rem;">
-          <div class="form-group">
-            <label for="session-clouds">Clouds</label>
-            <select id="session-clouds">
-              <option value="">Unknown</option>
-              <option value="None">None</option>
-              <option value="Intermittent">Intermittent</option>
-              <option value="Hazy">Hazy</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="session-smoke">Smoke</label>
-            <select id="session-smoke">
-              <option value="">Unknown</option>
-              <option value="None">None</option>
-              <option value="Light">Light</option>
-              <option value="Moderate">Moderate</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="session-seeing">Seeing</label>
-            <select id="session-seeing">
-              <option value="">Unknown</option>
-              <option value="Poor">Poor</option>
-              <option value="Below Average">Below Average</option>
-              <option value="Average">Average</option>
-              <option value="Good">Good</option>
-              <option value="Excellent">Excellent</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="session-transparency">Transparency</label>
-            <select id="session-transparency">
-              <option value="">Unknown</option>
-              <option value="Poor">Poor</option>
-              <option value="Below Average">Below Average</option>
-              <option value="Average">Average</option>
-              <option value="Good">Good</option>
-              <option value="Excellent">Excellent</option>
-            </select>
+          <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 1rem;">
+            <div class="form-group">
+              <label for="session-clouds">Clouds</label>
+              <select id="session-clouds">
+                <option value="">Unknown</option>
+                <option value="None">None</option>
+                <option value="Intermittent">Intermittent</option>
+                <option value="Hazy">Hazy</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="session-smoke">Smoke</label>
+              <select id="session-smoke">
+                <option value="">Unknown</option>
+                <option value="None">None</option>
+                <option value="Light">Light</option>
+                <option value="Moderate">Moderate</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="session-seeing">Seeing</label>
+              <select id="session-seeing">
+                <option value="">Unknown</option>
+                <option value="Poor">Poor</option>
+                <option value="Below Average">Below Average</option>
+                <option value="Average">Average</option>
+                <option value="Good">Good</option>
+                <option value="Excellent">Excellent</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="session-transparency">Transparency</label>
+              <select id="session-transparency">
+                <option value="">Unknown</option>
+                <option value="Poor">Poor</option>
+                <option value="Below Average">Below Average</option>
+                <option value="Average">Average</option>
+                <option value="Good">Good</option>
+                <option value="Excellent">Excellent</option>
+              </select>
+            </div>
           </div>
         </div>
 
         <!-- Acquisition -->
         <div class="settings-section">
-          <h4>Acquisition</h4>
+          <div id="new-session-acquisiton">
+            <h4>Acquisition</h4>
 
-          <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 1rem;">
-            <div class="form-group">
-              <label for="session-sub-length">Sub Length (seconds) * <span class="tooltip-icon tooltip-host" data-tooltip-key="ilog_sessionSubLength">?</span></label>
-              <input type="number"
-                     id="session-sub-length"
-                     min="1"
-                     placeholder="e.g., 300">
-            </div>
+            <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 1rem;">
+              <div class="form-group">
+                <label for="session-sub-length">Sub Length (seconds) * <span class="tooltip-icon tooltip-host" data-tooltip-key="ilog_sessionSubLength">?</span></label>
+                <input type="number"
+                       id="session-sub-length"
+                       min="1"
+                       placeholder="e.g., 300">
+              </div>
 
-            <div class="form-group">
-              <label for="session-num-exposures">Original Exposures * <span class="tooltip-icon tooltip-host" data-tooltip-key="ilog_sessionOriginal">?</span></label>
-              <input type="number"
-                     id="session-num-exposures"
-                     min="1"
-                     placeholder="e.g., 120">
-            </div>
+              <div class="form-group">
+                <label for="session-num-exposures">Original Exposures * <span class="tooltip-icon tooltip-host" data-tooltip-key="ilog_sessionOriginal">?</span></label>
+                <input type="number"
+                       id="session-num-exposures"
+                       min="1"
+                       placeholder="e.g., 120">
+              </div>
 
-            <div class="form-group">
-              <label for="session-used-exposures">Used <span class="tooltip-icon tooltip-host" data-tooltip-key="ilog_sessionUsed">?</span></label>
-              <input type="number"
-                     id="session-used-exposures"
-                     min="0"
-                     placeholder="e.g., 115">
-            </div>
+              <div class="form-group">
+                <label for="session-used-exposures">Used <span class="tooltip-icon tooltip-host" data-tooltip-key="ilog_sessionUsed">?</span></label>
+                <input type="number"
+                       id="session-used-exposures"
+                       min="0"
+                       placeholder="e.g., 115">
+              </div>
 
-            <div class="form-group">
-              <label>Integration Time</label>
-              <div id="session-integration-time"
-                   style="padding: 0.5rem;
-                          background: var(--hover-bg);
-                          border-radius: 4px;
-                          font-weight: 600;
-                          line-height: 2.5;">
-                -
+              <div class="form-group">
+                <label>Integration Time</label>
+                <div id="session-integration-time"
+                     style="padding: 0.5rem;
+                            background: var(--hover-bg);
+                            border-radius: 4px;
+                            font-weight: 600;
+                            line-height: 2.5;">
+                  -
+                </div>
               </div>
             </div>
           </div>
@@ -2268,6 +2274,7 @@
     <script src="js/tutorials/tutorial-admin-tools.js"></script>
     <script src="js/tutorials/tutorial-daily-visibility.js"></script>
     <script src="js/tutorials/tutorial-getting-started.js"></script>
+    <script src="js/tutorials/tutorial-imaging-projects.js"></script>
     <script src="js/tutorials/tutorial-settings.js"></script>
     <script src="js/tutorials/tutorial-sequence-planner.js"></script>
     <script src="js/tutorials/tutorial-sidebar.js"></script>
