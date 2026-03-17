@@ -378,10 +378,10 @@ const BackupManager = {
             backup.imagingPrograms = imagingPrograms;
         }
 
-        // Add target database if selected
+        // Add target database if selected — strip regenerable Best Months data
         if (selectedStores.includes('targets')) {
             const targets = await DBManager.getAll(APP_CONFIG.STORES.TARGETS);
-            backup.targetDatabase = targets;
+            backup.targetDatabase = targets.map(({ bestMonth, peakAltitude, visibilityStart, visibilityEnd, ...rest }) => rest);
         }
 
         return backup;

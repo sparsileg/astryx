@@ -916,13 +916,6 @@ const UIManager = {
             }
         });
 
-        // Show and setup Help button
-        const helpBtn = document.getElementById('modal-help');
-        if (helpBtn) {
-            helpBtn.style.display = 'block';
-            helpBtn.onclick = () => this.showMarkdownHelp('best-months');
-        }
-
         this.populateBestMonthsModal();
     },
 
