@@ -63,9 +63,9 @@
             <li class="nav-item tooltip-host"
                 id="sidebar-to-do-list" data-view="todo" data-tooltip-key="sb_todoList">To Do List</li>
             <li class="nav-item tooltip-host"
-                id="sidebar-daily-visibility" data-view="daily-visibility" data-tooltip-key="sb_dailyVis">Daily Visibility</li>
-            <li class="nav-item tooltip-host"
                 id="sidebar-yearly-observability" data-view="yearly-observability" data-tooltip-key="sb_yearlyObs">Yearly Observability</li>
+            <li class="nav-item tooltip-host"
+                id="sidebar-daily-visibility" data-view="daily-visibility" data-tooltip-key="sb_dailyVis">Daily Visibility</li>
             <li class="nav-item tooltip-host"
                 id="sidebar-viewfinder" data-view="fov" data-tooltip-key="sb_fov">Viewfinder</li>
             <li class="nav-item tooltip-host"
@@ -652,7 +652,7 @@
           <!-- Row 1: Name, Timezone, Bortle -->
           <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 0.75rem;">
             <div class="form-group">
-              <label class="tooltip-host" data-tooltip-key="ml_locName" for="manage-location-name">Location Name*</label>
+              <label for="manage-location-name">Location Name*</label>
               <input type="text" id="manage-location-name" placeholder="e.g., Home, Dark Site, etc.">
             </div>
             <div class="form-group">
@@ -677,15 +677,15 @@
           <!-- Row 2: Latitude, Longitude, Elevation -->
           <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem;">
             <div class="form-group">
-              <label class="tooltip-host" data-tooltip-key="ml_lat" for="manage-latitude">Latitude (°)*</label>
+              <label for="manage-latitude">Latitude (°)*</label>
               <input type="number" id="manage-latitude" step="0.000001" placeholder="e.g., 39.296739" min="-90" max="90">
             </div>
             <div class="form-group">
-              <label class="tooltip-host" data-tooltip-key="ml_lon" for="manage-longitude">Longitude (°)*</label>
+              <label for="manage-longitude">Longitude (°)*</label>
               <input type="number" id="manage-longitude" step="0.000001" placeholder="e.g., -78.198136" min="-180" max="180">
             </div>
             <div class="form-group">
-              <label class="tooltip-host" data-tooltip-key="ml_elev" for="manage-elevation">Elevation (m)*</label>
+              <label for="manage-elevation">Elevation (m)*</label>
               <input type="number" id="manage-elevation" step="1" placeholder="e.g., 233" min="0" max="9000">
             </div>
           </div>
@@ -700,7 +700,7 @@
         </div>
         <!-- Location List -->
         <div class="form-group" style="margin-top: 1rem;">
-          <h4 class="tooltip-host" data-tooltip-key="ml_existing">Existing Locations</h4>
+          <h4>Existing Locations</h4>
           <div id="location-list" style="max-height: 200px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 4px;">
             <!-- Locations will be populated here -->
           </div>
@@ -838,7 +838,7 @@
     <!-- Import Targets Template -->
     <template id="import-targets-template">
       <div class="form-group">
-        <label class="tooltip-host" data-tooltip-key="it_selectTgt" for="target-file">Select target database CSV file</label>
+        <label for="target-file">Select target database CSV file</label>
         <input type="file" id="target-file" accept=".csv,.txt">
       </div>
       <div class="form-group">
@@ -1027,26 +1027,26 @@
         <h4>Add New Telescope</h4>
       </div>
       <div class="form-group">
-        <label class="tooltip-host" data-tooltip-key="mt_telName" for="telescope-name">Telescope Name</label>
+        <label for="telescope-name">Telescope Name</label>
         <input type="text" id="telescope-name" placeholder="e.g., My Refractor">
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label class="tooltip-host" data-tooltip-key="mt_fl" for="telescope-focal-length">Focal Length (mm)</label>
+          <label for="telescope-focal-length">Focal Length (mm)</label>
           <input type="number" id="telescope-focal-length" step="1" placeholder="e.g., 1000">
         </div>
         <div class="form-group">
-          <label class="tooltip-host" data-tooltip-key="mt_aperture" for="telescope-aperture">Aperture (mm)</label>
+          <label for="telescope-aperture">Aperture (mm)</label>
           <input type="number" id="telescope-aperture" step="1" placeholder="e.g., 150">
         </div>
       </div>
       <div class="form-group">
-        <label class="tooltip-host" data-tooltip-key="mt_multiplier" for="telescope-multiplier">Reducer/Barlow Multiplier</label>
+        <label for="telescope-multiplier">Reducer/Barlow Multiplier</label>
         <input type="number" id="telescope-multiplier" step="0.01" value="1.0" placeholder="e.g., 0.63 or 2.0">
       </div>
       <hr style="margin: 2rem 0; border: none; border-top: 1px solid var(--border-color);">
       <div class="form-group">
-        <h4 class="tooltip-host" data-tooltip-key="mt_saved">Saved Telescopes</h4>
+        <h4>Saved Telescopes</h4>
       </div>
       <div id="telescope-list">
         <!-- Saved telescopes will be populated here -->
@@ -1060,32 +1060,32 @@
         <h4>Add New Sensor</h4>
       </div>
       <div class="form-group">
-        <label class="tooltip-host" data-tooltip-key="ms_sensName" for="sensor-name">Sensor Name</label>
+        <label for="sensor-name">Sensor Name</label>
         <input type="text" id="sensor-name" placeholder="e.g., ASI2600MC">
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label class="tooltip-host" data-tooltip-key="ms_resX" for="sensor-resolution-x">Resolution X (pixels)</label>
+          <label for="sensor-resolution-x">Resolution X-axis (pixels)</label>
           <input type="number" id="sensor-resolution-x" step="1" placeholder="e.g., 6248">
         </div>
         <div class="form-group">
-          <label class="tooltip-host" data-tooltip-key="ms_resY" for="sensor-resolution-y">Resolution Y (pixels)</label>
+          <label for="sensor-resolution-y">Resolution Y-axis (pixels)</label>
           <input type="number" id="sensor-resolution-y" step="1" placeholder="e.g., 4176">
         </div>
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label class="tooltip-host" data-tooltip-key="ms_pixX" for="sensor-pixel-size-x">Pixel Size X (µm)</label>
+          <label for="sensor-pixel-size-x">Pixel Size X-axis (µm)</label>
           <input type="number" id="sensor-pixel-size-x" step="0.01" placeholder="e.g., 3.76">
         </div>
         <div class="form-group">
-          <label class="tooltip-host" data-tooltip-key="ms_pixY" for="sensor-pixel-size-y">Pixel Size Y (µm)</label>
+          <label for="sensor-pixel-size-y">Pixel Size Y-axis (µm)</label>
           <input type="number" id="sensor-pixel-size-y" step="0.01" placeholder="e.g., 3.76">
         </div>
       </div>
       <hr style="margin: 2rem 0; border: none; border-top: 1px solid var(--border-color);">
       <div class="form-group">
-        <h4 class="tooltip-host" data-tooltip-key="ms_savedSens">Saved Sensors</h4>
+        <h4>Saved Sensors</h4>
       </div>
       <div id="sensor-list">
         <!-- Saved sensors will be populated here -->
@@ -1100,12 +1100,12 @@
         <h4>Add New Filter</h4>
       </div>
       <div class="form-group">
-        <label class="tooltip-host" data-tooltip-key="mf_filtName" for="filter-name">Filter Name</label>
+        <label for="filter-name">Filter Name</label>
         <input type="text" id="filter-name" placeholder="e.g., Ha, OIII, L, R, G, B">
       </div>
       <hr style="margin: 2rem 0; border: none; border-top: 1px solid var(--border-color);">
       <div class="form-group">
-        <h4 class="tooltip-host" data-tooltip-key="mf_savedFilt">Saved Filters</h4>
+        <h4>Saved Filters</h4>
       </div>
       <div id="filters-list">
         <!-- Saved filters will be populated here -->
@@ -1639,15 +1639,26 @@
       </div>
     </template>
 
-    <!-- Calculate Best Months Modal Template -->
+    <!-- Calculate Best Months Template -->
     <template id="best-months-template">
       <div class="settings-content" style="max-width: 550px;">
         <p style="margin-bottom: 1rem; color: var(--text-secondary); line-height: 1.5;">
-          Calculates best observing month and visibility window for all targets based on type-specific altitude thresholds (30° or 40°) and weighted scoring.
+          Calculates best observing month and visibility window for all
+          targets viewable from the specified location. The scoring is
+          based on type-specific weighted scoring of sky position,
+          integration time, and altitude.<br><br>
+          High transit weight for stars, dark nebulae, galaxies. These
+          targets benefit most from being high in the sky. Position matters
+          more than total time. Balanced weights for bright nebulae,
+          SNRs. These extended objects benefit from both good positioning
+          and longer integration time. Lower altitude thresholds for bright
+          nebulae. Brighter objects can be imaged at lower altitudes where
+          atmospheric extinction is greater.<br><br>For additional information,
+          see the help page.<br><br>
         </p>
 
         <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
-          <label class="tooltip-host" data-tooltip-key="bm_location" for="best-months-location-select" style="white-space: nowrap;">Location:</label>
+          <label for="best-months-location-select" style="white-space: nowrap;">Location:</label>
           <select id="best-months-location-select" style="flex: 1; max-width: 200px;">
             <option value="">Select...</option>
             <option value="__ALL__">All Locations</option>

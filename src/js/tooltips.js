@@ -12,13 +12,8 @@
  */
 
 /**
- * bm:   best month
  * ilog: imaging log
- * it:   import targets
- * mf:   manage filters
  * ml:   manage locations
- * ms:   manage sensors
- * mt:   manage telescopes
  * sb:   sidebar
  * set:  settings
  * sp:   sequence planner
@@ -28,7 +23,6 @@
 
 const TOOLTIPS = {
 
-    bm_location:    'The observing location for which you wish\nto compute the Best Month and month visibility',
     ilog_catalogPrefix:     'The catalog designation prefix to match\n— for example NGC, M, or IC. Targets\nwhose designations start with this prefix\nand fall within the maximum number\nare included in the program.',
     ilog_maxNumber:         'The highest catalog number included\nin this program. For example, entering\n110 for prefix M defines the\n110-object Messier program.',
     ilog_programType:       'Catalog Pattern matches targets by\ndesignation prefix and number range,\nuseful for structured programs like\nimaging all NGC objects. Manual List\naccepts an explicit list of existing\ntarget designations.',
@@ -46,41 +40,22 @@ const TOOLTIPS = {
     ilog_sessionTemp:       'Sensor cooling target temperature\nin degrees Celsius. Consistent\ncooling reduces thermal noise and\nimproves frame calibration.',
     ilog_sessionUsed:       'Number of exposures kept after\nquality rejection. Used to calculate\nfinal integration time.',
     ilog_statusFilter:      'Show only projects in the selected\nstatus. All But Completed is the\ndefault — it hides finished projects\nwhile keeping active work visible.',
-    it_selectTgt:   'Select the desired target database file\nin Astryx CSV format',
-    mf_filtName:    'Preferred name for the new filter',
-    mf_savedFilt:   'List of the existing filters',
-    ml_bortle:      'Bortle scale number of the new location',
-    ml_elev:        'Elevation in meters of the new location',
-    ml_existing:    'List of existing observation locations',
-    ml_horizProf:   'Horizon profile of the new location. One point\nper line in Azimuth Elevation order, where\nAzimuth is in integer degrees and Elevation\nis in integer degrees',
-    ml_lat:         'Latitude of the new location\nin decimal degrees',
-    ml_locName:     'Preferred name for the new location',
-    ml_lon:         'Longitude of the new location\nin decimal degrees',
+    ml_bortle:      'Level of light pollution. See Utilities for determining.',
+    ml_horizProf:   'Horizon profile of the new location. One point\nper line in Azimuth Elevation order, both\nin integer degrees.',
     ml_tzOffset:    'Timezone offset of the new\nlocation in hours, where west is\nnegative and east is positive',
-    ms_pixX:        'Pixel size in micrometers for the X-axis',
-    ms_pixY:        'Pixel size in micrometers for the Y-axis',
-    ms_resX:        'Resolution in pixels for the X-axis',
-    ms_resY:        'Resolution in pixels for the Y-axis',
-    ms_savedSens:   'List of the existing sensors',
-    ms_sensName:    'Preferred name for the new sensor',
-    mt_aperture:    'Aperture in millimeters of the new telescope',
-    mt_fl:          'Focal length in millimeters of the new telescope',
-    mt_multiplier:  'The power of the flattener, reducer, or barlow',
-    mt_saved:       'List of the existing telescopes',
-    mt_telName:     'Preferred name for the new telescope',
+    sb_system:      'Menu for various settings and administrative operations',
+    sb_theme:       'Select the style and theme of\nthe interface',
+    sb_location:    'Select the location from which\nimaging will take place',
     sb_currentTgt:  'The currently selected target\nfor analysis operations',
+    sb_tgtSelect:   'Search and filter the target database.\n Pin and add objects to To Do list.\n Remove objects from list',
+    sb_todoList:    'Display the target To Do list\nin various formats',
+    sb_yearlyObs:   'Compute and view the observability\nof the current target over the\nupcoming year',
     sb_dailyVis:    'Compute and view the visibility\nof the current target over\na specified time period',
     sb_fov:         'View a DSS image for the current\ntarget within the specified\nfield of view',
-    sb_imgLog:      'Track and report on imaging\nprojects, sessions, and\ntarget lists',
-    sb_location:    'Select the location from which\nimaging will take place',
-    sb_seqPlanner:  'Generate an optimal\nimaging sequence for the\npinned targets for a\nspecified day',
-    sb_system:      'Menu for various settings and administrative operations',
     sb_tgtOpt:      'Generate a set of individual\ntargets and target combinations\nbest suited for viewing\non a specified day',
-    sb_tgtSelect:   'Search and filter the target database.\n Pin and add objects to To Do list.\n Remove objects from list',
-    sb_theme:       'Select the style and theme of\nthe interface',
-    sb_todoList:    'Display the target To Do list\nin various formats',
+    sb_seqPlanner:  'Generate an optimal\nimaging sequence for the\npinned targets for a\nspecified day',
+    sb_imgLog:      'Track and report on imaging\nprojects, sessions, and\ntarget lists',
     sb_utils:       'Clouds, light pollution, and\ndust motes',
-    sb_yearlyObs:   'Compute and view the observability\nof the current target over the\nupcoming year',
     set_DST:        'Set Daylight Savings Time mode,\nusually leave it on Automatic',
     set_autoBU:     'Automatically back up to the default\nlocation after a change in:\nsettings, locations, telescopes,\nsensors, filters, pinnedTargets,\ntoDoTargets, imagingProjects,\nimagingSessions, imagingPrograms',
     set_backupDelay: 'Minutes after last change before\nmaking an automatic backup\nto the default location',
