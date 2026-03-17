@@ -140,7 +140,7 @@ const TUTORIAL_IMAGING_PROGRAMS = {
             id: 'edit-delete',
             type: 'callout',
             title: 'Editing and Deleting Programs',
-            body: 'Each program card has <strong>Edit Program</strong> and <strong>Delete Program</strong> buttons. Editing reopens the program form so you can update the name, type, or target list. Deleting permanently removes the program — a confirmation is required.<br><br>Deleting a program does not affect your imaging projects or sessions — only the program definition is removed.<br><br>Delete the new program if you don't want to keep it. Scroll to the top of the page.',
+            body: 'Each program card has <strong>Edit Program</strong> and <strong>Delete Program</strong> buttons. Editing reopens the program form so you can update the name, type, or target list. Deleting permanently removes the program — a confirmation is required.<br><br>Deleting a program does not affect your imaging projects or sessions — only the program definition is removed.<br><br>Delete the new program if you don\'t want to keep it. Scroll to the top of the page.',
             target: '#imaging-log-programs-list',
             position: 'top',
             width: '420px',

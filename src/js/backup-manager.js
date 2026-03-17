@@ -235,7 +235,7 @@ const BackupManager = {
 
         if (remaining <= 0) {
             // Delay already elapsed — clear the pending flag, don't fire on cold start
-            await SettingsManager.saveSetting('lastBackupTimestamp', Date.now());
+            await SettingsManager.saveSetting('lastBackupTimestamp', TimeUtils.nowDTG());
             return;
         } else {
             // Resume the countdown from where it left off
@@ -274,6 +274,7 @@ const BackupManager = {
             URL.revokeObjectURL(url);
 
             await SettingsManager.saveSetting('lastBackupTimestamp', TimeUtils.nowDTG());
+            BackupReminder.onBackupComplete();
             UIManager.showToast('Auto-backup saved', 'success');
         } catch (error) {
             console.error('Auto-backup failed:', error);
@@ -411,6 +412,10 @@ const BackupManager = {
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
+
+        // Update last backup timestamp
+        await SettingsManager.saveSetting('lastBackupTimestamp', TimeUtils.nowDTG());
+        BackupReminder.onBackupComplete();
 
         // Show success modal
         const selectedStores = this.getSelectedBackupStores();

@@ -379,6 +379,17 @@ const SettingsManager = {
     async setLastChangeTimestamp(dtg) {
         this.settings.lastChangeTimestamp = dtg;
         await this.saveSettings();
+    },
+
+    getBackupReminderDays() {
+        return this.settings.backupReminderDays !== undefined
+            ? this.settings.backupReminderDays
+            : APP_CONFIG.BACKUP_REMINDER_INTERVAL_DAYS;
+    },
+
+    async setBackupReminderDays(days) {
+        this.settings.backupReminderDays = days;
+        await this.saveSettings();
     }
 
 };

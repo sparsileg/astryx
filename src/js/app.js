@@ -62,6 +62,9 @@ const App = {
             // Initialize auto-backup timer (resume if pending from last session)
             await BackupManager.initAutoBackup();
 
+            // Initialize backup reminder system
+            BackupReminder.init();
+
             // Auto-calculate Best Months for selected location if needed
             const selectedLocation = SettingsManager.getSelectedLocation();
             if (selectedLocation && !UIManager.locationHasBestMonths(selectedLocation)) {

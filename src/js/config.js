@@ -15,7 +15,7 @@
 const APP_CONFIG = {
     APP_NAME: 'Astryx',
     APP_TITLE: 'Astryx - Astrophotography Planning Tool',
-    APP_VERSION: '0.17.2',
+    APP_VERSION: '0.18.0',
     DB_NAME: 'astryx-db',
     DB_VERSION: 8,
     TARGET_DATA_PATH: './data/',
@@ -66,6 +66,11 @@ const APP_CONFIG = {
 
     // Default target (used when no current target is selected)
     DEFAULT_TARGET: 'M 42',
+
+    // Backup reminder constants
+    BACKUP_REMINDER_INTERVAL_DAYS: 7,   // default reminder interval (days)
+    BACKUP_REMINDER_AMBER_DAYS: 7,      // sidebar indicator turns amber after this many days
+    BACKUP_REMINDER_RED_DAYS: 14,       // sidebar indicator turns orange/red after this many days
 
     // Feature flags
     FEATURES: {

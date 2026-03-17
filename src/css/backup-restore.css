@@ -334,3 +334,15 @@
     margin: 0 0.5rem;
     color: var(--primary-color);
 }
+
+#backup-reminder-indicator {
+    font-family: "Lucida Console", "Courier", monospace;
+    position: absolute;
+    bottom: 1.75rem;
+    left: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    opacity: 1;
+    transition: color 0.5s;
+}
