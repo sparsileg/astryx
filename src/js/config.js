@@ -67,6 +67,9 @@ const APP_CONFIG = {
     // Default target (used when no current target is selected)
     DEFAULT_TARGET: 'M 42',
 
+    // Daily visibility: hours past midnight before which we default to previous night
+    DV_LOOKBACK_CUTOFF_HOUR: 12,
+
     // Backup reminder constants
     BACKUP_REMINDER_INTERVAL_DAYS: 7,   // default reminder interval (days)
     BACKUP_REMINDER_AMBER_DAYS: 7,      // sidebar indicator turns amber after this many days
