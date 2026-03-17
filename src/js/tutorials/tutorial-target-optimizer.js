@@ -86,7 +86,7 @@ const TUTORIAL_TARGET_OPTIMIZER = {
             id: 'filter-pool',
             type: 'modal',
             title: 'Using Filter Targets as a Source',
-            body: 'The Filter Targets view lets you search the full 14,000+ object database using criteria like object type, size, constellation, and observability. When you have a filtered result set you want to evaluate, click <strong>Send to Optimizer</strong> in Filter Targets.<br><br>The Optimizer\'s Source dropdown will update to show the count of loaded targets and enable the Filter Targets option. This is useful when your To Do List is small or when you want to explore what is available in a specific category on a given night.',
+            body: 'The Filter Targets view lets you search the full 12,000+ object database using criteria like object type, size, constellation, and observability. When you have a filtered result set you want to evaluate, click <strong>Send to Optimizer</strong> in Filter Targets.<br><br>The Optimizer\'s Source dropdown will update to show the count of loaded targets and enable the Filter Targets option. This is useful when your To Do List is small or when you want to explore what is available in a specific category on a given night.',
             target: null,
             position: 'center',
             waitFor: 'next',

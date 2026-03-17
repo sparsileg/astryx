@@ -14,6 +14,7 @@ const TUTORIAL_REGISTRY = {
     version: '1.0',
     tutorials: {
         'admin-tools':              TUTORIAL_ADMIN_TOOLS,
+        'backup-restore':           TUTORIAL_BACKUP_RESTORE,
         'daily-visibility':         TUTORIAL_DAILY_VISIBILITY,
         'getting-started':          TUTORIAL_GETTING_STARTED,
         'imaging-projects':         TUTORIAL_IMAGING_PROJECTS,
