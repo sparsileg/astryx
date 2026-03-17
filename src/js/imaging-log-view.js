@@ -183,7 +183,14 @@ const ImagingLogView = {
             <div class="project-card" data-project-id="${project.id}">
                 <div class="project-card-header" onclick="ImagingLogView.toggleProjectSessions(${project.id})">
                     <div style="flex: 1;">
-                        <div class="project-card-title">${this.escapeHtml(project.name)}</div>
+                        <div class="project-card-title">
+                    ${this.escapeHtml(project.name)}
+                    ${project.publishedLink
+                        ? `<a href="${this.escapeHtml(project.publishedLink)}" target="_blank" rel="noopener noreferrer"
+                              title="View published image" class="project-published-link" onclick="event.stopPropagation()">🔗</a>`
+                        : `<span title="Edit project to add published image link" class="project-published-link-inactive">🔗</span>`
+                    }
+                </div>
                     </div>
                     <div class="project-card-actions">
                         <button class="project-action-btn project-action-btn-delete"
@@ -366,6 +373,7 @@ const ImagingLogView = {
             const project = await ImagingLogManager.getProject(projectId);
             document.getElementById('project-name').value = project.name;
             document.getElementById('project-status').value = project.status;
+            document.getElementById('project-published-link').value = project.publishedLink || '';
             document.getElementById('project-notes').value = project.notes || '';
 
             // Load selected targets
@@ -497,12 +505,20 @@ const ImagingLogView = {
         const name = document.getElementById('project-name')?.value.trim();
         const status = document.getElementById('project-status')?.value;
         const notes = document.getElementById('project-notes')?.value.trim();
+        const publishedLink = document.getElementById('project-published-link')?.value.trim();
+
+        // Validate URL if provided
+        if (publishedLink && !/^https?:\/\/.+/.test(publishedLink)) {
+            UIManager.showToast('Published link must be a valid http:// or https:// URL', 'error');
+            return;
+        }
 
         const projectData = {
             name: name,
             targetDesignations: this.selectedTargets,
             status: status,
-            notes: notes
+            notes: notes,
+            publishedLink: publishedLink || null
         };
 
         // Validate

@@ -18,6 +18,7 @@ const ImagingLogManager = {
             targetDesignations: projectData.targetDesignations || [],
             status: projectData.status || 'Planning',
             notes: projectData.notes || '',
+            publishedLink: projectData.publishedLink || null,
             created: new Date().toISOString(),
             modified: new Date().toISOString()
         };
@@ -40,6 +41,7 @@ const ImagingLogManager = {
         project.targetDesignations = projectData.targetDesignations;
         project.status = projectData.status;
         project.notes = projectData.notes;
+        project.publishedLink = projectData.publishedLink || null;
         project.modified = new Date().toISOString();
 
         await DBManager.put(APP_CONFIG.STORES.IMAGING_PROJECTS, project);

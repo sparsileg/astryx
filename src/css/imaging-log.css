@@ -422,3 +422,34 @@
     overflow-y: auto;
     scrollbar-gutter: stable;
 }
+
+/* ============================================================================
+   Published Image Link Icon
+   ============================================================================ */
+
+.project-published-link {
+    margin-left: 0.5rem;
+    font-size: 1.3rem;
+    display: inline-block;
+    transform: rotate(45deg);
+    text-decoration: none;
+    color: var(--primary-color);
+    line-height: 0;
+    vertical-align: middle;
+    filter: drop-shadow(0 0 3px var(--primary-color));
+    transition: transform 0.2s;
+}
+
+.project-published-link:hover {
+    transform: rotate(0deg) scale(1.8);
+}
+
+.project-published-link-inactive {
+    margin-left: 0.5rem;
+    font-size: 1.3rem;
+    display: inline-block;
+    transform: rotate(45deg);
+    color: var(--text-secondary);
+    opacity: 0.2;
+    cursor: default;
+}
