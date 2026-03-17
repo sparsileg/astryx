@@ -14,7 +14,7 @@
 const TUTORIAL_IMAGING_PROGRAMS = {
     id: 'imaging-programs-reports',
     title: 'Imaging Programs & Reports',
-    version: 1,
+    version: 2,
     nextTutorial: null,
     steps: [
 
@@ -144,6 +144,16 @@ const TUTORIAL_IMAGING_PROGRAMS = {
             target: '#imaging-log-programs-list',
             position: 'top',
             width: '420px',
+            waitFor: 'next',
+            highlight: false
+        },
+        {
+            id: 'create-from-filter',
+            type: 'modal',
+            title: 'Creating a Program from Filter Results',
+            body: 'There is a faster way to create a Manual List program — directly from a set of filter results in Target Selection.<br><br>In the <strong>Target Selection</strong> view, apply filters to find the targets you want — for example, all emission nebulae in the Caldwell catalog above 10 arcminutes in size. Once you have results, click <strong>Create Imaging Program</strong> in the Filter Results panel header.<br><br>A dialog asks you to name the program and creates it instantly from the filtered targets, matching them against the database automatically. The result is identical to a Manual List program created through the Imaging Log.<br><br>Note: the filter results must contain 199 or fewer targets. If your results exceed this limit, a message will ask you to refine your filters before creating the program.',
+            target: null,
+            position: 'center',
             waitFor: 'next',
             highlight: false
         },
