@@ -1173,6 +1173,7 @@
       </div>
 
       <div class="form-group">
+        <div class="form-group">
         <label>Program Type <span class="tooltip-icon tooltip-host" data-tooltip-key="ilog_programType">?</span></label>
         <div style="display: flex; gap: 1.5rem; margin-top: 0.5rem;">
           <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
@@ -1550,7 +1551,7 @@
         <!-- Programs Tab -->
         <div id="imaging-log-programs-tab" class="imaging-log-tab-content">
           <div class="imaging-log-toolbar">
-            <button class="btn-primary" id="imaging-log-import-program-btn">New Program</button>
+            <button class="btn-primary" id="imaging-log-new-program-btn">New Program</button>
           </div>
 
           <div id="imaging-log-programs-list">
@@ -1562,7 +1563,7 @@
         <div id="imaging-log-reports-tab" class="imaging-log-tab-content">
 
           <!-- Catalog Coverage Report -->
-          <div class="card">
+          <div class="card" id="report-catalog-coverage-card">
             <div class="card-header">
               <h3>Catalog Coverage</h3>
               <div>Counts include alternate designators of the primary targets</div>
@@ -1575,7 +1576,7 @@
           </div>
 
           <!-- Program Progress Report -->
-          <div class="card">
+          <div class="card" id="report-program-progress-card">
             <div class="card-header">
               <h3>Program Progress</h3>
               <div>Counts include alternate designators of the primary targets</div>
@@ -1588,7 +1589,7 @@
           </div>
 
           <!-- Project Status Report -->
-          <div class="card">
+          <div class="card" id="report-project-status-card">
             <div class="card-header">
               <h3>Project Status</h3>
               <div>Counts are ONLY the primary targets in a project</div>
@@ -2275,6 +2276,7 @@
     <script src="js/tutorials/tutorial-daily-visibility.js"></script>
     <script src="js/tutorials/tutorial-getting-started.js"></script>
     <script src="js/tutorials/tutorial-imaging-projects.js"></script>
+    <script src="js/tutorials/tutorial-imaging-programs-reports.js"></script>
     <script src="js/tutorials/tutorial-settings.js"></script>
     <script src="js/tutorials/tutorial-sequence-planner.js"></script>
     <script src="js/tutorials/tutorial-sidebar.js"></script>

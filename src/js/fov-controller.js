@@ -713,15 +713,12 @@ const FOVView = {
         // Use offset center from Wider mode drag box if available — Issue #96
         const raDeg = this._offsetCenter ? this._offsetCenter.raDeg : this.currentTarget.ra * 15;
         const decDeg = this._offsetCenter ? this._offsetCenter.decDeg : this.currentTarget.dec;
-        console.log('fetchAndRenderDSS — raDeg:', raDeg, 'decDeg:', decDeg, 'offset:', !!this._offsetCenter);
-
         const canvas = FOVCanvas.canvas;
         const width = canvas.width;
         const height = canvas.height;
 
         // Use the larger FOV dimension for the query
         const fovDeg = Math.max(fovData.fovWidth, fovData.fovHeight);
-
         const cacheKey = this.getDSSCacheKey(raDeg, decDeg, fovDeg);
 
         // Check cache first
