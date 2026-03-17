@@ -65,6 +65,13 @@ const App = {
             // Initialize backup reminder system
             BackupReminder.init();
 
+            // Resume tutorial if flagged before a reload
+            const resumeTutorial = localStorage.getItem('resumeTutorialAfterReload');
+            if (resumeTutorial) {
+                localStorage.removeItem('resumeTutorialAfterReload');
+                setTimeout(() => TutorialEngine.start(resumeTutorial), 500);
+            }
+
             // Auto-calculate Best Months for selected location if needed
             const selectedLocation = SettingsManager.getSelectedLocation();
             if (selectedLocation && !UIManager.locationHasBestMonths(selectedLocation)) {

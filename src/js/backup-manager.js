@@ -310,9 +310,11 @@ const BackupManager = {
      * Generate backup data object from selected stores
      */
     async generateBackupData(selectedStores) {
+        const targetVersionRecord = await DBManager.get(APP_CONFIG.STORES.SETTINGS, 'target-version');
         const backup = {
             version: APP_CONFIG.APP_VERSION,
             dbVersion: APP_CONFIG.DB_VERSION,
+            targetVersion: targetVersionRecord ? targetVersionRecord.value : null,
             exportDate: new Date().toISOString()
         };
 
@@ -641,7 +643,13 @@ const BackupManager = {
                     <span>${exportDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} at ${exportDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</span>
 
                     <span style="color: var(--text-secondary);">Version:</span>
-                    <span>${backupData.version || 'Unknown'} (DB v${backupData.dbVersion})</span>
+                    <span>${backupData.version || 'Unknown'}</span>
+
+                    <span style="color: var(--text-secondary);">Database:</span>
+                    <span>${backupData.dbVersion || 'Unknown'}</span>
+
+                    <span style="color: var(--text-secondary);">Target:</span>
+                    <span>${backupData.targetVersion || '—'}</span>
 
                     <span style="color: var(--text-secondary);">Size:</span>
                     <span>${this.formatBytes(this.restoreFile.size)}</span>
@@ -779,6 +787,11 @@ const BackupManager = {
 
             // Reload the page to reflect changes
             setTimeout(() => {
+                // If a tutorial is active, flag it to resume after reload
+                const activeTutorial = TutorialEngine._currentTutorial?.id;
+                if (activeTutorial) {
+                    localStorage.setItem('resumeTutorialAfterReload', activeTutorial);
+                }
                 location.reload();
             }, 1500);
 
@@ -845,6 +858,11 @@ const BackupManager = {
         } else {
             // Restore single item (settings)
             await DBManager.put(mapping.storeName, data);
+        }
+
+        // If restoring targets, also restore the target version number
+        if (storeKey === 'targets' && backupData.targetVersion) {
+            await DataManager.setTargetVersion(backupData.targetVersion);
         }
     }
 
