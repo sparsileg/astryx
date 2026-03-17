@@ -831,10 +831,21 @@ input[type="number"] {
     background: rgba(0, 0, 0, 0.2);
 }
 
-/* increase the max-height if additional items are added to the */
-/* Admin Tools submenu */
 .menu-submenu.expanded {
-    max-height: 400px;
+    max-height: 600px;
+}
+
+#tutorials-submenu.expanded {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    max-height: 300px;
+    border: 2px solid var(--primary-color);
+    border-radius: 4px;
+}
+
+#admin-tools-submenu.expanded {
+    border: 2px solid var(--primary-color);
+    border-radius: 4px;
 }
 
 .submenu-item {

@@ -1205,7 +1205,7 @@ const ImagingLogView = {
      * Setup program controls
      */
     setupProgramControls() {
-        const importProgramBtn = document.getElementById('imaging-log-import-program-btn');
+        const importProgramBtn = document.getElementById('imaging-log-new-program-btn');
         if (importProgramBtn) {
             const newBtn = importProgramBtn.cloneNode(true);
             importProgramBtn.parentNode.replaceChild(newBtn, importProgramBtn);
