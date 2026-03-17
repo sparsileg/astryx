@@ -50,14 +50,18 @@ const SkyglowView = {
      * Issue #81 / #93
      */
     async fetchCloudData(latitude, longitude, dateStr) {
-        // Only display for today through today+4
+        // Display for yesterday (if before cutoff hour) through today+4
         const today = new Date();
-        const todayStr = TimeUtils.formatDateForInput(today);
+        const minDate = new Date(today);
+        if (today.getHours() < APP_CONFIG.DV_LOOKBACK_CUTOFF_HOUR) {
+            minDate.setDate(today.getDate() - 1);
+        }
+        const minDateStr = TimeUtils.formatDateForInput(minDate);
         const maxDate = new Date(today);
         maxDate.setDate(today.getDate() + 4);
         const maxDateStr = TimeUtils.formatDateForInput(maxDate);
 
-        if (dateStr < todayStr || dateStr > maxDateStr) {
+        if (dateStr < minDateStr || dateStr > maxDateStr) {
             return null;
         }
 
@@ -303,7 +307,11 @@ const SkyglowView = {
     initControls() {
         const dateInput = document.getElementById('dv-date');
         if (dateInput) {
-            const dateStr = window.skyglowData?.date || TimeUtils.formatDateForInput(new Date());
+            let defaultDate = new Date();
+            if (!window.skyglowData?.date && defaultDate.getHours() < APP_CONFIG.DV_LOOKBACK_CUTOFF_HOUR) {
+                defaultDate.setDate(defaultDate.getDate() - 1);
+            }
+            const dateStr = window.skyglowData?.date || TimeUtils.formatDateForInput(defaultDate);
             dateInput.value = dateStr;
         }
         const minAlt = document.getElementById('dv-min-altitude');
