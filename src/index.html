@@ -79,7 +79,8 @@
           </ul>
         </div>
 
-        <div id="app-version"></div>
+        <div id="backup-reminder-indicator">Last backup: —</div>
+        <div id="app-version">
       </nav>
 
       <!-- Main Content Area -->
@@ -610,6 +611,17 @@
             <option value="20">20</option>
             <option value="60" selected>60</option>
           </select>
+        </div>
+        <!-- Row 5: Backup reminder interval -->
+        <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem;">
+          <label for="backup-reminder-days" style="margin-bottom: 0; display: inline;">Backup reminder every</label>
+          <select id="backup-reminder-days">
+            <option value="1">1</option>
+            <option value="3">3</option>
+            <option value="7" selected>7</option>
+            <option value="30">30</option>
+          </select>
+          <span>days</span>
         </div>
         <!-- Row 5: Custom DST dates (conditional) -->
         <div id="custom-dates" style="display: none;">
@@ -1977,6 +1989,30 @@
     </template>
     <!-- END OF Utilities Template -->
 
+    <!-- Backup Reminder Modal Template -->
+    <template id="backup-reminder-modal-template">
+      <div style="line-height: 1.6;">
+        <p style="margin-bottom: 1rem;">
+          All your Astryx data — locations, equipment, imaging projects, sessions, programs, your To Do List, and pinned targets — is stored exclusively in your browser's local IndexedDB storage. <strong>Nothing is stored on any server.</strong>
+        </p>
+        <p style="margin-bottom: 1rem;">
+          This means if your browser data is cleared, your device is lost or fails, or you switch browsers, your data is gone. Regular backups to redundant or cloud storage are essential.
+        </p>
+        <p style="margin-bottom: 0.5rem;"><strong>Recommended backup strategy:</strong></p>
+        <p style="margin-bottom: 0.25rem;">1. Back up the <strong>Target Database</strong> once — it rarely changes and is large. Store it somewhere safe.</p>
+        <p style="margin-bottom: 1rem;">2. Back up <strong>everything else</strong> regularly — after every imaging session or at least weekly. Store these backups in cloud storage or on a separate device.</p>
+        <p style="margin-bottom: 1rem; color: var(--text-secondary); font-size: 0.9rem;">
+          Backups are compressed ZIP files you can restore at any time from the Backup &amp; Restore function in the system menu.
+        </p>
+        <div style="text-align: center; margin-top: 1.5rem;">
+          <button class="btn-primary" onclick="UIManager.closeModal(); UIManager.openNewBackupModal();">
+            Go to Backup &amp; Restore
+          </button>
+        </div>
+      </div>
+    </template>
+    <!-- END OF Backup Reminder Modal Template -->
+
     <!-- Target Optimizer View Template -->
     <template id="optimizer-view-template">
       <div class="view-container">
@@ -2026,8 +2062,8 @@
     <!-- Backup Modal Template -->
     <template id="backup-modal-template">
       <div class="backup-restore-select-buttons">
-        <button type="button" class="backup-restore-select-btn" id="backup-select-all">Select All</button>
-        <button type="button" class="backup-restore-select-btn" id="backup-select-none">Select None</button>
+        <button type="button" class="backup-restore-select-btn" id="backup-select-userdata">Select User Data</button>
+        <button type="button" class="backup-restore-select-btn" id="backup-select-targets">Select Targets</button>
       </div>
 
       <!-- User Settings & Configuration -->
@@ -2113,7 +2149,7 @@
         <!-- Filename -->
         <div class="backup-filename-group">
           <label for="backup-filename" class="backup-filename-label">Filename:</label>
-          <input type="text" id="backup-filename" class="backup-filename-input" value="Astryx-v0.9.0-d6-20260114-2103">
+          <input type="text" id="backup-filename" class="backup-filename-input" readonly value="Astryx-v0.9.0-d6-20260114-2103">
         </div>
 
         <!-- Uncompressed Size -->
@@ -2237,6 +2273,7 @@
     <script src="include/marked.min.js"></script>
     <script src="include/jszip.min.js"></script>
     <script src="js/backup-manager.js"></script>
+    <script src="js/backup-reminder.js"></script>
     <script src="js/config.js"></script>
     <script src="js/tooltips.js"></script>
     <script src="js/help-content.js"></script>

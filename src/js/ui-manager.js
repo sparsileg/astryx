@@ -1259,6 +1259,12 @@ const UIManager = {
             backupDelaySelect.value = SettingsManager.getBackupDelayMinutes();
         }
 
+        // Backup reminder interval
+        const backupReminderSelect = document.getElementById('backup-reminder-days');
+        if (backupReminderSelect) {
+            backupReminderSelect.value = SettingsManager.getBackupReminderDays();
+        }
+
         // Optimizer candidate count
         const optimizerCountInput = document.getElementById('optimizer-candidate-count');
         if (optimizerCountInput) {
@@ -1293,6 +1299,11 @@ const UIManager = {
         const backupDelay = modalBody.querySelector('#backup-delay-minutes')?.value;
         if (backupDelay) {
             await SettingsManager.setBackupDelayMinutes(parseInt(backupDelay));
+        }
+
+        const backupReminderDays = modalBody.querySelector('#backup-reminder-days')?.value;
+        if (backupReminderDays) {
+            await SettingsManager.setBackupReminderDays(parseInt(backupReminderDays));
         }
 
         const filterMinSizeRaw = modalBody.querySelector('#filter-min-size')?.value.trim();
@@ -1391,8 +1402,8 @@ const UIManager = {
     },
 
     async markDataChanged() {
-        if (!SettingsManager.getAutoBackupEnabled()) return;
         await SettingsManager.setLastChangeTimestamp(Date.now());
+        if (!SettingsManager.getAutoBackupEnabled()) return;
         BackupManager.scheduleAutoBackup();
     },
 
@@ -2278,23 +2289,94 @@ const UIManager = {
             }
         });
 
-        // Setup Select All/None buttons and populate counts
+        // Setup backup modal controls
         setTimeout(async () => {
-            const selectAllBtn = document.getElementById('backup-select-all');
-            const selectNoneBtn = document.getElementById('backup-select-none');
+            const selectUserDataBtn = document.getElementById('backup-select-userdata');
+            const selectTargetsBtn  = document.getElementById('backup-select-targets');
 
-            if (selectAllBtn) {
-                selectAllBtn.addEventListener('click', () => {
-                    BackupManager.backupSelectAll(true);
+            const userDataIds = [
+                'backup-settings', 'backup-locations', 'backup-telescopes',
+                'backup-sensors', 'backup-filters', 'backup-pinned',
+                'backup-todo', 'backup-imaging', 'backup-programs'
+            ];
+            const targetId = 'backup-targets';
+
+            const userDataStoreNames = {
+                'backup-settings':   'settings',
+                'backup-locations':  'locations',
+                'backup-telescopes': 'telescopes',
+                'backup-sensors':    'sensors',
+                'backup-filters':    'filters',
+                'backup-pinned':     'pinned-targets',
+                'backup-todo':       'todo-list',
+                'backup-imaging':    'projects-sessions',
+                'backup-programs':   'programs'
+            };
+
+            const updateFilename = () => {
+                const filenameInput = document.getElementById('backup-filename');
+                if (!filenameInput) return;
+
+                const base = `${APP_CONFIG.APP_NAME}-v${APP_CONFIG.APP_VERSION}-d${APP_CONFIG.DB_VERSION}`;
+                const dtg  = TimeUtils.nowDTG();
+                const targetsChecked   = document.getElementById(targetId)?.checked;
+                const checkedUserData  = userDataIds.filter(id => document.getElementById(id)?.checked);
+
+                if (targetsChecked) {
+                    filenameInput.value = `${base}-targets-${dtg}`;
+                } else if (checkedUserData.length === 0) {
+                    filenameInput.value = '';
+                } else if (checkedUserData.length === 1) {
+                    const storeName = userDataStoreNames[checkedUserData[0]];
+                    filenameInput.value = `${base}-${storeName}-${dtg}`;
+                } else if (checkedUserData.length === userDataIds.length) {
+                    filenameInput.value = `${base}-userdata-${dtg}`;
+                } else {
+                    filenameInput.value = `${base}-partial-userdata-${dtg}`;
+                }
+            };
+
+            if (selectUserDataBtn) {
+                selectUserDataBtn.addEventListener('click', () => {
+                    // Uncheck and disable targets
+                    const targetCb = document.getElementById(targetId);
+                    if (targetCb) { targetCb.checked = false; targetCb.disabled = true; }
+
+                    // Check and enable all user data
+                    userDataIds.forEach(id => {
+                        const cb = document.getElementById(id);
+                        if (cb) { cb.checked = true; cb.disabled = false; }
+                    });
+
+                    updateFilename();
                     BackupManager.updateBackupSizeEstimates();
                 });
             }
-            if (selectNoneBtn) {
-                selectNoneBtn.addEventListener('click', () => {
-                    BackupManager.backupSelectAll(false);
+
+            if (selectTargetsBtn) {
+                selectTargetsBtn.addEventListener('click', () => {
+                    // Uncheck and disable all user data
+                    userDataIds.forEach(id => {
+                        const cb = document.getElementById(id);
+                        if (cb) { cb.checked = false; cb.disabled = true; }
+                    });
+
+                    // Check and enable targets
+                    const targetCb = document.getElementById(targetId);
+                    if (targetCb) { targetCb.checked = true; targetCb.disabled = false; }
+
+                    updateFilename();
                     BackupManager.updateBackupSizeEstimates();
                 });
             }
+
+            // Default to Select User Data state on open
+            const targetCbInit = document.getElementById(targetId);
+            if (targetCbInit) { targetCbInit.checked = false; targetCbInit.disabled = true; }
+            userDataIds.forEach(id => {
+                const cb = document.getElementById(id);
+                if (cb) { cb.checked = true; cb.disabled = false; }
+            });
 
             // Get actual counts and update display
             const counts = await BackupManager.countDataStoreItems();
@@ -2303,22 +2385,19 @@ const UIManager = {
             // Update size estimates initially
             await BackupManager.updateBackupSizeEstimates();
 
-            // Set dynamic filename with current timestamp
-            const filename = `${APP_CONFIG.APP_NAME}-v${APP_CONFIG.APP_VERSION}-d${APP_CONFIG.DB_VERSION}-${TimeUtils.nowDTG()}`;
-            const filenameInput = document.getElementById('backup-filename');
-            if (filenameInput) {
-                filenameInput.value = filename;
-            }
+            // Set initial filename
+            updateFilename();
 
-            // Add change listeners to all checkboxes to update size
+            // Add change listeners to all checkboxes to update size and filename
             const checkboxes = document.querySelectorAll('#modal-body input[type="checkbox"]');
             checkboxes.forEach(cb => {
-                cb.addEventListener('change', () => BackupManager.updateBackupSizeEstimates());
+                cb.addEventListener('change', () => {
+                    updateFilename();
+                    BackupManager.updateBackupSizeEstimates();
+                });
             });
         }, 0);
     },
-
-
 
 
 
