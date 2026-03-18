@@ -101,6 +101,12 @@ const UIManager = {
                         this.toggleTutorialsSubmenu();
                         return;
                     }
+                    // Handle help submenu toggle
+                    if (action === 'help') {
+                        e.stopPropagation();
+                        this.toggleHelpSubmenu();
+                        return;
+                    }
                     // Handle tutorial launches
                     if (action.startsWith('tutorial-')) {
                         const tutorialId = action.replace('tutorial-', '');
@@ -144,6 +150,25 @@ const UIManager = {
             parent.classList.toggle('expanded');
             submenu.classList.toggle('expanded');
         }
+    },
+
+    /**
+     * Toggle Help submenu
+     */
+    toggleHelpSubmenu() {
+        const parent = document.querySelector('[data-action="help"]');
+        const submenu = document.getElementById('help-submenu');
+        if (parent && submenu) {
+            parent.classList.toggle('expanded');
+            submenu.classList.toggle('expanded');
+        }
+    },
+
+    /**
+     * Open a help page in a new browser tab
+     */
+    openHelpPage(filename) {
+        window.open(`help/${filename}`, '_blank');
     },
 
     /**
@@ -214,8 +239,14 @@ const UIManager = {
         case 'tutorials':
             // Submenu is populated dynamically — no action needed here
             break;
-        case 'help':
-            this.openHelpListModal();
+        case 'help-best-months':
+            this.openHelpPage('best-months.html');
+            break;
+        case 'help-yearly-observability':
+            this.openHelpPage('yearly-observability.html');
+            break;
+        case 'help-target-database':
+            this.openHelpPage('target-database.html');
             break;
         case 'about':
             this.openAboutModal();
@@ -438,161 +469,6 @@ const UIManager = {
         }
     },
 
-    /**
-     * Load and display markdown help content
-     * @param {string} helpKey - Key for help content (e.g., 'best-months')
-     */
-    async showMarkdownHelp(helpKey) {
-        try {
-            // Check if HelpContent is available
-            if (typeof HelpContent === 'undefined') {
-                this.showToast('Help content not loaded', 'error');
-                console.error('HelpContent is not loaded. Add <script src="js/help-content.js"></script> to index.html');
-                return;
-            }
-
-            // Get markdown content
-            const markdown = HelpContent[helpKey];
-            if (!markdown) {
-                this.showToast(`Help topic '${helpKey}' not found`, 'error');
-                console.error(`Available help topics:`, Object.keys(HelpContent));
-                return;
-            }
-
-            // Check if marked is available
-            if (typeof marked === 'undefined') {
-                this.showToast('Markdown library not loaded', 'error');
-                console.error('marked.js is not loaded. Add <script src="include/marked.min.js"></script> to index.html');
-                return;
-            }
-
-            // Try both marked APIs (parse for newer versions, direct call for older)
-            let html;
-            try {
-                html = marked.parse ? marked.parse(markdown) : marked(markdown);
-            } catch (e) {
-                console.error('Error parsing markdown:', e);
-                html = `<pre>${markdown}</pre>`; // Fallback to preformatted text
-            }
-
-            // Check if modal is already open
-            const modal = document.getElementById('modal');
-            const modalIsOpen = modal && modal.classList.contains('active');
-
-            if (!modalIsOpen) {
-                // Open a new modal for help
-                this.openModal('help-template', 'Help', (action) => {
-                    if (action === 'close') {
-                        this.closeModal();
-                    }
-                });
-            }
-
-            // Update modal content
-            // Update modal content
-            const modalBody = document.getElementById('modal-body');
-            if (modalBody) {
-                modalBody.innerHTML = `
-        <div class="markdown-content" style="max-height: 600px; overflow-y: auto; padding: 1rem;">
-            ${html}
-        </div>
-                `;
-
-                // Re-attach close handler
-                const closeBtn = modalBody.querySelector('[data-action="close"]');
-                if (closeBtn) {
-                    closeBtn.addEventListener('click', () => this.closeModal());
-                }
-            }
-
-            // Update modal title
-            const modalTitle = document.getElementById('modal-title');
-            if (modalTitle) {
-                modalTitle.textContent = 'Help';
-            }
-
-            // Hide modal Help button when viewing help (if it exists)
-            const helpBtn = document.getElementById('modal-help');
-            if (helpBtn) {
-                helpBtn.style.display = 'none';
-            }
-        } catch (error) {
-            console.error('Error loading help:', error);
-            this.showToast(`Error loading help: ${error.message}`, 'error');
-        }
-    },
-
-    /**
-     * Open help list modal showing all available help topics
-     */
-    openHelpListModal() {
-        // Check if HelpContent is available
-        if (typeof HelpContent === 'undefined') {
-            this.showToast('Help content not loaded', 'error');
-            return;
-        }
-
-        // Get all help topics and sort alphabetically
-        const helpTopics = Object.keys(HelpContent).sort();
-
-        // Convert kebab-case keys to Title Case for display
-        const formatTitle = (key) => {
-            return key
-                .split('-')
-                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-                .join(' ');
-        };
-
-        // Build HTML for help topic list
-        let listHtml = '<div style="max-height: 500px; overflow-y: auto;">';
-
-        if (helpTopics.length === 0) {
-            listHtml += '<p style="padding: 2rem; text-align: center; color: var(--text-secondary);">No help topics available</p>';
-        } else {
-            listHtml += '<div style="display: flex; flex-direction: column; gap: 0.5rem;">';
-            helpTopics.forEach(key => {
-                const title = formatTitle(key);
-                listHtml += `
-                    <div class="help-topic-item"
-                         data-help-key="${key}"
-                         style="padding: 1rem;
-                                background: var(--card-bg);
-                                border: 1px solid var(--border-color);
-                                border-radius: 6px;
-                                cursor: pointer;
-                                transition: all 0.2s;"
-                         onmouseover="this.style.background='var(--card-hover)'"
-                         onmouseout="this.style.background='var(--card-bg)'">
-                        <strong>${title}</strong>
-                    </div>
-                `;
-            });
-            listHtml += '</div>';
-        }
-
-        listHtml += '</div>';
-
-        // Open modal with help list
-        this.openModal('help-template', 'Help Topics', (action) => {
-            if (action === 'close') {
-                this.closeModal();
-            }
-        });
-
-        // Populate modal body with help topic list
-        const modalBody = document.getElementById('modal-body');
-        if (modalBody) {
-            modalBody.innerHTML = listHtml;
-
-            // Add click handlers to help topic items
-            modalBody.querySelectorAll('.help-topic-item').forEach(item => {
-                item.addEventListener('click', () => {
-                    const helpKey = item.dataset.helpKey;
-                    this.showMarkdownHelp(helpKey);
-                });
-            });
-        }
-    },
 
     /**
      * Open settings modal

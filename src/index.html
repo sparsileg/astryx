@@ -139,9 +139,21 @@
       </div>
       <div class="menu-submenu" id="tutorials-submenu">
       </div>
-      <div class="menu-item" data-action="help">
+      <div class="menu-item menu-parent" data-action="help">
         <span class="menu-icon">❓</span>
         Help
+        <span class="menu-arrow">›</span>
+      </div>
+      <div class="menu-submenu" id="help-submenu">
+        <div class="menu-item submenu-item" data-action="help-best-months">
+          Best Month Calculation
+        </div>
+        <div class="menu-item submenu-item" data-action="help-yearly-observability">
+          Yearly Observability
+        </div>
+        <div class="menu-item submenu-item" data-action="help-target-database">
+          Target Database
+        </div>
       </div>
 
       <div class="menu-item" data-action="about">
@@ -2295,7 +2307,6 @@
     <script src="js/backup-reminder.js"></script>
     <script src="js/config.js"></script>
     <script src="js/tooltips.js"></script>
-    <script src="js/help-content.js"></script>
     <script src="js/db-manager.js"></script>
     <script src="js/data-manager.js"></script>
     <script src="js/ui-manager.js"></script>
