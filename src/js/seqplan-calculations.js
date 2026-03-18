@@ -27,7 +27,6 @@ const SeqPlanCalculations = {
                                                 location.timezone, location.isDST);
 
         if (!duskJD || !dawnJD) {
-            console.log('No dusk/dawn found - returning null');
             return null;
         }
 
@@ -372,8 +371,6 @@ const SeqPlanCalculations = {
     calculateSessionWindow(optimizedTargets, duskJD, dawnJD, location, minAltitude,
                            startTimeMode, customStartTime, useHorizon = false, horizonProfile = null) {
 
-        console.log('calculateSessionWindow - useHorizon:', useHorizon, 'horizonProfile:', horizonProfile ? 'present' : 'none');
-
         // Determine initial start time (dusk or custom)
         let initialStartJD = duskJD;
 
@@ -449,10 +446,8 @@ const SeqPlanCalculations = {
             if (setJD) {
                 const setAlt = getAltitude(setJD, lastTarget.ra, lastTarget.dec,
                                            location.latitude, location.longitude);
-                console.log(`Last target ${lastTarget.name} sets below ${minAltitude}° at ${jdToDate(setJD).toLocaleTimeString()} (altitude: ${setAlt.toFixed(1)}°)`);
                 sessionEndJD = setJD;
             } else {
-                console.log(`Last target ${lastTarget.name} stays visible until dawn`);
                 sessionEndJD = dawnJD; // Use dawn as session end
             }
         }
@@ -497,7 +492,6 @@ const SeqPlanCalculations = {
         // Determine valid window
         let validStartJD = riseJD || session.sessionStartJD;
         let validEndJD = setJD || session.sessionEndJD; // If no set found, use session end
-        console.log(`${target.name} constraint check - validStart: ${validStartJD ? jdToDate(validStartJD).toLocaleTimeString() : 'null'}, validEnd: ${validEndJD ? jdToDate(validEndJD).toLocaleTimeString() : 'null'}, imagingStart: ${jdToDate(target.imagingStartJD).toLocaleTimeString()}, imagingEnd: ${jdToDate(target.imagingEndJD).toLocaleTimeString()}`);
 
         // Check for violations
         let violationType = null;
@@ -713,9 +707,6 @@ const SeqPlanCalculations = {
 
             // Violation = above min altitude but blocked by horizon
             const isViolating = aboveMinAlt && !aboveHorizon;
-            if (isViolating) {
-                console.log(`Horizon violation detected at ${jdToDate(jd).toLocaleTimeString()}: alt=${altitude.toFixed(1)}°, minAlt=${minAltitude}°, aboveMinAlt=${aboveMinAlt}, aboveHorizon=${aboveHorizon}`);
-            }
             if (isViolating && !inViolation) {
                 // Start of violation period
                 violationStart = jd;
