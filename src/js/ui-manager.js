@@ -1764,7 +1764,11 @@ const UIManager = {
 
         const minAltitude = SettingsManager.getGlobalMinAltitude();
         const useHorizon = true;
-        const dateStr = TimeUtils.formatDateForInput(new Date());
+        const now = new Date();
+        const defaultDate = now.getHours() < APP_CONFIG.DV_LOOKBACK_CUTOFF_HOUR
+            ? new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1)
+            : now;
+        const dateStr = TimeUtils.formatDateForInput(defaultDate);
 
         const skyglowData = VisibilityCalculations.assembleSkyglowData(
             target, dateStr, locationName, minAltitude, useHorizon
