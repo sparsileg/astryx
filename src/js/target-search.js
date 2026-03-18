@@ -27,9 +27,6 @@ const VisibilityTargets = {
         const targetInput = document.getElementById('target-name');
         if (targetInput) {
             targetInput.addEventListener('input', (e) => this.handleSearch(e.target.value));
-            targetInput.addEventListener('blur', () => {
-                setTimeout(() => this.hideResults(), 200);
-            });
             targetInput.addEventListener('focus', (e) => {
                 e.target.select();
             });
@@ -68,6 +65,8 @@ const VisibilityTargets = {
             this.clearFields();
             return;
         }
+
+        localStorage.setItem('lastSearchQuery', query);
 
         this.searchTimeout = setTimeout(() => {
             this.search(query);
@@ -125,6 +124,7 @@ const VisibilityTargets = {
 
         resultsDiv.innerHTML = '';
         if (countDiv) countDiv.textContent = '';
+        if (countDiv) resultsDiv.before(countDiv);
 
         if (this.allResults.length === 0) {
             resultsDiv.innerHTML = '<div style="padding: 0.75rem; color: var(--text-secondary);">No targets found</div>';
@@ -149,7 +149,9 @@ const VisibilityTargets = {
         const countDiv = document.getElementById('target-search-results-count');
         if (!resultsDiv) { this.isLoading = false; return; }
 
-        const batchSize = this.displayedCount === 0 ? INITIAL_RESULTS_BATCH : LAZY_LOAD_BATCH_SIZE;
+        const SEARCH_INITIAL_BATCH = 10;
+        const SEARCH_LAZY_BATCH = 10;
+        const batchSize = this.displayedCount === 0 ? SEARCH_INITIAL_BATCH : SEARCH_LAZY_BATCH;
         const start = this.displayedCount;
         const end = Math.min(start + batchSize, this.allResults.length);
         const batch = this.allResults.slice(start, end);
@@ -163,13 +165,13 @@ const VisibilityTargets = {
 
             const commonName = target.common ? target.common.split(',')[0].trim() : '';
             resultDiv.innerHTML = `
-                <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                <div class="target-result-row">
                     <div class="target-name">${target.object}</div>
-                    <div style="font-size: 0.85rem; color: var(--text-secondary);">${typeDisplay}</div>
+                    <div class="target-result-secondary">${typeDisplay}</div>
                 </div>
-                <div style="display: flex; justify-content: space-between; align-items: baseline;">
-                    <div style="font-size: 0.85rem; color: var(--text-secondary);">${commonName}</div>
-                    <div style="font-size: 0.85rem; color: var(--text-secondary);">${constellation}</div>
+                <div class="target-result-row">
+                    <div class="target-result-secondary">${commonName}</div>
+                    <div class="target-result-secondary">${constellation}</div>
                 </div>
             `;
 
@@ -200,7 +202,7 @@ const VisibilityTargets = {
         this.scrollHandler = () => {
             const scrollPosition = resultsDiv.scrollTop + resultsDiv.clientHeight;
             const scrollHeight = resultsDiv.scrollHeight;
-            if (scrollPosition >= scrollHeight - 100) {
+            if (scrollPosition >= scrollHeight - 20) {
                 this.loadMoreResults();
             }
         };
@@ -303,8 +305,47 @@ const VisibilityTargets = {
             try {
                 const target = JSON.parse(lastTarget);
                 this.currentTarget = target;
-                this.select(target);
+
+                // Restore UI manually without clearing results panel
+                const targetNameInput = document.getElementById('target-name');
+                const infoDisplay = document.getElementById('target-info-display');
+                const targetType = document.getElementById('target-type');
+                const targetConstellation = document.getElementById('target-constellation');
+                const targetCommonNameEl = document.getElementById('target-common-name');
+                const targetOtherInfo = document.getElementById('target-other-info');
+
+                if (typeof VisibilityCalculations !== 'undefined') {
+                    VisibilityCalculations.currentTarget = target;
+                }
+
+                if (targetNameInput) targetNameInput.value = target.object;
+                if (infoDisplay) infoDisplay.style.display = 'block';
+                if (targetType) targetType.textContent = target.type ? (OBJECT_TYPES[target.type] || target.type) : '—';
+                if (targetConstellation) targetConstellation.textContent = target.constellation ? (CONSTELLATIONS[target.constellation] || target.constellation) : '—';
+                if (targetCommonNameEl) {
+                    if (target.common) {
+                        const names = target.common.split(',').map(n => n.trim());
+                        targetCommonNameEl.innerHTML = names.map(name =>
+                            `<a href="https://en.wikipedia.org/w/index.php?search=${encodeURIComponent(name).replace(/%20/g, '+')}&go=Go" target="_blank" class="wiki-link">${name}</a>`
+                        ).join(', ');
+                    } else {
+                        targetCommonNameEl.textContent = '—';
+                    }
+                }
+                if (targetOtherInfo) targetOtherInfo.textContent = target.other || '—';
+
                 UIManager.updateSidebarCurrentTarget(target.object);
+
+                // Restore search results panel
+                // Restore search results panel
+                const lastQuery = localStorage.getItem('lastSearchQuery');
+                console.log('lastQuery:', lastQuery);
+                if (lastQuery && targetNameInput) {
+                    targetNameInput.value = lastQuery;
+                    if (infoDisplay) infoDisplay.style.display = 'none';
+                    this.search(lastQuery);
+                }
+
             } catch (e) {
                 console.error('Failed to load last target:', e);
             }
