@@ -15,7 +15,7 @@
 const APP_CONFIG = {
     APP_NAME: 'Astryx',
     APP_TITLE: 'Astryx - Astrophotography Planning Tool',
-    APP_VERSION: '0.18.0',
+    APP_VERSION: '0.19.0',
     DB_NAME: 'astryx-db',
     DB_VERSION: 8,
     TARGET_DATA_PATH: './data/',
@@ -75,12 +75,14 @@ const APP_CONFIG = {
     BACKUP_REMINDER_AMBER_DAYS: 7,      // sidebar indicator turns amber after this many days
     BACKUP_REMINDER_RED_DAYS: 14,       // sidebar indicator turns orange/red after this many days
 
-    // Feature flags
     FEATURES: {
         OPTIMIZER_COMBINATIONS: true,  // Issue #38 - combination mode for target optimizer
         CLOUD_COVER: true,             // Issue #81 - cloud cover strip on daily visibility timeline (experimental)
-        TRANSITION_OPTIMIZATION: false  // Issue #41 - transition conflict avoidance in sequence planner
+        TRANSITION_OPTIMIZATION: true  // Issue #109 - sequence transition optimization
     },
+
+    // Sequence transition optimization settings
+    TRANSITION_OPTIMIZATION_THRESHOLD: 0.05,  // Minimum fractional improvement to accept reorder (5%)
 
     // External data APIs
     APIS: {

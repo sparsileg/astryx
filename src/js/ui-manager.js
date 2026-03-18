@@ -239,14 +239,17 @@ const UIManager = {
         case 'tutorials':
             // Submenu is populated dynamically — no action needed here
             break;
+        case 'help-target-database':
+            this.openHelpPage('target-database.html');
+            break;
         case 'help-best-months':
             this.openHelpPage('best-months.html');
             break;
         case 'help-yearly-observability':
             this.openHelpPage('yearly-observability.html');
             break;
-        case 'help-target-database':
-            this.openHelpPage('target-database.html');
+        case 'help-sequence-planner':
+            this.openHelpPage('sequence-planner.html');
             break;
         case 'about':
             this.openAboutModal();

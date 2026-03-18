@@ -115,143 +115,325 @@ const SeqPlanOptimizer = {
     },
 
     /**
-     * Optimize target sequence to minimize overhead events near target transitions
+     * Optimize target sequence to maximize total exposure count
      * Runs as a second pass after optimizeTargetOrder()
-     * Attempts shift first, then reorder if shift doesn't resolve conflicts
+     * Tries all permutations and picks the one with the most total subs
+     * Uses conflict count as tiebreaker when permutations are within tolerance
      * @param {Array} targets - Ordered targets (output of optimizeTargetOrder)
      * @param {Object} session - Session configuration
-     * @param {number} toleranceMinutes - Tolerance window in minutes (0 = disabled)
-     * @returns {Array} Targets with adjusted allocations and/or reordered
+     * @param {number} toleranceMinutes - Minimum imaging time improvement to accept reorder (0 = disabled)
+     * @returns {Array} Targets in optimal order
+     */
+    /**
+     * Optimize target sequence to maximize total exposure count
+     * Runs as a second pass after optimizeTargetOrder()
+     * Tries all permutations with flip boundary optimization per permutation
+     * Only accepts result if it improves on baseline by at least TRANSITION_OPTIMIZATION_THRESHOLD
+     * @param {Array} targets - Ordered targets (output of optimizeTargetOrder)
+     * @param {Object} session - Session configuration
+     * @param {number} toleranceMinutes - Minimum imaging time to enable optimization (0 = disabled)
+     * @returns {Array} Targets in optimal order
      */
     optimizeTransitions(targets, session, toleranceMinutes) {
         if (!APP_CONFIG.FEATURES.TRANSITION_OPTIMIZATION) return targets;
         if (targets.length < 2 || toleranceMinutes <= 0) return targets;
 
-        const MAX_ITERATIONS = 3;
-        let current = targets.map(t => ({ ...t }));
+        // Calculate baseline sub count with input order
+        const baselineWindow = SeqPlanCalculations.calculateSessionWindow(
+            targets,
+            session.duskJD,
+            session.dawnJD,
+            session.location,
+            session.minAltitude,
+            session.startTimeMode,
+            session.customStartTime,
+            session.useHorizon,
+            session.useHorizon ? session.location.horizon : null
+        );
+        const baselineSession = {
+            ...session,
+            sessionStartJD: baselineWindow.sessionStartJD,
+            sessionEndJD: baselineWindow.sessionEndJD
+        };
+        const baselineCalculated = SeqPlanCalculations.calculateExposureCounts(targets, baselineSession);
+        const baselineSubs = baselineCalculated.reduce((sum, t) => sum + t.exposureCount, 0);
+        console.log(`Transition optimization: baseline ${baselineSubs} subs`);
 
-        for (let iteration = 0; iteration < MAX_ITERATIONS; iteration++) {
-            // Recalculate with current allocations
-            const calculated = SeqPlanCalculations.calculateExposureCounts(current, session);
+        // Find best permutation + flip boundary combination
+        const best = this.tryReorder(targets, session, toleranceMinutes);
 
-            // Find conflicts
-            const conflicts = SeqPlanCalculations.findTransitionConflicts(
-                calculated, session, toleranceMinutes
-            );
-
-            if (conflicts.length === 0) {
-                console.log(`Transition optimization: no conflicts after ${iteration} iteration(s)`);
-                break;
-            }
-
-            console.log(`Transition optimization iteration ${iteration + 1}: ${conflicts.length} conflict(s) found`);
-
-            let improved = false;
-
-            for (const conflict of conflicts) {
-                const i = conflict.targetIndex;
-
-                if (conflict.type === 'flip_near_end') {
-                    // Shift boundary earlier to skip the flip entirely
-                    // Reduce current target allocation by (overheadMinutes + minutesFromBoundary)
-                    const shiftMinutes = conflict.overheadMinutes + conflict.minutesFromBoundary;
-                    const totalMinutes = (session.sessionEndJD - session.sessionStartJD) * 24 * 60;
-                    const shiftPercent = shiftMinutes / totalMinutes * 100;
-
-                    if (current[i].allocatedPercent - shiftPercent > 0 &&
-                        current[i + 1] &&
-                        current[i + 1].allocatedPercent + shiftPercent > 0) {
-                        current[i].allocatedPercent -= shiftPercent;
-                        current[i + 1].allocatedPercent += shiftPercent;
-                        console.log(`  flip_near_end: shifted ${shiftMinutes.toFixed(1)} min from target ${i} to ${i + 1}`);
-                        improved = true;
-                    }
-
-                } else if (conflict.type === 'flip_near_start') {
-                    // Shift boundary later so flip happens on current target's time
-                    // Extend current target allocation by (overheadMinutes - minutesFromBoundary)
-                    const shiftMinutes = conflict.overheadMinutes - conflict.minutesFromBoundary;
-                    if (shiftMinutes > 0) {
-                        const totalMinutes = (session.sessionEndJD - session.sessionStartJD) * 24 * 60;
-                        const shiftPercent = shiftMinutes / totalMinutes * 100;
-
-                        if (current[i] &&
-                            current[i + 1].allocatedPercent - shiftPercent > 0) {
-                            current[i].allocatedPercent += shiftPercent;
-                            current[i + 1].allocatedPercent -= shiftPercent;
-                            console.log(`  flip_near_start: shifted ${shiftMinutes.toFixed(1)} min from target ${i + 1} to ${i}`);
-                            improved = true;
-                        }
-                    }
-
-                } else if (conflict.type === 'af_near_end') {
-                    // Shift boundary earlier by just enough to drop the last AF run
-                    // before transition, landing boundary between previous and last AF event
-                    // Shift = minutesFromBoundary + small buffer to clear the AF event
-                    const shiftMinutes = conflict.minutesFromBoundary + conflict.overheadMinutes + 1;
-                    const totalMinutes = (session.sessionEndJD - session.sessionStartJD) * 24 * 60;
-                    const shiftPercent = shiftMinutes / totalMinutes * 100;
-
-                    if (current[i].allocatedPercent - shiftPercent > 0 &&
-                        current[i + 1] &&
-                        current[i + 1].allocatedPercent + shiftPercent > 0) {
-                        current[i].allocatedPercent -= shiftPercent;
-                        current[i + 1].allocatedPercent += shiftPercent;
-                        console.log(`  af_near_end: shifted ${shiftMinutes.toFixed(1)} min from target ${i} to ${i + 1} (gap was ${conflict.gapToNextAF.toFixed(1)} min, interval ${session.autofocusInterval} min)`);
-                        improved = true;
-                    }
-                }
-            }
-            if (!improved) {
-                // Shifts didn't help — try reordering
-                console.log(`  No improvement from shifts, attempting reorder`);
-                const reordered = this.tryReorder(current, session, toleranceMinutes);
-                if (reordered) {
-                    current = reordered;
-                    improved = true;
-                } else {
-                    console.log(`  Reorder did not improve conflicts, stopping`);
-                    break;
-                }
-            }
+        if (!best) {
+            console.log(`Transition optimization: no improvement found, keeping original`);
+            return targets;
         }
 
-        return current;
+        // Only accept if improvement exceeds configured threshold
+        const threshold = APP_CONFIG.TRANSITION_OPTIMIZATION_THRESHOLD || 0.05;
+        const minAcceptableSubs = Math.ceil(baselineSubs * (1 + threshold));
+        if (best.totalSubs >= minAcceptableSubs) {
+            console.log(`Transition optimization: accepted — ${baselineSubs} → ${best.totalSubs} subs (≥${threshold * 100}% improvement)`);
+            return best.targets;
+        }
+
+        console.log(`Transition optimization: improvement insufficient (${baselineSubs} → ${best.totalSubs} subs, threshold ${minAcceptableSubs}), keeping original`);
+        return targets;
     },
 
     /**
-     * Try all permutations of target order to find one with fewer conflicts
+     * Try all permutations of target order, applying flip boundary optimization to each
+     * Recalculates session window per permutation since last target determines session end
+     * Returns the best permutation+flip combination found
      * Only practical for small numbers of targets (2-4)
      * @param {Array} targets - Current target order
      * @param {Object} session - Session configuration
      * @param {number} toleranceMinutes - Tolerance window in minutes
-     * @returns {Array|null} Better ordered targets, or null if no improvement found
+     * @returns {Object|null} { targets, totalSubs, conflicts } or null if no improvement
      */
     tryReorder(targets, session, toleranceMinutes) {
-        const currentCalculated = SeqPlanCalculations.calculateExposureCounts(targets, session);
-        const currentConflicts = SeqPlanCalculations.findTransitionConflicts(
-            currentCalculated, session, toleranceMinutes
-        ).length;
 
-        // Generate all permutations
+        // Helper: score a permutation by recalculating session window, then applying
+        // flip boundary optimization, returning the best achievable sub count
+        const scorePerm = (perm) => {
+            const sessionWindow = SeqPlanCalculations.calculateSessionWindow(
+                perm,
+                session.duskJD,
+                session.dawnJD,
+                session.location,
+                session.minAltitude,
+                session.startTimeMode,
+                session.customStartTime,
+                session.useHorizon,
+                session.useHorizon ? session.location.horizon : null
+            );
+            const permSession = {
+                ...session,
+                sessionStartJD: sessionWindow.sessionStartJD,
+                sessionEndJD: sessionWindow.sessionEndJD
+            };
+
+            // Try flip boundary optimization on this permutation
+            const flipped = this.optimizeFlipBoundaries(perm, permSession, toleranceMinutes);
+            const finalPerm = flipped || perm;
+
+            // Recalculate with flip-optimized allocations
+            const finalWindow = flipped ? SeqPlanCalculations.calculateSessionWindow(
+                finalPerm,
+                session.duskJD,
+                session.dawnJD,
+                session.location,
+                session.minAltitude,
+                session.startTimeMode,
+                session.customStartTime,
+                session.useHorizon,
+                session.useHorizon ? session.location.horizon : null
+            ) : sessionWindow;
+            const finalSession = flipped ? {
+                ...session,
+                sessionStartJD: finalWindow.sessionStartJD,
+                sessionEndJD: finalWindow.sessionEndJD
+            } : permSession;
+
+            const calculated = SeqPlanCalculations.calculateExposureCounts(finalPerm, finalSession);
+            const totalSubs = calculated.reduce((sum, t) => sum + t.exposureCount, 0);
+            const conflicts = SeqPlanCalculations.findTransitionConflicts(
+                calculated, finalSession, toleranceMinutes
+            ).length;
+            return { totalSubs, conflicts, targets: finalPerm, permSession: finalSession };
+        };
+
+        // Score current order
+        const currentScore = scorePerm(targets);
+
+        // Generate and score all permutations
         const permutations = this.getPermutations(targets);
-        let bestOrder = null;
-        let bestConflicts = currentConflicts;
+        let bestScore = null;
+        let bestSubs = currentScore.totalSubs;
+        let bestConflicts = currentScore.conflicts;
 
         for (const perm of permutations) {
-            const calculated = SeqPlanCalculations.calculateExposureCounts(perm, session);
-            const conflicts = SeqPlanCalculations.findTransitionConflicts(
-                calculated, session, toleranceMinutes
-            ).length;
+            const score = scorePerm(perm);
+            const subImprovement = score.totalSubs - currentScore.totalSubs;
 
-            if (conflicts < bestConflicts) {
-                bestConflicts = conflicts;
-                bestOrder = perm;
-                console.log(`  Reorder found better order with ${conflicts} conflict(s)`);
+            if (score.totalSubs > bestSubs) {
+                bestSubs = score.totalSubs;
+                bestConflicts = score.conflicts;
+                bestScore = score;
+            // Tiebreaker: same subs, prefer fewer conflicts
+            } else if (score.totalSubs === bestSubs && score.conflicts < bestConflicts) {
+                bestConflicts = score.conflicts;
+                bestScore = score;
+            }
+        }
+        if (bestScore) {
+            return bestScore;
+        }
+        return null;
+    },
+
+    /**
+     * Optimize target boundary positions around meridian flips
+     * For each target with a meridian flip, tries two boundary positions:
+     *   1. Exclude flip - end target just before flip pause begins
+     *   2. Include flip - keep current boundary (flip happens in this target's time)
+     * Picks the boundary combination that maximizes total exposure count
+     * @param {Array} targets - Ordered targets (output of tryReorder)
+     * @param {Object} session - Session configuration
+     * @param {number} toleranceMinutes - Tolerance window in minutes
+     * @returns {Array|null} Targets with adjusted allocations, or null if no improvement
+     */
+    optimizeFlipBoundaries(targets, session, toleranceMinutes) {
+        // First calculate baseline with current allocations
+        const sessionWindow = SeqPlanCalculations.calculateSessionWindow(
+            targets,
+            session.duskJD,
+            session.dawnJD,
+            session.location,
+            session.minAltitude,
+            session.startTimeMode,
+            session.customStartTime,
+            session.useHorizon,
+            session.useHorizon ? session.location.horizon : null
+        );
+        const baseSession = {
+            ...session,
+            sessionStartJD: sessionWindow.sessionStartJD,
+            sessionEndJD: sessionWindow.sessionEndJD
+        };
+        const baseCalculated = SeqPlanCalculations.calculateExposureCounts(targets, baseSession);
+        const baseSubs = baseCalculated.reduce((sum, t) => sum + t.exposureCount, 0);
+
+        // Find targets that have meridian flips
+        const flipTargetIndices = baseCalculated
+              .map((t, i) => ({ t, i }))
+              .filter(({ t }) => t.meridianFlipJD)
+              .map(({ i }) => i);
+
+        if (flipTargetIndices.length === 0) {
+            return null;
+        }
+
+        const totalMinutes = (baseSession.sessionEndJD - baseSession.sessionStartJD) * 24 * 60;
+        let bestAllocations = targets.map(t => t.allocatedPercent);
+        let bestSubs = baseSubs;
+
+        // For each target with a flip, try excluding vs including the flip
+        for (const flipIdx of flipTargetIndices) {
+            const flipTarget = baseCalculated[flipIdx];
+
+            // Calculate minutes to end of target from flip pause start
+            const pauseBeforeJD = flipTarget.meridianFlipJD -
+                  (session.meridianFlipPause / 1440);
+            const minutesToFlip = (pauseBeforeJD - flipTarget.imagingStartJD) * 1440;
+            const minutesAfterFlip = (flipTarget.imagingEndJD - flipTarget.meridianFlipJD -
+                                      (session.meridianFlipPause / 1440) -
+                                      (session.meridianFlipDuration / 1440)) * 1440;
+
+            // Option A: Exclude flip — end target just before flip pause
+            const excludeMinutes = minutesToFlip;
+            const excludePercent = excludeMinutes / totalMinutes * 100;
+            const currentPercent = flipTarget.allocatedPercent;
+            const percentDiff = currentPercent - excludePercent;
+
+            if (flipIdx + 1 < targets.length && percentDiff > 0) {
+                // Try exclude: shrink flip target, give time to next target
+                const testAllocations = [...bestAllocations];
+                testAllocations[flipIdx] = excludePercent;
+                testAllocations[flipIdx + 1] += percentDiff;
+
+                const testTargets = targets.map((t, i) => ({
+                    ...t,
+                    allocatedPercent: testAllocations[i]
+                }));
+                const testCalculated = SeqPlanCalculations.calculateExposureCounts(
+                    testTargets, baseSession
+                );
+
+                const testSubs = testCalculated.reduce((sum, t) => sum + t.exposureCount, 0);
+                if (testSubs > bestSubs) {
+                    bestSubs = testSubs;
+                    bestAllocations = testAllocations;
+                }
+            }
+
+            // Option B: Include flip — already the current state, but try extending
+            // to get more post-flip imaging time at the expense of next target
+            const flipOverhead = (session.meridianFlipPause * 2) + session.meridianFlipDuration;
+            const postFlipMinutes = minutesAfterFlip;
+
+            if (flipIdx + 1 < targets.length && postFlipMinutes > 0) {
+                // Try include with extension: give flip target enough time to image after flip
+                const exposureSeconds = flipTarget.exposureTime + session.interExposureTime;
+                const postFlipSubs = Math.floor((postFlipMinutes * 60) / exposureSeconds);
+                const extendMinutes = flipOverhead + (postFlipSubs * exposureSeconds / 60);
+                const extendPercent = extendMinutes / totalMinutes * 100;
+
+                if (bestAllocations[flipIdx] + extendPercent <= 100 &&
+                    bestAllocations[flipIdx + 1] - extendPercent > 0) {
+                    const testAllocations = [...bestAllocations];
+                    testAllocations[flipIdx] += extendPercent;
+                    testAllocations[flipIdx + 1] -= extendPercent;
+
+                    const testTargets = targets.map((t, i) => ({
+                        ...t,
+                        allocatedPercent: testAllocations[i]
+                    }));
+                    const testCalculated = SeqPlanCalculations.calculateExposureCounts(
+                        testTargets, baseSession
+                    );
+
+                    const testSubs = testCalculated.reduce((sum, t) => sum + t.exposureCount, 0);
+                    if (testSubs > bestSubs) {
+                        bestSubs = testSubs;
+                        bestAllocations = testAllocations;
+                    }
+                }
+            }
+
+            // Option C: Extend past next target's flip — absorb next target's flip
+            // into current target's time, so next target starts clean post-flip
+            if (flipIdx + 1 < targets.length) {
+                const nextTarget = baseCalculated[flipIdx + 1];
+                if (nextTarget.meridianFlipJD) {
+                    // Boundary needs to move past next target's full flip sequence
+                    const nextFlipEnd = nextTarget.meridianFlipJD +
+                          (session.meridianFlipPause / 1440) +
+                          (session.meridianFlipDuration / 1440);
+
+                    // Current target extended to just after next target's flip completes
+                    const extendToMinutes = (nextFlipEnd - flipTarget.imagingStartJD) * 1440;
+                    const extendToPercent = extendToMinutes / totalMinutes * 100;
+                    const currentFlipPercent = bestAllocations[flipIdx];
+                    const absorbDiff = extendToPercent - currentFlipPercent;
+
+                    if (absorbDiff > 0 &&
+                        bestAllocations[flipIdx + 1] - absorbDiff > 0) {
+                        const testAllocations = [...bestAllocations];
+                        testAllocations[flipIdx] = extendToPercent;
+                        testAllocations[flipIdx + 1] -= absorbDiff;
+
+                        const testTargets = targets.map((t, i) => ({
+                            ...t,
+                            allocatedPercent: testAllocations[i]
+                        }));
+                        const testCalculated = SeqPlanCalculations.calculateExposureCounts(
+                            testTargets, baseSession
+                        );
+
+                        const testSubs = testCalculated.reduce((sum, t) => sum + t.exposureCount, 0);
+                        if (testSubs > bestSubs) {
+                            bestSubs = testSubs;
+                            bestAllocations = testAllocations;
+                        }
+                    }
+                }
             }
         }
 
-        return bestOrder;
+        if (bestSubs > baseSubs) {
+            return targets.map((t, i) => ({ ...t, allocatedPercent: bestAllocations[i] }));
+        }
+
+        return null;
     },
 
     /**
