@@ -194,6 +194,17 @@ const SeqPlanView = {
             SettingsManager.getSetting('seqPlanCalibrationDuration', 5);
         document.getElementById('seq-plan-inter-exposure').value =
             SettingsManager.getSetting('seqPlanInterExposureTime', 8);
+
+        const toleranceSelect = document.getElementById('seq-plan-transition-tolerance');
+        if (toleranceSelect) {
+            if (!APP_CONFIG.FEATURES.TRANSITION_OPTIMIZATION) {
+                toleranceSelect.value = 0;
+                toleranceSelect.disabled = true;
+            } else {
+                toleranceSelect.value = SettingsManager.getSetting('seqPlanTransitionTolerance', 0);
+                toleranceSelect.disabled = false;
+            }
+        }
     },
 
     /**
@@ -221,6 +232,9 @@ const SeqPlanView = {
                                           parseFloat(document.getElementById('seq-plan-cal-duration').value));
         await SettingsManager.saveSetting('seqPlanInterExposureTime',
                                           parseFloat(document.getElementById('seq-plan-inter-exposure').value));
+
+        await SettingsManager.saveSetting('seqPlanTransitionTolerance',
+                                          parseInt(document.getElementById('seq-plan-transition-tolerance').value));
     },
 
     /**
@@ -255,6 +269,14 @@ const SeqPlanView = {
             'seq-plan-cal-duration',
             'seq-plan-inter-exposure'
         ];
+
+        // Transition tolerance requires full regeneration with optimization
+        const toleranceInput = document.getElementById('seq-plan-transition-tolerance');
+        if (toleranceInput) {
+            toleranceInput.addEventListener('change', () => {
+                this.debouncedGenerate();
+            });
+        }
 
         overheadInputs.forEach(id => {
             const element = document.getElementById(id);
@@ -408,9 +430,16 @@ const SeqPlanView = {
         this.currentSession.sessionStartJD = sessionWindow.sessionStartJD;
         this.currentSession.sessionEndJD = sessionWindow.sessionEndJD;
 
+        // Apply transition optimization (second pass, if enabled and tolerance set)
+        const transitionOptimizedTargets = SeqPlanOptimizer.optimizeTransitions(
+            optimizedTargets,
+            this.currentSession,
+            this.currentSession.transitionTolerance
+        );
+
         // Calculate exposure counts
         this.calculatedResults = SeqPlanCalculations.calculateExposureCounts(
-            optimizedTargets,
+            transitionOptimizedTargets,
             this.currentSession
         );
 
@@ -500,7 +529,8 @@ const SeqPlanView = {
             meridianFlipPause: parseInt(document.getElementById('seq-plan-flip-pause').value),
             meridianFlipDuration: parseInt(document.getElementById('seq-plan-flip-duration').value),
             meridianFlipOffset: parseInt(document.getElementById('seq-plan-flip-offset').value),
-            interExposureTime: parseInt(document.getElementById('seq-plan-inter-exposure').value)
+            interExposureTime: parseInt(document.getElementById('seq-plan-inter-exposure').value),
+            transitionTolerance: parseInt(document.getElementById('seq-plan-transition-tolerance')?.value || 0)
         };
     },
 
@@ -1072,9 +1102,16 @@ const SeqPlanView = {
         this.currentSession.sessionStartJD = sessionWindow.sessionStartJD;
         this.currentSession.sessionEndJD = sessionWindow.sessionEndJD;
 
+        // Apply transition optimization (second pass, if enabled and tolerance set)
+        const transitionOptimizedTargets = SeqPlanOptimizer.optimizeTransitions(
+            optimizedTargets,
+            this.currentSession,
+            this.currentSession.transitionTolerance
+        );
+
         // Recalculate with new order and equal allocations
         this.calculatedResults = SeqPlanCalculations.calculateExposureCounts(
-            optimizedTargets,
+            transitionOptimizedTargets,
             this.currentSession
         );
 

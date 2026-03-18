@@ -531,6 +531,154 @@ const SeqPlanCalculations = {
         };
     },
 
+/**
+     * Find transition conflicts for all target boundaries
+     * Checks both end of current target and start of next target
+     * for meridian flips and periodic autofocus events within tolerance window
+     * @param {Array} targets - Calculated target plans (output of calculateExposureCounts)
+     * @param {Object} session - Session configuration
+     * @param {number} toleranceMinutes - Tolerance window in minutes
+     * @returns {Array} Array of conflict objects describing each conflict found
+     */
+    findTransitionConflicts(targets, session, toleranceMinutes) {
+        if (!targets || targets.length < 2 || toleranceMinutes <= 0) {
+            return [];
+        }
+
+        const toleranceJD = toleranceMinutes / 1440;
+        const conflicts = [];
+
+        for (let i = 0; i < targets.length - 1; i++) {
+            const current = targets[i];
+            const next = targets[i + 1];
+            const boundaryJD = current.imagingEndJD;
+
+            // === LOOK-BACK: events near end of current target ===
+
+            // Meridian flip near end of current target
+            if (current.meridianFlipJD) {
+                const minutesFromEnd = (boundaryJD - current.meridianFlipJD) * 1440;
+                if (minutesFromEnd >= 0 && minutesFromEnd <= toleranceMinutes) {
+                    conflicts.push({
+                        type: 'flip_near_end',
+                        targetIndex: i,
+                        targetName: current.name,
+                        nextTargetName: next.name,
+                        eventJD: current.meridianFlipJD,
+                        boundaryJD: boundaryJD,
+                        minutesFromBoundary: minutesFromEnd,
+                        overheadMinutes: (session.meridianFlipPause * 2) + session.meridianFlipDuration
+                    });
+                }
+            }
+
+            // Periodic AF near end of current target
+            // Only flag if the gap between this AF and the next target's initial AF
+            // would be less than autofocusInterval (i.e. two AF events too close together)
+            // Mirrors generateTimelineEvents() AF schedule exactly, including meridian flip reset
+            if (session.autofocusEnabled && session.autofocusInterval > 0) {
+
+                // Guard: if calibration alone fills the interval, no conflict possible
+                if (session.calibrationDuration < session.autofocusInterval) {
+                    const afDuration = session.autofocusDuration / 1440;
+                    const afInterval = session.autofocusInterval / 1440;
+
+                    // Start after initial AF and calibration
+                    let scheduleJD = current.imagingStartJD + afDuration +
+                                     (session.calibrationDuration / 1440);
+                    let lastAFEndJD = current.imagingStartJD + afDuration;
+
+                    if (current.meridianFlipJD) {
+                        // === Walk AF events BEFORE flip ===
+                        const pauseBeforeJD = current.meridianFlipJD -
+                                              (session.meridianFlipPause / 1440);
+                        let afStart = scheduleJD + afInterval;
+
+                        while (afStart < pauseBeforeJD) {
+                            const afEnd = afStart + afDuration;
+                            lastAFEndJD = afEnd;
+                            scheduleJD = afEnd;
+                            afStart = afEnd + afInterval;
+                        }
+
+                        // === Walk AF events AFTER flip ===
+                        // AF fires immediately after flip, resetting the timer
+                        const flipEnd = current.meridianFlipJD +
+                                        (session.meridianFlipPause / 1440) +
+                                        (session.meridianFlipDuration / 1440);
+                        const postFlipAFEnd = flipEnd + afDuration;
+                        lastAFEndJD = postFlipAFEnd;
+                        scheduleJD = postFlipAFEnd;
+
+                        let afStartPost = postFlipAFEnd + afInterval;
+                        while (afStartPost < boundaryJD) {
+                            const afEnd = afStartPost + afDuration;
+                            lastAFEndJD = afEnd;
+                            scheduleJD = afEnd;
+                            afStartPost = afEnd + afInterval;
+                        }
+
+                    } else {
+                        // === No flip - walk AF events continuously ===
+                        let afStart = scheduleJD + afInterval;
+                        while (afStart < boundaryJD) {
+                            const afEnd = afStart + afDuration;
+                            lastAFEndJD = afEnd;
+                            scheduleJD = afEnd;
+                            afStart = afEnd + afInterval;
+                        }
+                    }
+
+                    // lastAFEndJD is when the last AF on this target completed
+                    // Next target's first AF fires after its initial AF (at imagingStartJD)
+                    // Gap = time from lastAFEndJD to next target's first AF end
+                    // Next target first AF starts at boundaryJD, ends at boundaryJD + afDuration
+                    // Then calibration, then imaging begins
+                    const nextAFStartJD = boundaryJD; // initial AF of next target
+                    const gapMinutes = (nextAFStartJD - lastAFEndJD) * 1440;
+
+                    if (gapMinutes < 15 &&
+                        gapMinutes >= 0 &&
+                        (boundaryJD - lastAFEndJD) * 1440 <= toleranceMinutes) {
+                        conflicts.push({
+                            type: 'af_near_end',
+                            targetIndex: i,
+                            targetName: current.name,
+                            nextTargetName: next.name,
+                            eventJD: lastAFEndJD,
+                            boundaryJD: boundaryJD,
+                            minutesFromBoundary: (boundaryJD - lastAFEndJD) * 1440,
+                            gapToNextAF: gapMinutes,
+                            overheadMinutes: session.autofocusDuration
+                        });
+                    }
+                }
+            }
+
+            // === LOOK-AHEAD: events near start of next target ===
+
+            // Meridian flip near start of next target
+            if (next.meridianFlipJD) {
+                const minutesFromStart = (next.meridianFlipJD - boundaryJD) * 1440;
+                if (minutesFromStart >= 0 && minutesFromStart <= toleranceMinutes) {
+                    conflicts.push({
+                        type: 'flip_near_start',
+                        targetIndex: i + 1,
+                        targetName: next.name,
+                        nextTargetName: next.name,
+                        eventJD: next.meridianFlipJD,
+                        boundaryJD: boundaryJD,
+                        minutesFromBoundary: minutesFromStart,
+                        overheadMinutes: (session.meridianFlipPause * 2) + session.meridianFlipDuration
+                    });
+                }
+            }
+        }
+
+        return conflicts;
+    },
+
+
     /**
      * Find all periods where target violates horizon profile (but not min altitude)
      * @param {number} startJD - Imaging window start

@@ -78,7 +78,8 @@ const APP_CONFIG = {
     // Feature flags
     FEATURES: {
         OPTIMIZER_COMBINATIONS: true,  // Issue #38 - combination mode for target optimizer
-        CLOUD_COVER: true              // Issue #81 - cloud cover strip on daily visibility timeline (experimental)
+        CLOUD_COVER: true,             // Issue #81 - cloud cover strip on daily visibility timeline (experimental)
+        TRANSITION_OPTIMIZATION: false  // Issue #41 - transition conflict avoidance in sequence planner
     },
 
     // External data APIs
