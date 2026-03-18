@@ -59,7 +59,7 @@ const TUTORIAL_TARGET_SEARCH = {
             id: 'result-panel',
             type: 'callout',
             title: 'Reading the Result Panel',
-            body: 'Once you have selected the current target, a short summary panel appears, as well as a <strong>Detail</strong> button. The summary provides a few attributes of the selected target.',
+            body: 'Once you have selected the current target, a short summary panel appears, as well as a <strong>Detail</strong> button. The summary provides a few attributes of the selected target.<br><br>Note that if you navigate away and return to <strong>Target Selection</strong>, your previous search query and results are automatically restored.',
             target: '#target-info-display',
             position: 'right',
             waitFor: 'next',

@@ -1731,6 +1731,20 @@ const UIManager = {
         const el = document.getElementById('sidebar-current-target');
         if (el) {
             el.textContent = `Current Target: ${targetName || 'None'}`;
+
+            // Remove old listener by cloning
+            const newEl = el.cloneNode(true);
+            el.parentNode.replaceChild(newEl, el);
+
+            if (targetName) {
+                newEl.style.cursor = 'pointer';
+                newEl.addEventListener('click', () => {
+                    const target = DataManager.getTarget(targetName);
+                    if (target) this.openObjectDetailModal(target);
+                });
+            } else {
+                newEl.style.cursor = 'default';
+            }
         }
     },
 

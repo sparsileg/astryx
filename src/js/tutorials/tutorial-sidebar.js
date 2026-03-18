@@ -79,7 +79,7 @@ const TUTORIAL_SIDEBAR = {
             id: 'current-target',
             type: 'callout',
             title: 'Current Target',
-            body: 'Displays the currently selected target. Once the <strong>Current Target</strong> is set, all analysis tools operate on the target. You set the <strong>Current Target</strong> by selecting a result from <strong>Target Search</strong>, <strong>Filter Targets</strong>, or the <strong>Pinned Targets</strong> list.',
+            body: 'Displays the currently selected target. Once the <strong>Current Target</strong> is set, all analysis tools operate on the target. You set the <strong>Current Target</strong> by selecting a result from <strong>Target Search</strong>, <strong>Filter Targets</strong>, or the <strong>Pinned Targets</strong> list.<br><br>You can click the <strong>Current Target</strong> label directly to open the Detail panel for that target.',
             target: '#sidebar-current-target',
             position: 'right',
             waitFor: 'next',
@@ -90,7 +90,7 @@ const TUTORIAL_SIDEBAR = {
             type: 'callout',
             title: 'Target Selection',
             body: 'Search and filter the target database of thousands of deep-sky objects. Pin targets for quick access or add them to your To Do list from the Detail panel.<br><br>Once you create a <strong>To Do List</strong>, you can use it for searches and filters instead of the entire target database.',
-            target: '#siderbar-target-selection',
+            target: '#sidebar-target-selection',
             position: 'right',
             waitFor: 'next',
             highlight: true

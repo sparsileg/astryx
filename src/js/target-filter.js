@@ -4,8 +4,8 @@
  */
 
 /* configurable parameters */
-const INITIAL_RESULTS_BATCH = 5;
-const LAZY_LOAD_BATCH_SIZE = 5;
+const INITIAL_RESULTS_BATCH = 10;
+const LAZY_LOAD_BATCH_SIZE = 10;
 const MAX_TOTAL_RESULTS = 20000;
 const RANDOMIZE_RESULTS = true;
 const MAX_IMAGING_PROGRAM_TARGETS = 199;
@@ -791,15 +791,15 @@ const TargetFilter = {
             const typeDisplay = target.type ? (OBJECT_TYPES[target.type] || target.type) : 'Unknown type';
 
             resultDiv.innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: baseline;">
+            <div class="target-result-row">
                 <div class="target-name">${target.object}</div>
-                <div style="font-size: 0.85rem; color: var(--text-secondary);">${typeDisplay}</div>
+                <div class="target-result-secondary">${typeDisplay}</div>
             </div>
-            <div style="display: flex; justify-content: space-between; align-items: baseline;">
-                <div style="font-size: 0.85rem; color: var(--text-secondary);">${commonNameDisplay}</div>
-                <div style="font-size: 0.85rem; color: var(--text-secondary);">${constellation}</div>
+            <div class="target-result-row">
+                <div class="target-result-secondary">${commonNameDisplay}</div>
+                <div class="target-result-secondary">${constellation}</div>
             </div>
-        `;
+           `;
 
             resultDiv.addEventListener('click', () => {
                 VisibilityTargets.select(target);

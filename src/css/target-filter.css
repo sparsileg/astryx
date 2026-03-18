@@ -90,8 +90,12 @@
 #target-filter-results-count {
     color: var(--text-secondary);
     font-size: 0.9rem;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.25rem;
     text-align: center;
+}
+
+#filter-results-card .card-header {
+    margin-bottom: 0.25rem;
 }
 
 #create-imaging-program-btn {

@@ -82,6 +82,7 @@
         <div id="backup-reminder-indicator">Last backup: —</div>
         <div id="app-version">
       </nav>
+      <!-- end of Sidebar Navigation -->
 
       <!-- Main Content Area -->
       <main class="main-content">
@@ -221,8 +222,8 @@
                   <button id="pin-target-btn" class="btn-secondary tooltip-host" style="white-space: nowrap;"
                           data-tooltip-key="ts_PIN">📌 Pin</button>
                 </div>
+                <div id="target-search-results-count"></div>
                 <div id="target-search-results"></div>
-                <div id="target-search-results-count" style="font-size: 0.75rem; color: var(--text-secondary); padding: 0.25rem 0;"></div>
               </div>
 
               <!-- Target Info Display -->
@@ -390,7 +391,7 @@
           </div>
 
           <!-- Filter Results Card -->
-          <div class="card card-no-margin">
+          <div class="card card-no-margin" id="filter-results-card">
             <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
               <h3 id="filter-results-label">📋 Filter Results</h3>
               <div id="filter-results-options" style="display: flex; flex-direction: column; gap: 0.35rem; align-items: flex-end;">
@@ -411,6 +412,7 @@
               </div>
             </div>
           </div> <!-- End filter results card -->
+
         </div> <!-- End ts-two-col-grid -->
     </template>
     <!-- END OF target-selection template -->
