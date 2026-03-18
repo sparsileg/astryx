@@ -704,18 +704,18 @@ const VisibilityCalculations = {
                 .join('');
 
             headerContainer.innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <div class="yo-header">
                 <div>
-                    <h2 style="margin: 0; color: var(--text-primary);">${inputs.targetName}${inputs.targetCommonName ? ' (' + inputs.targetCommonName + ')' : ''}</h2>
-                    <p style="margin: 0.25rem 0 0 0; color: var(--text-secondary); font-size: 0.9rem;">
+                    <h2>${inputs.targetName}${inputs.targetCommonName ? ' (' + inputs.targetCommonName + ')' : ''}</h2>
+                    <p class="yo-header-subtitle">
                         ${peakAltitudeStr}${bestMonthStr ? ' &nbsp;·&nbsp; ' + bestMonthStr : ''}
                     </p>
-                    <div class="form-inline" style="margin-top: 0.5rem;">
-                        <label for="yearly-min-altitude" style="font-size: 0.9rem; color: var(--text-secondary); margin-right: 0.5rem;">Minimum Altitude:</label>
+                    <div class="form-inline yo-header-controls">
+                        <label for="yearly-min-altitude">Minimum Altitude:</label>
                         <select id="yearly-min-altitude">${altOptions}</select>
                     </div>
                 </div>
-                <div style="display: flex; gap: 0.5rem;">
+                <div class="yo-header-buttons">
                     <button id="yearly-observability-help-btn" class="btn-secondary">Help</button>
                 </div>
             </div>
@@ -725,7 +725,7 @@ const VisibilityCalculations = {
 
             if (helpBtn) {
                 helpBtn.addEventListener('click', () => {
-                    UIManager.showMarkdownHelp('yearly-observability');
+                    window.open('help/yearly-observability.html', '_blank');
                 });
             }
 

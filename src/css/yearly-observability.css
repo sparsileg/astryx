@@ -1,0 +1,84 @@
+/* Yearly Observability View */
+
+.yo-view-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1.5rem;
+}
+
+.yo-help {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.yo-help p {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.yo-graph {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.yo-graph-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 150px;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+}
+
+.yo-legend {
+    display: flex;
+    gap: 2rem;
+    justify-content: center;
+    padding: 1rem;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    flex-wrap: wrap;
+}
+
+/* Header */
+.yo-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.yo-header h2 {
+    margin: 0;
+    color: var(--text-primary);
+}
+
+.yo-header-subtitle {
+    margin: 0.25rem 0 0 0;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.yo-header-controls {
+    margin-top: 0.5rem;
+}
+
+.yo-header-controls label {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-right: 0.5rem;
+}
+
+.yo-header-buttons {
+    display: flex;
+    gap: 0.5rem;
+}
