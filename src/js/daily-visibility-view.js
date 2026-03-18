@@ -1,9 +1,9 @@
 /**
- * view-skyglow.js
- * Skyglow Analysis view - timeline visualization of sky brightness
+ * daily-visibility-view.js
+ * Daily Visibility view - timeline visualization of one day's target visibility
  */
 
-const SkyglowView = {
+const DailyVisibilityView = {
     container: null,
     currentData: null,
     TIMELINE_HEIGHT: 300,
@@ -15,7 +15,7 @@ const SkyglowView = {
         this.container = container;
 
         // Load template
-        const template = document.getElementById('skyglow-template');
+        const template = document.getElementById('daily-visibility-template');
         const content = template.content.cloneNode(true);
 
         container.innerHTML = '';
@@ -353,7 +353,7 @@ const SkyglowView = {
         const target = VisibilityTargets?.currentTarget;
         if (!target || !locationName || !dateStr) return;
 
-        const skyglowData = VisibilityCalculations.assembleSkyglowData(
+        const skyglowData = DailyVisibilityCalculations.assembleSkyglowData(
             target, dateStr, locationName, minAltitude, useHorizon
         );
         if (!skyglowData) {
@@ -370,7 +370,7 @@ const SkyglowView = {
      * Show data entry form if no data available
      */
     showDataEntryForm() {
-        const messageDiv = document.getElementById('skyglow-message');
+        const messageDiv = document.getElementById('daily-visibility-message');
         if (messageDiv) {
             messageDiv.innerHTML = `
                 <p style="color: var(--text-secondary); text-align: center; padding: 2rem;">
@@ -382,11 +382,11 @@ const SkyglowView = {
     },
 
     /**
-     * Perform skyglow analysis - main entry point
+     * Perform daily visibility analysis - main entry point
      */
     performAnalysis(data) {
         // Hide message, show content
-        const messageDiv = document.getElementById('skyglow-message');
+        const messageDiv = document.getElementById('daily-visibility-message');
         if (messageDiv) messageDiv.style.display = 'none';
 
         // Show analysis sections

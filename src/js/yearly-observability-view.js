@@ -47,10 +47,10 @@ const YearlyObservabilityView = {
         container.replaceChildren(...tempDiv.childNodes);
 
         // Render from cache if available (pre-calculated before navigation) — no blink
-        if (typeof VisibilityCalculations !== 'undefined') {
+        if (typeof YearlyObservabilityCalculations !== 'undefined') {
             const cached = window.lastYearlyObservabilityGraphData;
             if (cached) {
-                VisibilityCalculations.displayYearlyObservabilityGraph(
+                YearlyObservabilityCalculations.displayYearlyObservabilityGraph(
                     cached.altitudeData, cached.inputs
                 );
             } else {
@@ -62,7 +62,7 @@ const YearlyObservabilityView = {
                     const defaultTarget = DataManager.getTargets().find(t => t.object === APP_CONFIG.DEFAULT_TARGET);
                     if (defaultTarget) VisibilityTargets.currentTarget = defaultTarget;
                 }
-                setTimeout(() => VisibilityCalculations.calculateYearly(), 0);
+                setTimeout(() => YearlyObservabilityCalculations.calculateYearly(), 0);
             }
         }
 
@@ -79,7 +79,7 @@ const YearlyObservabilityView = {
                 resizeTimer = setTimeout(() => {
                     const cached = window.lastYearlyObservabilityGraphData;
                     if (cached) {
-                        VisibilityCalculations.renderYearlyObservabilityGraph(
+                        YearlyObservabilityCalculations.renderYearlyObservabilityGraph(
                             cached.altitudeData, cached.inputs
                         );
                     }

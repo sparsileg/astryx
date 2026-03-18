@@ -46,27 +46,27 @@ function isTargetVisibleDuringWindow(duskJD, dawnJD, raHours, decDeg, latitude, 
 function findTargetRise(startJD, endJD, raHours, decDeg, latitude, longitude, minAltitude, horizonArray = null) {
     const stepSize = APP_CONFIG.TARGET_SEARCH_STEP_SIZE;
     let jd = startJD;
-    
+
     // Check initial visibility
     const startAltitude = getAltitude(startJD, raHours, decDeg, latitude, longitude);
     const startAzimuth = getAzimuth(startJD, raHours, decDeg, latitude, longitude);
     let prevVisible = isAboveHorizon(startAltitude, startAzimuth, minAltitude, horizonArray);
-    
+
     // Search through window for crossing from not visible to visible
     while (jd <= endJD) {
         const altitude = getAltitude(jd, raHours, decDeg, latitude, longitude);
         const azimuth = getAzimuth(jd, raHours, decDeg, latitude, longitude);
         const isVisible = isAboveHorizon(altitude, azimuth, minAltitude, horizonArray);
-        
+
         // Detect crossing from not visible to visible
         if (!prevVisible && isVisible) {
             return jd;
         }
-        
+
         prevVisible = isVisible;
         jd += stepSize;
     }
-    
+
     return null;
 }
 
@@ -74,38 +74,38 @@ function findTargetSet(startJD, endJD, raHours, decDeg, latitude, longitude, min
     const stepSize = APP_CONFIG.TARGET_SEARCH_STEP_SIZE;
     let jd = startJD;
     let lastSetJD = null; // Track the LAST set time
-    
+
     // Check initial visibility
     const startAltitude = getAltitude(startJD, raHours, decDeg, latitude, longitude);
     const startAzimuth = getAzimuth(startJD, raHours, decDeg, latitude, longitude);
     let prevVisible = isAboveHorizon(startAltitude, startAzimuth, minAltitude, horizonArray);
-    
+
     // Search through entire window, tracking the LAST set time
     while (jd <= endJD) {
         const altitude = getAltitude(jd, raHours, decDeg, latitude, longitude);
         const azimuth = getAzimuth(jd, raHours, decDeg, latitude, longitude);
         const isVisible = isAboveHorizon(altitude, azimuth, minAltitude, horizonArray);
-        
+
         // Detect crossing from visible to not visible
         if (prevVisible && !isVisible) {
             lastSetJD = jd; // Update to latest set time
         }
-        
+
         prevVisible = isVisible;
         jd += stepSize;
     }
-    
+
     // Check if target is still visible at end of window
     const endAltitude = getAltitude(endJD, raHours, decDeg, latitude, longitude);
     const endAzimuth = getAzimuth(endJD, raHours, decDeg, latitude, longitude);
     const visibleAtEnd = isAboveHorizon(endAltitude, endAzimuth, minAltitude, horizonArray);
-    
+
     // If visible at end, any earlier set was temporary (obstruction) - return null
     if (visibleAtEnd) {
         console.log(`  Target visible at end of window - no final set`);
         return null;
     }
-    
+
     if (!lastSetJD) {
         console.log(`  No set found - target stays invisible throughout`);
     }
@@ -129,7 +129,7 @@ function getNoonToNoonWindow(dateStr, timezone, isDST) {
     );
 
     // Convert directly to JD without timezone adjustment
-    // (matching how view-skyglow.js does it)
+    // (matching how daily-visibility-view.js does it)
     const noonJD = dateToJD(noonDate);
     const noonNextDayJD = noonJD + 1;
 

@@ -1,6 +1,6 @@
 /**
- * visibility-main.js
- * Main view controller for Visibility Calculator
+ * target-selection-view.js
+ * Main view controller for Target Selection
  */
 
 const TargetSelectionView = {
@@ -45,7 +45,6 @@ const TargetSelectionView = {
         // ... rest of method
         // Initialize components
         VisibilityTargets.init();
-        VisibilityUI.init();
         TargetFilter.initUI();
 
         // Load last selections
@@ -60,5 +59,6 @@ const TargetSelectionView = {
      */
     destroy() {
         document.removeEventListener('targets-updated', VisibilityTargets.initializeSearch);
+        TargetFilter.destroyUI();
     }
 };

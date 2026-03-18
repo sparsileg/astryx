@@ -37,9 +37,12 @@ const UtilitiesView = {
 
         let html = '<div class="weather-forecast-grid">';
 
+        /*const zoomUrl = `https://zoom.earth/maps/satellite/#place=${location.latitude},-${location.longitude}/date=2026-03-18,15:00,-4`;*/
+
         Object.entries(locations).forEach(([name, location]) => {
             const astrosphericUrl = `https://astrospheric.com/?Latitude=${location.latitude}&Longitude=${location.longitude}&Loc=Forecast`;
             const clearOutsideUrl = `https://clearoutside.com/forecast/${location.latitude}/${location.longitude}?view=current`;
+            const cloudsUrl = `https://zoom.earth/maps/satellite/#view=${location.latitude},${location.longitude},8z`;
 
             html += `
                 <div class="weather-location-card">
@@ -48,6 +51,8 @@ const UtilitiesView = {
                     <a class="block-link" href="${astrosphericUrl}" target="_blank" class="weather-link">Astrospheric</a>
                     <span class="location-separator">•</span>
                     <a class="block-link" href="${clearOutsideUrl}" target="_blank" class="weather-link">Clear Outside</a>
+                    <span class="location-separator">•</span>
+                    <a class="block-link" href="${cloudsUrl}" target="_blank" class="weather-link">Clouds</a>
                 </div>
             `;
         });

@@ -275,9 +275,9 @@ const App = {
             TargetSelectionView.render(container, params);
             break;
 
-        case 'skyglow':
-            this.currentView = SkyglowView;
-            SkyglowView.render(container, params);
+        case 'daily-visibility':
+            this.currentView = DailyVisibilityView;
+            DailyVisibilityView.render(container, params);
             break;
 
             /* yearly observability */

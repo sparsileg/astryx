@@ -196,7 +196,7 @@ const TUTORIAL_ADMIN_TOOLS = {
             id: 'location-bortle',
             type: 'callout',
             title: 'Bortle Scale',
-            body: 'The Bortle scale rates sky darkness from 1 (darkest) to 9 (inner city). This value is used in skyglow analysis and target scoring.<br><br>If you do not know the Bortle value for your location. Create your location and use the <strong>Utilities >> Light Pollution</strong> link to identify your Bortle value. You can then edit your location to update it. ',
+            body: 'The Bortle scale rates sky darkness from 1 (darkest) to 9 (inner city). This value is used in daily visibility and target scoring.<br><br>If you do not know the Bortle value for your location. Create your location and use the <strong>Utilities >> Light Pollution</strong> link to identify your Bortle value. You can then edit your location to update it. ',
             target: '#manage-bortle',
             position: 'left',
             waitFor: 'next',
