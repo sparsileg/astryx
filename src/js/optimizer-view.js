@@ -558,7 +558,7 @@ const OptimizerView = {
         const minAltitude = SettingsManager.getGlobalMinAltitude();
         const useHorizon = true;
 
-        const skyglowData = VisibilityCalculations.assembleSkyglowData(
+        const skyglowData = DailyVisibilityCalculations.assembleSkyglowData(
             target, dateStr, locationName, minAltitude, useHorizon
         );
 
@@ -568,7 +568,7 @@ const OptimizerView = {
         }
 
         window.skyglowData = skyglowData;
-        window.location.hash = '#skyglow';
+        window.location.hash = '#daily-visibility';
     },
 
     /**

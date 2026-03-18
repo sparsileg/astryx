@@ -227,9 +227,12 @@ const VisibilityTargets = {
         // Store the current target
         this.currentTarget = target;
 
-        // Only set if VisibilityCalculations exists
-        if (typeof VisibilityCalculations !== 'undefined') {
-            VisibilityCalculations.currentTarget = target;
+        // Only set if DailyVisibilityCalculations exists
+        if (typeof DailyVisibilityCalculations !== 'undefined') {
+            DailyVisibilityCalculations.currentTarget = target;
+        }
+        if (typeof YearlyObservabilityCalculations !== 'undefined') {
+            YearlyObservabilityCalculations.currentTarget = target;
         }
 
         // Only update DOM if elements exist (we're on Target Selection view)
@@ -314,8 +317,12 @@ const VisibilityTargets = {
                 const targetCommonNameEl = document.getElementById('target-common-name');
                 const targetOtherInfo = document.getElementById('target-other-info');
 
-                if (typeof VisibilityCalculations !== 'undefined') {
-                    VisibilityCalculations.currentTarget = target;
+                // Only set if DailyVisibilityCalculations exists
+                if (typeof DailyVisibilityCalculations !== 'undefined') {
+                    DailyVisibilityCalculations.currentTarget = target;
+                }
+                if (typeof YearlyObservabilityCalculations !== 'undefined') {
+                    YearlyObservabilityCalculations.currentTarget = target;
                 }
 
                 if (targetNameInput) targetNameInput.value = target.object;

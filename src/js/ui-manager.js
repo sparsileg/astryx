@@ -36,7 +36,7 @@ const UIManager = {
                         // Re-render yearly observability if it's currently displayed
                         const yearlyObservabilityContainer = document.getElementById('yearly-observability-container');
                         if (yearlyObservabilityContainer && yearlyObservabilityContainer.style.display !== 'none' && window.lastYearlyObservabilityGraphData) {
-                            VisibilityCalculations.renderYearlyObservabilityGraph(
+                            YearlyObservabilityCalculations.renderYearlyObservabilityGraph(
                                 window.lastYearlyObservabilityGraphData.altitudeData,
                                 window.lastYearlyObservabilityGraphData.inputs
                             );
@@ -1784,7 +1784,7 @@ const UIManager = {
             : now;
         const dateStr = TimeUtils.formatDateForInput(defaultDate);
 
-        const skyglowData = VisibilityCalculations.assembleSkyglowData(
+        const skyglowData = DailyVisibilityCalculations.assembleSkyglowData(
             target, dateStr, locationName, minAltitude, useHorizon
         );
 
@@ -1794,7 +1794,7 @@ const UIManager = {
         }
 
         window.skyglowData = skyglowData;
-        window.location.hash = '#skyglow';
+        window.location.hash = '#daily-visibility';
     },
 
 
@@ -1813,14 +1813,13 @@ const UIManager = {
             }
         }
 
-        if (typeof VisibilityCalculations !== 'undefined') {
+        if (typeof YearlyObservabilityCalculations !== 'undefined') {
             if (typeof VisibilityTargets !== 'undefined' && VisibilityTargets.currentTarget) {
-                VisibilityCalculations.currentTarget = VisibilityTargets.currentTarget;
+                YearlyObservabilityCalculations.currentTarget = VisibilityTargets.currentTarget;
             }
-            // Pre-calculate and store before navigating — eliminates blink
-            const inputs = VisibilityCalculations.getYearlyInputs();
-            if (inputs.targetName && !isNaN(inputs.ra) && !isNaN(inputs.dec)) {
-                const altitudeData = VisibilityCalculations.calculateYearlyAltitudeData(inputs);
+            const inputs = YearlyObservabilityCalculations.getYearlyInputs();
+            if (inputs.targetName && inputs.ra !== null) {
+                const altitudeData = YearlyObservabilityCalculations.calculateYearlyAltitudeData(inputs);
                 window.lastYearlyObservabilityGraphData = { altitudeData, inputs };
             }
         }

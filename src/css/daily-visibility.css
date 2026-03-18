@@ -1,6 +1,6 @@
 /* Daily Visibility */
 
-/* Skyglow Timeline */
+/* Daily Visibility Timeline */
 .timeline-container {
     position: relative;
     width: 100%;
@@ -41,11 +41,7 @@
 }
 
 
-/* Skyglow Info */
-.skyglow-details {
-    margin: 1.5rem 0;
-}
-
+/* Daily Visibilty Info */
 .detail-item {
     display: flex;
     justify-content: space-between;
@@ -490,11 +486,6 @@ background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/s
     font-weight: normal;
 }
 
-.analyze-skyglow-btn {
-    min-width: 150px;
-    white-space: nowrap;
-    flex-shrink: 0;
-}
 
 /* ============================================================
    Cloud Cover Strip — Issue #81

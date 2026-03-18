@@ -287,7 +287,7 @@
             </div>
             <div id="yearly-options">
               <input type="checkbox" id="yearly-show-target-altitude" checked>
-              <input type="checkbox" id="yearly-show-skyglow" checked>
+              <input type="checkbox" id="yearly-show-observability" checked>
               <input type="checkbox" id="yearly-show-min-altitude" checked>
             </div>
           </div>
@@ -456,16 +456,16 @@
     <!-- END OF Filter Results Too Many Template -->
 
 
-    <!-- Skyglow Analysis Template -->
-    <template id="skyglow-template">
+    <!-- Daily Visibility Template -->
+    <template id="daily-visibility-template">
       <div class="view-header">
         <div style="display: flex; align-items: baseline; gap: 0.5rem;">
           <h1>🌙 Daily Visibility</h1>
           <span id="analysis-title" style="font-size: 2.0rem; color: var(--text-secondary);"></span>
         </div>
       </div>
-      <div id="skyglow-content">
-        <div id="skyglow-message"></div>
+      <div id="daily-visibility-content">
+        <div id="daily-visibility-message"></div>
 
         <div class="dv-controls-row">
           <label class="dv-label">Date</label>
@@ -574,6 +574,7 @@
           </div>
         </div>
     </template>
+    <!-- end of Daily Visibility template -->
 
     <!-- Settings Modal Template -->
     <template id="settings-template">
@@ -2335,10 +2336,11 @@
     <script src="js/target-filter.js"></script>
     <script src="js/target-search.js"></script>
     <script src="js/yearly-observability-view.js"></script>
-    <script src="js/view-visibility/visibility-main.js"></script>
-    <script src="js/view-visibility/visibility-calculations.js"></script>
+    <script src="js/yearly-observability-calculations.js"></script>
+    <script src="js/target-selection-view.js"></script>
+    <script src="js/daily-visibility-calculations.js"></script>
     <script src="js/view-visibility/visibility-ui.js"></script>
-    <script src="js/view-visibility/view-skyglow.js"></script>
+    <script src="js/daily-visibility-view.js"></script>
     <script src="js/fov-calculations.js"></script>
     <script src="js/fov-canvas.js"></script>
     <script src="js/fov-controller.js"></script>

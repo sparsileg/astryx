@@ -113,16 +113,10 @@
     flex-wrap: wrap;
 }
 
-.project-card-integration {
-    display: flex;
-    gap: 1rem;
-    font-size: 0.85rem;
-    color: var(--text-secondary);
-    flex-wrap: wrap;
-}
 
 /* ============================================================================
-   Status Badges
+   Status Badges - these are dynamically constructed so they are not explicitly
+   visible in the source code. DO NOT DELETE.
    ============================================================================ */
 
 .project-status-badge {

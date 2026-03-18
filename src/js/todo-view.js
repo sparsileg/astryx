@@ -829,8 +829,14 @@ const ToDoView = {
                     if (typeof VisibilityTargets !== 'undefined') {
                         VisibilityTargets.currentTarget = target;
                     }
-                    if (typeof VisibilityCalculations !== 'undefined') {
-                        VisibilityCalculations.currentTarget = target;
+                    if (typeof DailyVisibilityCalculations !== 'undefined') {
+                        DailyVisibilityCalculations.currentTarget = target;
+                    }
+                    if (typeof YearlyObservabilityCalculations !== 'undefined') {
+                        YearlyObservabilityCalculations.currentTarget = target;
+                    }
+                    if (typeof YearlyObservabilityCalculations !== 'undefined') {
+                        YearlyObservabilityCalculations.currentTarget = target;
                     }
                     // Update sidebar current target display — Issue #79
                     UIManager.updateSidebarCurrentTarget(target.object);
