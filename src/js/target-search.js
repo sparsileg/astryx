@@ -291,14 +291,37 @@ const VisibilityTargets = {
             });
         }
 
-        // Hide search results only if element exists
+        // Reset results state to just the selected target
+        this.allResults = [target];
+        this.displayedCount = 1;
+
+        // Replace search results with single selected target
         const searchResults = document.getElementById('target-search-results');
         if (searchResults) {
-            searchResults.innerHTML = '';
+            const typeDisplay = target.type ? (OBJECT_TYPES[target.type] || target.type) : 'Unknown type';
+            const constellation = target.constellation ? (CONSTELLATIONS[target.constellation] || target.constellation) : '';
+            const commonName = target.common ? target.common.split(',')[0].trim() : '';
+            searchResults.innerHTML = `
+                <div class="target-result selected">
+                    <div class="target-result-row">
+                        <div class="target-name">${target.object}</div>
+                        <div class="target-result-secondary">${typeDisplay}</div>
+                    </div>
+                    <div class="target-result-row">
+                        <div class="target-result-secondary">${commonName}</div>
+                        <div class="target-result-secondary">${constellation}</div>
+                    </div>
+                </div>`;
+            searchResults.style.display = 'block';
         }
 
         // Save last selected target (save full target object)
         localStorage.setItem('lastSelectedTarget', JSON.stringify(target));
+        localStorage.setItem('lastSearchQuery', target.object);
+
+        // Update count to reflect single selection
+        const countDiv = document.getElementById('target-search-results-count');
+        if (countDiv) countDiv.textContent = 'Showing 1 of 1 unique results';
 
         // Update sidebar current target display
         UIManager.updateSidebarCurrentTarget(target.object);
