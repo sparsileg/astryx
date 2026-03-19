@@ -313,9 +313,12 @@ const ImagingLogManager = {
     /**
      * Get program progress (how many targets imaged)
      */
-    async getProgramProgress(programId) {
+    async getProgramProgress(programId, completedOnly = false) {
         const program = await this.getProgram(programId);
-        const allProjects = await this.getAllProjects();
+        const fetchedProjects = await this.getAllProjects();
+        const allProjects = completedOnly
+            ? fetchedProjects.filter(p => p.status === 'Completed')
+            : fetchedProjects;
 
         // Get all target designations from all projects
         const imagedTargetSet = new Set();

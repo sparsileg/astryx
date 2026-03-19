@@ -1272,7 +1272,7 @@ const ImagingLogView = {
      */
     async renderProgramCard(program) {
         // Get progress
-        const progress = await ImagingLogManager.getProgramProgress(program.id);
+        const progress = await ImagingLogManager.getProgramProgress(program.id, true);
         const progressPercent = parseFloat(progress.percentage);
 
         // Determine if pattern-based or manual
@@ -1848,7 +1848,8 @@ const ImagingLogView = {
         if (!container) return;
 
         // Get all projects and their targets
-        const projects = await ImagingLogManager.getAllProjects();
+        const allProjects = await ImagingLogManager.getAllProjects();
+        const projects = allProjects.filter(p => p.status === 'Completed');
         const allTargets = new Set();
 
         projects.forEach(project => {
@@ -1910,11 +1911,12 @@ const ImagingLogView = {
         let html = '';
 
         for (const program of programs) {
-            const progress = await ImagingLogManager.getProgramProgress(program.id);
-            const projects = await ImagingLogManager.getAllProjects();
+            const progress = await ImagingLogManager.getProgramProgress(program.id, true);
+            const allProjects = await ImagingLogManager.getAllProjects();
+            const projects = allProjects.filter(p => p.status === 'Completed');
             const isPattern = ImagingLogManager.isProgramPatternBased(program);
 
-            // Get all imaged targets from projects
+            // Get all imaged targets from completed projects
             const imagedTargets = new Set();
             projects.forEach(project => {
                 project.targetDesignations.forEach(designation => {
