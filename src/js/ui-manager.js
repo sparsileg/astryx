@@ -795,6 +795,12 @@ const UIManager = {
             }
         });
 
+        const helpBtn = document.getElementById('modal-help');
+        if (helpBtn) {
+            helpBtn.style.display = '';
+            helpBtn.onclick = () => this.openHelpPage('best-months.html');
+        }
+
         this.populateBestMonthsModal();
     },
 
@@ -1332,10 +1338,18 @@ const UIManager = {
         this.openModal('import-targets-template', 'Import Target Database', async (action, modalBody) => {
             if (action === 'import') {
                 await this.importTargets(modalBody);
-            } else if (action === 'cancel') {
-                this.closeModal();
             }
         });
+
+        const headerButtons = document.getElementById('modal-header-buttons');
+        if (headerButtons) {
+            const importBtn = document.createElement('button');
+            importBtn.id = 'modal-save-btn';
+            importBtn.className = 'btn-primary btn-sm';
+            importBtn.textContent = 'Import Targets';
+            importBtn.addEventListener('click', () => this.importTargets(document.getElementById('modal-body')));
+            headerButtons.appendChild(importBtn);
+        }
     },
 
     /**

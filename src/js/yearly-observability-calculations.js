@@ -22,11 +22,6 @@ const YearlyObservabilityCalculations = {
         const minAltitudeInput = document.getElementById('yearly-min-altitude') || document.getElementById('min-altitude');
         const minAltitude = minAltitudeInput ? parseFloat(minAltitudeInput.value) : 35;
 
-        // Safely get checkbox values if they exist, otherwise use defaults
-        const showTargetAltitudeCheck = document.getElementById('yearly-show-target-altitude');
-        const showMinAltitudeCheck = document.getElementById('yearly-show-min-altitude');
-        const showSkyglowCheck = document.getElementById('yearly-show-observability');
-
         return {
             targetName: this.currentTarget ? this.currentTarget.object : '',
             targetCommonName: this.currentTarget ? this.currentTarget.common : null,
@@ -37,9 +32,9 @@ const YearlyObservabilityCalculations = {
             longitude: location ? location.longitude : null,
             timezone: location ? location.timezone : null,
             minAltitude: minAltitude,
-            showTargetAltitude: showTargetAltitudeCheck ? showTargetAltitudeCheck.checked : true,
-            showMinAltitude: showMinAltitudeCheck ? showMinAltitudeCheck.checked : true,
-            showSkyglow: showSkyglowCheck ? showSkyglowCheck.checked : true
+            showTargetAltitude: true,
+            showMinAltitude: true,
+            showSkyglow: true
         };
     },
 
@@ -280,9 +275,7 @@ const YearlyObservabilityCalculations = {
 
             // Calculate imaging quality score if requested (legacy)
             let imagingScore = null;
-            if (inputs.showSkyglow) {
-                imagingScore = this.calculateImagingScore(date, inputs);
-            }
+            imagingScore = this.calculateImagingScore(date, inputs);
 
             data.push({
                 dayIndex: dayOffset,
@@ -443,48 +436,33 @@ const YearlyObservabilityCalculations = {
             }
         }
 
-        // Populate header if container exists
-        if (headerContainer) {
-            const currentMinAlt = inputs.minAltitude || 35;
-            const altOptions = [5,10,15,20,25,30,35,40,45,50,55,60]
-                .map(v => `<option value="${v}"${v === currentMinAlt ? ' selected' : ''}>${v}°</option>`)
-                .join('');
+        // Populate header elements
+        const targetNameEl = document.getElementById('yo-target-name');
+        if (targetNameEl) {
+            targetNameEl.textContent = inputs.targetName + (inputs.targetCommonName ? ' (' + inputs.targetCommonName + ')' : '');
+        }
 
-            headerContainer.innerHTML = `
-            <div class="yo-header">
-                <div>
-                    <h2>${inputs.targetName}${inputs.targetCommonName ? ' (' + inputs.targetCommonName + ')' : ''}</h2>
-                    <p class="yo-header-subtitle">
-                        ${peakAltitudeStr}${bestMonthStr ? ' &nbsp;·&nbsp; ' + bestMonthStr : ''}
-                    </p>
-                    <div class="form-inline yo-header-controls">
-                        <label for="yearly-min-altitude">Minimum Altitude:</label>
-                        <select id="yearly-min-altitude">${altOptions}</select>
-                    </div>
-                </div>
-                <div class="yo-header-buttons">
-                    <button id="yearly-observability-help-btn" class="btn-secondary">Help</button>
-                </div>
-            </div>
-        `;
+        const subtitleEl = document.getElementById('yo-subtitle');
+        if (subtitleEl) {
+            subtitleEl.innerHTML = peakAltitudeStr + (bestMonthStr ? ' &nbsp;·&nbsp; ' + bestMonthStr : '');
+        }
 
-            const helpBtn = document.getElementById('yearly-observability-help-btn');
-            if (helpBtn) {
-                helpBtn.addEventListener('click', () => {
-                    window.open('help/yearly-observability.html', '_blank');
-                });
-            }
+        const minAltSelect = document.getElementById('yearly-min-altitude');
+        if (minAltSelect) {
+            minAltSelect.value = inputs.minAltitude || 35;
+            minAltSelect.addEventListener('change', () => {
+                if (typeof VisibilityTargets !== 'undefined' && VisibilityTargets.currentTarget) {
+                    YearlyObservabilityCalculations.currentTarget = VisibilityTargets.currentTarget;
+                }
+                YearlyObservabilityCalculations.calculateYearly();
+            });
+        }
 
-            const minAltSelect = document.getElementById('yearly-min-altitude');
-            if (minAltSelect) {
-                minAltSelect.addEventListener('change', () => {
-                    // Re-sync current target before recalculating
-                    if (typeof VisibilityTargets !== 'undefined' && VisibilityTargets.currentTarget) {
-                        YearlyObservabilityCalculations.currentTarget = VisibilityTargets.currentTarget;
-                    }
-                    YearlyObservabilityCalculations.calculateYearly();
-                });
-            }
+        const helpBtn = document.getElementById('yearly-observability-help-btn');
+        if (helpBtn) {
+            helpBtn.addEventListener('click', () => {
+                window.open('help/yearly-observability.html', '_blank');
+            });
         }
 
         // Store data for theme change re-rendering
@@ -613,162 +591,154 @@ const YearlyObservabilityCalculations = {
             cumulativeDays += daysInMonth[monthIndex];
         }
 
-        // Draw observability gradient (if showSkyglow enabled)
-        if (inputs.showSkyglow) {
-            // Create gradient definition
-            const gradientDef = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-            const linearGradient = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
-            linearGradient.setAttribute('id', 'observabilityGradient');
-            linearGradient.setAttribute('x1', '0%');
-            linearGradient.setAttribute('y1', '0%');
-            linearGradient.setAttribute('x2', '100%');
-            linearGradient.setAttribute('y2', '0%');
+        // Draw observability gradient
+        // Create gradient definition
+        const gradientDef = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+        const linearGradient = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
+        linearGradient.setAttribute('id', 'observabilityGradient');
+        linearGradient.setAttribute('x1', '0%');
+        linearGradient.setAttribute('y1', '0%');
+        linearGradient.setAttribute('x2', '100%');
+        linearGradient.setAttribute('y2', '0%');
 
-            // Add gradient stops from observability scores
-            altitudeData.data.forEach((point) => {
-                const stop = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
-                const position = (point.dayIndex / 365) * 100;
-                // Force white when target is below minimum altitude — Issue #88
-                let stopColor;
-                if (point.targetAltitude === null || point.targetAltitude < inputs.minAltitude) {
-                    stopColor = 'rgb(255,255,255)';
-                } else {
-                    // Convert score (0-1) to grayscale (0-255) where higher score = darker (better)
-                    const grayValue = Math.round(255 * (1 - point.observabilityScore));
-                    stopColor = `rgb(${grayValue},${grayValue},${grayValue})`;
-                }
-                stop.setAttribute('offset', `${position}%`);
-                stop.setAttribute('stop-color', stopColor);
-                linearGradient.appendChild(stop);
-            });
+        // Add gradient stops from observability scores
+        altitudeData.data.forEach((point) => {
+            const stop = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+            const position = (point.dayIndex / 365) * 100;
+            // Force white when target is below minimum altitude — Issue #88
+            let stopColor;
+            if (point.targetAltitude === null || point.targetAltitude < inputs.minAltitude) {
+                stopColor = 'rgb(255,255,255)';
+            } else {
+                // Convert score (0-1) to grayscale (0-255) where higher score = darker (better)
+                const grayValue = Math.round(255 * (1 - point.observabilityScore));
+                stopColor = `rgb(${grayValue},${grayValue},${grayValue})`;
+            }
+            stop.setAttribute('offset', `${position}%`);
+            stop.setAttribute('stop-color', stopColor);
+            linearGradient.appendChild(stop);
+        });
 
-            gradientDef.appendChild(linearGradient);
-            graphGroup.appendChild(gradientDef);
+        gradientDef.appendChild(linearGradient);
+        graphGroup.appendChild(gradientDef);
 
-            // Draw a rectangle with the gradient fill
-            const observabilityRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-            observabilityRect.setAttribute('x', 0);
-            observabilityRect.setAttribute('y', 0);
-            observabilityRect.setAttribute('width', graphWidth);
-            observabilityRect.setAttribute('height', graphHeight);
-            observabilityRect.setAttribute('fill', 'url(#observabilityGradient)');
-            observabilityRect.setAttribute('opacity', '1.0');
-            graphGroup.appendChild(observabilityRect);
+        // Draw a rectangle with the gradient fill
+        const observabilityRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        observabilityRect.setAttribute('x', 0);
+        observabilityRect.setAttribute('y', 0);
+        observabilityRect.setAttribute('width', graphWidth);
+        observabilityRect.setAttribute('height', graphHeight);
+        observabilityRect.setAttribute('fill', 'url(#observabilityGradient)');
+        observabilityRect.setAttribute('opacity', '1.0');
+        graphGroup.appendChild(observabilityRect);
+
+        // Draw minimum altitude line
+        const minAltY = graphHeight - (inputs.minAltitude / 90) * graphHeight;
+
+        // Black outline — solid, no dash — Issue #87
+        const minAltOutline = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        minAltOutline.setAttribute('x1', 0);
+        minAltOutline.setAttribute('y1', minAltY);
+        minAltOutline.setAttribute('x2', graphWidth);
+        minAltOutline.setAttribute('y2', minAltY);
+        minAltOutline.setAttribute('stroke', '#000000');
+        minAltOutline.setAttribute('stroke-width', '5');
+        graphGroup.appendChild(minAltOutline);
+
+        // Yellow dashed line on top — matches Daily Visibility style — Issue #87
+        const minAltLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        minAltLine.setAttribute('x1', 0);
+        minAltLine.setAttribute('y1', minAltY);
+        minAltLine.setAttribute('x2', graphWidth);
+        minAltLine.setAttribute('y2', minAltY);
+        minAltLine.setAttribute('stroke', 'rgba(255,255,0,0.5)');
+        minAltLine.setAttribute('stroke-width', '3');
+        minAltLine.setAttribute('stroke-dasharray', '5,5');
+        graphGroup.appendChild(minAltLine);
+
+        // Draw full moon indicators
+        // Find full moon peaks (local maxima in illumination)
+        const fullMoonPeaks = [];
+
+        for (let i = 1; i < altitudeData.data.length - 1; i++) {
+            const point = altitudeData.data[i];
+            const prevPoint = altitudeData.data[i - 1];
+            const nextPoint = altitudeData.data[i + 1];
+
+            if (point.imagingScore !== null &&
+                prevPoint.imagingScore !== null &&
+                nextPoint.imagingScore !== null &&
+                point.imagingScore.moonIllum > 0.90 && // At least 90% illuminated
+                point.imagingScore.moonIllum >= prevPoint.imagingScore.moonIllum &&
+                point.imagingScore.moonIllum >= nextPoint.imagingScore.moonIllum) {
+                // This is a local maximum - a full moon peak
+                fullMoonPeaks.push(point);
+            }
         }
 
-        // Draw minimum altitude line if requested (after gradient so it's visible)
-        if (inputs.showMinAltitude) {
-            const minAltY = graphHeight - (inputs.minAltitude / 90) * graphHeight;
+        // Draw yellow circles for full moon peaks
+        fullMoonPeaks.forEach((point) => {
+            const x = (point.dayIndex / 365) * graphWidth;
 
-            // Black outline — solid, no dash — Issue #87
-            const minAltOutline = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-            minAltOutline.setAttribute('x1', 0);
-            minAltOutline.setAttribute('y1', minAltY);
-            minAltOutline.setAttribute('x2', graphWidth);
-            minAltOutline.setAttribute('y2', minAltY);
-            minAltOutline.setAttribute('stroke', '#000000');
-            minAltOutline.setAttribute('stroke-width', '5');
-            graphGroup.appendChild(minAltOutline);
+            const moonCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            moonCircle.setAttribute('cx', x);
+            moonCircle.setAttribute('cy', 10); // delta-y from top in pixels
+            moonCircle.setAttribute('r', 7);   // radius in pixels
+            moonCircle.setAttribute('fill', '#ffd700'); // Gold/yellow color
+            moonCircle.setAttribute('stroke', '#000000');
+            moonCircle.setAttribute('stroke-width', '0.5');
+            graphGroup.appendChild(moonCircle);
+        });
 
-            // Yellow dashed line on top — matches Daily Visibility style — Issue #87
-            const minAltLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-            minAltLine.setAttribute('x1', 0);
-            minAltLine.setAttribute('y1', minAltY);
-            minAltLine.setAttribute('x2', graphWidth);
-            minAltLine.setAttribute('y2', minAltY);
-            minAltLine.setAttribute('stroke', 'rgba(255,255,0,0.5)');
-            minAltLine.setAttribute('stroke-width', '3');
-            minAltLine.setAttribute('stroke-dasharray', '5,5');
-            graphGroup.appendChild(minAltLine);
-        }
+        // Draw target altitude curve
+        // Build path segments, skipping negative altitudes (creates gaps)
+        const pathSegments = [];
+        let currentSegment = [];
 
-        // Draw full moon indicators if showing imaging quality
-        if (inputs.showSkyglow) {
-            // Find full moon peaks (local maxima in illumination)
-            const fullMoonPeaks = [];
-
-            for (let i = 1; i < altitudeData.data.length - 1; i++) {
-                const point = altitudeData.data[i];
-                const prevPoint = altitudeData.data[i - 1];
-                const nextPoint = altitudeData.data[i + 1];
-
-                if (point.imagingScore !== null &&
-                    prevPoint.imagingScore !== null &&
-                    nextPoint.imagingScore !== null &&
-                    point.imagingScore.moonIllum > 0.90 && // At least 90% illuminated
-                    point.imagingScore.moonIllum >= prevPoint.imagingScore.moonIllum &&
-                    point.imagingScore.moonIllum >= nextPoint.imagingScore.moonIllum) {
-                    // This is a local maximum - a full moon peak
-                    fullMoonPeaks.push(point);
+        altitudeData.data.forEach((d, i) => {
+            if (d.targetAltitude !== null && d.targetAltitude >= 0) {
+                const x = (d.dayIndex / 365) * graphWidth;
+                const clampedAlt = Math.min(90, d.targetAltitude);
+                const y = graphHeight - (clampedAlt / 90) * graphHeight;
+                currentSegment.push({ x, y });
+            } else {
+                // Negative or null altitude - end current segment
+                if (currentSegment.length > 0) {
+                    pathSegments.push(currentSegment);
+                    currentSegment = [];
                 }
             }
+        });
 
-            // Draw yellow circles for full moon peaks
-            fullMoonPeaks.forEach((point) => {
-                const x = (point.dayIndex / 365) * graphWidth;
-
-                const moonCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-                moonCircle.setAttribute('cx', x);
-                moonCircle.setAttribute('cy', 10); // delta-y from top in pixels
-                moonCircle.setAttribute('r', 7);   // radius in pixels
-                moonCircle.setAttribute('fill', '#ffd700'); // Gold/yellow color
-                moonCircle.setAttribute('stroke', '#000000');
-                moonCircle.setAttribute('stroke-width', '0.5');
-                graphGroup.appendChild(moonCircle);
-            });
+        // Add final segment if any
+        if (currentSegment.length > 0) {
+            pathSegments.push(currentSegment);
         }
 
-        // Draw target altitude curve if requested
-        if (inputs.showTargetAltitude !== false) {
-            // Build path segments, skipping negative altitudes (creates gaps)
-            const pathSegments = [];
-            let currentSegment = [];
+        // Draw each segment as a separate path
+        pathSegments.forEach(segment => {
+            if (segment.length < 2) return; // Skip single points
 
-            altitudeData.data.forEach((d, i) => {
-                if (d.targetAltitude !== null && d.targetAltitude >= 0) {
-                    const x = (d.dayIndex / 365) * graphWidth;
-                    const clampedAlt = Math.min(90, d.targetAltitude);
-                    const y = graphHeight - (clampedAlt / 90) * graphHeight;
-                    currentSegment.push({ x, y });
-                } else {
-                    // Negative or null altitude - end current segment
-                    if (currentSegment.length > 0) {
-                        pathSegments.push(currentSegment);
-                        currentSegment = [];
-                    }
-                }
-            });
+            const targetPath = segment.map((point, i) => {
+                return `${i === 0 ? 'M' : 'L'} ${point.x} ${point.y}`;
+            }).join(' ');
 
-            // Add final segment if any
-            if (currentSegment.length > 0) {
-                pathSegments.push(currentSegment);
-            }
+            // Black outline for target — Issue #87
+            const targetOutline = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            targetOutline.setAttribute('d', targetPath);
+            targetOutline.setAttribute('fill', 'none');
+            targetOutline.setAttribute('stroke', '#000000');
+            targetOutline.setAttribute('stroke-width', '5');
+            graphGroup.appendChild(targetOutline);
 
-            // Draw each segment as a separate path
-            pathSegments.forEach(segment => {
-                if (segment.length < 2) return; // Skip single points
-
-                const targetPath = segment.map((point, i) => {
-                    return `${i === 0 ? 'M' : 'L'} ${point.x} ${point.y}`;
-                }).join(' ');
-
-                // Black outline for target — Issue #87
-                const targetOutline = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-                targetOutline.setAttribute('d', targetPath);
-                targetOutline.setAttribute('fill', 'none');
-                targetOutline.setAttribute('stroke', '#000000');
-                targetOutline.setAttribute('stroke-width', '5');
-                graphGroup.appendChild(targetOutline);
-
-                // White line on top — matches Daily Visibility style — Issue #87
-                const targetLine = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-                targetLine.setAttribute('d', targetPath);
-                targetLine.setAttribute('fill', 'none');
-                targetLine.setAttribute('stroke', '#FFFFFF');
-                targetLine.setAttribute('stroke-width', '2');
-                graphGroup.appendChild(targetLine);
-            });
-        }
+            // White line on top — matches Daily Visibility style — Issue #87
+            const targetLine = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            targetLine.setAttribute('d', targetPath);
+            targetLine.setAttribute('fill', 'none');
+            targetLine.setAttribute('stroke', '#FFFFFF');
+            targetLine.setAttribute('stroke-width', '2');
+            graphGroup.appendChild(targetLine);
+        });
 
         // Draw current day indicator (extends full height of SVG)
         const today = new Date();
@@ -792,135 +762,6 @@ const YearlyObservabilityCalculations = {
         // Append SVG to container
         container.innerHTML = '';
         container.appendChild(svg);
-
-        // Render legend below the graph in the legend container
-        this.renderLegend(inputs, altitudeData);
     },
 
-    /**
-     * Render the legend below the graph
-     */
-    renderLegend(inputs, altitudeData) {
-        const legendContainer = document.getElementById('yearly-observability-legend');
-        if (!legendContainer) return;
-
-        // Get CSS variables for theme support
-        const computedStyle = getComputedStyle(document.documentElement);
-        const textColor = computedStyle.getPropertyValue('--text-color').trim();
-        const borderColor = computedStyle.getPropertyValue('--border-color').trim();
-
-        legendContainer.innerHTML = '';
-
-        // Target altitude legend item
-        if (inputs.showTargetAltitude !== false) {
-            const targetItem = document.createElement('div');
-            targetItem.style.display = 'flex';
-            targetItem.style.alignItems = 'center';
-            targetItem.style.gap = '0.5rem';
-
-            const targetLine = document.createElement('div');
-            targetLine.style.width = '30px';
-            targetLine.style.height = '5px';
-            targetLine.style.background = '#000000';
-            targetLine.style.borderTop = '2px solid #FFFFFF';
-            targetItem.appendChild(targetLine);
-
-            const targetLabel = document.createElement('span');
-            targetLabel.style.color = textColor;
-            targetLabel.style.fontSize = '12px';
-            targetLabel.textContent = 'Target Altitude';
-            targetItem.appendChild(targetLabel);
-
-            legendContainer.appendChild(targetItem);
-        }
-
-        // Minimum altitude legend item
-        if (inputs.showMinAltitude) {
-            const minAltItem = document.createElement('div');
-            minAltItem.style.display = 'flex';
-            minAltItem.style.alignItems = 'center';
-            minAltItem.style.gap = '0.5rem';
-
-            const minAltLine = document.createElement('div');
-            minAltLine.style.width = '30px';
-            minAltLine.style.height = '5px';
-            minAltLine.style.background = '#000000';
-            minAltLine.style.borderTop = '2px dashed rgba(255,255,0,0.8)';
-            minAltItem.appendChild(minAltLine);
-
-            const minAltLabel = document.createElement('span');
-            minAltLabel.style.color = textColor;
-            minAltLabel.style.fontSize = '12px';
-            minAltLabel.textContent = `Minimum Altitude`;
-            minAltItem.appendChild(minAltLabel);
-
-            legendContainer.appendChild(minAltItem);
-        }
-
-        // Imaging quality gradient legend item
-        if (inputs.showSkyglow) {
-            const imagingItem = document.createElement('div');
-            imagingItem.style.display = 'flex';
-            imagingItem.style.alignItems = 'center';
-            imagingItem.style.gap = '0.5rem';
-
-            const imagingBox = document.createElement('div');
-            imagingBox.style.width = '30px';
-            imagingBox.style.height = '12px';
-            imagingBox.style.background = 'linear-gradient(to right, #000000, #888888, #ffffff)';
-            imagingBox.style.border = `1px solid ${borderColor}`;
-            imagingItem.appendChild(imagingBox);
-
-            const imagingLabel = document.createElement('span');
-            imagingLabel.style.color = textColor;
-            imagingLabel.style.fontSize = '12px';
-            imagingLabel.textContent = 'Observability (darker = better)';
-            imagingItem.appendChild(imagingLabel);
-
-            legendContainer.appendChild(imagingItem);
-
-            // Full moon legend item (only show when skyglow is enabled)
-            const fullMoonItem = document.createElement('div');
-            fullMoonItem.style.display = 'flex';
-            fullMoonItem.style.alignItems = 'center';
-            fullMoonItem.style.gap = '0.5rem';
-
-            const moonCircle = document.createElement('div');
-            moonCircle.style.width = '8px';
-            moonCircle.style.height = '8px';
-            moonCircle.style.borderRadius = '50%';
-            moonCircle.style.background = '#ffd700';
-            moonCircle.style.border = '1px solid #000';
-            fullMoonItem.appendChild(moonCircle);
-
-            const moonLabel = document.createElement('span');
-            moonLabel.style.color = textColor;
-            moonLabel.style.fontSize = '12px';
-            moonLabel.textContent = 'Full Moon';
-            fullMoonItem.appendChild(moonLabel);  // FIXED: was moonItem, now fullMoonItem
-
-            legendContainer.appendChild(fullMoonItem);
-        }
-
-        // Current day legend item (ALWAYS show, moved outside skyglow block)
-        const currentDayItem = document.createElement('div');
-        currentDayItem.style.display = 'flex';
-        currentDayItem.style.alignItems = 'center';
-        currentDayItem.style.gap = '0.5rem';
-
-        const currentDayLine = document.createElement('div');
-        currentDayLine.style.width = '3px';
-        currentDayLine.style.height = '20px';
-        currentDayLine.style.background = '#ffa726';
-        currentDayLine.style.opacity = '0.8';
-        currentDayItem.appendChild(currentDayLine);
-
-        const currentDayLabel = document.createElement('span');
-        currentDayLabel.style.color = textColor;
-        currentDayLabel.style.fontSize = '12px';
-        currentDayLabel.textContent = 'Current Day';
-        currentDayItem.appendChild(currentDayLabel);
-
-        legendContainer.appendChild(currentDayItem);
-    }
 };

@@ -193,11 +193,11 @@ const ImagingLogView = {
                 </div>
                     </div>
                     <div class="project-card-actions">
-                        <button class="project-action-btn project-action-btn-delete"
+                        <button class="project-action-btn btn-danger btn-small"
                                 onclick="event.stopPropagation(); ImagingLogView.handleDeleteProject(${project.id})">
                             Delete Project
                         </button>
-                        <button class="project-action-btn project-action-btn-edit"
+                        <button class="project-action-btn btn-secondary btn-small"
                                 onclick="event.stopPropagation(); ImagingLogView.handleEditProject(${project.id})">
                             Edit Project
                         </button>
@@ -1299,11 +1299,11 @@ const ImagingLogView = {
                         </div>
                     </div>
                     <div class="project-card-actions">
-                        <button class="project-action-btn project-action-btn-delete"
+                        <button class="project-action-btn btn-danger btn-small"
                                 data-program-id="${program.id}" data-action="delete">
                             Delete Program
                         </button>
-                        <button class="project-action-btn project-action-btn-edit"
+                        <button class="project-action-btn btn-secondary btn-small"
                                 data-program-id="${program.id}" data-action="edit">
                             Edit Program
                         </button>

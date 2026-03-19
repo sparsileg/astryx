@@ -407,7 +407,7 @@ const DailyVisibilityView = {
         });
 
         // Build title — target name and common name only, no date
-        let titleText = '· ' + data.targetName;
+        let titleText = data.targetName;
         if (data.commonName && data.commonName.trim()) {
             titleText += ` (${data.commonName})`;
         }

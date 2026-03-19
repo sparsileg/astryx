@@ -3,3 +3,7 @@ src/data/
 *.tgz
 *.7z
 *.zip
+*.backup
+*.BACKUP
+*.BU
+*.tmp

@@ -31,12 +31,6 @@ const TargetSelectionView = {
             pageTitle.textContent = '🔭 Visibility';
         }
 
-        // Set the heading inside the view
-        const viewHeading = container.querySelector('.visibility-view h2');
-        if (viewHeading) {
-            viewHeading.textContent = '🌟 Target Selection';
-        }
-
         // Make sure the main visibility form is visible
         const twoColGrid = document.querySelector('.ts-two-col-grid');
         if (twoColGrid) {

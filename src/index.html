@@ -14,6 +14,7 @@
     <link rel="stylesheet" href="css/optimizer.css">
     <link rel="stylesheet" href="css/seq-plan.css">
     <link rel="stylesheet" href="css/sidebar.css">
+    <link rel="stylesheet" href="css/titles.css">
     <link rel="stylesheet" href="css/target-filter.css">
     <link rel="stylesheet" href="css/target-search.css">
     <link rel="stylesheet" href="css/todo.css">
@@ -52,9 +53,12 @@
               <option value="">Select a location...</option>
             </select>
           </div>
-          <div id="sidebar-current-target" class="tooltip-host" data-tooltip-key="sb_currentTgt">
+          <button id="sidebar-current-target" class="tooltip-host btn-secondary" data-tooltip-key="sb_currentTgt">Current Target: None</button>
+<!--
+          <div id="sidebar-current-target" class="tooltip-host btn-primary" data-tooltip-key="sb_currentTgt">
             Current Target: None
           </div>
+-->
         </div>
 
         <div class="sidebar-content">
@@ -177,8 +181,8 @@
             <div id="modal-subtitle"></div>
           </div>
           <div id="modal-header-buttons" style="display: flex; gap: 0.5rem;">
-            <button id="modal-help" class="close-btn" style="display: none;">Help</button>
-            <button id="modal-close" class="close-btn">Close</button>
+            <button id="modal-help" class="btn-secondary btn-small" style="display: none;">Help</button>
+            <button id="modal-close" class="btn-secondary btn-small">Close</button>
           </div>
         </div>
         <div id="modal-body" class="modal-body">
@@ -191,9 +195,9 @@
 
     <!-- Target Selection Template -->
     <template id="ts-visibility-template">
-      <div class="visibility-view">
-        <div style="display: flex; justify-content: center; align-items: center; gap: 2rem; margin-bottom: 1rem;">
-          <h2 id="target-selection-source" style="margin: 0;">🌟 Target Selection</h2>
+      <div class="visibility-view view-bg-icon view-bg-icon-target-selection">
+        <div class="ts-view-header">
+          <h2 id="target-selection-source" class="view-title">Target Selection</h2>
           <div id="target-source-radio" style="display: flex; gap: 1rem; align-items: center; font-size: 0.9rem;">
             <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
               <input type="radio" name="target-filter-scope" value="all" checked>
@@ -285,11 +289,6 @@
                 <option value="all">All</option>
               </select>
             </div>
-            <div id="yearly-options">
-              <input type="checkbox" id="yearly-show-target-altitude" checked>
-              <input type="checkbox" id="yearly-show-observability" checked>
-              <input type="checkbox" id="yearly-show-min-altitude" checked>
-            </div>
           </div>
 
           <!-- Target Filter Section -->
@@ -373,9 +372,11 @@
               </div>
 
               <!-- Filter Actions -->
-              <div style="display: flex; gap: 0.5rem;">
+              <div id="target-filter-buttons">
+                <!--
                 <button id="target-filter-apply-btn" class="btn-primary" style="flex: 1;">Apply</button>
-                <button id="target-filter-reset-btn" class="btn-secondary" style="flex: 1;">Reset</button>
+                -->
+                <button id="target-filter-reset-btn" class="btn-secondary">Reset</button>
               </div>
 
             </div>
@@ -458,11 +459,9 @@
 
     <!-- Daily Visibility Template -->
     <template id="daily-visibility-template">
-      <div class="view-header">
-        <div style="display: flex; align-items: baseline; gap: 0.5rem;">
-          <h1>🌙 Daily Visibility</h1>
-          <span id="analysis-title" style="font-size: 2.0rem; color: var(--text-secondary);"></span>
-        </div>
+      <div class="view-header view-bg-icon view-bg-icon-daily-visibility">
+        <h2 class="view-title">Daily Visibility</h2>
+        <span id="analysis-title"></span>
       </div>
       <div id="daily-visibility-content">
         <div id="daily-visibility-message"></div>
@@ -860,17 +859,10 @@
         <label for="target-file">Select target database CSV file</label>
         <input type="file" id="target-file" accept=".csv,.txt">
       </div>
-      <div class="form-group">
-        <p style="color: var(--text-secondary); font-size: 0.9rem;">
-          See Creating database help for information on format.
-        </p>
-      </div>
       <div id="import-status"></div>
-      <div class="form-actions">
-        <button class="btn-secondary" data-action="cancel">Cancel</button>
-        <button class="btn-primary" data-action="import">Import Targets</button>
-      </div>
     </template>
+    <!-- end of Import Targets Template -->
+
 
     <!-- Location Management Modal Template -->
     <template id="location-modal-template">
@@ -939,8 +931,8 @@
 
     <!-- Field of View Template -->
     <template id="fov-template">
-      <div class="fov-view">
-        <h2 style="text-align: center;">🔭 Viewfinder</h2>
+      <div class="fov-view view-bg-icon view-bg-icon-viewfinder">
+        <h2 class="view-title">Viewfinder</h2>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 2rem;">
           <!-- Left Column: Equipment and Settings -->
           <div>
@@ -1533,8 +1525,8 @@
 
     <!-- Imaging Log View Template -->
     <template id="imaging-log-view-template">
-      <div class="view-container">
-        <h2>Imaging Log</h2>
+      <div class="view-container view-bg-icon view-bg-icon-imaging-log">
+        <h2 class="view-title">Imaging Log</h2>
 
         <!-- Tab Navigation -->
         <div class="imaging-log-tabs">
@@ -1690,7 +1682,7 @@
             <option value="">Select...</option>
             <option value="__ALL__">All Locations</option>
           </select>
-          <button class="btn-primary" id="best-months-calculate" data-action="calculate">Calculate</button>
+          <button class="btn-secondary" id="best-months-calculate" data-action="calculate">Calculate</button>
         </div>
 
         <!-- Progress indicator (hidden initially) -->
@@ -1709,6 +1701,7 @@
         <button class="btn-danger" data-action="cancel-calc" style="display: none;">Cancel</button>
       </div>
     </template>
+    <!-- end of Calculate Best Months template -->
 
     <!-- Help Template -->
     <template id="help-template">
@@ -1720,19 +1713,28 @@
 
     <!-- To Do List View Template -->
     <template id="todo-template">
-      <div class="todo-view">
-        <h2 style="text-align: center;">📋 Imaging To Do List</h2>
-        <div id="todo-container" style="max-width: 1200px; margin: 0 auto; padding: 1rem;">
-          <!-- To Do list will be rendered here -->
+      <div class="todo-view view-bg-icon view-bg-icon-todo">
+        <div class="todo-view-header">
+          <h2 class="view-title">To Do List</h2>
+          <div class="todo-controls">
+            <label for="todo-sort-select" class="todo-sort-label">Sort by:</label>
+            <select id="todo-sort-select" class="todo-sort-select">
+              <option value="rise">Rise Time (Tonight)</option>
+              <option value="type">Type</option>
+              <option value="month">Best Month</option>
+            </select>
+            <button id="toggle-rise-chart" class="btn-toggle-chart btn-secondary btn-small" style="visibility:hidden;">📊 Chart</button>
+          </div>
         </div>
+        <div id="todo-container"></div>
       </div>
     </template>
     <!-- END OF To Do List View Template -->
 
     <!-- Sequence Planner Template -->
     <template id="seq-plan-view-template">
-      <div class="view-container">
-        <h2>Sequence Planner</h2>
+      <div class="view-container view-bg-icon view-bg-icon-sequence-planner">
+        <h2 class="view-title">Sequence Planner</h2>
 
         <!-- Session Settings Card (with Overhead Settings merged) -->
         <div class="card" id="seqplan-session-settings">
@@ -1946,8 +1948,8 @@
 
     <!-- Utilities Template -->
     <template id="utilities-view-template">
-      <div class="view-container">
-        <h2>Utilities</h2>
+      <div class="view-container view-bg-icon view-bg-icon-utilities">
+        <h2 class="view-title">Utilities</h2>
 
         <div class="card">
           <div class="card-header">
@@ -1975,7 +1977,7 @@
           <div class="card-header">
             <h3>Dust Mote Distance Estimator <span class="tooltip-icon tooltip-host" data-tooltip-key="util_dustMote">?</span></h3>
           </div>
-          <div class="card-body" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+          <div class="card-body" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
             <!-- Left column: inputs -->
             <div>
               <div class="form-row" style="margin-bottom: 0.75rem;">
@@ -1992,7 +1994,7 @@
                   </select>
                 </div>
               </div>
-              <div style="display: grid; grid-template-columns: 0.9fr 0.9fr 1.2fr; gap: 1rem; margin-bottom: 0.75rem;">
+              <div id="util-dust-mote-params">
                 <div class="form-group">
                   <label for="dust-focal-ratio">Focal Ratio (f/) <span class="tooltip-icon tooltip-host" data-tooltip-key="util_dustFocalRatio">?</span></label>
                   <input type="number" id="dust-focal-ratio" step="0.1" min="1" placeholder="e.g. 7.2">
@@ -2059,8 +2061,8 @@
 
     <!-- Target Optimizer View Template -->
     <template id="optimizer-view-template">
-      <div class="view-container">
-        <h2>Target Optimizer</h2>
+      <div class="view-container view-bg-icon view-bg-icon-optimizer">
+        <h2 class="view-title">Target Optimizer</h2>
 
         <div class="card">
           <div class="card-header">
@@ -2102,6 +2104,78 @@
       </div>
     </template>
     <!-- END OF Target Optimizer View Template -->
+
+    <!-- Yearly Observability Template -->
+    <template id="yo-view-template">
+      <div class="view-container yo-view-container view-bg-icon view-bg-icon-yearly-observability">
+        <div class="view-header">
+          <h2 class="view-title">Yearly Observability</h2>
+        </div>
+        <div id="yearly-observability-header">
+          <div class="yo-header">
+            <div>
+              <h2 id="yo-target-name"></h2>
+              <p id="yo-subtitle" class="yo-header-subtitle"></p>
+              <div class="form-inline yo-header-controls">
+                <label for="yearly-min-altitude">Minimum Altitude:</label>
+                <select id="yearly-min-altitude">
+                  <option value="5">5°</option>
+                  <option value="10">10°</option>
+                  <option value="15">15°</option>
+                  <option value="20">20°</option>
+                  <option value="25">25°</option>
+                  <option value="30">30°</option>
+                  <option value="35" selected>35°</option>
+                  <option value="40">40°</option>
+                  <option value="45">45°</option>
+                  <option value="50">50°</option>
+                  <option value="55">55°</option>
+                  <option value="60">60°</option>
+                </select>
+              </div>
+            </div>
+            <div class="yo-header-buttons">
+              <button id="yearly-observability-help-btn" class="btn-secondary">Help</button>
+            </div>
+          </div>
+        </div>
+        <div id="yearly-observability-help" class="yo-help">
+          <p>
+            <strong>Graph visualization:</strong> Shows peak target altitude during astronomical darkness throughout the year.
+            Background gradient shows observability score for each day based on
+            <strong>transit timing</strong> (how close to midnight) and <strong>dark hours available</strong> (total time above type-specific threshold).
+            Darker shading indicates better observing conditions.
+          </p>
+        </div>
+        <div id="yearly-observability-graph" class="yo-graph">
+          <div class="yo-graph-placeholder">Calculating...</div>
+        </div>
+        <div id="yearly-observability-legend" class="yo-legend">
+          <div class="yo-legend-item" id="yo-legend-target">
+            <div class="yo-legend-target-line"></div>
+            <span>Target Altitude</span>
+          </div>
+          <div class="yo-legend-item" id="yo-legend-min-alt">
+            <div class="yo-legend-min-alt-line"></div>
+            <span>Minimum Altitude</span>
+          </div>
+          <div class="yo-legend-item" id="yo-legend-observability">
+            <div class="yo-legend-observability-box"></div>
+            <span>Observability (darker = better)</span>
+          </div>
+          <div class="yo-legend-item" id="yo-legend-moon">
+            <div class="yo-legend-moon-circle"></div>
+            <span>Full Moon</span>
+          </div>
+          <div class="yo-legend-item" id="yo-legend-current-day">
+            <div class="yo-legend-current-day-line"></div>
+            <span>Current Day</span>
+          </div>
+        </div>
+      </div>
+    </template>
+    <!-- END OF Yearly Observability Template -->
+
 
     <!-- Backup Modal Template -->
     <template id="backup-modal-template">

@@ -80,6 +80,10 @@
     margin: 0;
 }
 
+#target-filter-buttons {
+    text-align: center;
+}
+
 #target-filter-results {
     max-height: 20vh;
     overflow-y: auto;

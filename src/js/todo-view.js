@@ -43,67 +43,9 @@ const ToDoView = {
     },
 
     /**
-     * Add sort dropdown to header
+     * Initialize sort dropdown and toggle button from template
      */
     addSortDropdown() {
-        const todoView = document.querySelector('.todo-view');
-        if (!todoView) return;
-
-        // Remove any existing header containers first
-        const existingHeader = todoView.querySelector('.todo-view-header, .todo-view-header-with-toggle');
-        const h2 = todoView.querySelector('h2');
-
-        if (existingHeader) {
-            // Extract the h2 before removing container
-            const originalH2 = existingHeader.querySelector('h2');
-            if (originalH2 && existingHeader.parentElement) {
-                existingHeader.parentElement.insertBefore(originalH2, existingHeader);
-                existingHeader.remove();
-            }
-        }
-
-        if (!h2) return;
-
-        // Create new header container
-        const headerContainer = document.createElement('div');
-        headerContainer.className = this.currentSort === 'rise' ? 'todo-view-header-with-toggle' : 'todo-view-header';
-
-        // Move h2 into container
-        const newH2 = h2.cloneNode(true);
-        headerContainer.appendChild(newH2);
-
-        // Create right side container for sort dropdown and toggle button
-        const rightContainer = document.createElement('div');
-        rightContainer.className = 'todo-view-header-right';
-
-        // Create sort dropdown
-        const sortContainer = document.createElement('div');
-        sortContainer.className = 'todo-sort-container';
-        sortContainer.innerHTML = `
-        <label for="todo-sort-select" class="todo-sort-label">Sort by:</label>
-        <select id="todo-sort-select" class="todo-sort-select">
-            <option value="rise">Rise Time (Tonight)</option>
-            <option value="type">Type</option>
-            <option value="month">Best Month</option>
-        </select>
-    `;
-        rightContainer.appendChild(sortContainer);
-
-        // Add toggle button if in rise time mode
-        if (this.currentSort === 'rise') {
-            const toggleBtn = document.createElement('button');
-            toggleBtn.id = 'toggle-rise-chart';
-            toggleBtn.className = 'btn-toggle-chart';
-            toggleBtn.textContent = this.riseTimeViewMode === 'list' ? '📊 Chart' : '📝 List';
-            rightContainer.appendChild(toggleBtn);
-        }
-
-        headerContainer.appendChild(rightContainer);
-
-        // Replace h2 with new container
-        h2.replaceWith(headerContainer);
-
-        // Add event listeners
         const select = document.getElementById('todo-sort-select');
         if (select) {
             select.value = this.currentSort;
@@ -112,16 +54,27 @@ const ToDoView = {
                 if (newSort !== this.currentSort) {
                     this.currentSort = newSort;
                     this.riseTimeViewMode = 'list';
-                    this.addSortDropdown(); // Rebuild to add/remove toggle button
+                    this.updateToggleButton();
                     this.renderToDoList();
                 }
             });
         }
 
-        // Add toggle listener if button exists
+        this.updateToggleButton();
+
         if (this.currentSort === 'rise') {
             this.attachChartToggle();
         }
+    },
+
+    /**
+     * Show or hide the chart toggle button based on current sort
+     */
+    updateToggleButton() {
+        const toggleBtn = document.getElementById('toggle-rise-chart');
+        if (!toggleBtn) return;
+        toggleBtn.style.visibility = this.currentSort === 'rise' ? 'visible' : 'hidden';
+        toggleBtn.textContent = this.riseTimeViewMode === 'list' ? '📊 Chart' : '📝 List';
     },
 
     /**
