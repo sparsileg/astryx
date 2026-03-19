@@ -550,7 +550,7 @@ const ToDoView = {
         const locationName = SettingsManager.getSelectedLocation();
         const location = DataManager.getLocation(locationName);
         const timezone = location ? location.timezone : 0;
-        const isDST = false; // Simplified for now
+        const isDST = location ? SettingsManager.isDSTActive(new Date(), location.timezone) : false;
 
         // Format dusk and dawn times
         const duskTime = this.formatLocalTime(duskJD, timezone, isDST);
