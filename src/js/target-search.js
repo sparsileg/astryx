@@ -61,8 +61,11 @@ const VisibilityTargets = {
         clearTimeout(this.searchTimeout);
 
         if (query.length < 2) {
+            localStorage.setItem('lastSearchQuery', '');
             this.hideResults();
             this.clearFields();
+            const countDiv = document.getElementById('target-search-results-count');
+            if (countDiv) countDiv.textContent = '';
             return;
         }
 
@@ -218,6 +221,8 @@ const VisibilityTargets = {
         if (resultsDiv) {
             resultsDiv.style.display = 'none';
         }
+        const countDiv = document.getElementById('target-search-results-count');
+        if (countDiv) countDiv.textContent = '';
     },
 
     /**
@@ -344,13 +349,15 @@ const VisibilityTargets = {
                 UIManager.updateSidebarCurrentTarget(target.object);
 
                 // Restore search results panel
-                // Restore search results panel
                 const lastQuery = localStorage.getItem('lastSearchQuery');
-                console.log('lastQuery:', lastQuery);
                 if (lastQuery && targetNameInput) {
                     targetNameInput.value = lastQuery;
                     if (infoDisplay) infoDisplay.style.display = 'none';
                     this.search(lastQuery);
+                } else if (targetNameInput) {
+                    targetNameInput.value = '';
+                    const infoDisplay = document.getElementById('target-info-display');
+                    if (infoDisplay) infoDisplay.style.display = 'none';
                 }
 
             } catch (e) {

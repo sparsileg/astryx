@@ -723,7 +723,7 @@ const TargetFilter = {
 
         // Update count display
         const totalToShow = Math.min(this.allResults.length, MAX_TOTAL_RESULTS);
-        countDiv.textContent = `Showing 0 of ${totalToShow} results`;
+        countDiv.textContent = `Showing 0 of ${totalToShow} unique results`;
 
         this.loadMoreResults(); // Display initial batch
         this.attachScrollListener(); // for lazy loading
@@ -812,7 +812,7 @@ const TargetFilter = {
 
         // Update count
         if (countDiv) {
-            countDiv.textContent = `Showing ${this.displayedCount} of ${this.allResults.length} results`;
+            countDiv.textContent = `Showing ${this.displayedCount} of ${this.allResults.length} unique results`;
         }
 
         this.isLoading = false;
