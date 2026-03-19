@@ -147,6 +147,8 @@
 
 #analysis-title {
     margin-bottom: 0;
+    font-size: 1.3rem;
+    color: var(--text-secondary);
 }
 
 /* Info cards */

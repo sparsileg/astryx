@@ -3,7 +3,6 @@
 .yo-view-container {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 1.5rem;
 }
 
 .yo-help {
@@ -81,4 +80,49 @@
 .yo-header-buttons {
     display: flex;
     gap: 0.5rem;
+}
+
+/* Legend items */
+.yo-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+    color: var(--text-color);
+}
+
+.yo-legend-target-line {
+    width: 30px;
+    height: 5px;
+    background: #000000;
+    border-top: 2px solid #FFFFFF;
+}
+
+.yo-legend-min-alt-line {
+    width: 30px;
+    height: 5px;
+    background: #000000;
+    border-top: 2px dashed rgba(255,255,0,0.8);
+}
+
+.yo-legend-observability-box {
+    width: 30px;
+    height: 12px;
+    background: linear-gradient(to right, #000000, #888888, #ffffff);
+    border: 1px solid var(--border-color);
+}
+
+.yo-legend-moon-circle {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #ffd700;
+    border: 1px solid #000;
+}
+
+.yo-legend-current-day-line {
+    width: 3px;
+    height: 20px;
+    background: #ffa726;
+    opacity: 0.8;
 }

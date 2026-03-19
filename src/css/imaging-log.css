@@ -384,31 +384,7 @@
     padding: 0.4rem 0.8rem;
     border-radius: 4px;
     font-size: 0.85rem;
-    cursor: pointer;
     transition: all 0.2s;
-    border: 1px solid var(--border-color);
-}
-
-.project-action-btn-delete {
-    background: var(--error-color);
-    color: white;
-    border-color: var(--error-color);
-}
-
-.project-action-btn-delete:hover {
-    background: var(--error-hover);
-    border-color: var(--error-hover);
-}
-
-.project-action-btn-edit {
-    background: var(--primary-color);
-    color: var(--primary-text);
-    border-color: var(--primary-color);
-}
-
-.project-action-btn-edit:hover {
-    background: var(--primary-hover);
-    border-color: var(--primary-hover);
 }
 
 /* Projects tab - always reserve scrollbar space */

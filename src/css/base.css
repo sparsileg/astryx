@@ -133,7 +133,7 @@ label.has-tip::after {
 #app {
     flex: 1;
     overflow-y: auto;
-    padding: 2rem;
+    padding: 0.5rem 1.5rem;
 }
 
 /* Buttons */
@@ -469,10 +469,10 @@ label.has-tip::after {
 .mt-4 { margin-top: 2rem; }
 
 .ts-two-col-grid {
+    gap: 1.5rem;
+    margin-bottom: 0.5rem;
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 1.5rem;
-    margin-bottom: 1.5rem;
 }
 
 .card-no-margin {
@@ -722,20 +722,6 @@ input[type="number"] {
     display: none;
 }
 
-/* View Header */
-.view-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1.5rem;
-}
-
-.view-header h2,
-.view-header h1 {
-    margin: 0;
-    color: var(--text-primary);
-}
-
 /* Annual Altitude Graph SVG Styling */
 .svg-background {
     fill: var(--bg-color);
@@ -927,57 +913,6 @@ input[type="number"] {
                  0 0 32px var(--primary-color);
 }
 
-/* Rise Time Chart View */
-.todo-view-header-with-toggle {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 2rem;
-    margin-bottom: 1rem;
-}
-
-.todo-view-header-with-toggle h2 {
-    margin: 0;
-}
-
-.todo-view-header-right {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-}
-
-.btn-toggle-chart {
-    padding: 0.5rem 1rem;
-    background: transparent;
-    color: var(--text-primary);
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 0.9rem;
-    transition: background 0.2s;
-}
-
-.btn-toggle-chart:hover {
-    background: var(--card-hover);
-}
-
-.todo-rise-chart-container {
-    background: var(--card-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    padding: 1rem;
-    margin: 0 auto;
-    max-width: 1400px;
-}
-
-#todo-rise-chart {
-    display: block;
-    margin: 0 auto;
-}
-
-/* END OF Rise Time Chart View */
-
-
 .card-header:has(#seq-plan-af-note) {
     display: flex;
     align-items: center;
@@ -1078,4 +1013,12 @@ select.altitude-override-active,
     box-shadow: 0 0 8px var(--warning-color) !important;
     border: 2px solid var(--warning-color) !important;
     outline: none !important;
+}
+
+/* Utilities */
+#util-dust-mote-params {
+    display: grid;
+    gap: 1rem;
+    margin-bottom: 0.75rem;
+    grid-template-columns: 1.2fr 1.2fr 1.5fr;
 }
