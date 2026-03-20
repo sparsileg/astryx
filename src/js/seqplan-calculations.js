@@ -35,29 +35,24 @@ const SeqPlanCalculations = {
 
     /**
      * Check if meridian flip occurs during target imaging window
-     * @param {number} raHours - Target right ascension (hours)
+     * @param {number} transitJD - Pre-calculated transit time (JD)
      * @param {number} startJD - Window start (Julian Date)
      * @param {number} endJD - Window end (Julian Date)
-     * @param {number} longitude - Observer longitude (degrees)
      * @param {number} offsetMinutes - Offset from meridian (± minutes)
-     * @returns {number|null} JD of meridian crossing (before pause), or null if no flip
+     * @returns {number|null} JD of flip point, or null if no flip
      */
     checkMeridianFlip(transitJD, startJD, endJD, offsetMinutes) {
-        // Use pre-calculated transit time
         if (!transitJD) {
-            return null; // No transit
+            return null;
         }
 
-        // Check if transit is within imaging window
         if (transitJD < startJD || transitJD > endJD) {
-            return null; // Transit outside imaging window
+            return null;
         }
 
-        // Apply offset (convert minutes to JD)
         const offsetJD = offsetMinutes / 1440;
         const flipJD = transitJD + offsetJD;
 
-        // Verify flip is still within window
         if (flipJD >= startJD && flipJD <= endJD) {
             return flipJD;
         }
@@ -66,11 +61,7 @@ const SeqPlanCalculations = {
 
     /**
      * Calculate exposure counts for each target based on allocation
-     * Meridian flip overhead sequence:
-     *   1. Pause before (user-entered pause duration)
-     *   2. Flip operation (user-entered flip duration)
-     *   3. Pause after (same user-entered pause duration)
-     *   4. Calibration (user-entered calibration duration)
+     * Sequence: calibration, autofocus, imaging, [periodic AF+imaging], [flip, calibration, autofocus, imaging...]
      *
      * @param {Array} targets - Ordered targets with percentages
      * @param {Object} session - Session configuration with overhead settings
@@ -85,18 +76,13 @@ const SeqPlanCalculations = {
         const results = [];
 
         for (const target of targets) {
-            // Allocated time for this target
             const allocatedMinutes = netMinutes * (target.allocatedPercent / 100);
 
-            // Account for target-specific overhead
             let targetOverhead = session.calibrationDuration; // Initial calibration
 
-            // Account for autofocus overhead
             if (session.autofocusEnabled && session.autofocusDuration > 0) {
-                // Initial AF run at start of target
-                targetOverhead += session.autofocusDuration;
+                targetOverhead += session.autofocusDuration; // Initial AF
 
-                // Periodic AF runs during target imaging
                 if (session.autofocusInterval > 0) {
                     const imagingAfterInitial = allocatedMinutes - targetOverhead;
                     const periodicAfCount = Math.floor(imagingAfterInitial / session.autofocusInterval);
@@ -104,7 +90,6 @@ const SeqPlanCalculations = {
                 }
             }
 
-            // Check for meridian flip during this target's window
             const targetEndJD = currentJD + (allocatedMinutes / 1440);
             const flipJD = this.checkMeridianFlip(
                 target.transitJD, currentJD, targetEndJD,
@@ -112,16 +97,16 @@ const SeqPlanCalculations = {
             );
 
             if (flipJD) {
-                // Total flip overhead: pause + flip + pause (calibration is already included in flip event)
-                const flipOverhead = (session.meridianFlipPause * 2) +
-                      session.meridianFlipDuration;
+                // Flip overhead: pause + flip duration + calibration + autofocus after flip
+                const flipOverhead = session.meridianFlipPause +
+                      session.meridianFlipDuration +
+                      session.calibrationDuration +
+                      (session.autofocusEnabled ? session.autofocusDuration : 0);
                 targetOverhead += flipOverhead;
             }
 
-            // Net imaging minutes for this target
             const imagingMinutes = allocatedMinutes - targetOverhead;
 
-            // Calculate exposure count
             const exposureSeconds = target.exposureTime + session.interExposureTime;
             const exposureCount = Math.max(0, Math.floor((imagingMinutes * 60) / exposureSeconds));
 
@@ -151,20 +136,18 @@ const SeqPlanCalculations = {
     generateTimelineEvents(targets, session) {
         const events = [];
 
-        for (const target of targets) {
-            let currentJD = target.imagingStartJD;
+        // Snap AF trigger time to next sub boundary to avoid cutting a sub short
+        const snapToSubBoundary = (triggerJD, segStartJD, subDurationJD) => {
+            if (subDurationJD <= 0) return triggerJD;
+            const subsElapsed = Math.ceil((triggerJD - segStartJD) / subDurationJD);
+            return segStartJD + subsElapsed * subDurationJD;
+        };
 
-            // Initial autofocus for this target (if enabled)
-            if (session.autofocusEnabled) {
-                events.push({
-                    type: 'autofocus',
-                    targetId: target.targetId,
-                    startJD: currentJD,
-                    endJD: currentJD + (session.autofocusDuration / 1440),
-                    description: 'AF'
-                });
-                currentJD += session.autofocusDuration / 1440;
-            }
+        let lastTarget = null;
+
+        for (const target of targets) {
+            lastTarget = target;
+            let currentJD = target.imagingStartJD;
 
             // Initial calibration
             events.push({
@@ -176,18 +159,28 @@ const SeqPlanCalculations = {
             });
             currentJD += session.calibrationDuration / 1440;
 
-            // Handle meridian flip case
+            // Initial autofocus
+            if (session.autofocusEnabled) {
+                events.push({
+                    type: 'autofocus',
+                    targetId: target.targetId,
+                    startJD: currentJD,
+                    endJD: currentJD + (session.autofocusDuration / 1440),
+                    description: 'AF'
+                });
+                currentJD += session.autofocusDuration / 1440;
+            }
+
             if (target.meridianFlipJD) {
                 // === BEFORE FLIP ===
                 const pauseBeforeJD = target.meridianFlipJD - (session.meridianFlipPause / 1440);
 
-                // Generate imaging and AF events before flip
                 let segmentStart = currentJD;
                 if (session.autofocusEnabled && session.autofocusInterval > 0) {
-                    let afStart = currentJD + (session.autofocusInterval / 1440);
+                    const subDurationJD = (target.exposureTime + session.interExposureTime) / 86400;
+                    let afStart = snapToSubBoundary(currentJD + (session.autofocusInterval / 1440), currentJD, subDurationJD);
 
                     while (afStart < pauseBeforeJD) {
-                        // Imaging segment up to this AF
                         events.push({
                             type: 'imaging',
                             targetId: target.targetId,
@@ -199,7 +192,6 @@ const SeqPlanCalculations = {
                             horizonViolations: target.horizonViolations || []
                         });
 
-                        // AF event
                         const afEnd = afStart + (session.autofocusDuration / 1440);
                         events.push({
                             type: 'autofocus',
@@ -209,13 +201,12 @@ const SeqPlanCalculations = {
                             description: 'AF'
                         });
 
-                        // Update for next segment
                         segmentStart = afEnd;
-                        afStart = afEnd + (session.autofocusInterval / 1440);
+                        afStart = snapToSubBoundary(afEnd + (session.autofocusInterval / 1440), afEnd, subDurationJD);
                     }
                 }
 
-                // Imaging segment up to this AF
+                // Imaging segment up to flip pause
                 events.push({
                     type: 'imaging',
                     targetId: target.targetId,
@@ -227,25 +218,33 @@ const SeqPlanCalculations = {
                     horizonViolations: target.horizonViolations || []
                 });
 
-                // Meridian flip event (includes calibration)
+                // Meridian flip event
                 const flipStart = pauseBeforeJD;
-                const flipEnd = target.meridianFlipJD +
-                      (session.meridianFlipPause / 1440) +
-                      (session.meridianFlipDuration / 1440);
+                const flipEnd = target.meridianFlipJD + (session.meridianFlipDuration / 1440);
 
                 events.push({
                     type: 'flip',
                     targetId: target.targetId,
                     startJD: flipStart,
                     endJD: flipEnd,
-                    description: 'Flip+Cal'
+                    description: 'Flip'
                 });
 
                 currentJD = flipEnd;
 
                 // === AFTER FLIP ===
 
-                // Autofocus after flip (if enabled)
+                // Calibration after flip
+                events.push({
+                    type: 'calibration',
+                    targetId: target.targetId,
+                    startJD: currentJD,
+                    endJD: currentJD + (session.calibrationDuration / 1440),
+                    description: `Cal: ${target.name}`
+                });
+                currentJD += session.calibrationDuration / 1440;
+
+                // Autofocus after flip
                 if (session.autofocusEnabled) {
                     events.push({
                         type: 'autofocus',
@@ -257,13 +256,13 @@ const SeqPlanCalculations = {
                     currentJD += session.autofocusDuration / 1440;
                 }
 
-                // Generate imaging and AF events after flip
+                // Imaging and periodic AF after flip
                 segmentStart = currentJD;
                 if (session.autofocusEnabled && session.autofocusInterval > 0) {
-                    let afStart = currentJD + (session.autofocusInterval / 1440);
+                    const subDurationJD = (target.exposureTime + session.interExposureTime) / 86400;
+                    let afStart = snapToSubBoundary(currentJD + (session.autofocusInterval / 1440), currentJD, subDurationJD);
 
                     while (afStart < target.imagingEndJD) {
-                        // Imaging segment up to this AF
                         events.push({
                             type: 'imaging',
                             targetId: target.targetId,
@@ -275,7 +274,6 @@ const SeqPlanCalculations = {
                             horizonViolations: target.horizonViolations || []
                         });
 
-                        // AF event
                         const afEnd = afStart + (session.autofocusDuration / 1440);
                         events.push({
                             type: 'autofocus',
@@ -285,9 +283,8 @@ const SeqPlanCalculations = {
                             description: 'AF'
                         });
 
-                        // Update for next segment
                         segmentStart = afEnd;
-                        afStart = afEnd + (session.autofocusInterval / 1440);
+                        afStart = snapToSubBoundary(afEnd + (session.autofocusInterval / 1440), afEnd, subDurationJD);
                     }
                 }
 
@@ -306,13 +303,12 @@ const SeqPlanCalculations = {
             } else {
                 // === NO FLIP - CONTINUOUS IMAGING ===
 
-                // Generate imaging and AF events
                 let segmentStart = currentJD;
                 if (session.autofocusEnabled && session.autofocusInterval > 0) {
-                    let afStart = currentJD + (session.autofocusInterval / 1440);
+                    const subDurationJD = (target.exposureTime + session.interExposureTime) / 86400;
+                    let afStart = snapToSubBoundary(currentJD + (session.autofocusInterval / 1440), currentJD, subDurationJD);
 
                     while (afStart < target.imagingEndJD) {
-                        // Imaging segment up to this AF
                         events.push({
                             type: 'imaging',
                             targetId: target.targetId,
@@ -324,7 +320,6 @@ const SeqPlanCalculations = {
                             horizonViolations: target.horizonViolations || []
                         });
 
-                        // AF event
                         const afEnd = afStart + (session.autofocusDuration / 1440);
                         events.push({
                             type: 'autofocus',
@@ -334,9 +329,8 @@ const SeqPlanCalculations = {
                             description: 'AF'
                         });
 
-                        // Update for next segment
                         segmentStart = afEnd;
-                        afStart = afEnd + (session.autofocusInterval / 1440);
+                        afStart = snapToSubBoundary(afEnd + (session.autofocusInterval / 1440), afEnd, subDurationJD);
                     }
                 }
 
@@ -351,6 +345,18 @@ const SeqPlanCalculations = {
                     altitudeConstraint: target.altitudeConstraint,
                     horizonViolations: target.horizonViolations || []
                 });
+            }
+        }
+
+        // Extend final imaging segment to complete the last sub even if it overruns session end
+        if (lastTarget) {
+            const lastImaging = [...events].reverse().find(e => e.type === 'imaging');
+            if (lastImaging) {
+                const subDurationJD = (lastTarget.exposureTime + session.interExposureTime) / 86400;
+                if (subDurationJD > 0) {
+                    const subsCount = Math.ceil((lastImaging.endJD - lastImaging.startJD) / subDurationJD);
+                    lastImaging.endJD = lastImaging.startJD + subsCount * subDurationJD;
+                }
             }
         }
 
@@ -371,17 +377,45 @@ const SeqPlanCalculations = {
     calculateSessionWindow(optimizedTargets, duskJD, dawnJD, location, minAltitude,
                            startTimeMode, customStartTime, useHorizon = false, horizonProfile = null) {
 
-        // Determine initial start time (dusk or custom)
         let initialStartJD = duskJD;
 
         if (startTimeMode === 'custom' && customStartTime) {
             const [hours, minutes] = customStartTime.split(':').map(Number);
-            const timeOffset = (hours + minutes / 60) / 24;
-            const dateAtMidnight = new Date(jdToDate(duskJD).toDateString() + ' 00:00:00');
-            const midnightJD = dateToJD(dateAtMidnight);
-            let customJD = midnightJD + timeOffset;
+            // Custom time is local — convert to UTC using location timezone
+            const timezone = location ? location.timezone : 0;
+            const isDST = location ? SettingsManager.isDSTActive(new Date(), timezone) : false;
+            const utcOffset = timezone + (isDST ? 1 : 0);
+            const localMinutes = hours * 60 + minutes;
+            const utcMinutes = localMinutes - utcOffset * 60;
+            const utcHours = Math.floor(((utcMinutes % 1440) + 1440) % 1440 / 60);
+            const utcMins = ((utcMinutes % 1440) + 1440) % 1440 % 60;
+            const dayOffset = Math.floor((utcMinutes + 1440) / 1440) - 1;
 
-            if (hours < 12 && customJD < duskJD) {
+            const duskDate = jdToDate(duskJD);
+            const dateAtMidnight = new Date(Date.UTC(
+                duskDate.getUTCFullYear(),
+                duskDate.getUTCMonth(),
+                duskDate.getUTCDate(),
+                0, 0, 0, 0
+            ));
+            const midnightJD = dateToJD(dateAtMidnight);
+            const timeOffset = (utcHours + utcMins / 60) / 24;
+            let customJD = midnightJD + timeOffset;
+            console.log('Custom time debug:', {
+                customStartTime,
+                hours, minutes,
+                timezone, utcOffset,
+                utcHours, utcMins, dayOffset,
+                midnightJD,
+                customJD,
+                duskJD,
+                dawnJD,
+                diff_dusk: (customJD - duskJD) * 1440,
+                diff_dawn: (dawnJD - customJD) * 1440
+            });
+
+            // If UTC time is early morning (wrapped past midnight), advance one day
+            if (utcHours < 12 && customJD < duskJD) {
                 customJD += 1;
             }
 
@@ -392,7 +426,6 @@ const SeqPlanCalculations = {
             }
         }
 
-        // Find when FIRST target rises above minimum altitude
         let sessionStartJD = initialStartJD;
 
         if (optimizedTargets.length > 0) {
@@ -420,18 +453,11 @@ const SeqPlanCalculations = {
             }
         }
 
-        // Find when LAST target sets below minimum altitude
         let sessionEndJD = dawnJD;
 
         if (optimizedTargets.length > 0) {
             const lastTarget = optimizedTargets[optimizedTargets.length - 1];
 
-            // Check altitude at session start
-            const startAlt = getAltitude(sessionStartJD, lastTarget.ra, lastTarget.dec,
-                                         location.latitude, location.longitude);
-            // Check altitude at dawn
-            const dawnAlt = getAltitude(dawnJD, lastTarget.ra, lastTarget.dec,
-                                        location.latitude, location.longitude);
             const setJD = findTargetSet(
                 sessionStartJD,
                 dawnJD,
@@ -444,11 +470,9 @@ const SeqPlanCalculations = {
             );
 
             if (setJD) {
-                const setAlt = getAltitude(setJD, lastTarget.ra, lastTarget.dec,
-                                           location.latitude, location.longitude);
                 sessionEndJD = setJD;
             } else {
-                sessionEndJD = dawnJD; // Use dawn as session end
+                sessionEndJD = dawnJD;
             }
         }
 
@@ -465,7 +489,6 @@ const SeqPlanCalculations = {
         const location = session.location;
         const minAlt = session.minAltitude;
 
-        // Find when target rises above minimum altitude
         const riseJD = findTargetRise(
             session.duskJD,
             session.dawnJD,
@@ -477,7 +500,6 @@ const SeqPlanCalculations = {
             session.useHorizon ? session.location.horizon : null
         );
 
-        // Find when target sets below minimum altitude
         const setJD = findTargetSet(
             session.duskJD,
             session.dawnJD,
@@ -489,16 +511,13 @@ const SeqPlanCalculations = {
             session.useHorizon ? session.location.horizon : null
         );
 
-        // Determine valid window
         let validStartJD = riseJD || session.sessionStartJD;
-        let validEndJD = setJD || session.sessionEndJD; // If no set found, use session end
+        let validEndJD = setJD || session.sessionEndJD;
 
-        // Check for violations
         let violationType = null;
         let isValid = true;
 
         if (!riseJD && !setJD) {
-            // Target never rises above minimum altitude
             const altitude = getAltitude(session.sessionStartJD, target.ra, target.dec,
                                          location.latitude, location.longitude);
             if (altitude < minAlt) {
@@ -506,7 +525,6 @@ const SeqPlanCalculations = {
                 isValid = false;
             }
         } else {
-            // Check if imaging window extends outside valid window
             if (target.imagingStartJD < validStartJD) {
                 violationType = 'starts_early';
                 isValid = false;
@@ -525,7 +543,7 @@ const SeqPlanCalculations = {
         };
     },
 
-/**
+    /**
      * Find transition conflicts for all target boundaries
      * Checks both end of current target and start of next target
      * for meridian flips and periodic autofocus events within tolerance window
@@ -549,7 +567,6 @@ const SeqPlanCalculations = {
 
             // === LOOK-BACK: events near end of current target ===
 
-            // Meridian flip near end of current target
             if (current.meridianFlipJD) {
                 const minutesFromEnd = (boundaryJD - current.meridianFlipJD) * 1440;
                 if (minutesFromEnd >= 0 && minutesFromEnd <= toleranceMinutes) {
@@ -561,29 +578,22 @@ const SeqPlanCalculations = {
                         eventJD: current.meridianFlipJD,
                         boundaryJD: boundaryJD,
                         minutesFromBoundary: minutesFromEnd,
-                        overheadMinutes: (session.meridianFlipPause * 2) + session.meridianFlipDuration
+                        overheadMinutes: session.meridianFlipPause + session.meridianFlipDuration
                     });
                 }
             }
 
-            // Periodic AF near end of current target
-            // Only flag if the gap between this AF and the next target's initial AF
-            // would be less than autofocusInterval (i.e. two AF events too close together)
-            // Mirrors generateTimelineEvents() AF schedule exactly, including meridian flip reset
             if (session.autofocusEnabled && session.autofocusInterval > 0) {
 
-                // Guard: if calibration alone fills the interval, no conflict possible
                 if (session.calibrationDuration < session.autofocusInterval) {
                     const afDuration = session.autofocusDuration / 1440;
                     const afInterval = session.autofocusInterval / 1440;
 
-                    // Start after initial AF and calibration
                     let scheduleJD = current.imagingStartJD + afDuration +
                                      (session.calibrationDuration / 1440);
                     let lastAFEndJD = current.imagingStartJD + afDuration;
 
                     if (current.meridianFlipJD) {
-                        // === Walk AF events BEFORE flip ===
                         const pauseBeforeJD = current.meridianFlipJD -
                                               (session.meridianFlipPause / 1440);
                         let afStart = scheduleJD + afInterval;
@@ -595,10 +605,7 @@ const SeqPlanCalculations = {
                             afStart = afEnd + afInterval;
                         }
 
-                        // === Walk AF events AFTER flip ===
-                        // AF fires immediately after flip, resetting the timer
                         const flipEnd = current.meridianFlipJD +
-                                        (session.meridianFlipPause / 1440) +
                                         (session.meridianFlipDuration / 1440);
                         const postFlipAFEnd = flipEnd + afDuration;
                         lastAFEndJD = postFlipAFEnd;
@@ -613,7 +620,6 @@ const SeqPlanCalculations = {
                         }
 
                     } else {
-                        // === No flip - walk AF events continuously ===
                         let afStart = scheduleJD + afInterval;
                         while (afStart < boundaryJD) {
                             const afEnd = afStart + afDuration;
@@ -623,12 +629,7 @@ const SeqPlanCalculations = {
                         }
                     }
 
-                    // lastAFEndJD is when the last AF on this target completed
-                    // Next target's first AF fires after its initial AF (at imagingStartJD)
-                    // Gap = time from lastAFEndJD to next target's first AF end
-                    // Next target first AF starts at boundaryJD, ends at boundaryJD + afDuration
-                    // Then calibration, then imaging begins
-                    const nextAFStartJD = boundaryJD; // initial AF of next target
+                    const nextAFStartJD = boundaryJD;
                     const gapMinutes = (nextAFStartJD - lastAFEndJD) * 1440;
 
                     if (gapMinutes < 15 &&
@@ -651,7 +652,6 @@ const SeqPlanCalculations = {
 
             // === LOOK-AHEAD: events near start of next target ===
 
-            // Meridian flip near start of next target
             if (next.meridianFlipJD) {
                 const minutesFromStart = (next.meridianFlipJD - boundaryJD) * 1440;
                 if (minutesFromStart >= 0 && minutesFromStart <= toleranceMinutes) {
@@ -663,7 +663,7 @@ const SeqPlanCalculations = {
                         eventJD: next.meridianFlipJD,
                         boundaryJD: boundaryJD,
                         minutesFromBoundary: minutesFromStart,
-                        overheadMinutes: (session.meridianFlipPause * 2) + session.meridianFlipDuration
+                        overheadMinutes: session.meridianFlipPause + session.meridianFlipDuration
                     });
                 }
             }
@@ -687,7 +687,7 @@ const SeqPlanCalculations = {
      */
     findHorizonViolations(startJD, endJD, raHours, decDeg, latitude, longitude, minAltitude, horizonArray) {
         if (!horizonArray || horizonArray.length === 0) {
-            return []; // No horizon profile = no violations
+            return [];
         }
 
         const violations = [];
@@ -701,18 +701,14 @@ const SeqPlanCalculations = {
             const altitude = getAltitude(jd, raHours, decDeg, latitude, longitude);
             const azimuth = getAzimuth(jd, raHours, decDeg, latitude, longitude);
 
-            // Check if above min altitude but below horizon
             const aboveMinAlt = altitude >= minAltitude;
             const aboveHorizon = isAboveHorizon(altitude, azimuth, minAltitude, horizonArray);
 
-            // Violation = above min altitude but blocked by horizon
             const isViolating = aboveMinAlt && !aboveHorizon;
             if (isViolating && !inViolation) {
-                // Start of violation period
                 violationStart = jd;
                 inViolation = true;
             } else if (!isViolating && inViolation) {
-                // End of violation period
                 violations.push({ startJD: violationStart, endJD: jd });
                 inViolation = false;
                 violationStart = null;
@@ -721,7 +717,6 @@ const SeqPlanCalculations = {
             jd += stepSize;
         }
 
-        // Handle violation extending to end of window
         if (inViolation && violationStart !== null) {
             violations.push({ startJD: violationStart, endJD: endJD });
         }
