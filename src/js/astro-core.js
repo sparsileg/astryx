@@ -103,13 +103,12 @@ function jdToDate(jd) {
     }
 
     let dayFraction = (jd + 0.5) - a;
-    let hours = dayFraction * 24;
-    let minutes = (hours % 1) * 60;
-    let seconds = (minutes % 1) * 60;
-    let milliseconds = (seconds % 1) * 1000;
+    let totalSeconds = Math.round(dayFraction * 86400);
+    let hours = Math.floor(totalSeconds / 3600);
+    let minutes = Math.floor((totalSeconds % 3600) / 60);
+    let seconds = totalSeconds % 60;
 
-    return new Date(Date.UTC(year, month - 1, day, Math.floor(hours),
-                   Math.floor(minutes), Math.floor(seconds), Math.floor(milliseconds)));
+    return new Date(Date.UTC(year, month - 1, day, hours, minutes, seconds, 0));
 }
 
 // ============================================================================
@@ -124,14 +123,14 @@ function jdToDate(jd) {
 function getGMST(jd) {
     // Days since J2000.0
     const d = jd - 2451545.0;
-    
+
     // GMST at 0h UT
     const gmst0 = 18.697374558 + 24.06570982441908 * d;
-    
+
     // Normalize to 0-24 range
     let gmst = gmst0 % 24;
     if (gmst < 0) gmst += 24;
-    
+
     return gmst;
 }
 
@@ -271,17 +270,17 @@ function getHorizonElevationAtAzimuth(azimuth, horizonArray) {
     if (!horizonArray || horizonArray.length === 0) {
         return 0; // No horizon data = flat horizon at 0°
     }
-    
+
     // Normalize azimuth to 0-360
     azimuth = ((azimuth % 360) + 360) % 360;
-    
+
     // Sort horizon points by azimuth (in case they're not sorted)
     const sorted = [...horizonArray].sort((a, b) => a.azimuth - b.azimuth);
-    
+
     // Find the two points to interpolate between
     let before = sorted[sorted.length - 1]; // Wrap around: last point
     let after = sorted[0]; // Wrap around: first point
-    
+
     for (let i = 0; i < sorted.length; i++) {
         if (sorted[i].azimuth <= azimuth) {
             before = sorted[i];
@@ -290,22 +289,22 @@ function getHorizonElevationAtAzimuth(azimuth, horizonArray) {
             break;
         }
     }
-    
+
     // Handle wrap-around case (e.g., azimuth = 5°, points at 350° and 10°)
     let azBefore = before.azimuth;
     let azAfter = after.azimuth;
-    
+
     if (azAfter < azBefore) {
         azAfter += 360; // Wrap around
         if (azimuth < before.azimuth) {
             azimuth += 360;
         }
     }
-    
+
     // Linear interpolation
     const fraction = (azimuth - azBefore) / (azAfter - azBefore);
     const elevation = before.elevation + fraction * (after.elevation - before.elevation);
-    
+
     return elevation;
 }
 
@@ -322,13 +321,12 @@ function isAboveHorizon(altitude, azimuth, minAltitude, horizonArray) {
     if (altitude < minAltitude) {
         return false;
     }
-    
+
     // Check horizon profile
     const horizonElevation = getHorizonElevationAtAzimuth(azimuth, horizonArray);
     if (altitude < horizonElevation) {
         return false;
     }
-    
+
     return true;
 }
-
