@@ -597,11 +597,18 @@ const SeqPlanView = {
                 </tbody>
             </table>`;
 
+        // Store events for PDF generation
+        this._modalEvents = events;
+        this._modalTargetId = target.targetId;
+
         // Open modal and inject content directly
         UIManager.openModal(null, `${target.name} — Session Detail`, null);
         const modalBody = document.getElementById('modal-body');
         if (modalBody) {
-            modalBody.innerHTML = html;
+            modalBody.innerHTML = html + `
+                <div style="margin-top: 1rem;">
+                    <button class="btn btn-primary btn-sm" onclick="SeqPlanView.downloadPDF(SeqPlanView._modalTargetId, SeqPlanView._modalEvents, SeqPlanView.currentSession)">Download PDF</button>
+                </div>`;
         }
     },
 
@@ -1327,6 +1334,87 @@ const SeqPlanView = {
                 }
             });
         });
+    },
+
+/**
+     * Generate and download a PDF of the sequence plan for a single target.
+     */
+    downloadPDF(targetId, events, session) {
+        const target = this.calculatedResults.find(t => t.targetId === targetId);
+        if (!target) return;
+
+        const colors = {
+            headerBg: '#2c3e50',
+            headerText: '#ffffff',
+            rowAlt: '#f2f4f6',
+            rowWhite: '#ffffff',
+        };
+
+        const typeLabel = {
+            'autofocus':   'Autofocus',
+            'calibration': 'Guide Calibration',
+            'imaging':     'Imaging',
+            'flip-pause':  'Flip Pause',
+            'flip':        'Meridian Flip'
+        };
+
+        const detailRows = events.map((e, idx) => {
+            const startTime = jdToDate(e.startJD).toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false});
+            const endTime = jdToDate(e.endJD).toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false});
+            const durationMin = ((e.endJD - e.startJD) * 24 * 60).toFixed(1);
+            const bg = idx % 2 === 0 ? colors.rowWhite : colors.rowAlt;
+
+            return [
+                { text: target.name, fontSize: 9, fillColor: bg },
+                { text: typeLabel[e.type] || e.type, fontSize: 9, fillColor: bg },
+                { text: startTime, fontSize: 9, fillColor: bg },
+                { text: endTime, fontSize: 9, fillColor: bg },
+                { text: durationMin + 'm', fontSize: 9, fillColor: bg, alignment: 'right' },
+            ];
+        });
+
+        const docDefinition = {
+            pageSize: 'LETTER',
+            pageMargins: [54, 54, 54, 54],
+            defaultStyle: { font: 'Roboto', fontSize: 9 },
+            styles: {
+                title: { fontSize: 14, bold: true, color: '#2c3e50', margin: [0, 0, 0, 2] },
+                subtitle: { fontSize: 8, color: '#555555', margin: [0, 0, 0, 8] },
+                tableHeader: { fontSize: 9, bold: true, color: colors.headerText, fillColor: colors.headerBg },
+            },
+            content: [
+                { text: `${target.name} — Sequence Plan`, style: 'title' },
+                { text: `${session.date}  •  ${session.location.name || ''}`, style: 'subtitle' },
+                {
+                    table: {
+                        headerRows: 1,
+                        widths: [80, 130, 40, 40, 50],
+                        body: [
+                            [
+                                { text: 'Target', style: 'tableHeader' },
+                                { text: 'Event', style: 'tableHeader' },
+                                { text: 'Start', style: 'tableHeader' },
+                                { text: 'End', style: 'tableHeader' },
+                                { text: 'Duration', style: 'tableHeader', alignment: 'right' },
+                            ],
+                            ...detailRows,
+                        ]
+                    },
+                    layout: {
+                        hLineWidth: () => 0.5,
+                        vLineWidth: () => 0,
+                        hLineColor: () => '#cccccc',
+                        paddingLeft: () => 5,
+                        paddingRight: () => 5,
+                        paddingTop: () => 3,
+                        paddingBottom: () => 3,
+                    }
+                },
+            ]
+        };
+
+        const filename = `${target.name.replace(/\s+/g, '_')}_${session.date.replace(/-/g, '')}_sequence-plan.pdf`;
+        pdfMake.createPdf(docDefinition).download(filename);
     },
 
     /**
