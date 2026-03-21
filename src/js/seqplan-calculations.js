@@ -206,17 +206,19 @@ const SeqPlanCalculations = {
                     }
                 }
 
-                // Imaging segment up to flip pause
-                events.push({
-                    type: 'imaging',
-                    targetId: target.targetId,
-                    startJD: segmentStart,
-                    endJD: pauseBeforeJD,
-                    description: target.name,
-                    transitJD: target.transitJD,
-                    altitudeConstraint: target.altitudeConstraint,
-                    horizonViolations: target.horizonViolations || []
-                });
+                // Imaging segment up to flip pause (suppress if negative duration)
+                if (pauseBeforeJD > segmentStart) {
+                    events.push({
+                        type: 'imaging',
+                        targetId: target.targetId,
+                        startJD: segmentStart,
+                        endJD: pauseBeforeJD,
+                        description: target.name,
+                        transitJD: target.transitJD,
+                        altitudeConstraint: target.altitudeConstraint,
+                        horizonViolations: target.horizonViolations || []
+                    });
+                }
 
                 // Meridian flip event
                 const flipStart = pauseBeforeJD;
