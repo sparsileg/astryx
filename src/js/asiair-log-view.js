@@ -1,5 +1,5 @@
 /**
- * asiari-log-view.js
+ * asiair-log-view.js
  * Renders parsed ASIAir session log data as an on-screen report.
  */
 
@@ -8,17 +8,52 @@ const AsiairLogView = {
     _parsed: null,
 
     /**
-     * Render the parsed session data into #session-log-report.
+     * Render the parsed session data into the session analysis accordion.
      * @param {object} parsed - Output from AsiairLogParser.parse()
      */
-    renderReport(parsed) {
+    renderAccordion(parsed) {
         this._parsed = parsed;
-        const container = document.getElementById('session-log-report');
+        const container = document.getElementById('session-analysis-accordions');
         if (!container) return;
 
-        const { target, date, summary, recommendations, events } = parsed;
+        // Remove existing ASIAir accordion if present
+        const existing = document.getElementById('accordion-asiair');
+        if (existing) existing.remove();
 
-        // Format date range for header
+        const sessionDate = this._formatSessionDate(parsed.events);
+        const title = `Session Report — ${this.escapeHtml(parsed.target)} — ${sessionDate}`;
+        const reportHtml = this._buildReportHtml(parsed);
+
+        const accordion = document.createElement('div');
+        accordion.id = 'accordion-asiair';
+        accordion.className = 'analysis-accordion';
+        accordion.innerHTML = `
+            <div class="analysis-accordion-header" onclick="this.parentElement.classList.toggle('open')">
+                <span class="analysis-accordion-arrow">▶</span>
+                <span class="analysis-accordion-title">${title}</span>
+            </div>
+            <div class="analysis-accordion-body">
+                ${reportHtml}
+                <div style="margin-top: 1rem;">
+                    <button class="btn btn-primary btn-sm" id="asiair-pdf-btn">Download PDF</button>
+                </div>
+            </div>
+        `;
+        container.appendChild(accordion);
+
+        document.getElementById('asiair-pdf-btn').addEventListener('click', () => {
+            this.downloadPDF(this._parsed);
+        });
+    },
+
+    /**
+     * Build the report HTML string from parsed data.
+     * @param {object} parsed - Output from AsiairLogParser.parse()
+     * @returns {string} HTML string
+     */
+    _buildReportHtml(parsed) {
+        const { target, summary, recommendations, events } = parsed;
+
         const sessionDate = this._formatSessionDate(events);
 
         let html = `<div class="session-report">`;
@@ -105,12 +140,17 @@ const AsiairLogView = {
             `;
         }
 
-        html += `
+        if (summary.ditherCount > 0) {
+            html += `
                     <tr>
                         <td>Dither (${summary.ditherCount} events)</td>
                         <td>${this.fmtDuration(summary.ditherTotalS)}</td>
                         <td>${AsiairLogParser.fmtPct(summary.ditherPct)}</td>
                     </tr>
+            `;
+        }
+
+        html += `
                     <tr class="session-report-total-row">
                         <td>Total tracked</td>
                         <td>~${this.fmtDuration(summary.totalTrackedS)}</td>
@@ -161,10 +201,6 @@ const AsiairLogView = {
         `;
 
         // --- Notes ---
-        const subsPerDither = summary.ditherCount > 0
-            ? (summary.totalSubs / summary.ditherCount).toFixed(0)
-            : '—';
-
         html += `
             <h4 class="session-report-section">Notes</h4>
             <ul class="session-report-notes">
@@ -178,11 +214,7 @@ const AsiairLogView = {
 
         html += `</div>`;
 
-        container.innerHTML = html;
-
-        // Show download button
-        const downloadDiv = document.getElementById('session-log-download');
-        if (downloadDiv) downloadDiv.style.display = 'block';
+        return html;
     },
 
     // -------------------------------------------------------------------------
@@ -195,14 +227,20 @@ const AsiairLogView = {
         if (!starts.length) return '';
         const first = starts.reduce((a, b) => a < b ? a : b);
         const last = ends.reduce((a, b) => a > b ? a : b);
-        const d1 = first.toISOString().slice(0, 10);
-        const d2 = last.toISOString().slice(0, 10);
+        const fmtLocal = (d) => {
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${y}-${m}-${day}`;
+        };
+        const d1 = fmtLocal(first);
+        const d2 = fmtLocal(last);
         return d1 === d2 ? d1 : `${d1} / ${d2}`;
     },
 
     _eventLabel(e) {
         switch (e.type) {
-            case 'autofocus':     return 'Autofocus';
+            case 'autofocus':         return 'Autofocus';
             case 'guide_calibration': return 'Guide Calibration';
             case 'preflight_pause':   return 'Pre-flip Pause';
             case 'meridian_flip':     return 'Meridian Flip';
@@ -217,6 +255,12 @@ const AsiairLogView = {
         const minutes = seconds / 60;
         if (minutes >= 100) return Math.round(minutes) + 'm';
         return minutes.toFixed(1) + 'm';
+    },
+
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     },
 
     downloadPDF(parsed) {
@@ -234,17 +278,6 @@ const AsiairLogView = {
             subtitleText: '#555555',
         };
 
-        const tableHeader = (cols) => ({
-            fillColor: colors.headerBg,
-            color: colors.headerText,
-            bold: true,
-            fontSize: 9,
-            columns: cols
-        });
-
-        const cellStyle = { fontSize: 9, color: '#222222' };
-
-        // --- Detail table rows ---
         const detailHeaders = [
             { text: 'Target', style: 'tableHeader' },
             { text: 'Event', style: 'tableHeader' },
@@ -263,7 +296,6 @@ const AsiairLogView = {
                 { text: AsiairLogParser.fmtMinutes(e.durationS), fontSize: 9, fillColor: idx % 2 === 0 ? colors.rowWhite : colors.rowAlt },
             ]);
 
-        // --- Summary table rows ---
         const summaryRows = [];
         const addSummaryRow = (label, total, pct, isTotal = false) => {
             const bg = isTotal ? colors.totalRowBg : (summaryRows.length % 2 === 0 ? colors.rowWhite : colors.rowAlt);
@@ -281,7 +313,6 @@ const AsiairLogView = {
         if (summary.ditherCount > 0) addSummaryRow(`Dither (${summary.ditherCount} events)`, this.fmtDuration(summary.ditherTotalS), AsiairLogParser.fmtPct(summary.ditherPct));
         addSummaryRow('Total tracked', '~' + this.fmtDuration(summary.totalTrackedS), '100%', true);
 
-        // --- Recommendations table rows ---
         const recRows = [];
         const addRecRow = (setting, observed, recommended) => {
             const bg = recRows.length % 2 === 0 ? colors.rowWhite : colors.rowAlt;
@@ -310,7 +341,6 @@ const AsiairLogView = {
             Math.ceil(recommendations.betweenSubsS) + 's'
         );
 
-        // --- Notes ---
         const noteItems = [
             'AF duration: includes autofocus process + guide re-select + guide settle; excludes guide calibration',
         ];
@@ -319,7 +349,16 @@ const AsiairLogView = {
         if (summary.meridianTotalS > 0) noteItems.push('Pre-flip pause and Meridian Flip are listed as separate events in the detail table');
         noteItems.push('Dither total is included in the summary but is embedded within imaging segments in the detail table');
 
-        // --- Document definition ---
+        const tableLayout = {
+            hLineWidth: () => 0.5,
+            vLineWidth: () => 0,
+            hLineColor: () => '#cccccc',
+            paddingLeft: () => 5,
+            paddingRight: () => 5,
+            paddingTop: () => 3,
+            paddingBottom: () => 3,
+        };
+
         const docDefinition = {
             pageSize: 'LETTER',
             pageMargins: [54, 54, 54, 54],
@@ -335,98 +374,19 @@ const AsiairLogView = {
             content: [
                 { text: `${target} — Session Detail`, style: 'title' },
                 { text: `${sessionDate}  •  AF duration includes guide settle  •  Guide Calibration duration includes guide settle`, style: 'subtitle' },
-
-                // Detail table
-                {
-                    table: {
-                        headerRows: 1,
-                        widths: [80, 130, 40, 40, 50],
-                        body: [
-                            detailHeaders,
-                            ...detailRows,
-                        ]
-                    },
-                    layout: {
-                        hLineWidth: () => 0.5,
-                        vLineWidth: () => 0,
-                        hLineColor: () => '#cccccc',
-                        paddingLeft: () => 5,
-                        paddingRight: () => 5,
-                        paddingTop: () => 3,
-                        paddingBottom: () => 3,
-                    }
-                },
-
-                // Summary
+                { table: { headerRows: 1, widths: [80, 130, 40, 40, 50], body: [detailHeaders, ...detailRows] }, layout: tableLayout },
                 { text: 'Summary', style: 'sectionHeading' },
-                {
-                    table: {
-                        headerRows: 1,
-                        widths: [200, 80, 80],
-                        body: [
-                            [
-                                { text: 'Event Type', style: 'tableHeader' },
-                                { text: 'Total Time', style: 'tableHeader' },
-                                { text: '% of Session', style: 'tableHeader' },
-                            ],
-                            ...summaryRows,
-                        ]
-                    },
-                    layout: {
-                        hLineWidth: () => 0.5,
-                        vLineWidth: () => 0,
-                        hLineColor: () => '#cccccc',
-                        paddingLeft: () => 5,
-                        paddingRight: () => 5,
-                        paddingTop: () => 3,
-                        paddingBottom: () => 3,
-                    }
-                },
-
-                // Recommended Settings
+                { table: { headerRows: 1, widths: [200, 80, 80], body: [[{ text: 'Event Type', style: 'tableHeader' }, { text: 'Total Time', style: 'tableHeader' }, { text: '% of Session', style: 'tableHeader' }], ...summaryRows] }, layout: tableLayout },
                 { text: 'Recommended Session Settings', style: 'sectionHeading' },
                 { text: 'Based on analysis of this session log:', style: 'sectionNote' },
-                {
-                    table: {
-                        headerRows: 1,
-                        widths: [180, 160, 80],
-                        body: [
-                            [
-                                { text: 'Setting', style: 'tableHeader' },
-                                { text: 'Observed', style: 'tableHeader' },
-                                { text: 'Recommended', style: 'tableHeader' },
-                            ],
-                            ...recRows,
-                        ]
-                    },
-                    layout: {
-                        hLineWidth: () => 0.5,
-                        vLineWidth: () => 0,
-                        hLineColor: () => '#cccccc',
-                        paddingLeft: () => 5,
-                        paddingRight: () => 5,
-                        paddingTop: () => 3,
-                        paddingBottom: () => 3,
-                    }
-                },
-
-                // Notes
+                { table: { headerRows: 1, widths: [180, 160, 80], body: [[{ text: 'Setting', style: 'tableHeader' }, { text: 'Observed', style: 'tableHeader' }, { text: 'Recommended', style: 'tableHeader' }], ...recRows] }, layout: tableLayout },
                 { text: 'Notes', style: 'sectionHeading' },
-                ...noteItems.map(note => ({
-                    text: `• ${note}`,
-                    style: 'noteItem'
-                })),
+                ...noteItems.map(note => ({ text: `• ${note}`, style: 'noteItem' })),
             ]
         };
 
-        const filename = `${target.replace(/\s+/g, '_')}_${this._formatSessionDate(events).slice(0, 10)}_session-report.pdf`;
+        const filename = `${target.replace(/\s+/g, '_')}_${sessionDate.slice(0, 10).replace(/-/g, '')}_session-report.pdf`;
         pdfMake.createPdf(docDefinition).download(filename);
     },
-
-    escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
 
 };

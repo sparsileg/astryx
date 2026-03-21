@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="css/imaging-log.css">
     <link rel="stylesheet" href="css/misc.css">
     <link rel="stylesheet" href="css/optimizer.css">
+    <link rel="stylesheet" href="css/reports.css">
     <link rel="stylesheet" href="css/seq-plan.css">
     <link rel="stylesheet" href="css/sidebar.css">
     <link rel="stylesheet" href="css/titles.css">
@@ -1943,17 +1944,20 @@
 
         <div class="card">
           <div class="card-header">
-            <h3>ASIAir Session Log Analyzer</h3>
+            <h3>Session Analysis</h3>
           </div>
           <div class="card-body">
-            <div class="form-group">
-              <label for="session-log-file">Select Autorun log file (.txt)</label>
-              <input type="file" id="session-log-file" accept=".txt">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="session-log-file">Session Log</label>
+                <input type="file" id="session-log-file" accept=".txt">
+              </div>
+              <div class="form-group">
+                <label for="phd2-log-file">PHD2 Guide Log</label>
+                <input type="file" id="phd2-log-file" accept=".txt">
+              </div>
             </div>
-            <div id="session-log-report"></div>
-            <div id="session-log-download" style="display:none; margin-top: 1rem;">
-              <button id="session-log-pdf-btn" class="btn btn-primary btn-sm">Download PDF</button>
-            </div>
+            <div id="session-analysis-accordions"></div>
           </div>
         </div>
 
@@ -2378,6 +2382,8 @@
     <script src="include/vfs_fonts.js"></script>
     <script src="js/asiair-log-parser.js"></script>
     <script src="js/asiair-log-view.js"></script>
+    <script src="js/phd2-log-parser.js"></script>
+    <script src="js/phd2-log-view.js"></script>
     <script src="js/backup-manager.js"></script>
     <script src="js/backup-reminder.js"></script>
     <script src="js/config.js"></script>
