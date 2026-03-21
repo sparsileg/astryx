@@ -234,16 +234,6 @@ const SeqPlanCalculations = {
 
                 // === AFTER FLIP ===
 
-                // Calibration after flip
-                events.push({
-                    type: 'calibration',
-                    targetId: target.targetId,
-                    startJD: currentJD,
-                    endJD: currentJD + (session.calibrationDuration / 1440),
-                    description: `Cal: ${target.name}`
-                });
-                currentJD += session.calibrationDuration / 1440;
-
                 // Autofocus after flip
                 if (session.autofocusEnabled) {
                     events.push({
@@ -255,6 +245,16 @@ const SeqPlanCalculations = {
                     });
                     currentJD += session.autofocusDuration / 1440;
                 }
+
+                // Calibration after flip
+                events.push({
+                    type: 'calibration',
+                    targetId: target.targetId,
+                    startJD: currentJD,
+                    endJD: currentJD + (session.calibrationDuration / 1440),
+                    description: `Cal: ${target.name}`
+                });
+                currentJD += session.calibrationDuration / 1440;
 
                 // Imaging and periodic AF after flip
                 segmentStart = currentJD;
