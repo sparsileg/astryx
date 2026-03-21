@@ -11,7 +11,7 @@ const UtilitiesView = {
         this.renderWeatherForecasts();
         this.renderLightPollutionInfo();
         this.renderDustMoteCalculator();
-        this.initAsiairLogAnalyzer();
+        this.initSessionAnalysis();
 
         // Listen for location updates
         this._locationsHandler = () => {
@@ -197,11 +197,18 @@ const UtilitiesView = {
     },
 
     /**
+     * Initialize Session Analysis card — coordinates all log analyzers
+     */
+    initSessionAnalysis() {
+        this.initAsiairLogAnalyzer();
+        this.initPhd2LogAnalyzer();
+    },
+
+    /**
      * Initialize ASIAir session log analyzer
      */
     initAsiairLogAnalyzer() {
         const fileInput = document.getElementById('session-log-file');
-        const pdfBtn = document.getElementById('session-log-pdf-btn');
         if (!fileInput) return;
 
         fileInput.addEventListener('change', (e) => {
@@ -210,18 +217,33 @@ const UtilitiesView = {
             const reader = new FileReader();
             reader.onload = (ev) => {
                 const parsed = AsiairLogParser.parse(ev.target.result);
-                AsiairLogView.renderReport(parsed);
+                AsiairLogView.renderAccordion(parsed);
+                // If PHD2 data already loaded, rerender it with new ASIAir context
+                if (Phd2LogView._parsed) {
+                    Phd2LogView.renderAccordion(Phd2LogView._parsed, parsed);
+                }
             };
             reader.readAsText(file);
         });
+    },
 
-        if (pdfBtn) {
-            pdfBtn.addEventListener('click', () => {
-                if (AsiairLogView._parsed) {
-                    AsiairLogView.downloadPDF(AsiairLogView._parsed);
-                }
-            });
-        }
+    /**
+     * Initialize PHD2 guide log analyzer
+     */
+    initPhd2LogAnalyzer() {
+        const fileInput = document.getElementById('phd2-log-file');
+        if (!fileInput) return;
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                const parsed = Phd2LogParser.parse(ev.target.result);
+                Phd2LogView.renderAccordion(parsed, AsiairLogView._parsed || null);
+            };
+            reader.readAsText(file);
+        });
     },
 
     /**
