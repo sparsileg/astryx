@@ -1975,6 +1975,22 @@
 
         <div class="card">
           <div class="card-header">
+            <h3>ASIAir Session Log Analyzer</h3>
+          </div>
+          <div class="card-body">
+            <div class="form-group">
+              <label for="session-log-file">Select Autorun log file (.txt)</label>
+              <input type="file" id="session-log-file" accept=".txt">
+            </div>
+            <div id="session-log-report"></div>
+            <div id="session-log-download" style="display:none; margin-top: 1rem;">
+              <button id="session-log-pdf-btn" class="btn btn-primary btn-sm">Download PDF</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
             <h3>Dust Mote Distance Estimator <span class="tooltip-icon tooltip-host" data-tooltip-key="util_dustMote">?</span></h3>
           </div>
           <div class="card-body" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
@@ -2390,6 +2406,10 @@
     <!-- Scripts - load in dependency order -->
     <script src="include/marked.min.js"></script>
     <script src="include/jszip.min.js"></script>
+    <script src="include/pdfmake.min.js"></script>
+    <script src="include/vfs_fonts.js"></script>
+    <script src="js/asiair-log-parser.js"></script>
+    <script src="js/asiair-log-view.js"></script>
     <script src="js/backup-manager.js"></script>
     <script src="js/backup-reminder.js"></script>
     <script src="js/config.js"></script>
