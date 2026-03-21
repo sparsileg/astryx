@@ -107,7 +107,7 @@ const AsiairLogView = {
 
         html += `
                     <tr>
-                        <td>Dither (all events)</td>
+                        <td>Dither (${summary.ditherCount} events)</td>
                         <td>${this.fmtDuration(summary.ditherTotalS)}</td>
                         <td>${AsiairLogParser.fmtPct(summary.ditherPct)}</td>
                     </tr>
@@ -278,7 +278,7 @@ const AsiairLogView = {
         addSummaryRow('Autofocus (incl. guide settle)', this.fmtDuration(summary.afTotalS), AsiairLogParser.fmtPct(summary.afPct));
         if (summary.calCount > 0) addSummaryRow('Guide Calibration (incl. settle)', this.fmtDuration(summary.calTotalS), AsiairLogParser.fmtPct(summary.calPct));
         if (summary.meridianTotalS > 0) addSummaryRow('Meridian Flip (pause + flip)', this.fmtDuration(summary.meridianTotalS), AsiairLogParser.fmtPct(summary.meridianPct));
-        if (summary.ditherCount > 0) addSummaryRow('Dither (all events)', this.fmtDuration(summary.ditherTotalS), AsiairLogParser.fmtPct(summary.ditherPct));
+        if (summary.ditherCount > 0) addSummaryRow(`Dither (${summary.ditherCount} events)`, this.fmtDuration(summary.ditherTotalS), AsiairLogParser.fmtPct(summary.ditherPct));
         addSummaryRow('Total tracked', '~' + this.fmtDuration(summary.totalTrackedS), '100%', true);
 
         // --- Recommendations table rows ---
