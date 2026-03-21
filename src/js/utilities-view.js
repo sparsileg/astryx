@@ -11,6 +11,7 @@ const UtilitiesView = {
         this.renderWeatherForecasts();
         this.renderLightPollutionInfo();
         this.renderDustMoteCalculator();
+        this.initAsiairLogAnalyzer();
 
         // Listen for location updates
         this._locationsHandler = () => {
@@ -193,6 +194,34 @@ const UtilitiesView = {
         if (result05) result05.textContent = distances[0].distanceMm;
         if (result15) result15.textContent = distances[1].distanceMm;
         if (summary)  summary.textContent  = `Spot diameter: ${spotDiameterMm.toFixed(3)} mm  •  f/${fRatio}`;
+    },
+
+    /**
+     * Initialize ASIAir session log analyzer
+     */
+    initAsiairLogAnalyzer() {
+        const fileInput = document.getElementById('session-log-file');
+        const pdfBtn = document.getElementById('session-log-pdf-btn');
+        if (!fileInput) return;
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                const parsed = AsiairLogParser.parse(ev.target.result);
+                AsiairLogView.renderReport(parsed);
+            };
+            reader.readAsText(file);
+        });
+
+        if (pdfBtn) {
+            pdfBtn.addEventListener('click', () => {
+                if (AsiairLogView._parsed) {
+                    AsiairLogView.downloadPDF(AsiairLogView._parsed);
+                }
+            });
+        }
     },
 
     /**
