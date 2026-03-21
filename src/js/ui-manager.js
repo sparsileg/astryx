@@ -751,36 +751,50 @@ const UIManager = {
     /**
      * Open Manage Equipment modal
      */
-    openManageEquipmentModal() {
+    openManageEquipmentModal(tab = 'telescopes') {
         this.openModal('manage-equipment-template', 'Manage Equipment');
+        setTimeout(() => this._initEquipmentModal(tab), 0);
+    },
 
-        setTimeout(() => {
-            // Set up button handlers
-            const telescopesBtn = document.getElementById('manage-equipment-telescopes-btn');
-            const sensorsBtn = document.getElementById('manage-equipment-sensors-btn');
-            const filtersBtn = document.getElementById('manage-equipment-filters-btn');
+    _initEquipmentModal(activeTab) {
+        // Wire up tab switching
+        document.querySelectorAll('.imaging-log-tab-btn[data-tab]').forEach(btn => {
+            if (!btn.closest('.imaging-log-tabs')) return;
+            // Only target equipment tabs, not imaging log tabs
+            const panel = document.getElementById(`equipment-panel-${btn.dataset.tab}`);
+            if (!panel) return;
+            btn.addEventListener('click', () => this._switchEquipmentTab(btn.dataset.tab));
+        });
 
-            if (telescopesBtn) {
-                telescopesBtn.addEventListener('click', () => {
-                    this.closeModal();
-                    this.openManageTelescopesModal();
-                });
+        // Wire up save buttons
+        const saveTelescopeBtn = document.getElementById('equipment-save-telescope-btn');
+        const saveSensorBtn = document.getElementById('equipment-save-sensor-btn');
+        const saveFilterBtn = document.getElementById('equipment-save-filter-btn');
+
+        if (saveTelescopeBtn) saveTelescopeBtn.addEventListener('click', () => this.handleSaveTelescope());
+        if (saveSensorBtn) saveSensorBtn.addEventListener('click', () => this.handleSaveSensor());
+        if (saveFilterBtn) saveFilterBtn.addEventListener('click', () => this.handleSaveFilter());
+
+        // Switch to requested tab and refresh all lists
+        this._switchEquipmentTab(activeTab);
+        this.refreshTelescopeList();
+        this.refreshSensorList();
+        this.refreshFilterList();
+    },
+
+    _switchEquipmentTab(tab) {
+        // Update tab buttons
+        document.querySelectorAll('.imaging-log-tab-btn').forEach(btn => {
+            if (document.getElementById(`equipment-panel-${btn.dataset.tab}`) !== null) {
+                btn.classList.toggle('active', btn.dataset.tab === tab);
             }
+        });
 
-            if (sensorsBtn) {
-                sensorsBtn.addEventListener('click', () => {
-                    this.closeModal();
-                    this.openManageSensorsModal();
-                });
-            }
-
-            if (filtersBtn) {
-                filtersBtn.addEventListener('click', () => {
-                    this.closeModal();
-                    this.openManageFiltersModal();
-                });
-            }
-        }, 0);
+        // Show/hide panels
+        ['telescopes', 'sensors', 'filters'].forEach(t => {
+            const panel = document.getElementById(`equipment-panel-${t}`);
+            if (panel) panel.style.display = t === tab ? '' : 'none';
+        });
     },
 
     /**
@@ -1841,25 +1855,6 @@ const UIManager = {
         window.location.hash = '#yearly-observability';
     },
 
-    /**
-     * Open Manage Telescopes modal
-     */
-    openManageTelescopesModal() {
-        this.openModal('manage-telescopes-template', 'Manage Telescopes', (action, modalBody) => {
-            if (action === 'save') {
-                this.handleSaveTelescope(modalBody);
-            }
-        });
-
-        setTimeout(() => this.initializeManageTelescopesModal(), 0);
-    },
-
-    /**
-     * Initialize Manage Telescopes modal
-     */
-    initializeManageTelescopesModal() {
-        this.refreshTelescopeList();
-    },
 
     /**
      * Refresh telescope list in modal
@@ -1942,7 +1937,6 @@ const UIManager = {
             const mc = document.querySelector('.modal-content');
             if (mc) mc.scrollTop = 0;
         }, 150);
-        this.closeModal();
     },
 
     /**
@@ -1962,25 +1956,6 @@ const UIManager = {
         document.dispatchEvent(new CustomEvent('telescopes-updated'));
     },
 
-    /**
-     * Open Manage Sensors modal
-     */
-    openManageSensorsModal() {
-        this.openModal('manage-sensors-template', 'Manage Sensors', (action, modalBody) => {
-            if (action === 'save') {
-                this.handleSaveSensor(modalBody);
-            }
-        });
-
-        setTimeout(() => this.initializeManageSensorsModal(), 0);
-    },
-
-    /**
-     * Initialize Manage Sensors modal
-     */
-    initializeManageSensorsModal() {
-        this.refreshSensorList();
-    },
 
     /**
      * Refresh sensor list in modal
@@ -2061,7 +2036,6 @@ const UIManager = {
             const mc = document.querySelector('.modal-content');
             if (mc) mc.scrollTop = 0;
         }, 150);
-        this.closeModal();
     },
 
     /**
@@ -2083,25 +2057,6 @@ const UIManager = {
     // Filter Management
     // ============================================================================
 
-    /**
-     * Open Manage Filters modal
-     */
-    openManageFiltersModal() {
-        this.openModal('manage-filters-template', 'Manage Filters', (action, modalBody) => {
-            if (action === 'save') {
-                this.handleSaveFilter(modalBody);
-            }
-        });
-
-        setTimeout(() => this.initializeManageFiltersModal(), 0);
-    },
-
-    /**
-     * Initialize Manage Filters modal
-     */
-    initializeManageFiltersModal() {
-        this.refreshFilterList();
-    },
 
     /**
      * Refresh filter list in modal
