@@ -26,6 +26,8 @@ const TUTORIAL_REGISTRY = {
         'target-optimizer':         TUTORIAL_TARGET_OPTIMIZER,
         'target-search':            TUTORIAL_TARGET_SEARCH,
         'todo':                     TUTORIAL_TODO,
+        'utilities':                TUTORIAL_UTILITIES,
+        'yearly-observability':     TUTORIAL_YEARLY_OBSERVABILITY,
         'viewfinder':               TUTORIAL_VIEWFINDER,
         'yearly-observability':     TUTORIAL_YEARLY_OBSERVABILITY,
     }

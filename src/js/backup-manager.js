@@ -250,7 +250,7 @@ const BackupManager = {
 
         try {
             const dtg = TimeUtils.nowDTG();
-            const filename = `${APP_CONFIG.APP_NAME}-v${APP_CONFIG.APP_VERSION}-d${APP_CONFIG.DB_VERSION}-${dtg}`;
+            const filename = `${APP_CONFIG.APP_NAME}-v${APP_CONFIG.APP_VERSION}-d${APP_CONFIG.DB_VERSION}-userdata-${dtg}`;
 
             const selectedStores = [
                 'settings', 'locations', 'telescopes', 'sensors', 'filters',

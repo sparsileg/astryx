@@ -70,7 +70,8 @@
     padding: 0 .25rem;
     transition: color .3s ease-in-out, box-shadow .3s ease-in-out, text-shadow .3s ease-in-out;
     text-decoration: none;
-    text-shadow: 0 0 6px var(--primary-color);
+    text-shadow: 0 0 20px var(--primary-color);
+    border-bottom: 1px dotted color-mix(in srgb, var(--text-secondary) 70%, transparent);
 }
 
 .block-link:hover {
@@ -78,4 +79,5 @@
     color: var(--secondary-color);
     text-decoration: none;
     text-shadow: none;  /* Remove glow on hover since block fills */
+    border-bottom: 1px dotted transparent);
 }

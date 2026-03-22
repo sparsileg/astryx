@@ -57,7 +57,7 @@ const TUTORIAL_YEARLY_OBSERVABILITY = {
             id: 'header',
             type: 'callout',
             title: 'Target Summary',
-            body: 'The header shows the target name, its peak altitude across the year, the best calendar month for imaging from your location, and the full range of months during which it is observable. This gives you an immediate at-a-glance answer to "when should I image this target?"',
+            body: 'The header shows the <strong>Current Target</strong>, its peak altitude across the year, the best calendar month for imaging from your location, and the full range of months during which it is observable. This gives you an immediate at-a-glance answer to "when should I image this target?"',
             target: '#yearly-observability-header',
             position: 'bottom',
             waitFor: 'next',
@@ -163,8 +163,17 @@ const TUTORIAL_YEARLY_OBSERVABILITY = {
             waitFor: 'next',
             highlight: false
         },
-
-        // --- Legend ---
+        {
+            id: 'see-the-help',
+            type: 'callout',
+            title: 'Get Technical Details',
+            body: 'To learn even more about how to use the <strong>Yearly Observability</strong>, see the Help topic from the <strong>System Menu</strong>.',
+            target: '#system-menu-btn',
+            position: 'right',
+            width: '440px',
+            waitFor: 'next',
+            highlight: true
+        },
         {
             id: 'legend',
             type: 'callout',
@@ -175,8 +184,6 @@ const TUTORIAL_YEARLY_OBSERVABILITY = {
             waitFor: 'next',
             highlight: true
         },
-
-        // --- Planning guidance ---
         {
             id: 'planning',
             type: 'modal',
@@ -187,8 +194,6 @@ const TUTORIAL_YEARLY_OBSERVABILITY = {
             waitFor: 'next',
             highlight: false
         },
-
-        // --- Complete ---
         {
             id: 'complete',
             type: 'modal',

@@ -156,6 +156,16 @@ const TutorialEngine = {
     _showCallout(step, index, total) {
         const targetEl = step.target ? document.querySelector(step.target) : null;
 
+        // Scroll target into view if explicitly requested, then wait for scroll to settle
+        if (targetEl && step.scrollTo) {
+            targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            setTimeout(() => this._renderCallout(step, index, total, targetEl), 400);
+            return;
+        }
+        this._renderCallout(step, index, total, targetEl);
+    },
+
+    _renderCallout(step, index, total, targetEl) {
         // Highlight border around target element — no overlay for callout steps
         if (step.highlight && targetEl) {
             const rect = targetEl.getBoundingClientRect();
@@ -210,14 +220,25 @@ const TutorialEngine = {
         if (step.waitFor === 'click' && step.target) {
             if (targetEl) {
                 const selector = step.target;
-                const handler = (e) => {
-                    if (e.target.matches(selector) || e.target.closest(selector)) {
+                const isFileInput = (targetEl.tagName === 'INPUT' && targetEl.type === 'file') ||
+                                     targetEl.tagName === 'SELECT';
+                if (isFileInput) {
+                    const handler = () => {
                         this._teardown();
                         this.advance(true);
-                    }
-                };
-                document.addEventListener('click', handler, true);
-                this._clickHandler = handler;
+                    };
+                    targetEl.addEventListener('change', handler, { once: true });
+                    this._clickHandler = () => targetEl.removeEventListener('change', handler);
+                } else {
+                    const handler = (e) => {
+                        if (e.target.matches(selector) || e.target.closest(selector)) {
+                            this._teardown();
+                            this.advance(true);
+                        }
+                    };
+                    document.addEventListener('click', handler, true);
+                    this._clickHandler = handler;
+                }
             } else {
                 // Target not found — add Next button dynamically
                 const footer = panel.querySelector('.tutorial-callout-footer');
