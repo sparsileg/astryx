@@ -1247,8 +1247,7 @@ const UIManager = {
 
         try {
             await DBManager.clear(APP_CONFIG.STORES.TARGETS);
-
-            // Reset best months metadata so recalculation is triggered after new import
+            await DataManager.setTargetVersion(null);
             await SettingsManager.setLastBestMonthsCalculated(null);
             await SettingsManager.setLastBestMonthsAltitude(null);
             await SettingsManager.setLastBestMonthsDarkHours(null);
@@ -1273,6 +1272,7 @@ const UIManager = {
             await DataManager.init();
 
             this.showToast('All targets cleared successfully', 'success');
+            await App.updateVersionDisplay();
 
             // Refresh visibility view if it's current
             if (window.location.hash === '#target-select') {

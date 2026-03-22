@@ -113,7 +113,7 @@
         <div class="menu-item submenu-item" data-action="calculate-best-months">
           Calculate Best Months
         </div>
-        <div class="menu-item submenu-item" data-action="manage-equipment">
+        <div class="menu-item submenu-item" id="manage-equipment" data-action="manage-equipment">
           Manage Equipment
         </div>
         <div class="menu-item submenu-item" data-action="manage-locations">
@@ -125,7 +125,7 @@
         <div class="menu-item submenu-item" data-action="check-target-updates">
           Check for Target Updates
         </div>
-        <div class="menu-item submenu-item" data-action="import-targets">
+        <div class="menu-item submenu-item menu-item-disabled" data-action="import-targets">
           Import Target Database
         </div>
       </div>
@@ -578,7 +578,7 @@
 
     <!-- Settings Modal Template -->
     <template id="settings-template">
-      <div class="settings-content">
+      <div>
         <!-- Row 1: DST Mode | Min Altitude -->
         <div class="settings-two-col">
           <div class="form-group form-inline">
@@ -661,7 +661,7 @@
 
     <!-- Manage Locations Modal Template -->
     <template id="manage-locations-template">
-      <div class="settings-content">
+      <div>
         <p style="color: var(--text-secondary); line-height: 1.6; margin-bottom: 1rem;">
           Add, edit, or delete observer locations. Each location stores coordinates, timezone, and observing conditions.
         </p>
@@ -887,28 +887,38 @@
 
     <!-- About Modal Template -->
     <template id="about-template">
-      <div class="settings-content">
+      <div class="about-content">
         <h4>Astryx</h4>
-        <p style="color: var(--text-secondary); line-height: 1.6; margin-bottom: 1rem;">
+        <p>
           A planning tool for astrophotographers - calculate
           seasonal visibility windows, transit times, sequence planning,
           and many more capabilities are available for thousands of deep
           sky targets. Most functions do not require the internet.
         </p>
-        <p style="color: var(--text-secondary); line-height: 1.6; margin-bottom: 2rem;">
+        <p>
           This application uses astronomical and display algorithms
           developed with assistance from Claude (Anthropic).
         </p>
 
         <h4>Acknowledgements</h4>
-        <p style="color: var(--text-secondary); line-height: 1.6;">
+        <p>
           • Saguaro Astronomy Club (<a class="block-link" href="https://www.saguaroastro.org" target="_blank">SAC</a>) Deep Sky Database<br>
           • OpenNGC <a class="block-link" href="https://github.com/mattiaverga/OpenNGC" target="_blank">database</a> by Mattia Verga<br>
           • Astronomical League <a class="block-link" href="https://www.astroleague.org/observing-program-division/"
                                    target= "_blank">Observing Program Division</a><br>
-          • <a class="block-link" href="https://open-meteo.com"
-               target="_blank">Open Meteo</a> open source weather forecast API<br>
+          • <a class="block-link" href="https://open-meteo.com" target="_blank">Open Meteo</a> open source weather forecast API<br>
+          • <a class="block-link" href="https://www.gnu.org/software/emacs/?web=1" target="_blank">Gnu Emacs</a>. It's not an editor, it's a lifestyle.<br>
         </p>
+
+        <h4>Disclaimer and Warning</h4>
+        <p class="disclaimer">
+          Astryx stores all data locally in your browser. This software is
+          provided as-is, without warranty of any kind, express or
+          implied. The developer assumes no responsibility for data loss,
+          damages, or any other liability arising from the use of this
+          software or software failure. Back up your data regularly.
+        </p>
+
       </div>
     </template>
 
@@ -1191,9 +1201,9 @@
       <div id="pattern-fields" style="display: none;">
         <div class="form-group">
           <label for="program-catalog-prefix">Catalog Prefix <span class="tooltip-icon tooltip-host" data-tooltip-key="ilog_catalogPrefix">?</span></label>
-          <input type="text"
-                 id="program-catalog-prefix"
-                 placeholder="e.g., NGC, M, IC, Sh">
+          <select id="program-catalog-prefix">
+            <option value="">Select catalog...</option>
+          </select>
         </div>
         <div class="form-group">
           <label for="program-max-number">Maximum Number <span class="tooltip-icon tooltip-host" data-tooltip-key="ilog_maxNumber">?</span></label>
@@ -1629,7 +1639,7 @@
 
     <!-- Calculate Best Months Template -->
     <template id="best-months-template">
-      <div class="settings-content" style="max-width: 550px;">
+      <div style="max-width: 550px;">
         <p style="margin-bottom: 1rem; color: var(--text-secondary); line-height: 1.5;">
           Calculates best observing month and visibility window for all
           targets viewable from the specified location. The scoring is
@@ -1920,7 +1930,7 @@
       <div class="view-container view-bg-icon view-bg-icon-utilities">
         <h2 class="view-title">Utilities</h2>
 
-        <div class="card">
+        <div class="card"  id="utilities-weather-forecasts">
           <div class="card-header">
             <h3>Weather Forecasts <span class="tooltip-icon tooltip-host" data-tooltip-key="util_weather">?</span></h3>
           </div>
@@ -1931,7 +1941,7 @@
           </div>
         </div>
 
-        <div class="card">
+        <div class="card"  id="utilities-light-pollution">
           <div class="card-header">
             <h3>Light Pollution <span class="tooltip-icon tooltip-host" data-tooltip-key="util_lightPoll">?</span></h3>
           </div>
@@ -1942,9 +1952,10 @@
           </div>
         </div>
 
-        <div class="card">
+        <div class="card"  id="utilities-log-analysis">
           <div class="card-header">
-            <h3>Session Analysis</h3>
+            <h3>Session Log Analysis<span class="tooltip-icon tooltip-host" data-tooltip-key="util_sessLogs">?</span></h3>
+            ASIAir session and PHD2 guide logs
           </div>
           <div class="card-body">
             <div class="form-row">
@@ -1961,7 +1972,7 @@
           </div>
         </div>
 
-        <div class="card">
+        <div class="card" id="utilities-dust-mote">
           <div class="card-header">
             <h3>Dust Mote Distance Estimator <span class="tooltip-icon tooltip-host" data-tooltip-key="util_dustMote">?</span></h3>
           </div>
@@ -1999,7 +2010,7 @@
             </div>
 
             <!-- Right column: results -->
-            <div>
+            <div id="dust-mote-results">
               <table class="session-table">
                 <tbody>
                   <tr>
@@ -2434,6 +2445,7 @@
     <script src="js/tutorials/tutorial-target-optimizer.js"></script>
     <script src="js/tutorials/tutorial-target-search.js"></script>
     <script src="js/tutorials/tutorial-todo.js"></script>
+    <script src="js/tutorials/tutorial-utilities.js"></script>
     <script src="js/tutorials/tutorial-viewfinder.js"></script>
     <script src="js/tutorials/tutorial-yearly-observability.js"></script>
     <script src="js/tutorials/tutorial-registry.js"></script>

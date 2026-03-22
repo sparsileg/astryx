@@ -13,7 +13,7 @@
 const TUTORIAL_ADMIN_TOOLS = {
     id: 'admin-tools',
     title: 'Admin Tools',
-    version: 1,
+    version: 2,
     nextTutorial: 'sidebar',
     steps: [
         {
@@ -30,7 +30,7 @@ const TUTORIAL_ADMIN_TOOLS = {
             id: 'admin-submenu',
             type: 'callout',
             title: 'Admin Tools Menu',
-            body: 'Open the <strong>Admin Tools</strong> submenu from the system menu. The <strong>Admin Tools</strong> submenu contains six utilities for managing your data and equipment. We will walk through each one.',
+            body: 'Open the <strong>Admin Tools</strong> submenu from the system menu. The <strong>Admin Tools</strong> submenu contains several utilities for managing your data and equipment. We will walk through each one.',
             target: '#admin-tools-submenu',
             position: 'right',
             waitFor: 'next',
@@ -40,9 +40,9 @@ const TUTORIAL_ADMIN_TOOLS = {
         // --- Calculate Best Months ---
         {
             id: 'best-months-intro',
-            type: 'modal',
+            type: 'callout',
             title: 'Calculate Best Months',
-            body: 'This operation is, normally, automagically executed when you select a location for the first time. The option is kept in Admin Tools "just in case".<br><br>Open <strong>Admin Tools → Calculate Best Months</strong>.<br><br> Click Next when the dialog is open.',
+            body: 'The <strong>Calculate Best Months</strong> operation is normally executed when you select a location for the first time. The option is kept in Admin Tools "just in case" or if you just want to calculate for all your current locations.<br><br>Open <strong>Admin Tools → Calculate Best Months</strong>.<br><br> Click Next when the dialog is open.',
             target: null,
             position: 'center',
             waitFor: 'next',
@@ -52,18 +52,38 @@ const TUTORIAL_ADMIN_TOOLS = {
             id: 'best-months-location',
             type: 'callout',
             title: 'Select Location',
-            body: 'Choose the observing location for which you want to compute best months. Astryx will calculate, for each target, which calendar months offer the most favorable visibility from that location.<br><br>Best Months analysis scores every target across the year based on visibility windows, darkness hours, and minimum altitude. Results are stored per location so you can run this for each site you image from. Depending on the computer, this operation usually takes less than one minute.',
+            body: 'Choose the observing location for which you want to compute best months. Astryx will calculate, for each target, which calendar months offer the most favorable visibility from that location.<br><br>Best Months analysis scores every target across the year based on visibility windows, darkness hours, and minimum altitude. Results are stored per location so you can run this for each site you image from.',
             target: '#best-months-location-select',
             position: 'right',
-            width: '400px',
+            width: '500px',
             waitFor: 'next',
             highlight: true
         },
         {
-            id: 'manage-equipment-intro',
+            id: 'best-months-execute',
+            type: 'callout',
+            title: 'Calculate for One Location',
+            body: 'Once a location is selected, click the <strong>Calculate</strong> button to find the best month and visible months for every target in the database from this location.',
+            target: '#best-months-calculate',
+            position: 'left',
+            waitFor: 'click',
+            highlight: true
+        },
+        {
+            id: 'best-months-results',
+            type: 'callout',
+            title: 'Calculating ...',
+            body: 'The calculations usually takes less than a minute. When it is completed, click <strong>Next</strong>.',
+            target: '#best-months-location-select',
+            position: 'top',
+            waitFor: 'next',
+            highlight: true
+        },
+        {
+            id: 'best-months-close',
             type: 'callout',
             title: 'Close Best Months Dialog',
-            body: 'Close the <strong>Calculate Best Observing Months</strong> dialog.',
+            body: 'Once the calculation is done, close the <strong>Calculate Best Observing Months</strong> dialog.',
             target: '#modal-close',
             position: 'left',
             waitFor: 'click',
@@ -73,7 +93,7 @@ const TUTORIAL_ADMIN_TOOLS = {
         // --- Manage Equipment ---
         {
             id: 'manage-equipment-intro',
-            type: 'modal',
+            type: 'callout',
             title: 'Manage Equipment',
             body: 'Open <strong>Admin Tools → Manage Equipment</strong>. Click Next when the dialog is open.',
             target: null,
@@ -83,13 +103,13 @@ const TUTORIAL_ADMIN_TOOLS = {
         },
         {
             id: 'manage-equipment-tabs',
-            type: 'callout',
-            title: 'Equipment Types',
-            body: 'Equipment is organized into three categories: <strong>Telescopes</strong>, <strong>Sensors</strong>, and <strong>Filters</strong>. Click the <strong>Telescopes</strong> tab to follow along.',
-            target: '#manage-equipment-telescopes-btn',
-            position: 'bottom',
-            waitFor: 'click',
-            highlight: true
+            type: 'modal',
+            title: 'Equipment Tabs',
+            body: 'Equipment is organized into three tabs: <strong>Telescopes</strong>, <strong>Sensors</strong>, and <strong>Filters</strong>. Click the <strong>Telescopes</strong> tab at the top of the dialog to follow along. Click Next when you are on the Telescopes tab.',
+            target: null,
+            position: 'center',
+            waitFor: 'next',
+            highlight: false
         },
         {
             id: 'telescope-name',
@@ -132,25 +152,46 @@ const TUTORIAL_ADMIN_TOOLS = {
             highlight: true
         },
         {
+            id: 'telescope-save',
+            type: 'callout',
+            title: 'Save Telescope',
+            body: 'Click <strong>Save Telescope</strong> to save your entry. The telescope will appear in the Saved Telescopes list below.',
+            target: '#equipment-save-telescope-btn',
+            position: 'bottom',
+            waitFor: 'next',
+            highlight: true
+        },
+        {
             id: 'telescope-list',
             type: 'callout',
             title: 'Saved Telescopes',
-            body: 'Your saved telescopes appear here. You can delete any entry. The same pattern applies to Sensors and Filters — add as many as you own.',
+            body: 'Your saved telescopes appear here. You can delete any entry.',
             target: '#telescope-list',
             position: 'top',
             waitFor: 'next',
             highlight: 'flash'
         },
         {
-            id: 'telescopes-close',
+            id: 'do-the-rest',
             type: 'callout',
-            title: 'Close Manage Telescopes',
-            body: 'Close the <strong>Manage Telescopes</strong> dialog.',
+            title: 'Sensors and Filters',
+            body: 'Switch to the <strong>Sensors</strong> and <strong>Filters</strong> tabs to manage those equipment types — no need to close and reopen the dialog.  The same pattern applies to adding and deleting Sensors and Filters tabs. If you need to change any of the information, simply delete the equipment and add a new item with the updated information.',
+            target: '#telescope-list',
+            position: 'top',
+            waitFor: 'next',
+            highlight: 'flash'
+        },
+        {
+            id: 'equipment-close',
+            type: 'callout',
+            title: 'Close Manage Equipment',
+            body: 'Close the <strong>Manage Equipment</strong> dialog.',
             target: '#modal-close',
             position: 'left',
             waitFor: 'click',
             highlight: true
         },
+
         // --- Manage Observer Locations ---
         {
             id: 'manage-locations-intro',
@@ -205,7 +246,7 @@ const TUTORIAL_ADMIN_TOOLS = {
         {
             id: 'location-coords',
             type: 'callout',
-            title: 'Coordinates & Timezone',
+            title: 'Coordinates & Elevation',
             body: 'Enter the latitude and longitude in decimal degrees (south and west are negative), and the elevation in meters.',
             target: '#manage-longitude',
             position: 'bottom',
@@ -226,7 +267,7 @@ const TUTORIAL_ADMIN_TOOLS = {
             id: 'location-list',
             type: 'callout',
             title: 'Saved Locations',
-            body: 'Your saved location appear here. You can edit or delete any entry.',
+            body: 'Your saved locations appear here. You can edit or delete any entry.',
             target: '#location-list',
             position: 'top',
             waitFor: 'next',
@@ -242,6 +283,7 @@ const TUTORIAL_ADMIN_TOOLS = {
             waitFor: 'click',
             highlight: true
         },
+
         // --- Database Operations ---
         {
             id: 'database-ops-intro',
@@ -255,11 +297,12 @@ const TUTORIAL_ADMIN_TOOLS = {
         },
         {
             id: 'admin-submenu-2',
-            type: 'modal',
+            type: 'callout',
             title: 'Database Operations',
             body: 'Open the system menu (☰) and expand <strong>Admin Tools</strong> again. The bottom three items — <strong>Clear All Targets</strong>, <strong>Check for Target Updates</strong>, and <strong>Merge New Targets</strong> — manage the target database.',
             target: null,
             position: 'center',
+            width: '450px',
             waitFor: 'next',
             highlight: false
         },
@@ -287,7 +330,7 @@ const TUTORIAL_ADMIN_TOOLS = {
             id: 'import-targets',
             type: 'modal',
             title: 'Import Target Database',
-            body: 'This operation is intended to be used when using Astryx in local mode - it will not work when running from <em>astryx.tools</em>. <strong>Import Target Database</strong> reads an Astryx CSV file and adds new targets without removing your existing data. Use this to update to a newer database while preserving your pinned targets, to-do list, and imaging logs.',
+            body: 'This operation is intended to be used when using Astryx in local mode. When running from <strong>https://astryx.tools</strong>, target database, if they occur, are handled automatically. <strong>Import Target Database</strong> reads an Astryx CSV file and adds new targets without removing your existing data. Use this to update to a newer database while preserving your pinned targets, to-do list, and imaging logs. Because this will interfere with automatic updates, this capability is currently disabled.',
             target: null,
             position: 'center',
             waitFor: 'next',

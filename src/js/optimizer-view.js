@@ -263,7 +263,7 @@ const OptimizerView = {
                                 <div class="optimizer-composite-line">Composite Score: <strong>${target.scores.composite}</strong></div>
                             </div>
                             <!-- STUB: thumbnail image placeholder - future implementation -->
-                            <div class="optimizer-thumbnail-stub">IMG<br>future</div>
+                            <div class="optimizer-thumbnail-stub" style="display:none;">IMG<br>future</div>
                         </div>
                     </div>
                 </div>

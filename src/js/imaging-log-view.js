@@ -1374,18 +1374,6 @@ const ImagingLogView = {
                         </div>
                     </div>
 
-                    <!-- Pattern Mode Fields -->
-                    <div id="pattern-fields" style="display: none;">
-                        <div class="form-group">
-                            <label for="program-catalog-prefix">Catalog Prefix</label>
-                            <input type="text" id="program-catalog-prefix" placeholder="e.g., NGC, M, IC, Sh">
-                        </div>
-                        <div class="form-group">
-                            <label for="program-max-number">Maximum Number</label>
-                            <input type="number" id="program-max-number" min="1" placeholder="e.g., 7840">
-                        </div>
-                    </div>
-
                     <!-- Manual List Fields -->
                     <div id="manual-fields">
                         <div class="form-group">
@@ -1423,6 +1411,7 @@ const ImagingLogView = {
         `;
 
         modal.style.display = 'flex';
+        console.log('showProgramModal called, modal:', modal);
 
         setTimeout(async () => {
             await this.initializeProgramModal(programId);
@@ -1435,7 +1424,23 @@ const ImagingLogView = {
         const manualRadio = document.getElementById('program-type-manual');
         const patternFields = document.getElementById('pattern-fields');
         const manualFields = document.getElementById('manual-fields');
+
         const catalogPrefixField = document.getElementById('program-catalog-prefix');
+        console.log('populating catalog prefix, targets:', DataManager.targetDatabase.length, 'field:', catalogPrefixField);
+        const prefixSet = new Set();
+        DataManager.targetDatabase.forEach(target => {
+                if (target.object) {
+                    const m = target.object.match(/^([A-Za-z]+)/);
+                    if (m) prefixSet.add(m[1].toUpperCase());
+                }
+            });
+        Array.from(prefixSet).sort().forEach(prefix => {
+            const option = document.createElement('option');
+            option.value = prefix;
+            option.textContent = prefix;
+            catalogPrefixField.appendChild(option);
+        });
+
         const maxNumberField = document.getElementById('program-max-number');
         const targetsField = document.getElementById('program-targets');
         const statusField = document.getElementById('program-status');
@@ -1569,10 +1574,30 @@ const ImagingLogView = {
     },
 
     async initializeImportProgramModal(programId) {
+        console.log('initializeImportProgramModal called');
         const patternRadio = document.getElementById('program-type-pattern');
         const manualRadio = document.getElementById('program-type-manual');
         const patternFields = document.getElementById('pattern-fields');
         const manualFields = document.getElementById('manual-fields');
+
+        // Populate catalog prefix dropdown from target database
+        const catalogPrefixField = document.getElementById('program-catalog-prefix');
+        console.log('catalogPrefixField:', catalogPrefixField, 'targets:', DataManager.targetDatabase.length);
+        if (catalogPrefixField) {
+            const prefixSet = new Set();
+            DataManager.targetDatabase.forEach(target => {
+                if (target.object) {
+                    const m = target.object.match(/^([A-Za-z]+)/);
+                    if (m) prefixSet.add(m[1].toUpperCase());
+                }
+            });
+            Array.from(prefixSet).sort().forEach(prefix => {
+                const option = document.createElement('option');
+                option.value = prefix;
+                option.textContent = prefix;
+                catalogPrefixField.appendChild(option);
+            });
+        }
 
         // Toggle fields based on program type
         const toggleFields = () => {

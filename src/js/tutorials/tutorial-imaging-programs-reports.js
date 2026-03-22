@@ -44,7 +44,7 @@ const TUTORIAL_IMAGING_PROGRAMS = {
             type: 'callout',
             title: 'Open the Programs Tab',
             body: 'Click the <strong>Programs</strong> tab to switch to the programs view.',
-            target: '.imaging-log-tabs',
+            target: '[data-tab="programs"]',
             position: 'bottom',
             waitFor: 'click',
             highlight: true
@@ -162,7 +162,7 @@ const TUTORIAL_IMAGING_PROGRAMS = {
             type: 'callout',
             title: 'Open the Reports Tab',
             body: 'Click the <strong>Reports</strong> tab to see a summary of your imaging history.',
-            target: '.imaging-log-tabs',
+            target: '[data-tab="reports"]',
             position: 'bottom',
             waitFor: 'click',
             highlight: true
@@ -197,6 +197,7 @@ const TUTORIAL_IMAGING_PROGRAMS = {
             target: '#report-project-status-card',
             position: 'top',
             width: '420px',
+            scrollTo: true,
             waitFor: 'next',
             highlight: 'flash'
         },

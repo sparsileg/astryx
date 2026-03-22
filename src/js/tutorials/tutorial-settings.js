@@ -25,14 +25,25 @@ const TUTORIAL_SETTINGS = {
             highlight: false
         },
         {
-            id: 'open-settings',
+            id: 'open-system-menu',
             type: 'callout',
-            title: 'Open Settings',
-            body: 'Open the system menu (☰) in the top right of the sidebar header and click <strong>Settings</strong>. Click Next when the Settings panel is open.',
+            title: 'Open System Menu',
+            body: 'Open the system menu (☰) in the top right of the sidebar header.',
             target: '#system-menu-btn',
             position: 'left',
             width: '175px',
-            waitFor: 'next',
+            waitFor: 'click',
+            highlight: true
+        },
+        {
+            id: 'open-settings',
+            type: 'callout',
+            title: 'Open Settings',
+            body: 'Click <strong>Settings</strong>.',
+            target: '[data-action="settings"]',
+            position: 'left',
+            width: '175px',
+            waitFor: 'click',
             highlight: true
         },
         {
@@ -91,6 +102,16 @@ const TUTORIAL_SETTINGS = {
             title: 'Backup Delay',
             body: 'The number of minutes Astryx waits after your last change before triggering an automatic backup. This prevents excessive backups during active use. The timer resets if there is another change before the backup is performed.',
             target: '#backup-delay-minutes',
+            position: 'right',
+            waitFor: 'next',
+            highlight: true
+        },
+        {
+            id: 'backup-reminder',
+            type: 'callout',
+            title: 'Backup Remindern',
+            body: 'The number of days Astryx waits after your last backup before raising a toast reminding you to backup.',
+            target: '#backup-reminder-days',
             position: 'right',
             waitFor: 'next',
             highlight: true
