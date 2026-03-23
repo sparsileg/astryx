@@ -11,6 +11,7 @@ const SeqPlanView = {
     debounceTimer: null,
     isInitializing: false,
     resizeListenerAdded: false,
+    _resizeObserver: null,
 
     /**
      * Initialize Sequence Planner view
@@ -53,30 +54,27 @@ const SeqPlanView = {
             this.resizeListenerAdded = true;
         }
 
-        // Watch for sidebar collapse/expand using MutationObserver
-        const sidebar = document.querySelector('.sidebar');
-        if (sidebar) {
-            this._mutationObserver = new MutationObserver((mutations) => {
-                mutations.forEach((mutation) => {
-                    if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
-                        // Sidebar class changed - wait for CSS transition to complete
-                        setTimeout(() => {
-                            if (this.calculatedResults && this.calculatedResults.length > 0 && this.currentSession) {
-                                const events = SeqPlanCalculations.generateTimelineEvents(
-                                    this.calculatedResults,
-                                    this.currentSession
-                                );
-                                SeqPlanTimeline.render(events, this.currentSession.sessionStartJD, this.currentSession.sessionEndJD, this.currentSession);
-                            }
-                        }, 300); // Wait for sidebar transition
+        // Re-render timeline on resize — Issue #129
+        const canvasParent = document.getElementById('seq-plan-timeline')?.parentElement;
+        if (canvasParent && typeof ResizeObserver !== 'undefined') {
+            if (this._resizeObserver) {
+                this._resizeObserver.disconnect();
+                this._resizeObserver = null;
+            }
+            let resizeTimer = null;
+            this._resizeObserver = new ResizeObserver(() => {
+                clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(() => {
+                    if (this.calculatedResults && this.calculatedResults.length > 0 && this.currentSession) {
+                        const events = SeqPlanCalculations.generateTimelineEvents(
+                            this.calculatedResults,
+                            this.currentSession
+                        );
+                        SeqPlanTimeline.render(events, this.currentSession.sessionStartJD, this.currentSession.sessionEndJD, this.currentSession);
                     }
-                });
+                }, 200);
             });
-
-            this._mutationObserver.observe(sidebar, {
-                attributes: true,
-                attributeFilter: ['class']
-            });
+            this._resizeObserver.observe(canvasParent);
         }
 
         // Auto-generate plan
@@ -1434,9 +1432,9 @@ const SeqPlanView = {
             document.removeEventListener('locations-updated', this._locationsHandler);
             this._locationsHandler = null;
         }
-        if (this._mutationObserver) {
-            this._mutationObserver.disconnect();
-            this._mutationObserver = null;
+        if (this._resizeObserver) {
+            this._resizeObserver.disconnect();
+            this._resizeObserver = null;
         }
     }
 };

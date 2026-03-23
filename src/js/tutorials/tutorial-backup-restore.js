@@ -13,7 +13,7 @@ const TUTORIAL_BACKUP_RESTORE = {
     id: 'backup-restore',
     title: 'Backup & Restore',
     version: 1,
-    nextTutorial: null,
+    nextTutorial: 'sidebar',
     steps: [
 
         // --- Introduction ---

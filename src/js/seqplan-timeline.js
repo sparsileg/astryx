@@ -9,7 +9,7 @@ const SeqPlanTimeline = {
 
     // Rendering constants
     CANVAS_HEIGHT: 210,
-    TIMELINE_MARGIN: 60,
+    TIMELINE_MARGIN: 25,
     LEGEND_MARGIN: 80,
     BLOCK_HEIGHT: 100,
     LABEL_AREA_HEIGHT: 50,  // Space above blocks for event labels
@@ -30,7 +30,7 @@ const SeqPlanTimeline = {
         if (!this.canvas) return;
 
         // Force complete canvas reset by changing dimensions
-        const containerWidth = this.canvas.parentElement.clientWidth - 32;
+        const containerWidth = this.canvas.parentElement.clientWidth;
 
         // Completely reset the canvas by setting width (this clears it)
         this.canvas.width = containerWidth;

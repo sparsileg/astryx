@@ -15,7 +15,7 @@ const TUTORIAL_IMAGING_PROJECTS = {
     id: 'imaging-projects',
     title: 'Imaging Projects',
     version: 1,
-    nextTutorial: null,
+    nextTutorial: 'imaging-programs-reports',
     steps: [
 
         // --- Introduction ---

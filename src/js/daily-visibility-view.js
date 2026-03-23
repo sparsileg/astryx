@@ -7,6 +7,8 @@ const DailyVisibilityView = {
     container: null,
     currentData: null,
     TIMELINE_HEIGHT: 300,
+    _resizeObserver: null,
+    _lastWindValues: null,
 
     /**
      * Render the skyglow view
@@ -25,6 +27,29 @@ const DailyVisibilityView = {
         this.initControls();
         this.attachEventHandlers();
 
+        // Re-render wind SVG on resize — Issue #129
+        const timelineContainer = container.querySelector('#timeline-container');
+        if (timelineContainer && typeof ResizeObserver !== 'undefined') {
+            if (this._resizeObserver) {
+                this._resizeObserver.disconnect();
+                this._resizeObserver = null;
+            }
+            let resizeTimer = null;
+            this._resizeObserver = new ResizeObserver(() => {
+                clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(() => {
+                    if (!this._lastWindValues) return;
+                    const windBand = document.querySelector('[data-wind-band]');
+                    if (!windBand) return;
+                    const w = windBand.offsetWidth || 800;
+                    const lbl = windBand.querySelector('.cloud-band-label');
+                    windBand.innerHTML = this.buildWindSVG(this._lastWindValues, w);
+                    if (lbl) windBand.appendChild(lbl);
+                }, 200);
+            });
+            this._resizeObserver.observe(timelineContainer);
+        }
+
         // Check if we have data passed from visibility view
         if (window.skyglowData) {
             this.currentData = window.skyglowData;
@@ -40,6 +65,11 @@ const DailyVisibilityView = {
      */
     destroy() {
         this.currentData = null;
+        this._lastWindValues = null;
+        if (this._resizeObserver) {
+            this._resizeObserver.disconnect();
+            this._resizeObserver = null;
+        }
     },
 
     /**
@@ -180,10 +210,13 @@ const DailyVisibilityView = {
         const lastX = ((values.length - 1) / 24) * width;
         const polygon = `${points} ${lastX},${HEIGHT} 0,${HEIGHT}`;
 
+        const midY = HEIGHT / 2;
+
         return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${HEIGHT}" style="display:block;position:absolute;top:0;left:0;">
             <polygon points="${polygon}" fill="rgba(255,255,0,0.8)"/>
-            <polyline points="${points}" fill="none" stroke="#000000" stroke-width="4" stroke-linejoin="round"/>
-            <polyline points="${points}" fill="none" stroke="#ffff00" stroke-width="2" stroke-linejoin="round"/>
+            <!-- Mid-scale reference line: black outline then yellow dashed on top -->
+            <line x1="0" y1="${midY}" x2="${width}" y2="${midY}" stroke="#000000" stroke-width="3"/>
+            <line x1="0" y1="${midY}" x2="${width}" y2="${midY}" stroke="rgba(255,255,0,0.5)" stroke-width="2" stroke-dasharray="5,5"/>
             <!-- Max wind label background -->
             <rect x="2" y="2" width="44" height="14" fill="rgba(0,0,0,0.8)" rx="2"/>
             <!-- Max wind value -->
@@ -218,17 +251,20 @@ const DailyVisibilityView = {
             {
                 label: 'Clouds',
                 type: 'gradient',
-                background: this.assembleGradient(cloudData.cloud, v => this.cloudColor(v))
+                background: this.assembleGradient(cloudData.cloud, v => this.cloudColor(v)),
+                tooltipKey: 'dv_clouds'
             },
             {
                 label: 'Wind',
                 type: 'wind',
-                wind: cloudData.wind
+                wind: cloudData.wind,
+                tooltipKey: 'dv_wind'
             },
             {
                 label: 'Dew',
                 type: 'gradient',
-                background: this.assembleGradient(cloudData.spread, v => this.dewColor(v))
+                background: this.assembleGradient(cloudData.spread, v => this.dewColor(v)),
+                tooltipKey: 'dv_dew'
             }
         ];
 
@@ -241,6 +277,7 @@ const DailyVisibilityView = {
 
             const bandDiv = document.createElement('div');
             bandDiv.className = 'cloud-band';
+            if (band.tooltipKey) bandDiv.dataset.tooltipKey = band.tooltipKey;
 
             if (band.type === 'gradient') {
                 bandDiv.style.background = band.background;
@@ -264,6 +301,7 @@ const DailyVisibilityView = {
         // Draw wind SVG now that the band is in the DOM and has a width
         const windBand = strip.querySelector('[data-wind-band]');
         if (windBand && cloudData.wind) {
+            this._lastWindValues = cloudData.wind;
             const w = windBand.offsetWidth || 800;
             windBand.innerHTML += this.buildWindSVG(cloudData.wind, w);
             // Re-append label on top of SVG

@@ -95,6 +95,9 @@ const TOOLTIPS = {
     util_dustFocalRatio:'The focal ratio (f-number) of your telescope.\nAuto-filled when you select a telescope above,\nor enter manually.',
     util_dustPixelSize: 'The physical size of one pixel on your sensor\nin micrometres. Auto-filled when you select\na sensor above, or enter manually.',
     util_dustSpotDiam:  'The diameter of the dust spot shadow in your\ncalibration frame, measured in pixels using\nyour imaging software.',
+    dv_clouds:      'Total cloud cover forecast. Black is clear,\nbright amber is fully overcast.',
+    dv_wind:        'Wind speed forecast at 10m elevation.\nGround-level or sheltered sites may\nexperience less wind than shown.',
+    dv_dew:         'Dew point risk forecast. Black is safe;\nbright blue means conditions are\napproaching dew formation.',
     xxxxxxx:        ''
 };
 

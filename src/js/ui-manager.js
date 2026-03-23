@@ -41,6 +41,16 @@ const UIManager = {
                                 window.lastYearlyObservabilityGraphData.inputs
                             );
                         }
+
+                        // Re-render sequence planner timeline if it's currently displayed
+                        const seqPlanTimeline = document.getElementById('seq-plan-timeline');
+                        if (seqPlanTimeline && SeqPlanView.calculatedResults?.length > 0 && SeqPlanView.currentSession) {
+                            const events = SeqPlanCalculations.generateTimelineEvents(
+                                SeqPlanView.calculatedResults,
+                                SeqPlanView.currentSession
+                            );
+                            SeqPlanTimeline.render(events, SeqPlanView.currentSession.sessionStartJD, SeqPlanView.currentSession.sessionEndJD, SeqPlanView.currentSession);
+                        }
                     }, { once: true }); // Only listen once
                 }
             });
@@ -250,6 +260,9 @@ const UIManager = {
             break;
         case 'help-sequence-planner':
             this.openHelpPage('sequence-planner.html');
+            break;
+        case 'changelog':
+            this.openHelpPage('changelog.html');
             break;
         case 'about':
             this.openAboutModal();
