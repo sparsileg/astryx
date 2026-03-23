@@ -14,7 +14,7 @@
 const TUTORIAL_SEQUENCE_PLANNER = {
     id: 'sequence-planner',
     title: 'Sequence Planner',
-    version: 1,
+    version: 2,
     nextTutorial: 'imaging-projects',
     steps: [
 
@@ -49,8 +49,6 @@ const TUTORIAL_SEQUENCE_PLANNER = {
             waitFor: 'next',
             highlight: false
         },
-
-        // --- Session Settings ---
         {
             id: 'session-settings-card',
             type: 'callout',
@@ -58,6 +56,7 @@ const TUTORIAL_SEQUENCE_PLANNER = {
             body: 'The Session Settings card contains everything that defines the boundaries of your imaging session — when it starts, where you are observing from, and how high a target must be before you will image it.<br><br>Click the header to collapse or expand this card once you have your settings configured.',
             target: '#seqplan-session-settings',
             position: 'bottom',
+            scrollTo: true,
             width: '400px',
             waitFor: 'next',
             highlight: true
@@ -151,19 +150,8 @@ const TUTORIAL_SEQUENCE_PLANNER = {
             id: 'calibration',
             type: 'callout',
             title: 'Guide Calibration and Between Subs',
-            body: '<strong>Calibration</strong> — The duration in minutes for guide calibration. Guide Calibration is assumed to run after moving to a new target (including the first) and after each meridian flip.<br><br><strong>Between Subs</strong> — the gap in seconds between consecutive exposures, accounting for download time and dithering recovery. For modern cameras and fast USB connections this is typically 6–12 seconds.',
+            body: '<strong>Guide Calibration</strong> — The duration in minutes for guide calibration. Guide Calibration is assumed to run after moving to a new target (including the first) and after each meridian flip.<br><br><strong>Between Subs</strong> — the gap in seconds between consecutive exposures, accounting for download time and dithering recovery. For modern cameras and fast USB connections this is typically 6–12 seconds.',
             target: '.seq-plan-overhead-row-3',
-            position: 'bottom',
-            width: '420px',
-            waitFor: 'next',
-            highlight: true
-        },
-        {
-            id: 'Optimization',
-            type: 'callout',
-            title: 'Additional Optimization',
-            body: 'If multiple targets are planned, the <strong>Sequence Planner</strong> performs an initial optimization based on the set time for each target. Additional optimization is performed if enabled by automatically adjusting target ordering and time allocaton. Please see the Help topic for more detailed information.',
-            target: '.seq-plan-overhead-row-4',
             position: 'bottom',
             width: '420px',
             waitFor: 'next',
@@ -194,7 +182,7 @@ const TUTORIAL_SEQUENCE_PLANNER = {
             id: 'sliders',
             type: 'callout',
             title: 'Time Allocation Sliders',
-            body: 'Each target has a slider that controls what percentage of the total session time is allocated to it. The sliders are linked — increasing one target\'s allocation reduces the others, working from right to left. The rightmost target absorbs changes first.<br><br>The allocation display shows the percentage, the number of exposures, and the exposure length for each target. Adjust sliders to prioritise targets you most want to image, or to account for targets with shorter available windows.',
+            body: 'Each target has a slider that controls what percentage of the total session time is allocated to it. The sliders are linked — increasing one target\'s allocation reduces the others, working from right to left. The rightmost target absorbs changes first.<br><br>The last target\'s slider is capped at its natural end time — it cannot be extended past when the target sets or dawn arrives.<br><br>The allocation display shows the percentage, the number of exposures, and the exposure length for each target. The total image count across all targets is shown at the bottom of the card. Adjust sliders to prioritise targets you most want to image, or to account for targets with shorter available windows.',
             target: '#seqplan-target-allocation',
             position: 'top',
             width: '400px',
@@ -209,6 +197,17 @@ const TUTORIAL_SEQUENCE_PLANNER = {
             target: '.seq-plan-drag-handle',
             position: 'right',
             position: '400px',
+            waitFor: 'next',
+            highlight: true
+        },
+        {
+            id: 'Optimization',
+            type: 'callout',
+            title: 'Additional Optimization',
+            body: 'If multiple targets are planned, the Sequence Planner performs an initial optimization based on set time — targets that drop below the minimum altitude earliest are imaged first.<br><br>Additional optimization is controlled by the <strong>Sequence Optimization</strong> checkbox in the Target Allocation card. When enabled, the planner tries all target orderings and time allocations using a three-level priority:<br><br>1. <strong>Maximize total exposures</strong> — the primary goal, never compromised<br>2. <strong>Minimize meridian flips</strong> — preferred when total exposures are equal<br>3. <strong>Equalize image count</strong> — distribute images as evenly as possible across targets, allowing a small reduction in total exposures if needed<br><br>When <strong>Sequence Optimization</strong> is off, the planner uses equal time allocation without reordering. This typically results in fewer total exposures but a more balanced distribution — some users may prefer this as a starting point for manual adjustment.',
+            target: '#seq-plan-transition-tolerance',
+            position: 'top',
+            width: '600px',
             waitFor: 'next',
             highlight: true
         },
@@ -235,6 +234,17 @@ const TUTORIAL_SEQUENCE_PLANNER = {
             highlight: 'flash'
         },
         {
+            id: 'warnings',
+            type: 'callout',
+            title: 'Warnings',
+            body: 'The Imaging Plan and Timeline flag two types of constraint violations with a ⚠ warning:<br><br><strong>Altitude constraint</strong> — part of a target\'s allocated window falls outside the time it is above the minimum altitude. This can happen when a target rises late or sets early relative to its allocated slot.<br><br><strong>Horizon constraint</strong> — part of the window is blocked by the custom horizon profile at your location.<br><br>Both warnings show the affected time period so you can decide whether to adjust the allocation, reorder targets, or accept the constraint. Short violations of a few minutes are often ignorable; longer ones may warrant adjusting the plan.',
+            target: '#seq-plan-timeline',
+            position: 'top',
+            width: '500px',
+            waitFor: 'next',
+            highlight: 'flash'
+        },
+        {
             id: 'imaging-plan',
             type: 'callout',
             title: 'Imaging Plan',
@@ -245,17 +255,6 @@ const TUTORIAL_SEQUENCE_PLANNER = {
             width: '420px',
             waitFor: 'next',
             highlight: true
-        },
-        {
-            id: 'warnings',
-            type: 'callout',
-            title: 'Warnings',
-            body: 'The Imaging Plan and Timeline flag two types of constraint violations with a ⚠ warning:<br><br><strong>Altitude constraint</strong> — part of a target\'s allocated window falls outside the time it is above the minimum altitude. This can happen when a target rises late or sets early relative to its allocated slot.<br><br><strong>Horizon constraint</strong> — part of the window is blocked by the custom horizon profile at your location.<br><br>Both warnings show the affected time period so you can decide whether to adjust the allocation, reorder targets, or accept the constraint. Short violations of a few minutes are often ignorable; longer ones may warrant adjusting the plan.',
-            target: '#seq-plan-timeline',
-            position: 'top',
-            width: '500px',
-            waitFor: 'next',
-            highlight: 'flash'
         },
         {
             id: 'workflow',

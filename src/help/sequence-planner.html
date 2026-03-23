@@ -385,6 +385,13 @@ scheduled last. Each target receives an equal percentage of the total
 session time. You can adjust individual target allocations using the
 sliders in the Target Allocation section — reducing one target's time
 increases the others proportionally.</p>
+<p>The last target's slider is capped at its natural end time — it cannot be
+extended past when the target sets below the minimum altitude or horizon or
+dawn arrives, whichever comes first.</p>
+<p>The total image count across all targets is displayed at the bottom of the
+Target Allocation card and updates as you adjust sliders or exposure times.</p>
+<p>The <strong>Sequence Optimization</strong> checkbox is also located at the bottom of the
+Target Allocation card. See the Sequence Optimization section below for details.</p>
 <p>Each target's net imaging time is its allocated time minus all overhead
 events that occur during its window.</p>
 <hr>
@@ -428,7 +435,14 @@ are still accessible.</p>
 <h2 id="sequence-optimization">Sequence Optimization<a class="headerlink" href="#sequence-optimization" title="Permanent link">¶</a></h2>
 <p>When <strong>Sequence Optimization</strong> is enabled, the planner runs a second pass
 to find a better target order and boundary allocation than the default
-equal-split. The algorithm has two components:</p>
+equal-split. The optimization uses a three-level priority:</p>
+<ol>
+<li><strong>Maximize total exposures</strong> — the primary goal, never compromised</li>
+<li><strong>Minimize meridian flips</strong> — preferred when total exposures are equal</li>
+<li><strong>Equalize image count</strong> — distribute images as evenly as possible
+   across targets, allowing a small reduction in total exposures if needed</li>
+</ol>
+<p>The algorithm has two components:</p>
 <h3 id="pass-1-permutation-search">Pass 1: Permutation Search<a class="headerlink" href="#pass-1-permutation-search" title="Permanent link">¶</a></h3>
 <p>All possible orderings of your targets are evaluated. For 2 targets there
 are 2 permutations; for 3 targets there are 6; for 4 targets there are 24.
@@ -454,16 +468,20 @@ has a meridian flip, extend the current target's boundary past that flip,
 so the next target begins with the telescope already on the correct side
 of the meridian. This can eliminate two flip overhead events with a single
 boundary adjustment.</p>
-<p>All three options are scored by total exposure count. The best result is
-kept.</p>
+<p>All three options are scored first by total exposure count, then by
+variance in image count across targets — lower variance means a more
+balanced distribution.</p>
+<p>After the best boundary position is found, a rebalancing sweep moves all
+target allocations simultaneously toward equal split in 1% steps, stopping
+if total exposures would drop below <code>bestSubs - (targets - 2)</code>. This allows
+a small sacrifice in total exposures — one sub for three targets, two for
+four — to achieve a more balanced result. The sweep runs even when no
+meridian flips are present, so equal distribution is always attempted.</p>
 <h3 id="acceptance-threshold">Acceptance Threshold<a class="headerlink" href="#acceptance-threshold" title="Permanent link">¶</a></h3>
-<p>The optimized result is only accepted if it improves total exposure count
-by at least <strong>5%</strong> over the baseline equal-allocation result. If the
-improvement is smaller than 5%, the original equal allocation is kept.
-This prevents the optimizer from accepting marginally better but
-unbalanced distributions — for example, giving one target very few
-exposures just to squeeze out one extra sub overall.</p>
-<p>The 5% threshold is configurable via <code>TRANSITION_OPTIMIZATION_THRESHOLD</code>
+<p>The optimized result is accepted if it produces any improvement over the
+baseline equal-allocation result — even a single additional exposure. The
+threshold is set to zero, meaning no minimum improvement is required.</p>
+<p>The threshold is configurable via <code>TRANSITION_OPTIMIZATION_THRESHOLD</code>
 in <code>config.js</code>.</p>
 <hr>
 <h2 id="constraints-and-assumptions">Constraints and Assumptions<a class="headerlink" href="#constraints-and-assumptions" title="Permanent link">¶</a></h2>
