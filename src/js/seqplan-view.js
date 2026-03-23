@@ -404,6 +404,13 @@ const SeqPlanView = {
         this.currentSession.duskJD = timing.duskJD;
         this.currentSession.dawnJD = timing.dawnJD;
 
+        // Reset allocations to equal split before optimization — prevents manual
+        // slider adjustments from polluting results on date/setting changes
+        const equalPercent = 100 / this.currentTargets.length;
+        this.currentTargets.forEach(target => {
+            target.allocatedPercent = equalPercent;
+        });
+
         // Optimize target order
         const optimizedTargets = SeqPlanOptimizer.optimizeTargetOrder(
             this.currentTargets,
@@ -487,6 +494,14 @@ const SeqPlanView = {
             this.calculatedResults,
             this.currentSession
         );
+
+        // Store last target's max allocation — set once per plan generation, never during slider interaction
+        if (this.calculatedResults.length > 0) {
+            const precedingPercent = this.calculatedResults
+                .slice(0, this.calculatedResults.length - 1)
+                .reduce((sum, t) => sum + t.allocatedPercent, 0);
+            this._lastTargetMaxPercent = Math.ceil(100 - precedingPercent);
+        }
 
         // Display results
         this.displayResults();
@@ -741,7 +756,6 @@ const SeqPlanView = {
     renderTargetAllocation() {
         const container = document.getElementById('seq-plan-target-list');
         if (!container || this.calculatedResults.length === 0) return;
-
         container.innerHTML = '';
 
         this.calculatedResults.forEach((target, index) => {
@@ -782,6 +796,15 @@ const SeqPlanView = {
 
         // Attach event listeners
         this.attachTargetAllocationListeners();
+
+        // Update footer with total image count
+        const footer = document.getElementById('seq-plan-allocation-footer');
+        const totalImages = document.getElementById('seq-plan-total-images');
+        if (footer && totalImages) {
+            const total = this.calculatedResults.reduce((sum, t) => sum + t.exposureCount, 0);
+            totalImages.textContent = `Total images: ${total}`;
+            footer.style.display = 'flex';
+        }
     },
 
     /**
@@ -877,8 +900,18 @@ const SeqPlanView = {
         // Distribute the difference only among targets to the RIGHT
         const targetsToRight = this.calculatedResults.slice(targetIndex + 1);
 
-        // If last target, just update it (may result in total < 100%)
+        // If last target, cap at stored max — cannot extend past original end time
         if (targetsToRight.length === 0) {
+            const lastTarget = this.calculatedResults[targetIndex];
+            const maxPercent = this._lastTargetMaxPercent ?? 100;
+            if (newPercent > maxPercent) {
+                newPercent = maxPercent;
+                const slider = document.getElementById(`slider-${lastTarget.targetId}`);
+                if (slider) {
+                    slider.value = maxPercent.toFixed(0);
+                    this.updateSliderBackground(slider);
+                }
+            }
             this.calculatedResults[targetIndex].allocatedPercent = newPercent;
         } else {
             // Normal case: distribute among targets to the right
@@ -982,6 +1015,13 @@ const SeqPlanView = {
 
         // Update results display
         this.displayResults();
+
+        // Update total images count in footer
+        const totalImages = document.getElementById('seq-plan-total-images');
+        if (totalImages) {
+            const total = this.calculatedResults.reduce((sum, t) => sum + t.exposureCount, 0);
+            totalImages.textContent = `Total images: ${total}`;
+        }
     },
 
     // ========================================================================

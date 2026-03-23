@@ -82,7 +82,7 @@ const APP_CONFIG = {
     },
 
     // Sequence transition optimization settings
-    TRANSITION_OPTIMIZATION_THRESHOLD: 0.05,  // Minimum fractional improvement to accept reorder (5%)
+    TRANSITION_OPTIMIZATION_THRESHOLD: 0.00,  // Minimum fractional improvement to accept reorder (0%)
 
     // External data APIs
     APIS: {
