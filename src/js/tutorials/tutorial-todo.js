@@ -13,7 +13,7 @@ const TUTORIAL_TODO = {
     id: 'todo',
     title: 'To Do List',
     version: 1,
-    nextTutorial: null,
+    nextTutorial: 'yearly-observability',
     steps: [
         {
             id: 'welcome',

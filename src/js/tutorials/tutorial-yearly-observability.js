@@ -16,7 +16,7 @@ const TUTORIAL_YEARLY_OBSERVABILITY = {
     id: 'yearly-observability',
     title: 'Yearly Observability',
     version: 2,
-    nextTutorial: null,
+    nextTutorial: 'daily-visibility',
     steps: [
 
         // --- Introduction ---

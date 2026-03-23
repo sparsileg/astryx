@@ -15,7 +15,7 @@ const TUTORIAL_IMAGING_PROGRAMS = {
     id: 'imaging-programs-reports',
     title: 'Imaging Programs & Reports',
     version: 2,
-    nextTutorial: null,
+    nextTutorial: 'utilities',
     steps: [
 
         // --- Introduction ---

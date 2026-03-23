@@ -1,3 +1,4 @@
+
 /**
  * tutorial-target-optimizer.js
  * "Target Optimizer" tutorial definition.
@@ -15,7 +16,7 @@ const TUTORIAL_TARGET_OPTIMIZER = {
     id: 'target-optimizer',
     title: 'Target Optimizer',
     version: 1,
-    nextTutorial: null,
+    nextTutorial: 'sequence-planner',
     steps: [
 
         // --- Introduction ---

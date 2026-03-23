@@ -15,7 +15,7 @@ const TUTORIAL_SEQUENCE_PLANNER = {
     id: 'sequence-planner',
     title: 'Sequence Planner',
     version: 1,
-    nextTutorial: null,
+    nextTutorial: 'imaging-projects',
     steps: [
 
         // --- Introduction ---

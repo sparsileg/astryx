@@ -14,7 +14,7 @@ const TUTORIAL_ADMIN_TOOLS = {
     id: 'admin-tools',
     title: 'Admin Tools',
     version: 2,
-    nextTutorial: 'sidebar',
+    nextTutorial: 'backup-restore',
     steps: [
         {
             id: 'welcome',

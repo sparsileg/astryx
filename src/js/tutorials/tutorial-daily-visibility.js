@@ -14,7 +14,7 @@ const TUTORIAL_DAILY_VISIBILITY = {
     id: 'daily-visibility',
     title: 'Daily Visibility',
     version: 4,
-    nextTutorial: null,
+    nextTutorial: 'viewfinder',
     steps: [
 
         // --- Introduction ---

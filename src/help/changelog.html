@@ -8,6 +8,8 @@
       
       
       
+        <link rel="prev" href="target-database.html">
+      
       
       
         
@@ -18,7 +20,7 @@
     
     
       
-        <title>Sequence Planner - Astryx Help</title>
+        <title>Change Log - Astryx Help</title>
       
     
     
@@ -75,7 +77,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#sequence-planner" class="md-skip">
+        <a href="#astryx-change-log" class="md-skip">
           Skip to content
         </a>
       
@@ -110,7 +112,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Sequence Planner
+              Change Log
             
           </span>
         </div>
@@ -314,10 +316,37 @@
       
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="changelog.html" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Change Log
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="changelog.html" class="md-nav__link md-nav__link--active">
         
   
   
@@ -333,6 +362,37 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
+      
+        <li class="md-nav__item">
+  <a href="#version-101" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Version 1.0.1
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -354,165 +414,16 @@
 
 
 
-<h1 id="sequence-planner">Sequence Planner<a class="headerlink" href="#sequence-planner" title="Permanent link">¶</a></h1>
-<h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">¶</a></h2>
-<p>The Sequence Planner helps you plan an optimal imaging session across
-pinned targets for a given night. It determines the best order to image
-your targets, allocates time to each one, accounts for equipment overhead
-events, and visualizes the entire session on a timeline. If you are imaging
-only one target, the Sequence Planner will provide the complete schedule
-of events using user-defined session settings.</p>
-<p>The planner works entirely from your pinned targets, your selected observer
-location, and the session settings you provide. It requires no internet
-connection.</p>
-<hr>
-<h2 id="session-boundaries">Session Boundaries<a class="headerlink" href="#session-boundaries" title="Permanent link">¶</a></h2>
-<p>The session begins at astronomical dusk (sun below -18°), a user-defined
-start time, or when your first target reaches minimum altitude. The session
-ends at astronomical dawn, or when the last target sets below your minimum
-altitude — whichever comes first.</p>
-<p><strong>Important:</strong> The session end time depends on which target is scheduled
-last. A target that remains visible until dawn extends the session longer
-than one that sets at 3 AM. The planner accounts for this when optimizing
-target order.</p>
-<hr>
-<h2 id="target-allocation">Target Allocation<a class="headerlink" href="#target-allocation" title="Permanent link">¶</a></h2>
-<p>Time is divided equally among all targets as a starting point, with targets
-ordered by earliest set time — the target that sets soonest below your
-minimum altitude is scheduled first, ensuring limited-visibility targets
-are imaged before they become inaccessible. Targets visible all night are
-scheduled last. Each target receives an equal percentage of the total
-session time. You can adjust individual target allocations using the
-sliders in the Target Allocation section — reducing one target's time
-increases the others proportionally.</p>
-<p>Each target's net imaging time is its allocated time minus all overhead
-events that occur during its window.</p>
-<hr>
-<h2 id="overhead-events">Overhead Events<a class="headerlink" href="#overhead-events" title="Permanent link">¶</a></h2>
-<p>The following overhead events consume imaging time and are accounted for in
-the exposure count calculation:</p>
-<h3 id="autofocus-af">Autofocus (AF)<a class="headerlink" href="#autofocus-af" title="Permanent link">¶</a></h3>
-<p>If enabled, autofocus:</p>
+<h1 id="astryx-change-log">Astryx Change Log<a class="headerlink" href="#astryx-change-log" title="Permanent link">¶</a></h1>
+<h2 id="version-101">Version 1.0.1<a class="headerlink" href="#version-101" title="Permanent link">¶</a></h2>
+<p>March 22, 2026</p>
 <ul>
-<li>Runs once at the <strong>start of every target</strong></li>
-<li>Runs once <strong>after every meridian flip</strong></li>
-<li>Runs <strong>periodically</strong> throughout each target at the interval you specify</li>
-<li>The AF timer resets after every AF event — whether periodic, post-flip,
-  or at a target transition</li>
+<li>Change Log. After release 1.0.0, any installed changes will be included in
+  a Change Log, accessible from the system menu.</li>
+<li>Linked tutorials. Starting with <strong>Getting Started</strong>, each tutorial,
+  after completion, will point to the next suggested tutorial.</li>
 </ul>
-<h3 id="calibration">Calibration<a class="headerlink" href="#calibration" title="Permanent link">¶</a></h3>
-<ul>
-<li>Runs once at the <strong>start of every target</strong></li>
-<li>Also runs as part of the meridian flip sequence</li>
-</ul>
-<h3 id="meridian-flip">Meridian Flip<a class="headerlink" href="#meridian-flip" title="Permanent link">¶</a></h3>
-<p>Occurs when a target transits (crosses the meridian). The full flip sequence is:</p>
-<ol>
-<li>Wait for transit plus the user-configured offset, then pause imaging</li>
-<li>Flip operation (user-configured duration)</li>
-<li>Pause after flip (same duration as pause before)</li>
-<li>Perform guiding calibration</li>
-</ol>
-<p>A flip offset can be applied to trigger the flip slightly before or after
-the exact transit time.</p>
-<h3 id="between-subs">Between Subs<a class="headerlink" href="#between-subs" title="Permanent link">¶</a></h3>
-<p>A brief gap between each exposure (download time, dithering, etc.).</p>
 <hr>
-<h2 id="initial-target-ordering">Initial Target Ordering<a class="headerlink" href="#initial-target-ordering" title="Permanent link">¶</a></h2>
-<p>Before any optimization, targets are ordered by <strong>earliest set time</strong> —
-the target that sets soonest below your minimum altitude is scheduled
-first. Targets that remain visible all night are scheduled last.</p>
-<p>This ensures targets with limited visibility windows are imaged while they
-are still accessible.</p>
-<hr>
-<h2 id="sequence-optimization">Sequence Optimization<a class="headerlink" href="#sequence-optimization" title="Permanent link">¶</a></h2>
-<p>When <strong>Sequence Optimization</strong> is enabled, the planner runs a second pass
-to find a better target order and boundary allocation than the default
-equal-split. The algorithm has two components:</p>
-<h3 id="pass-1-permutation-search">Pass 1: Permutation Search<a class="headerlink" href="#pass-1-permutation-search" title="Permanent link">¶</a></h3>
-<p>All possible orderings of your targets are evaluated. For 2 targets there
-are 2 permutations; for 3 targets there are 6; for 4 targets there are 24.
-This is practical for the typical 2–4 target session.</p>
-<p>For each permutation:
-- The session window is recalculated (since the last target determines
-  when the session ends)
-- Flip boundary optimization is applied (see Pass 2 below)
-- The total exposure count across all targets is calculated</p>
-<p>The permutation with the highest total exposure count is selected as the
-candidate result.</p>
-<h3 id="pass-2-flip-boundary-optimization">Pass 2: Flip Boundary Optimization<a class="headerlink" href="#pass-2-flip-boundary-optimization" title="Permanent link">¶</a></h3>
-<p>For each target that has a meridian flip, the planner tries three boundary
-positions relative to the transition to the next target:</p>
-<p><strong>Option A — Exclude the flip:</strong> End the current target just before the
-flip pause begins. The flip overhead is avoided entirely, and the saved
-time is given to the next target.</p>
-<p><strong>Option B — Include and extend the flip:</strong> Extend the current target's
-window to include the full flip sequence plus additional post-flip imaging
-time, at the expense of the next target's allocation.</p>
-<p><strong>Option C — Absorb the next target's flip:</strong> When the next target also
-has a meridian flip, extend the current target's boundary past that flip,
-so the next target begins with the telescope already on the correct side
-of the meridian. This can eliminate two flip overhead events with a single
-boundary adjustment.</p>
-<p>All three options are scored by total exposure count. The best result is
-kept.</p>
-<h3 id="acceptance-threshold">Acceptance Threshold<a class="headerlink" href="#acceptance-threshold" title="Permanent link">¶</a></h3>
-<p>The optimized result is only accepted if it improves total exposure count
-by at least <strong>5%</strong> over the baseline equal-allocation result. If the
-improvement is smaller than 5%, the original equal allocation is kept.
-This prevents the optimizer from accepting marginally better but
-unbalanced distributions — for example, giving one target very few
-exposures just to squeeze out one extra sub overall.</p>
-<p>The 5% threshold is configurable via <code>TRANSITION_OPTIMIZATION_THRESHOLD</code>
-in <code>config.js</code>.</p>
-<hr>
-<h2 id="constraints-and-assumptions">Constraints and Assumptions<a class="headerlink" href="#constraints-and-assumptions" title="Permanent link">¶</a></h2>
-<h3 id="altitude">Altitude<a class="headerlink" href="#altitude" title="Permanent link">¶</a></h3>
-<p>Targets must be above your configured minimum altitude to be scheduled.
-The global minimum altitude from Settings is used as the default, but can
-be overridden per session. If the first target is below minimum altitude at
-the start of the session, the session start is delayed until it rises. If a
-target sets before dawn, the session ends at that point.</p>
-<h3 id="horizon-profile">Horizon Profile<a class="headerlink" href="#horizon-profile" title="Permanent link">¶</a></h3>
-<p>If your observer location has a horizon profile defined and horizon use is
-enabled, targets blocked by the horizon are flagged with an orange
-crosshatch overlay on the timeline. The planner does not currently split
-a target's imaging window around a horizon obstruction.</p>
-<h3 id="equal-exposure-time">Equal Exposure Time<a class="headerlink" href="#equal-exposure-time" title="Permanent link">¶</a></h3>
-<p>All targets in a session are assumed to use the same exposure duration.
-Each target row has its own exposure time input, but the optimizer scores
-permutations using the first target's exposure time as a proxy for the
-session. Varying exposure times between targets may cause the optimizer to
-make slightly suboptimal decisions. This is a known limitation of the
-current optimizer.</p>
-<h3 id="meridian-flip-timing">Meridian Flip Timing<a class="headerlink" href="#meridian-flip-timing" title="Permanent link">¶</a></h3>
-<p>The flip is triggered at transit plus the flip offset you specify. The
-planner cannot communicate with your equipment — it models the flip as a
-fixed overhead block. Actual flip timing depends on your imaging software.</p>
-<h3 id="no-moon-avoidance">No Moon Avoidance<a class="headerlink" href="#no-moon-avoidance" title="Permanent link">¶</a></h3>
-<p>Moon position and phase are not currently factored into the sequencing
-algorithm. Moon data is displayed on the Daily Visibility view and can
-inform your manual target selection, but the sequence planner does not
-automatically avoid targets near a bright moon.</p>
-<hr>
-<h2 id="manual-overrides">Manual Overrides<a class="headerlink" href="#manual-overrides" title="Permanent link">¶</a></h2>
-<p>The optimizer's result is a suggestion. You can:</p>
-<ul>
-<li><strong>Drag targets</strong> to reorder them in the Target Allocation section</li>
-<li><strong>Adjust sliders</strong> to give more or less time to individual targets</li>
-<li><strong>Click Reset &amp; Optimize</strong> to return to the optimizer's suggested order
-  with equal allocations</li>
-</ul>
-<p>The timeline updates immediately whenever you make changes.</p>
-<hr>
-<h2 id="known-limitations">Known Limitations<a class="headerlink" href="#known-limitations" title="Permanent link">¶</a></h2>
-<ul>
-<li>Does not stop imaging when obstructed based on a horizon profile</li>
-<li>Does not take the moon position into account</li>
-<li>The optimizer is practical for 2–4 targets; sessions with 5+ targets
-  produce many permutations and may benefit from a heuristic approach
-  rather than exhaustive search</li>
-</ul>
 
 
 
@@ -545,6 +456,28 @@ automatically avoid targets near a bright moon.</p>
       
         <footer class="md-footer">
   
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer">
+        
+          
+          <a href="target-database.html" class="md-footer__link md-footer__link--prev" aria-label="Previous: Target Database">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"></path></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Target Database
+              </div>
+            </div>
+          </a>
+        
+        
+      </nav>
     
   
   <div class="md-footer-meta md-typeset">

@@ -15,7 +15,7 @@ const TUTORIAL_VIEWFINDER = {
     id: 'viewfinder',
     title: 'Viewfinder',
     version: 1,
-    nextTutorial: null,
+    nextTutorial: 'target-optimizer',
     steps: [
 
         {
