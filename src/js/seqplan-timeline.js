@@ -259,9 +259,6 @@ const SeqPlanTimeline = {
     /**
      * Draw event markers (autofocus, calibration, flips)
      */
-    /**
-     * Draw event markers (autofocus, calibration, flips)
-     */
     drawEventMarkers(events, sessionStartJD, sessionEndJD) {
         const blockTop = this.LABEL_AREA_HEIGHT;
         const blockBottom = this.LABEL_AREA_HEIGHT + this.BLOCK_HEIGHT;
@@ -325,7 +322,7 @@ const SeqPlanTimeline = {
             // Determine label text for cal/flip
             let label = '';
             if (event.type === 'calibration') label = 'Cal';
-            else if (event.type === 'flip') label = 'Cal'; // 'Flip' drawn separately above
+            //else if (event.type === 'flip') label = 'Cal'; // 'Flip' drawn separately above
 
             // Determine label row (0 = top row, 1 = bottom row)
             let row = 0;
