@@ -880,8 +880,9 @@ input[type="number"] {
 }
 
 .btn-sm.btn-secondary {
-    background: var(--button-secondary-bg);
-    color: var(--button-secondary-text);
+    background: var(--secondary-color);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
 }
 
 .btn-sm.btn-secondary:hover {

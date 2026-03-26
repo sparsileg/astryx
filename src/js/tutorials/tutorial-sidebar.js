@@ -59,7 +59,7 @@ const TUTORIAL_SIDEBAR = {
             id: 'theme',
             type: 'callout',
             title: 'Theme',
-            body: 'Select the style and colour theme of the interface. Astryx includes Dark, Light, Matrix, and Night themes. The Night theme is designed to preserve your dark adaptation at the telescope. Try different options and select your favorite. It can be changed at any time.',
+            body: 'Select the style and colour theme of the interface. Astryx includes Dark, Light, Matrix, Flat, and Night themes. The Night theme is designed to preserve your dark adaptation at the telescope. Try different options and select your favorite. It can be changed at any time.',
             target: '#theme-select',
             position: 'right',
             waitFor: 'next',
