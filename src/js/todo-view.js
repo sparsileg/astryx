@@ -538,9 +538,9 @@ const ToDoView = {
         // Get CSS color values with fallbacks
         const styles = getComputedStyle(document.documentElement);
         const bgColor = styles.getPropertyValue('--card-bg').trim() || '#1a1a1a';
-        const textColor = styles.getPropertyValue('--text-primary').trim() || '#ffffff';
+        const textColor = styles.getPropertyValue('--text-color').trim() || '#ffffff';
         const borderColor = styles.getPropertyValue('--border-color').trim() || '#444444';
-        const accentColor = styles.getPropertyValue('--accent-color').trim() || '#3b82f6';
+        const accentColor = styles.getPropertyValue('--primary-color').trim() || '#3b82f6';
 
         // Clear and fill background
         ctx.fillStyle = bgColor;

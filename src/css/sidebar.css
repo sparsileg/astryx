@@ -90,6 +90,7 @@
 
 /* When collapsing: fast fade out */
 .sidebar.collapsed #app-version,
+.sidebar.collapsed #backup-reminder-indicator,
 .sidebar.collapsed .sidebar-content,
 .sidebar.collapsed .sidebar-header {
     opacity: 0;

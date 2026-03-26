@@ -51,6 +51,12 @@ const UIManager = {
                             );
                             SeqPlanTimeline.render(events, SeqPlanView.currentSession.sessionStartJD, SeqPlanView.currentSession.sessionEndJD, SeqPlanView.currentSession);
                         }
+
+                        // Re-render To Do rise time chart if it's currently displayed
+                        const todoRiseChart = document.getElementById('todo-rise-chart');
+                        if (todoRiseChart && typeof ToDoView !== 'undefined' && ToDoView.riseTimeData) {
+                            ToDoView.renderRiseTimeChart();
+                        }
                     }, { once: true }); // Only listen once
                 }
             });

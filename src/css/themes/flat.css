@@ -1,0 +1,155 @@
+:root {
+    /* Background Colors */
+    --bg-color: #3d3228;
+    --sidebar-bg: #453a2e;
+    --card-bg: #4e4035;
+    --card-hover: #5a4a3d;
+    --input-bg: #453a2e;
+
+    /* Text Colors */
+    --text-color: #e0d0b8;
+    --text-secondary: #a08870;
+    --primary-text: #2a2018;
+
+    /* Primary Colors */
+    --primary-color: #d4982e;
+    --primary-hover: #bc8025;
+
+    /* Secondary Colors */
+    --secondary-color: #5a4a3d;
+    --secondary-hover: #655545;
+
+    /* Border Colors - defined but minimally used */
+    --border-color: #6a5848;
+    --border-color-light: #5a4a3d;
+
+    /* Status Colors */
+    --success-color: #72a85a;
+    --warning-color: #d4982e;
+    --error-color: #c04848;
+    --error-hover: #a83838;
+
+    /* Focus Ring */
+    --focus-ring: rgba(212, 152, 46, 0.25);
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+}
+
+/* Flat theme - remove all borders */
+*,
+*::before,
+*::after {
+    border-color: transparent !important;
+}
+
+/* Remove box shadows throughout */
+.result-card,
+.card,
+.info-card,
+.modal-content,
+.sidebar,
+.panel,
+.btn,
+input,
+select,
+textarea {
+    box-shadow: none !important;
+}
+
+/* Cards and panels differentiated by background only */
+.result-card,
+.card,
+.info-card {
+    border: none !important;
+    box-shadow: none !important;
+}
+
+.result-card:hover {
+    box-shadow: none !important;
+    background-color: var(--card-hover);
+}
+
+/* Inputs: bottom border only for affordance */
+input,
+select,
+textarea {
+    border: none !important;
+    border-bottom: 1px solid var(--border-color) !important;
+    border-radius: 0 !important;
+    background-color: var(--input-bg);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    border-bottom-color: var(--primary-color) !important;
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+/* Buttons - flat, no border, no shadow */
+.btn {
+    border: none !important;
+    border-radius: 3px !important;
+    box-shadow: none !important;
+}
+
+.btn:hover {
+    box-shadow: none !important;
+}
+
+/* Tables - no borders, alternating row tints */
+table,
+th,
+td {
+    border: none !important;
+}
+
+tr:nth-child(even) {
+    background-color: rgba(255, 255, 255, 0.04);
+}
+
+/* Modal */
+.modal {
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+    border: none !important;
+    border-radius: 3px !important;
+}
+
+/* info-box-wrapper and form-group */
+#target-info-display .form-group,
+.info-box-wrapper {
+    background: rgba(255, 255, 255, 0.04);
+    border: none !important;
+}
+
+/* Restore block-link dotted underline suppressed by global border reset */
+.block-link {
+    border-bottom: 1px dotted color-mix(in srgb, var(--text-secondary) 70%, transparent) !important;
+}
+
+.block-link:hover {
+    border-bottom: 1px dotted transparent !important;
+}
+
+/* Logo */
+.logo-ring {
+    filter: drop-shadow(0 0 10px rgba(212, 152, 46, 0.4));
+}
+
+/* Tutorial */
+:root {
+    --tutorial-accent: #d4982e;
+    --tutorial-accent-text: #2a2018;
+}
+
+.tutorial-modal,
+.tutorial-callout {
+    box-shadow: 0 0 24px rgba(212, 152, 46, 0.3), 0 0 0 1px var(--tutorial-accent);
+}
