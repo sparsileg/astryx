@@ -190,11 +190,19 @@ const AsiairLogView = {
             `;
         }
 
+        const learnedSubGapS = SettingsManager.getLearnedSubGapS();
+        const learnedDitherDurationS = SettingsManager.getLearnedDitherDurationS();
+
         html += `
                     <tr>
-                        <td>Between Subs${recommendations.subsPerDither > 0 ? ` (${recommendations.subsPerDither} subs per dither)` : ''}</td>
-                        <td>${recommendations.subsPerDither > 0 ? `~${summary.ditherAmortizedS.toFixed(1)}s dither + ` : ''}~${recommendations.interSubGapS.toFixed(0)}s gap</td>
-                        <td>${Math.ceil(recommendations.betweenSubsS)}s</td>
+                        <td>Sub Gap</td>
+                        <td>Observed: ${recommendations.observedSubGapS}s</td>
+                        <td>Stored: ${learnedSubGapS}s</td>
+                    </tr>
+                    <tr>
+                        <td>Dither Duration</td>
+                        <td>Observed: ${recommendations.observedDitherDurationS}s</td>
+                        <td>Stored: ${learnedDitherDurationS}s</td>
                     </tr>
                 </tbody>
             </table>
@@ -206,9 +214,10 @@ const AsiairLogView = {
             <ul class="session-report-notes">
                 <li>AF duration: includes autofocus process + guide re-select + guide settle; excludes guide calibration</li>
                 ${summary.calCount > 0 ? '<li>Guide Calibration: includes calibration process + guide settle</li>' : ''}
-                ${summary.ditherCount > 0 ? `<li>Dither: ${summary.ditherCount} events, avg ${summary.ditherAvgS.toFixed(0)}s each, total ${AsiairLogParser.fmtMinutes(summary.ditherTotalS)}, ${recommendations.subsPerDither} subs between dithers</li>` : ''}
+                ${summary.ditherCount > 0 ? `<li>Dither: ${summary.ditherCount} events, avg ${summary.ditherAvgS.toFixed(0)}s each, total ${AsiairLogParser.fmtMinutes(summary.ditherTotalS)}</li>` : ''}
                 ${summary.meridianTotalS > 0 ? '<li>Pre-flip pause and Meridian Flip are listed as separate events in the detail table</li>' : ''}
                 <li>Dither total is included in the summary but is embedded within imaging segments in the detail table</li>
+                <li>Sub gap and dither duration are learned values updated automatically each time a log is analyzed</li>
             </ul>
         `;
 
@@ -335,19 +344,29 @@ const AsiairLogView = {
                 Math.ceil(recommendations.calDurationS / 60) + 'm'
             );
         }
+        const learnedSubGapS = SettingsManager.getLearnedSubGapS();
+        const learnedDitherDurationS = SettingsManager.getLearnedDitherDurationS();
+
         addRecRow(
-            'Between Subs' + (recommendations.subsPerDither > 0 ? ` (${recommendations.subsPerDither} subs per dither)` : ''),
-            (recommendations.subsPerDither > 0 ? `~${summary.ditherAmortizedS.toFixed(1)}s dither + ` : '') + `~${recommendations.interSubGapS.toFixed(0)}s gap`,
-            Math.ceil(recommendations.betweenSubsS) + 's'
+            'Sub Gap',
+            `Observed: ${recommendations.observedSubGapS}s`,
+            `Stored: ${learnedSubGapS}s`
         );
+        addRecRow(
+            'Dither Duration',
+            `Observed: ${recommendations.observedDitherDurationS}s`,
+            `Stored: ${learnedDitherDurationS}s`
+        );
+
 
         const noteItems = [
             'AF duration: includes autofocus process + guide re-select + guide settle; excludes guide calibration',
         ];
         if (summary.calCount > 0) noteItems.push('Guide Calibration: includes calibration process + guide settle');
-        if (summary.ditherCount > 0) noteItems.push(`Dither: ${summary.ditherCount} events, avg ${summary.ditherAvgS.toFixed(0)}s each, total ${AsiairLogParser.fmtMinutes(summary.ditherTotalS)}, ${recommendations.subsPerDither} subs between dithers`);
+        if (summary.ditherCount > 0) noteItems.push(`Dither: ${summary.ditherCount} events, avg ${summary.ditherAvgS.toFixed(0)}s each, total ${AsiairLogParser.fmtMinutes(summary.ditherTotalS)}`);
         if (summary.meridianTotalS > 0) noteItems.push('Pre-flip pause and Meridian Flip are listed as separate events in the detail table');
         noteItems.push('Dither total is included in the summary but is embedded within imaging segments in the detail table');
+        noteItems.push('Sub gap and dither duration are learned values updated automatically each time a log is analyzed');
 
         const tableLayout = {
             hLineWidth: () => 0.5,
