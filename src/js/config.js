@@ -15,7 +15,7 @@
 const APP_CONFIG = {
     APP_NAME: 'Astryx',
     APP_TITLE: 'Astryx - Astrophotography Planning Tool',
-    APP_VERSION: '1.1.1',
+    APP_VERSION: '1.2.0',
     DB_NAME: 'astryx-db',
     DB_VERSION: 8,
     TARGET_DATA_PATH: './data/',
@@ -74,6 +74,11 @@ const APP_CONFIG = {
     BACKUP_REMINDER_INTERVAL_DAYS: 7,   // default reminder interval (days)
     BACKUP_REMINDER_AMBER_DAYS: 7,      // sidebar indicator turns amber after this many days
     BACKUP_REMINDER_RED_DAYS: 14,       // sidebar indicator turns orange/red after this many days
+
+    // Session analysis learned defaults (issue #145)
+    DEFAULT_SUB_GAP_S: 5,              // seconds between end of exposure and start of next (camera download + overhead)
+    DEFAULT_DITHER_DURATION_S: 25,     // seconds for dither + guide settle
+    DEFAULT_FRAMES_PER_DITHER: 3,      // user-settable frames between dithers
 
     FEATURES: {
         OPTIMIZER_COMBINATIONS: true,  // Issue #38 - combination mode for target optimizer

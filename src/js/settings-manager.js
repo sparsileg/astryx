@@ -21,7 +21,10 @@ const SettingsManager = {
         lastBestMonthsCalculated: null, // Timestamp of last best months calc
         lastBestMonthsLocation: null,  // Location used for last best months calc
         autoBackupEnabled: true,       // Auto-backup on data change
-        lastChangeTimestamp: null      // DTG of last data change
+        lastChangeTimestamp: null,     // DTG of last data change
+        learnedSubGapS: APP_CONFIG.DEFAULT_SUB_GAP_S,             // Learned camera download + overhead (issue #145)
+        learnedDitherDurationS: APP_CONFIG.DEFAULT_DITHER_DURATION_S, // Learned dither + settle duration (issue #145)
+        framesPerDither: APP_CONFIG.DEFAULT_FRAMES_PER_DITHER     // User-settable frames between dithers (issue #145)
     },
 
     /**
@@ -387,8 +390,36 @@ const SettingsManager = {
             : APP_CONFIG.BACKUP_REMINDER_INTERVAL_DAYS;
     },
 
-    async setBackupReminderDays(days) {
+async setBackupReminderDays(days) {
         this.settings.backupReminderDays = days;
+        await this.saveSettings();
+    },
+
+    // Learned session analysis values (issue #145)
+    getLearnedSubGapS() {
+        return this.settings.learnedSubGapS ?? APP_CONFIG.DEFAULT_SUB_GAP_S;
+    },
+
+    async setLearnedSubGapS(value) {
+        this.settings.learnedSubGapS = value;
+        await this.saveSettings();
+    },
+
+    getLearnedDitherDurationS() {
+        return this.settings.learnedDitherDurationS ?? APP_CONFIG.DEFAULT_DITHER_DURATION_S;
+    },
+
+    async setLearnedDitherDurationS(value) {
+        this.settings.learnedDitherDurationS = value;
+        await this.saveSettings();
+    },
+
+    getFramesPerDither() {
+        return this.settings.framesPerDither ?? APP_CONFIG.DEFAULT_FRAMES_PER_DITHER;
+    },
+
+    async setFramesPerDither(value) {
+        this.settings.framesPerDither = value;
         await this.saveSettings();
     }
 

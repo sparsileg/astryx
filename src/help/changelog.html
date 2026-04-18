@@ -379,6 +379,17 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
       
         <li class="md-nav__item">
+  <a href="#version-120" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Version 1.2.0
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#version-111" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -426,6 +437,18 @@
 
 
 <h1 id="astryx-change-log">Astryx Change Log<a class="headerlink" href="#astryx-change-log" title="Permanent link">¶</a></h1>
+<h2 id="version-120">Version 1.2.0<a class="headerlink" href="#version-120" title="Permanent link">¶</a></h2>
+<p>April 18, 2026</p>
+<ul>
+<li>Fixed session analysis log parser to correctly exclude flat frame sessions
+  from analysis, resolving negative gap values and incorrect subs-per-dither
+  counts. Issue 144.</li>
+<li>Replaced the single "Between Subs" session parameter with a learned algorithm
+  that automatically derives sub gap and dither duration from analyzed session
+  logs using an exponential moving average. The only user-settable parameter is
+  now "Frames per Dither" (0 = no dither). The sequence planner computes
+  between-sub overhead automatically from the learned values. Issue 145.</li>
+</ul>
 <h2 id="version-111">Version 1.1.1<a class="headerlink" href="#version-111" title="Permanent link">¶</a></h2>
 <p>March 25, 2026</p>
 <ul>

@@ -22,6 +22,9 @@ const AsiairLogParser = {
         const summary = this._computeSummary(events);
         const recommendations = this._computeRecommendations(events, summary, exposure);
 
+        // Update learned values in SettingsManager via EMA (issue #145)
+        this._updateLearnedValues(recommendations);
+
         return { target, date, exposure, totalSubs, events, summary, recommendations };
     },
 
@@ -403,63 +406,88 @@ const AsiairLogParser = {
     _computeRecommendations(events, summary, exposure) {
         const exp = exposure || 300;
 
-        // Extract all sub timestamps in order from imaging events
-        // We need raw sub times — collect from events as {imgNum, start}
-        const subTimes = [];
-        events.filter(e => e.type === 'imaging').forEach(block => {
-            // Reconstruct individual sub start times from block start + index * (exp + ~gap)
-            // Instead, use the raw lines approach via the event timestamps we have.
-            // block.start = first sub start, block.end = last sub start + exp
-            // We only have block boundaries, not individual sub times here.
-            // So we mark the block boundaries for gap detection.
-        });
-
-        // Build a sorted list of all non-imaging event time ranges for interruption detection
+        // Build interruption list — all non-imaging, non-dither events
+        // Dithers are excluded here so we can detect un-dithered gaps separately
         const interruptions = events
-            .filter(e => e.type !== 'imaging')
+            .filter(e => e.type !== 'imaging' && e.type !== 'dither')
             .map(e => ({ start: e.start, end: e.end }));
 
         const isInterrupted = (t1, t2) => {
             return interruptions.some(iv => iv.start >= t1 && iv.start < t2);
         };
 
-        // We need individual sub start times — store them during parse via _subTimes
-        // Since we don't have them here, compute from imaging blocks:
-        // For each block, consecutive subs are separated by (blockDuration / (subCount-1))
-        // but that averages in dithers. Instead, pass _subTimes from _extractEvents.
+        const isDithered = (t1, t2) => {
+            return events
+                .filter(e => e.type === 'dither')
+                .some(d => d.start >= t1 && d.start < t2);
+        };
+
         const subTimesRaw = this._subTimes || [];
-        const cleanGaps = [];
+
+        // Separate gaps into dithered and un-dithered
+        const ditheredGaps = [];   // gap includes a dither — used to compute observed dither duration
+        const cleanGaps = [];      // gap with no dither and no interruption — pure sub gap
 
         for (let i = 1; i < subTimesRaw.length; i++) {
             const prev = subTimesRaw[i - 1];
             const curr = subTimesRaw[i];
-            if (!isInterrupted(prev, curr)) {
-                const delta = (curr - prev) / 1000; // seconds
-                cleanGaps.push(delta - exp);
+
+            if (isInterrupted(prev, curr)) continue; // skip AF, flip, cal boundaries
+
+            const delta = (curr - prev) / 1000; // seconds between sub starts
+            const overhead = delta - exp;        // overhead above exposure time
+
+            if (isDithered(prev, curr)) {
+                ditheredGaps.push(overhead);     // overhead = dither duration + sub gap
+            } else {
+                cleanGaps.push(overhead);        // overhead = sub gap only
             }
         }
 
-        const interSubGapS = cleanGaps.length > 0
-            ? cleanGaps.reduce((s, g) => s + g, 0) / cleanGaps.length
-            : 0;
+        // Pure sub gap: average of un-dithered gaps
+        // Fall back to ditheredGap - ditherAvg if no clean gaps exist (dither-every-frame)
+        let observedSubGapS;
+        if (cleanGaps.length > 0) {
+            observedSubGapS = cleanGaps.reduce((s, g) => s + g, 0) / cleanGaps.length;
+        } else if (ditheredGaps.length > 0) {
+            // All gaps are dithered — subtract average dither duration to isolate sub gap
+            const avgDitheredOverhead = ditheredGaps.reduce((s, g) => s + g, 0) / ditheredGaps.length;
+            observedSubGapS = Math.max(0, avgDitheredOverhead - summary.ditherAvgS);
+        } else {
+            observedSubGapS = SettingsManager.getLearnedSubGapS();
+        }
 
-        // Subs per dither (integer, 0 if no dithers)
-        const subsPerDither = summary.ditherCount > 0
-            ? Math.floor(summary.totalSubs / summary.ditherCount)
-            : 0;
-
-        // Between-subs setting = amortized dither + inter-sub gap, rounded
-        const betweenSubsS = summary.ditherCount > 0
-            ? Math.round(summary.ditherAmortizedS + interSubGapS)
-            : Math.round(interSubGapS);
+        // Observed dither duration: from dithered gaps, subtract the sub gap
+        const observedDitherDurationS = summary.ditherAvgS > 0
+            ? summary.ditherAvgS
+            : SettingsManager.getLearnedDitherDurationS();
 
         return {
             afDurationS: summary.afAvgS,
             calDurationS: summary.calAvgS,
-            interSubGapS,
-            subsPerDither,
-            betweenSubsS,
+            observedSubGapS: Math.round(observedSubGapS),
+            observedDitherDurationS: Math.round(observedDitherDurationS),
         };
+    },
+
+    /**
+     * Update learned sub gap and dither duration via EMA (issue #145)
+     */
+    async _updateLearnedValues(recommendations) {
+        const EMA_WEIGHT = 0.2; // weight given to new observation
+
+        const storedSubGap = SettingsManager.getLearnedSubGapS();
+        const storedDitherDuration = SettingsManager.getLearnedDitherDurationS();
+
+        const newSubGap = Math.round(
+            (1 - EMA_WEIGHT) * storedSubGap + EMA_WEIGHT * recommendations.observedSubGapS
+        );
+        const newDitherDuration = Math.round(
+            (1 - EMA_WEIGHT) * storedDitherDuration + EMA_WEIGHT * recommendations.observedDitherDurationS
+        );
+
+        await SettingsManager.setLearnedSubGapS(newSubGap);
+        await SettingsManager.setLearnedDitherDurationS(newDitherDuration);
     },
 
     // -------------------------------------------------------------------------

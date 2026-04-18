@@ -1860,7 +1860,7 @@
                 <span>min</span>
               </div>
 
-              <!-- Row 3: Calibration and Between Subs -->
+              <!-- Row 3: Calibration and Frames per Dither -->
               <div class="seq-plan-overhead-row-3">
                 <label for="seq-plan-cal-duration" class="tooltip-host" data-tooltip-key="sp_calibration">Guide Calibration:</label>
                 <select id="seq-plan-cal-duration">
@@ -1873,15 +1873,14 @@
                 </select>
                 <span>min</span>
 
-                <label for="seq-plan-inter-exposure" class="tooltip-host" data-tooltip-key="sp_betweenSubs">Between Subs:</label>
-                <select id="seq-plan-inter-exposure">
-                  <option value="3">3</option>
-                  <option value="6">6</option>
-                  <option value="9" selected>9</option>
-                  <option value="12">12</option>
-                  <option value="15">15</option>
+                <label for="seq-plan-frames-per-dither" class="tooltip-host" data-tooltip-key="sp_framesPerDither">Frames per Dither:</label>
+                <select id="seq-plan-frames-per-dither">
+                  <option value="0">0</option>
+                  <option value="1">1</option>
+                  <option value="2">2</option>
+                  <option value="3" selected>3</option>
                 </select>
-                <span>sec</span>
+                <span>frames</span>
               </div>
             </div>
           </div>

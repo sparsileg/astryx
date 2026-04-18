@@ -65,7 +65,7 @@ const TOOLTIPS = {
     sp_afCheck:     'Check to enable autofocus events',
     sp_afDuration:  'Duration of an autofocus event',
     sp_afInterval:  'Interval between autofocus events',
-    sp_betweenSubs: 'Average duration in seconds between subs. This\nnot only includes the brief pause between subs\nbut also the dither settle time, averaged for each sub.\nAs you decrease the subs per dither, this value will\nincrease.',
+    sp_framesPerDither: 'Number of frames between dither events.\nSet to 0 to disable dithering.\nSub gap and dither duration are learned\nautomatically from analyzed session logs.',
     sp_calibration: 'Duration of a guide calibration',
     sp_flipDuration:'Duration of the actual meridian flip',
     sp_flipOffset:  'How many minutes after the target\npasses meridian before the mount starts\nto flip',

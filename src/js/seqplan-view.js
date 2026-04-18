@@ -190,8 +190,8 @@ const SeqPlanView = {
             SettingsManager.getSetting('seqPlanMeridianFlipOffset', 0);
         document.getElementById('seq-plan-cal-duration').value =
             SettingsManager.getSetting('seqPlanCalibrationDuration', 5);
-        document.getElementById('seq-plan-inter-exposure').value =
-            SettingsManager.getSetting('seqPlanInterExposureTime', 8);
+        document.getElementById('seq-plan-frames-per-dither').value =
+            SettingsManager.getFramesPerDither();
 
         const toleranceCheck = document.getElementById('seq-plan-transition-tolerance');
         if (toleranceCheck) {
@@ -228,8 +228,8 @@ const SeqPlanView = {
 
         await SettingsManager.saveSetting('seqPlanCalibrationDuration',
                                           parseFloat(document.getElementById('seq-plan-cal-duration').value));
-        await SettingsManager.saveSetting('seqPlanInterExposureTime',
-                                          parseFloat(document.getElementById('seq-plan-inter-exposure').value));
+        await SettingsManager.setFramesPerDither(
+            parseInt(document.getElementById('seq-plan-frames-per-dither').value));
 
         await SettingsManager.saveSetting('seqPlanTransitionTolerance',
                                           document.getElementById('seq-plan-transition-tolerance').checked);
@@ -265,8 +265,19 @@ const SeqPlanView = {
             'seq-plan-flip-duration',
             'seq-plan-flip-offset',
             'seq-plan-cal-duration',
-            'seq-plan-inter-exposure'
+            'seq-plan-frames-per-dither'
         ];
+
+        // Update the frames/no-dither label when dropdown changes
+        const framesPerDitherSelect = document.getElementById('seq-plan-frames-per-dither');
+        const framesPerDitherSpan = framesPerDitherSelect?.nextElementSibling;
+        if (framesPerDitherSelect && framesPerDitherSpan) {
+            const updateDitherLabel = () => {
+                framesPerDitherSpan.textContent = framesPerDitherSelect.value === '0' ? 'no dither' : 'frames';
+            };
+            framesPerDitherSelect.addEventListener('change', updateDitherLabel);
+            updateDitherLabel(); // Set correct label on initial load
+        }
 
         // Sequence optimization checkbox requires full regeneration
         const toleranceInput = document.getElementById('seq-plan-transition-tolerance');
@@ -557,7 +568,9 @@ const SeqPlanView = {
             meridianFlipPause: parseInt(document.getElementById('seq-plan-flip-pause').value),
             meridianFlipDuration: parseInt(document.getElementById('seq-plan-flip-duration').value),
             meridianFlipOffset: parseInt(document.getElementById('seq-plan-flip-offset').value),
-            interExposureTime: parseInt(document.getElementById('seq-plan-inter-exposure').value),
+            interExposureTime: SettingsManager.getFramesPerDither() === 0
+                ? SettingsManager.getLearnedSubGapS()
+                : SettingsManager.getLearnedSubGapS() + Math.round(SettingsManager.getLearnedDitherDurationS() / SettingsManager.getFramesPerDither()),
             transitionTolerance: document.getElementById('seq-plan-transition-tolerance')?.checked ? 1 : 0
         };
     },
