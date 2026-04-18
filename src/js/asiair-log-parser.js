@@ -11,7 +11,8 @@ const AsiairLogParser = {
      * @returns {object} Parsed session data
      */
     parse(text) {
-        const lines = text.trim().split('\n').map(l => l.trim()).filter(l => l);
+        const allLines = text.trim().split('\n').map(l => l.trim()).filter(l => l);
+        const lines = this._extractLightFrameLines(allLines);
 
         const target = this._extractTarget(lines);
         const date = this._extractDate(lines);
@@ -22,6 +23,52 @@ const AsiairLogParser = {
         const recommendations = this._computeRecommendations(events, summary, exposure);
 
         return { target, date, exposure, totalSubs, events, summary, recommendations };
+    },
+
+    /**
+     * Extract only lines belonging to light frame autorun sessions.
+     * Skips any autorun session that shoots flat, dark, or bias frames.
+     */
+    _extractLightFrameLines(lines) {
+        const result = [];
+        let inSession = false;
+        let sessionIsLight = false;
+        let sessionLines = [];
+
+        for (const line of lines) {
+            if (line.includes('[Autorun|Begin]')) {
+                inSession = true;
+                sessionIsLight = false;
+                sessionLines = [line];
+                continue;
+            }
+
+            if (inSession) {
+                sessionLines.push(line);
+
+                if (line.match(/Shooting \d+ light frames/)) {
+                    sessionIsLight = true;
+                }
+
+                if (line.includes('[Autorun|End]')) {
+                    if (sessionIsLight) {
+                        result.push(...sessionLines);
+                    }
+                    inSession = false;
+                    sessionLines = [];
+                }
+            } else {
+                // Lines outside any autorun session (log header etc.)
+                result.push(line);
+            }
+        }
+
+        // Handle unclosed session at end of file
+        if (inSession && sessionIsLight) {
+            result.push(...sessionLines);
+        }
+
+        return result;
     },
 
     // -------------------------------------------------------------------------
