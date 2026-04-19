@@ -53,7 +53,6 @@ const ToDoView = {
                 const newSort = e.target.value;
                 if (newSort !== this.currentSort) {
                     this.currentSort = newSort;
-                    this.riseTimeViewMode = 'list';
                     this.updateToggleButton();
                     this.renderToDoList();
                 }
@@ -61,10 +60,7 @@ const ToDoView = {
         }
 
         this.updateToggleButton();
-
-        if (this.currentSort === 'rise') {
-            this.attachChartToggle();
-        }
+        this.attachChartToggle();
     },
 
     /**
@@ -73,14 +69,15 @@ const ToDoView = {
     updateToggleButton() {
         const toggleBtn = document.getElementById('toggle-rise-chart');
         if (!toggleBtn) return;
-        toggleBtn.style.visibility = this.currentSort === 'rise' ? 'visible' : 'hidden';
+        toggleBtn.style.visibility = 'visible';
         toggleBtn.textContent = this.riseTimeViewMode === 'list' ? '📊 Chart' : '📝 List';
     },
 
     /**
      * Render the To Do list (delegates to appropriate method based on sort)
      */
-    renderToDoList() {
+    async renderToDoList() {
+        await this.loadImagingProjects();
         if (this.currentSort === 'month') {
             this.renderByMonth();
         } else if (this.currentSort === 'rise') {
@@ -125,6 +122,19 @@ const ToDoView = {
                 return aMonth - bMonth;
             });
         });
+
+        if (this.riseTimeViewMode === 'chart') {
+            // Build ordered list of label rows and target rows for chart
+            const sortedTypes = Object.keys(groupedByType).sort();
+            const rows = [];
+            sortedTypes.forEach(type => {
+                const typeDisplay = OBJECT_TYPES[type] || type;
+                rows.push({ isLabel: true, label: typeDisplay });
+                groupedByType[type].forEach(target => rows.push({ isLabel: false, target }));
+            });
+            this.renderGroupedChart(rows);
+            return;
+        }
 
         // Build HTML
         const sortedTypes = Object.keys(groupedByType).sort();
@@ -190,6 +200,26 @@ const ToDoView = {
         const currentMonth = new Date().getMonth() + 1; // 1-12
         const startMonth = currentMonth === 1 ? 12 : currentMonth - 1;
 
+        if (this.riseTimeViewMode === 'chart') {
+            // Build ordered list of label rows and target rows for chart
+            const rows = [];
+            for (let offset = 0; offset < 12; offset++) {
+                let monthNum = startMonth + offset;
+                if (monthNum > 12) monthNum -= 12;
+                const targets = groupedByMonth[monthNum];
+                if (targets.length > 0) {
+                    rows.push({ isLabel: true, label: monthNames[monthNum - 1] });
+                    targets.forEach(target => rows.push({ isLabel: false, target }));
+                }
+            }
+            if (groupedByMonth['none'].length > 0) {
+                rows.push({ isLabel: true, label: 'No Best Month Data' });
+                groupedByMonth['none'].forEach(target => rows.push({ isLabel: false, target }));
+            }
+            this.renderGroupedChart(rows);
+            return;
+        }
+
         // Add month cards in order starting from startMonth
         for (let offset = 0; offset < 12; offset++) {
             let monthNum = startMonth + offset;
@@ -202,9 +232,9 @@ const ToDoView = {
             }
         }
 
-        // Add "Not observable" card if needed
+        // Add "No Best Month Data" card if needed
         if (groupedByMonth['none'].length > 0) {
-            const notObsName = `Not Observable (${groupedByMonth['none'].length})`;
+            const notObsName = `No Best Month Data (${groupedByMonth['none'].length})`;
             html += this.buildCard(notObsName, groupedByMonth['none'], null, true);
         }
 
@@ -420,21 +450,22 @@ const ToDoView = {
 
         // Build observable targets
         if (observable.length > 0) {
-            const targets = observable.map((info, index) => {
+            const targets = observable.map((info) => {
                 const commonNames = this.getCommonNames(info.target.common);
                 const typeDisplay = OBJECT_TYPES[info.target.type] || info.target.type || '';
                 const typePart = typeDisplay ? ` ${typeDisplay}` : '';
                 const displayName = commonNames ? `${info.target.object}${typePart} (${commonNames})` : `${info.target.object}${typePart}`;
 
-                // Check if pinned
                 const isPinned = this.isTargetPinned(info.target.object);
                 const pinIcon = isPinned ? '📌 ' : '';
                 const pinnedClass = isPinned ? ' todo-target-pinned' : '';
+                const status = this.getImagingStatus(info.target.object);
+                const icon = this.IMAGING_STATUS_ICONS[status];
 
                 return `
         <span class="todo-target-item">
             <a href="#" class="todo-target-link${pinnedClass}" data-target-id="${info.target.object}">
-                ${pinIcon}${displayName} - Rise: ${info.riseTime}, Set: ${info.setTime}
+                ${icon}${pinIcon}${displayName} - Rise: ${info.riseTime}, Set: ${info.setTime}
             </a>
             <button class="btn-remove-todo" data-target-id="${info.target.object}">
                 Remove
@@ -448,21 +479,22 @@ const ToDoView = {
 
         // Build not observable targets
         if (notObservable.length > 0) {
-            const targets = notObservable.map((info, index) => {
+            const targets = notObservable.map((info) => {
                 const commonNames = this.getCommonNames(info.target.common);
                 const typeDisplay = OBJECT_TYPES[info.target.type] || info.target.type || '';
                 const typePart = typeDisplay ? ` ${typeDisplay}` : '';
                 const displayName = commonNames ? `${info.target.object}${typePart} (${commonNames})` : `${info.target.object}${typePart}`;
 
-                // Check if pinned
                 const isPinned = this.isTargetPinned(info.target.object);
                 const pinIcon = isPinned ? '📌 ' : '';
                 const pinnedClass = isPinned ? ' todo-target-pinned' : '';
+                const status = this.getImagingStatus(info.target.object);
+                const icon = this.IMAGING_STATUS_ICONS[status];
 
                 return `
         <span class="todo-target-item">
             <a href="#" class="todo-target-link${pinnedClass}" data-target-id="${info.target.object}">
-                ${pinIcon}${displayName} - Rise: ${info.riseTime}, Set: ${info.setTime}
+                ${icon}${pinIcon}${displayName} - Rise: ${info.riseTime}, Set: ${info.setTime}
             </a>
             <button class="btn-remove-todo" data-target-id="${info.target.object}">
                 Remove
@@ -633,12 +665,47 @@ const ToDoView = {
                     labelX = barX + 30; // 30px from left edge
                 }
 
+                // Draw target label with imaging status indicator
+                // Draw imaging status indicator as canvas circle
+                const status = this.getImagingStatus(info.target.object);
+                const circleR = 7;
+                const circleX = labelX + circleR;
+                const circleY = barY + 16;
+
+                ctx.beginPath();
+                ctx.arc(circleX, circleY, circleR, 0, Math.PI * 2);
+                if (status === 'complete') {
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fill();
+                } else if (status === 'active') {
+                    // Outline the full circle
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 1.5;
+                    ctx.stroke();
+                    // Fill right half only
+                    ctx.beginPath();
+                    ctx.arc(circleX, circleY, circleR, -Math.PI * 0.5, Math.PI * 0.5);
+                    ctx.lineTo(circleX, circleY);
+                    ctx.closePath();
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fill();
+                } else {
+                    // Empty: outline only
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 1.5;
+                    ctx.stroke();
+                }
+                const statusWidth = circleR * 2 + 6;
+
                 // Draw target label
+                ctx.fillStyle = '#ffffff';
                 ctx.font = 'bold 13px sans-serif';
                 ctx.textAlign = 'left';
                 const chartTypeDisplay = OBJECT_TYPES[info.target.type] || info.target.type || '';
-                const chartLabel = chartTypeDisplay ? `${info.target.object} ${chartTypeDisplay}` : info.target.object;
-                ctx.fillText(chartLabel, labelX, barY + 20);
+                const chartLabel = chartTypeDisplay
+                    ? `${info.target.object} ${chartTypeDisplay}`
+                    : info.target.object;
+                ctx.fillText(chartLabel, labelX + statusWidth, barY + 20);
 
                 // Show set time if it's before dawn (right-aligned)
                 if (info.setJD <= dawnJD) {
@@ -657,6 +724,233 @@ const ToDoView = {
             ctx.lineTo(totalWidth - padding, y + rowHeight);
             ctx.stroke();
             ctx.globalAlpha = 1.0;
+        });
+    },
+
+    /**
+     * Render a unified Gantt chart for Type or Best Month views.
+     * @param {Array} rows - Array of { isLabel, label } or { isLabel, target } objects
+     */
+    renderGroupedChart(rows) {
+        this.updateToggleButtonText();
+
+        const todoContainer = document.getElementById('todo-container');
+        if (!todoContainer || !this.riseTimeData) {
+            todoContainer.innerHTML = `
+                <div class="todo-empty-message">
+                    <p class="todo-empty-title">⚠️ Rise time data not available</p>
+                    <p>Switch to Rise Time sort first to load tonight's data, then switch back.</p>
+                </div>
+            `;
+            return;
+        }
+
+        const { duskJD, dawnJD, location, isDST } = this.riseTimeData;
+        const minAltitude = SettingsManager.getGlobalMinAltitude();
+
+        // Filter rows to only include label rows and observable targets
+        const observableObjects = new Set(this.riseTimeData.observable.map(o => o.target.object));
+        const filteredRows = rows.filter(row => row.isLabel || observableObjects.has(row.target.object));
+
+        // Drop label rows that have no observable targets after them
+        const cleanRows = [];
+        for (let i = 0; i < filteredRows.length; i++) {
+            const row = filteredRows[i];
+            if (row.isLabel) {
+                const nextTarget = filteredRows.slice(i + 1).find(r => !r.isLabel);
+                const nextLabel = filteredRows.slice(i + 1).find(r => r.isLabel);
+                if (nextTarget && (!nextLabel || filteredRows.indexOf(nextTarget) < filteredRows.indexOf(nextLabel))) {
+                    cleanRows.push(row);
+                }
+            } else {
+                cleanRows.push(row);
+            }
+        }
+
+        if (cleanRows.filter(r => !r.isLabel).length === 0) {
+            todoContainer.innerHTML = `
+                <div class="todo-empty-message">
+                    <p class="todo-empty-title">📋 No observable targets tonight</p>
+                    <p>No targets meet the minimum altitude criteria.</p>
+                </div>
+            `;
+            return;
+        }
+
+        // Add canvas
+        todoContainer.innerHTML = `
+            <div class="todo-rise-chart-container">
+                <canvas id="todo-rise-chart"></canvas>
+            </div>
+        `;
+
+        const canvas = document.getElementById('todo-rise-chart');
+        if (!canvas) return;
+
+        const ctx = canvas.getContext('2d');
+        const container = canvas.parentElement;
+        const containerWidth = container.clientWidth;
+        const maxChartWidth = 1000;
+        const chartWidth = Math.min(containerWidth - 80, maxChartWidth);
+
+        const rowHeight = 40;
+        const labelRowHeight = 24;
+        const headerHeight = 60;
+        const padding = 20;
+
+        // Calculate total height accounting for label rows being shorter
+        const totalHeight = headerHeight + padding * 2 +
+            cleanRows.reduce((h, row) => h + (row.isLabel ? labelRowHeight : rowHeight), 0);
+        const totalWidth = chartWidth + padding * 2;
+
+        canvas.width = totalWidth;
+        canvas.height = totalHeight;
+
+        const styles = getComputedStyle(document.documentElement);
+        const bgColor = styles.getPropertyValue('--card-bg').trim() || '#1a1a1a';
+        const textColor = styles.getPropertyValue('--text-color').trim() || '#ffffff';
+        const textSecondary = styles.getPropertyValue('--text-secondary').trim() || '#888888';
+        const borderColor = styles.getPropertyValue('--border-color').trim() || '#444444';
+        const accentColor = styles.getPropertyValue('--primary-color').trim() || '#3b82f6';
+
+        ctx.fillStyle = bgColor;
+        ctx.fillRect(0, 0, totalWidth, totalHeight);
+
+        const timezone = location ? location.timezone : 0;
+        const duskTime = this.formatLocalTime(duskJD, timezone, isDST);
+        const dawnTime = this.formatLocalTime(dawnJD, timezone, isDST);
+
+        const chartLeft = padding;
+        const chartRight = padding + chartWidth;
+        const chartCenter = chartLeft + chartWidth / 2;
+
+        // Header
+        ctx.fillStyle = textColor;
+        ctx.font = 'bold 14px sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText('Dusk', chartLeft + 5, padding + 15);
+        ctx.textAlign = 'right';
+        ctx.fillText('Dawn', chartRight - 5, padding + 15);
+
+        const today = new Date();
+        const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        const formattedDate = today.toLocaleDateString('en-US', dateOptions);
+
+        ctx.font = '0.9rem sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(`${formattedDate}  •  Minimum altitude: ${minAltitude}°`, chartCenter, padding + 15);
+        ctx.fillText(`Astronomical dusk: ${duskTime}  •  Astronomical dawn: ${dawnTime}`, chartCenter, padding + 35);
+
+        // Draw rows
+        let currentY = padding + headerHeight;
+
+        cleanRows.forEach(row => {
+            if (row.isLabel) {
+                // Label row — just text, no bar
+                ctx.fillStyle = textSecondary;
+                ctx.font = 'bold 14px sans-serif';
+                ctx.textAlign = 'left';
+                ctx.fillText(row.label.toUpperCase(), chartLeft + 5, currentY + 18);
+                currentY += labelRowHeight;
+                return;
+            }
+
+            // Target row — find rise time data
+            const info = this.riseTimeData.observable.find(o => o.target.object === row.target.object);
+            if (!info) { currentY += rowHeight; return; }
+
+            const y = currentY;
+            const startJD = Math.max(info.riseJD, duskJD);
+            const endJD = Math.min(info.setJD, dawnJD);
+
+            if (endJD > startJD) {
+                const barStartFraction = (startJD - duskJD) / (dawnJD - duskJD);
+                const barEndFraction = (endJD - duskJD) / (dawnJD - duskJD);
+                const barX = chartLeft + chartWidth * barStartFraction;
+                const barWidth = chartWidth * (barEndFraction - barStartFraction);
+                const barY = y + 5;
+                const barHeight = 30;
+
+                const isPinned = this.isTargetPinned(info.target.object);
+                const barColor = isPinned ? '#fbbf24' : accentColor;
+
+                ctx.fillStyle = barColor;
+                ctx.globalAlpha = 0.7;
+                ctx.fillRect(barX, barY, barWidth, barHeight);
+                ctx.globalAlpha = 1.0;
+
+                ctx.strokeStyle = barColor;
+                ctx.lineWidth = 1;
+                ctx.strokeRect(barX, barY, barWidth, barHeight);
+
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '12px sans-serif';
+
+                let labelX = barX + 5;
+                if (info.riseJD >= duskJD) {
+                    ctx.textAlign = 'left';
+                    ctx.fillText(info.riseTime, barX + 5, barY + 20);
+                    labelX = barX + 5 + ctx.measureText(info.riseTime).width + 30;
+                } else {
+                    labelX = barX + 30;
+                }
+
+                // Draw imaging status indicator as canvas circle
+                const status = this.getImagingStatus(info.target.object);
+                const circleR = 7;
+                const circleX = labelX + circleR;
+                const circleY = barY + 16;
+
+                ctx.beginPath();
+                ctx.arc(circleX, circleY, circleR, 0, Math.PI * 2);
+                if (status === 'complete') {
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fill();
+                } else if (status === 'active') {
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 1.5;
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.arc(circleX, circleY, circleR, -Math.PI * 0.5, Math.PI * 0.5);
+                    ctx.lineTo(circleX, circleY);
+                    ctx.closePath();
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fill();
+                } else {
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 1.5;
+                    ctx.stroke();
+                }
+                const statusWidth = circleR * 2 + 6;
+
+                // Draw target label
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 13px sans-serif';
+                ctx.textAlign = 'left';
+                const chartTypeDisplay = OBJECT_TYPES[info.target.type] || info.target.type || '';
+                const chartLabel = chartTypeDisplay
+                    ? `${info.target.object} ${chartTypeDisplay}`
+                    : info.target.object;
+                ctx.fillText(chartLabel, labelX + statusWidth, barY + 20);
+
+                if (info.setJD <= dawnJD) {
+                    ctx.font = '12px sans-serif';
+                    ctx.textAlign = 'right';
+                    ctx.fillText(info.setTime, barX + barWidth - 5, barY + 20);
+                }
+            }
+
+            // Row separator
+            ctx.strokeStyle = borderColor;
+            ctx.lineWidth = 0.5;
+            ctx.globalAlpha = 0.3;
+            ctx.beginPath();
+            ctx.moveTo(padding, y + rowHeight);
+            ctx.lineTo(totalWidth - padding, y + rowHeight);
+            ctx.stroke();
+            ctx.globalAlpha = 1.0;
+
+            currentY += rowHeight;
         });
     },
 
@@ -683,7 +977,8 @@ const ToDoView = {
         if (toggleBtn) {
             toggleBtn.addEventListener('click', () => {
                 this.riseTimeViewMode = this.riseTimeViewMode === 'list' ? 'chart' : 'list';
-                this.renderByRiseTime();
+                this.updateToggleButton();
+                this.renderToDoList();
             });
         }
     },
@@ -700,21 +995,25 @@ const ToDoView = {
             content = customContent;
         } else {
             // Generate from targets array (for type/month views)
-            content = targets.map((target, index) => {
+            content = targets.map((target) => {
                 const commonNames = this.getCommonNames(target.common);
                 const typeDisplay = showType ? (OBJECT_TYPES[target.type] || target.type || '') : '';
                 const typePart = typeDisplay ? ` ${typeDisplay}` : '';
                 const displayName = commonNames ? `${target.object}${typePart} (${commonNames})` : `${target.object}${typePart}`;
-                const comma = index < targets.length - 1 ? ',' : '';
+                const status = this.getImagingStatus(target.object);
+                const icon = this.IMAGING_STATUS_ICONS[status];
+                const isPinned = this.isTargetPinned(target.object);
+                const pinIcon = isPinned ? '📌 ' : '';
+                const pinnedClass = isPinned ? ' todo-target-pinned' : '';
 
                 return `
                     <span class="todo-target-item">
-                        <a href="#" class="todo-target-link" data-target-id="${target.object}">
-                            ${displayName}
+                        <a href="#" class="todo-target-link${pinnedClass}" data-target-id="${target.object}">
+                            ${icon}${pinIcon}${displayName}
                         </a>
                         <button class="btn-remove-todo" data-target-id="${target.object}">
                             Remove
-                        </button>${comma}
+                        </button>
                     </span>
                 `;
             }).join('');
@@ -808,7 +1107,7 @@ const ToDoView = {
         });
     },
 
-    /**
+/**
      * Cleanup when view is destroyed
      */
     destroy() {
@@ -816,5 +1115,44 @@ const ToDoView = {
             document.removeEventListener('todo-list-updated', this._todoUpdatedHandler);
             this._todoUpdatedHandler = null;
         }
+    },
+
+    // -------------------------------------------------------------------------
+    // Imaging status (issue #143)
+    // -------------------------------------------------------------------------
+
+    // SVG circle icons for imaging status
+    IMAGING_STATUS_ICONS: {
+        none:     '<svg width="16" height="16" viewBox="0 0 12 12" style="vertical-align:middle;margin-right:4px"><circle cx="6" cy="6" r="5" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>',
+        active:   '<svg width="16" height="16" viewBox="0 0 12 12" style="vertical-align:middle;margin-right:4px"><circle cx="6" cy="6" r="5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M6 1 A5 5 0 0 1 6 11 Z" fill="currentColor"/></svg>',
+        complete: '<svg width="16" height="16" viewBox="0 0 12 12" style="vertical-align:middle;margin-right:4px"><circle cx="6" cy="6" r="5" fill="currentColor" stroke="currentColor" stroke-width="1.5"/></svg>'
+    },
+
+    /**
+     * Get imaging status for a target object name.
+     * Returns 'complete', 'active', or 'none'.
+     * Requires _imagingProjects to be loaded via loadImagingProjects().
+     */
+    getImagingStatus(targetObject) {
+        if (!this._imagingProjects || this._imagingProjects.length === 0) return 'none';
+        const matches = this._imagingProjects.filter(p =>
+            p.targetDesignations && p.targetDesignations.some(d => d === targetObject)
+        );
+        if (matches.length === 0) return 'none';
+        if (matches.some(p => p.status === 'Completed')) return 'complete';
+        return 'active';
+    },
+
+    /**
+     * Load imaging projects into cache for status lookups.
+     * Call once per render cycle.
+     */
+    async loadImagingProjects() {
+        try {
+            this._imagingProjects = await ImagingLogManager.getAllProjects();
+        } catch (e) {
+            this._imagingProjects = [];
+        }
     }
+
 };
