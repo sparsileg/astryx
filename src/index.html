@@ -139,8 +139,16 @@
         Restore
       </div>
 
-      <div class="menu-item menu-parent" data-action="tutorials">
+      <div class="menu-item" data-action="start-tutorial">
         <span class="menu-icon">🎓</span>
+        Start Tutorial
+      </div>
+      <div class="menu-item" data-action="resume-tutorial" id="resume-tutorial-item" style="display:none">
+        <span class="menu-icon">▶️</span>
+        Resume Tutorial
+      </div>
+      <div class="menu-item menu-parent" data-action="tutorials">
+        <span class="menu-icon">📚</span>
         Tutorials
         <span class="menu-arrow">›</span>
       </div>
@@ -2405,6 +2413,8 @@
     <script src="js/asiair-log-view.js"></script>
     <script src="js/phd2-log-parser.js"></script>
     <script src="js/phd2-log-view.js"></script>
+    <script src="js/backup-manager-web.js"></script>
+    <script src="js/backup-manager-tauri.js"></script>
     <script src="js/backup-manager.js"></script>
     <script src="js/backup-reminder.js"></script>
     <script src="js/config.js"></script>
@@ -2458,8 +2468,9 @@
     <script src="js/tutorials/tutorial-utilities.js"></script>
     <script src="js/tutorials/tutorial-viewfinder.js"></script>
     <script src="js/tutorials/tutorial-yearly-observability.js"></script>
-    <script src="js/tutorials/tutorial-registry.js"></script>
-    <script src="js/tutorials/tutorial-engine.js"></script>
+    <script src="js/tutorial-registry.js"></script>
+    <script src="js/tutorial-manager.js"></script>
+    <script src="js/tutorial-engine.js"></script>
     <script src="js/app.js"></script>
 
   </body>

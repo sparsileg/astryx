@@ -221,6 +221,40 @@ const UIManager = {
     },
 
     /**
+     * Show/hide Resume Tutorial menu item based on in-progress tutorial.
+     * Wires up start and resume actions.
+     * @param {Object|null} inProgressTutorial - tutorial object or null
+     */
+    updateTutorialMenuItems(inProgressTutorial) {
+        const resumeItem = document.getElementById('resume-tutorial-item');
+        if (resumeItem) {
+            if (inProgressTutorial) {
+                resumeItem.style.display = '';
+                resumeItem.title = `Resume: ${inProgressTutorial.title}`;
+            } else {
+                resumeItem.style.display = 'none';
+            }
+        }
+
+        // Wire start-tutorial action
+        const startItem = document.querySelector('[data-action="start-tutorial"]');
+        if (startItem) {
+            startItem.addEventListener('click', () => {
+                TutorialEngine.start('getting-started');
+                this.closeSystemMenu();
+            });
+        }
+
+        // Wire resume-tutorial action
+        if (resumeItem && inProgressTutorial) {
+            resumeItem.addEventListener('click', () => {
+                TutorialEngine.start(inProgressTutorial.id);
+                this.closeSystemMenu();
+            });
+        }
+    },
+
+    /**
      * Handle system menu actions
      */
     handleSystemAction(action) {

@@ -58,24 +58,6 @@ const DBManager = {
                     db.createObjectStore(APP_CONFIG.STORES.TARGETS, { keyPath: 'object' });
                 }
 
-                // Version 8: Add tutorial progress store
-                if (oldVersion < 8) {
-                    console.log('Upgrading database to version 8...');
-                    if (!db.objectStoreNames.contains(APP_CONFIG.STORES.TUTORIAL_PROGRESS)) {
-                        db.createObjectStore(APP_CONFIG.STORES.TUTORIAL_PROGRESS, { keyPath: 'id' });
-                        console.log('Created tutorialProgress store');
-                    }
-                }
-
-                // Version 7: Add DSS image cache store
-                if (oldVersion < 7) {
-                    console.log('Upgrading database to version 7...');
-                    if (!db.objectStoreNames.contains(APP_CONFIG.STORES.DSS_CACHE)) {
-                        db.createObjectStore(APP_CONFIG.STORES.DSS_CACHE, { keyPath: 'id' });
-                        console.log('Created dssCache store');
-                    }
-                }
-
                 // Version 6: Add Imaging Log stores
                 if (oldVersion < 6) {
                     console.log('Upgrading database to version 6...');
@@ -105,6 +87,24 @@ const DBManager = {
                     if (!db.objectStoreNames.contains(APP_CONFIG.STORES.IMAGING_PROGRAMS)) {
                         db.createObjectStore(APP_CONFIG.STORES.IMAGING_PROGRAMS, { keyPath: 'id', autoIncrement: true });
                         console.log('Created imagingPrograms store');
+                    }
+                }
+
+                // Version 7: Add DSS image cache store
+                if (oldVersion < 7) {
+                    console.log('Upgrading database to version 7...');
+                    if (!db.objectStoreNames.contains(APP_CONFIG.STORES.DSS_CACHE)) {
+                        db.createObjectStore(APP_CONFIG.STORES.DSS_CACHE, { keyPath: 'id' });
+                        console.log('Created dssCache store');
+                    }
+                }
+
+                // Version 8: Add tutorial progress store
+                if (oldVersion < 8) {
+                    console.log('Upgrading database to version 8...');
+                    if (!db.objectStoreNames.contains(APP_CONFIG.STORES.TUTORIAL_PROGRESS)) {
+                        db.createObjectStore(APP_CONFIG.STORES.TUTORIAL_PROGRESS, { keyPath: 'id' });
+                        console.log('Created tutorialProgress store');
                     }
                 }
 
@@ -191,6 +191,15 @@ const DBManager = {
             this.db.close();
             this.db = null;
         }
+    },
+
+    /**
+     * Delete the database entirely.
+     * Used only as a last resort from the initialization error page.
+     */
+    deleteDatabase() {
+        this.close();
+        indexedDB.deleteDatabase(APP_CONFIG.DB_NAME);
     },
 
     /**

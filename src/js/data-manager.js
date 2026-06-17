@@ -169,6 +169,15 @@ const DataManager = {
     },
 
     /**
+     * Bulk update targets in storage.
+     * Callers are responsible for batching if needed.
+     * @param {Array} targets - Array of target objects to write
+     */
+    async bulkUpdateTargets(targets) {
+        await DBManager.putBulk(APP_CONFIG.STORES.TARGETS, targets);
+    },
+
+    /**
      * Get all targets
      */
     getTargets() {

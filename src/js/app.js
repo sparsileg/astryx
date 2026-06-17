@@ -72,6 +72,10 @@ const App = {
                 setTimeout(() => TutorialEngine.start(resumeTutorial), 500);
             }
 
+            // Check for in-progress tutorial and update menu accordingly
+            const inProgressTutorial = await TutorialManager.findInProgressTutorial();
+            UIManager.updateTutorialMenuItems(inProgressTutorial);
+
             // Auto-calculate Best Months for selected location if needed
             const selectedLocation = SettingsManager.getSelectedLocation();
             if (selectedLocation && !UIManager.locationHasBestMonths(selectedLocation)) {
@@ -365,7 +369,7 @@ const App = {
                     <button onclick="location.reload()" style="padding: 0.75rem 1.5rem; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer; margin: 0.5rem;">
                         Reload Application
                     </button>
-                    <button onclick="localStorage.clear(); indexedDB.deleteDatabase(${APP_CONFIG.DB_NAME}); location.reload()" style="padding: 0.75rem 1.5rem; background: #ef4444; color: white; border: none; border-radius: 6px; cursor: pointer; margin: 0.5rem;">
+                    <button onclick="localStorage.clear(); DBManager.deleteDatabase(); location.reload()" style="padding: 0.75rem 1.5rem; background: #ef4444; color: white; border: none; border-radius: 6px; cursor: pointer; margin: 0.5rem;">
                         Clear Data & Reload
                     </button>
                 </div>

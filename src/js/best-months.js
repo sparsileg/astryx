@@ -99,14 +99,14 @@ const BestMonths = {
 
             // Write in batches of 100 to avoid blocking
             if (processedCount % 100 === 0) {
-                await DBManager.putBulk(APP_CONFIG.STORES.TARGETS, targets.slice(processedCount - 100, processedCount));
+                await DataManager.bulkUpdateTargets(targets.slice(processedCount - 100, processedCount));
             }
         }
 
         // Write any remaining targets (less than 100)
         const remainder = processedCount % 100;
         if (remainder > 0) {
-            await DBManager.putBulk(APP_CONFIG.STORES.TARGETS, targets.slice(processedCount - remainder, processedCount));
+            await DataManager.bulkUpdateTargets(targets.slice(processedCount - remainder, processedCount));
         }
 
         this.isCalculating = false;
