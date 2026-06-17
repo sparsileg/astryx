@@ -96,7 +96,13 @@ const APP_CONFIG = {
     },
 
     // Preferred catalog order for deduplication (Issue #54)
-    CATALOG_PREFERENCE: ['Messier','NGC','IC','Sharpless','Caldwell','Barnard','Arp','Abell']
+    CATALOG_PREFERENCE: ['Messier','NGC','IC','Sharpless','Caldwell','Barnard','Arp','Abell'],
+
+    // To Do List chart altitude graph (Issue #147)
+    TODO_ALTITUDE_SAMPLE_POINTS: 24,     // number of samples across dusk-dawn window
+    TODO_ALTITUDE_GRAPH_STYLE: 'fill',   // 'fill' or 'line'
+    TODO_ALTITUDE_GRAPH_ALPHA: 0.65,     // opacity of fill or line
+    TODO_ALTITUDE_GRAPH_LINE_WIDTH: 4.0  // line width (used for both 'line' mode and fill outline)
 };
 
 /**
