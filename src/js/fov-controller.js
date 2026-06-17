@@ -56,10 +56,8 @@ const FOVView = {
 
         // Load current target if available
         if (typeof VisibilityTargets !== 'undefined') {
-            // Load last selected target if not already loaded
-            if (!VisibilityTargets.currentTarget) {
-                VisibilityTargets.loadLastTarget();
-            }
+            // Always load last selected target to pick up any change since last visit
+            VisibilityTargets.loadLastTarget();
             if (VisibilityTargets.currentTarget) {
                 this.currentTarget = VisibilityTargets.currentTarget;
                 this.displayTargetInfo();
