@@ -3,7 +3,7 @@
 **For:** Claude (next session)
 **Purpose:** Get up to speed on Stan's project and working style immediately
 **Project:** Astryx — a web-based astrophotography planning application
-**Current version:** Approaching v1.2.0 / public release
+**Current version:** v1.2.0
 
 ---
 
@@ -77,7 +77,7 @@ Stan uploads the current file before requesting changes to it. Always view the u
 | Persistence | `DBManager` → IndexedDB |
 | DB version | `DB_VERSION` in `config.js` (not db-manager.js) |
 | Tooltips | `data-tooltip-key` attributes → `tooltips.js` TOOLTIPS object |
-| Themes | CSS custom properties; 4 themes: Dark, Light, Matrix, Night |
+| Themes | CSS custom properties; 5 themes: Dark, Light, Matrix, Night, Flat |
 | Help pages | MkDocs, flat URL structure, open in new tab |
 | PDF output | pdfmake |
 | Tutorials | JS definition files, `TutorialEngine.start(id)` |
@@ -91,89 +91,49 @@ Stan uploads the current file before requesting changes to it. Always view the u
 - ASIAir files: `asiair-` prefix, objects `AsiairLogParser`, `AsiairLogView`
 - Sequence planner: JS `seqPlan`, CSS `seq-plan`, files `seqplan`
 
+**Canvas rendering patterns:**
+- Store hit regions during draw as `this._chartHitRegions = []` — array of `{ x, y, w, h, targetId }` — for click handling
+- Canvas click handlers stored as `this._canvasClickHandler` — remove before re-adding to avoid stacking listeners
+- Scale mouse coords to canvas coords via `canvas.getBoundingClientRect()` + `canvas.width / rect.width` ratio
+- Dark backing rectangles (`rgba(0,0,0,0.5)`) behind text labels ensure readability over complex canvas backgrounds
+- Theme-aware canvas colors read via `getComputedStyle(document.documentElement).getPropertyValue('--var-name')`
+- Per-theme CSS custom properties go in each theme CSS file (`dark.css`, `light.css`, `matrix.css`, `night.css`, `flat.css`)
+
 ---
 
 ## What Was Done in the Most Recent Session
 
-This was a long, productive session. Here is a summary of completed work:
+### Issue 147 — To Do List chart enhancements (todo-view.js, config.js, theme CSS files)
 
-### Tutorial Chain (not yet coded)
-Proposed tutorial order established:
-1. getting-started → 2. settings → 3. admin-tools → 4. backup-restore → 5. sidebar → 6. target-search → 7. target-filtering → 8. todo → 9. yearly-observability → 10. daily-visibility → 11. viewfinder → 12. target-optimizer → 13. sequence-planner → 14. imaging-projects → 15. imaging-programs-reports → 16. utilities
+1. **Canvas click to select target:** Clicking a bar in any chart mode (Rise Time, Type, Best Month) now opens the object detail modal, same as clicking a link in list mode. Implemented via hit regions stored during draw, single canvas click listener per render.
 
-Note: `target-filtering` had a bug — `nextTutorial: 'tutorial-todo'` should be `'todo'`. This was identified but not yet coded.
+2. **Altitude graph inside bars:** Each observable target's bar shows an altitude curve across the dusk→dawn window. Scale is fixed 0°–90° so graphs are comparable across targets. Drawn as filled polygon with fully-opaque outline stroke on top. Dark backing rectangle behind target label text for contrast.
 
-### Changelog (Issues resolved)
-- **System menu:** Added "Change Log" menu item (📝 icon) between Help and About in `index.html` and `ui-manager.js`. Opens `help/changelog.html` in new tab via `openHelpPage()`.
+3. **`selectTarget(targetId)` helper** extracted from `attachEventListeners()` — shared by both DOM list clicks and canvas bar clicks. Avoids duplication.
 
-### Issue 130 — Wind forecast too high
-- Fixed Open-Meteo URL: added `&wind_speed_unit=mph` to `APP_CONFIG.OPEN_METEO` in `config.js`.
-- Added mid-scale dashed reference line to wind SVG strip (black outline + yellow dashed on top, matching min-altitude line style).
-- Removed polyline border from wind area chart (was inflating apparent wind speed visually).
-- Added tooltips to all three weather strips (Clouds, Wind, Dew) via `data-tooltip-key` in `daily-visibility-view.js` and new keys `dv_clouds`, `dv_wind`, `dv_dew` in `tooltips.js`.
-
-### Issue 129 — Resize/sidebar collapse problems
-**Daily Visibility wind band:** Added `ResizeObserver` with 200ms debounce on `#timeline-container`. Stores wind values in `_lastWindValues` on the view. Rebuilds wind SVG on resize without re-fetching. Added `_resizeObserver` and `_lastWindValues` properties; cleanup in `destroy()`.
-
-**Sequence Planner chart:** Replaced MutationObserver + 300ms timeout (too short for 1.0s sidebar CSS transition) with `ResizeObserver` on canvas parent element, same pattern as Yearly Observability. Added `_resizeObserver` property; cleanup in `destroy()`.
-
-### Issue 133 — Sequence Planner canvas background wrong on theme switch
-Added theme change handler in `ui-manager.js` to re-render the sequence planner timeline when a theme CSS loads, alongside the existing Yearly Observability re-render.
-
-### Sequence Planner canvas sizing
-- `containerWidth` subtraction changed from `32` to `0` — canvas now fills the full card body width.
-- `TIMELINE_MARGIN` changed from `60` to `25` by Stan directly.
-
-### Issues 134/135 — Sequence Planner optimizer improvements
-
-**Issue 134 — Optimizer enhancements (seqplan-optimizer.js):**
-
-1. `tryReorder` now initializes `bestScore` to `currentScore` (not null) so flip-boundary-optimized allocations for the current order are always applied.
-
-2. Three-level priority added to `tryReorder`:
-   - Primary: maximize total subs
-   - Tiebreaker 1: minimize meridian flips (`flipCount` added to `scorePerm` return)
-   - Tiebreaker 2: minimize conflicts
-
-3. `optimizeFlipBoundaries` now includes a **simultaneous rebalancing sweep**: after finding the sub-maximizing allocation, moves all target allocations toward equal split in 1% steps simultaneously. Allows up to `targets - 2` sub loss for better balance (0 loss for 2 targets, 1 for 3, 2 for 4). Runs even when no flips are present.
-
-4. New helper method `calcSubVariance(subCounts)` added after `optimizeFlipBoundaries`.
-
-5. `TRANSITION_OPTIMIZATION_THRESHOLD` changed to `0.00` in `config.js` (was 0.05). The `||` fallback in optimizer changed to `??` to prevent zero being treated as falsy.
-
-6. Date changes reset `allocatedPercent` to equal split before optimization in `generatePlan` — prevents manual slider adjustments from polluting subsequent date changes.
-
-7. `_lastTargetMaxPercent` stored in `generatePlan` after `calculatedResults` populated — never recalculated during slider interactions.
-
-**Issue 135 — Last slider cap (seqplan-view.js):**
-Last target slider is capped at its natural end time. `handleSliderChange` clamps `newPercent` to `_lastTargetMaxPercent` (stored once at plan generation) rather than rejecting it, so the slider snaps to max when dragged past it.
-
-**Sequence Optimization checkbox moved:**
-Moved from Session Settings overhead row 4 to a footer row at the bottom of the Target Allocation card (`seq-plan-allocation-footer`) in `index.html`. Footer also shows total image count (`seq-plan-total-images`), updated in both `renderTargetAllocation` and `recalculateAndUpdate` in `seqplan-view.js`.
-
-**Tutorial and help file updated:**
-- `tutorial-sequence-planner.js`: version bumped to 2, Optimization step updated to modal with three-level priority description, Sliders step updated to mention last slider cap and total image count.
-- `sequence-planner.md`: Target Allocation section updated, Sequence Optimization section updated with three-level priority, Pass 2 updated with rebalancing sweep description, Acceptance Threshold updated to reflect 0% threshold.
+4. **`drawAltitudeGraph()` method** — self-contained, parameterized via `APP_CONFIG`:
+   - `TODO_ALTITUDE_SAMPLE_POINTS: 24` — samples across dusk-dawn window
+   - `TODO_ALTITUDE_GRAPH_STYLE: 'fill'` — `'fill'` or `'line'`
+   - `TODO_ALTITUDE_GRAPH_ALPHA: 0.65` — fill/line opacity
+   - `TODO_ALTITUDE_GRAPH_LINE_WIDTH: 4.0` — outline stroke width
+   - Color via `--todo-altitude-graph-color` CSS variable per theme (white tones for dark themes, dark for light theme, green for Matrix, red for Night, warm white for Flat)
 
 ---
 
 ## Open Items / What's Next
 
-- **Tutorial `nextTutorial` chain** needs to be coded across all tutorial files per the order listed above. Also fix `target-filtering` bug: `nextTutorial: 'tutorial-todo'` → `'todo'`.
-- **Version bump** — Stan deferred this; session closed before bumping. Likely v1.2.0 given the volume of work.
+- **Tutorial `nextTutorial` chain** needs to be coded across all tutorial files. Order: getting-started → settings → admin-tools → backup-restore → sidebar → target-search → target-filtering → todo → yearly-observability → daily-visibility → viewfinder → target-optimizer → sequence-planner → imaging-projects → imaging-programs-reports → utilities. Also fix `target-filtering` bug: `nextTutorial: 'tutorial-todo'` → `'todo'`.
 - **Changelog page** — needs content written and committed to `astryx-data`.
-- Stan mentioned a bug he spotted but didn't log — it may come up at session start.
 
 ---
 
-## Things Claude Got Wrong This Session (Learn From These)
+## Things Claude Got Wrong (Learn From These)
 
-- Used `// ... existing code ...` placeholder in a BEFORE/AFTER block — caused a `ReferenceError: finalPerm is not defined`. Stan explicitly banned this pattern.
-- Used `||` instead of `??` for a zero config value — caused a magic number fallback to fire.
-- Provided a BEFORE block that didn't match disk, requiring Stan to correct it.
-- Suggested `openHelpPage` icon using wrong emoji initially.
-- `renderTargetAllocation` was looking for `seq-plan-target-allocation` but the correct container ID is `seq-plan-target-list` — caused sliders to disappear entirely.
-- Tried to set slider `max` attribute to cap the last slider — this visually rescaled the track. Correct approach was to clamp `newPercent` in the change handler instead.
+- Used `// ... existing code ...` placeholder in a BEFORE/AFTER block — caused a `ReferenceError`. Explicitly banned.
+- Used `||` instead of `??` for a zero config value — caused magic number fallback to fire.
+- Provided a BEFORE block that didn't match disk — Stan had to correct it.
+- `renderTargetAllocation` looked for wrong container ID (`seq-plan-target-allocation` instead of `seq-plan-target-list`) — sliders disappeared entirely.
+- Tried to cap a slider via `max` attribute — visually rescaled the track. Correct approach: clamp the value in the change handler.
 
 ---
 
