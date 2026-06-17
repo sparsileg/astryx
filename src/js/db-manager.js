@@ -184,6 +184,16 @@ const DBManager = {
     },
 
     /**
+     * Close the database connection
+     */
+    close() {
+        if (this.db) {
+            this.db.close();
+            this.db = null;
+        }
+    },
+
+    /**
      * Bulk put operation for multiple items. Can greatly speed writes up
      * to the IndexedDB store for large numbers of items.
      */
