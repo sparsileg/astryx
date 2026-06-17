@@ -58,11 +58,13 @@ const TutorialEngine = {
         this.advance();
     },
 
-    exit() {
-        this._saveProgress(this._currentTutorial.id, 0, false);
+    async exit() {
+        await this._saveProgress(this._currentTutorial.id, this._currentStepIndex, false);
         this._teardown();
         this._currentTutorial = null;
         this._currentStepIndex = 0;
+        const inProgressTutorial = await TutorialManager.findInProgressTutorial();
+        UIManager.updateTutorialMenuItems(inProgressTutorial);
     },
 
     // -------------------------------------------------------------------------
@@ -323,14 +325,16 @@ const TutorialEngine = {
         }
     },
 
-    _complete() {
-        this._saveProgress(this._currentTutorial.id, 0, true);
+    async _complete() {
+        await this._saveProgress(this._currentTutorial.id, 0, true);
         const nextId = this._currentTutorial.nextTutorial;
         const nextTutorial = nextId ? TUTORIAL_REGISTRY.tutorials[nextId] : null;
         this._teardown();
         this._showCompletionModal(this._currentTutorial.title, nextTutorial);
         this._currentTutorial = null;
         this._currentStepIndex = 0;
+        const inProgressTutorial = await TutorialManager.findInProgressTutorial();
+        UIManager.updateTutorialMenuItems(inProgressTutorial);
     },
 
     _showCompletionModal(tutorialTitle, nextTutorial) {
@@ -381,12 +385,7 @@ const TutorialEngine = {
 
     async _saveProgress(tutorialId, currentStep, completed) {
         try {
-            await DBManager.put(APP_CONFIG.STORES.TUTORIAL_PROGRESS, {
-                id: tutorialId,
-                currentStep,
-                completed,
-                updatedAt: Date.now()
-            });
+            await TutorialManager.saveProgress(tutorialId, currentStep, completed);
         } catch (e) {
             console.error('TutorialEngine: failed to save progress', e);
         }
@@ -394,7 +393,7 @@ const TutorialEngine = {
 
     async _loadProgress(tutorialId) {
         try {
-            return await DBManager.get(APP_CONFIG.STORES.TUTORIAL_PROGRESS, tutorialId);
+            return await TutorialManager.loadProgress(tutorialId);
         } catch (e) {
             return null;
         }
