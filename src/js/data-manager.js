@@ -521,9 +521,7 @@ const DataManager = {
     async importAll(data) {
         try {
             // Close and reopen database to ensure clean state
-            if (DBManager.db) {
-                DBManager.db.close();
-            }
+            DBManager.close();
             await DBManager.init();
 
             if (data.locations) {
