@@ -12,7 +12,7 @@
 const TUTORIAL_TODO = {
     id: 'todo',
     title: 'To Do List',
-    version: 1,
+    version: 2,
     nextTutorial: 'yearly-observability',
     steps: [
         {
@@ -127,7 +127,7 @@ const TUTORIAL_TODO = {
             id: 'rise-time-toggle',
             type: 'callout',
             title: 'List and Chart Views',
-            body: 'A <strong>Chart</strong> button is available in all three sort modes. The chart displays observable targets as a Gantt-style visibility timeline across the night, grouped by type, month, or rise time depending on your sort selection. Toggle back with <strong>List</strong>.',
+            body: 'A <strong>Chart</strong> button is available in all three sort modes. The chart displays observable targets as a Gantt-style visibility timeline across the night, grouped by type, month, or rise time depending on your sort selection. Toggle back with <strong>List</strong>.<br><br>Each bar also shows an <strong>altitude curve</strong> — a graph of the target\'s altitude across the night on a fixed 0–90° scale, so the curves are comparable across targets. The higher the curve sits within the bar, the higher the target is in the sky at that moment.<br><br>Click any bar to select that target and open its detail view.',
             target: '#toggle-rise-chart',
             position: 'bottom',
             scrollTo: true,
