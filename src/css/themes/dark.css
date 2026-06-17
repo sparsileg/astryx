@@ -51,6 +51,7 @@ body {
 :root {
     --tutorial-accent: #f7a74f;
     --tutorial-accent-text: #000000;
+    --todo-altitude-graph-color: rgba(255, 255, 255, 0.9);
 }
 
 .tutorial-modal,

@@ -513,7 +513,7 @@ const ToDoView = {
     /**
      * Render rise time data as a Gantt chart
      */
-    renderRiseTimeChart() {
+   renderRiseTimeChart() {
         this.updateToggleButtonText();
 
         const todoContainer = document.getElementById('todo-container');
@@ -619,6 +619,9 @@ const ToDoView = {
         // Starting Y position for target rows
         const startY = padding + headerHeight;
 
+        // Reset hit regions for click handling
+        this._chartHitRegions = [];
+
         // Draw each target row (only observable targets)
         observable.forEach((info, index) => {
             const y = startY + index * rowHeight;
@@ -636,6 +639,9 @@ const ToDoView = {
                 const barY = y + 5;
                 const barHeight = 30;  // Increased from 20
 
+                // Store hit region for click handling
+                this._chartHitRegions.push({ x: barX, y: barY, w: barWidth, h: barHeight, targetId: info.target.object });
+
                 // Draw bar - use gold for pinned targets
                 const isPinned = this.isTargetPinned(info.target.object);
                 const barColor = isPinned ? '#fbbf24' : accentColor; // Gold for pinned, blue for normal
@@ -649,6 +655,9 @@ const ToDoView = {
                 ctx.strokeStyle = barColor;
                 ctx.lineWidth = 1;
                 ctx.strokeRect(barX, barY, barWidth, barHeight);
+
+                // Draw altitude graph inside bar
+                this.drawAltitudeGraph(ctx, info.target, barX, barY, barWidth, barHeight, duskJD, dawnJD, location, isDST);
 
                 // Draw rise/set times and target label INSIDE the bar
                 ctx.fillStyle = '#ffffff';
@@ -697,15 +706,21 @@ const ToDoView = {
                 }
                 const statusWidth = circleR * 2 + 6;
 
-                // Draw target label
-                ctx.fillStyle = '#ffffff';
+                // Draw target label with dark backing for contrast
                 ctx.font = 'bold 13px sans-serif';
                 ctx.textAlign = 'left';
                 const chartTypeDisplay = OBJECT_TYPES[info.target.type] || info.target.type || '';
                 const chartLabel = chartTypeDisplay
                     ? `${info.target.object} ${chartTypeDisplay}`
                     : info.target.object;
-                ctx.fillText(chartLabel, labelX + statusWidth, barY + 20);
+                const labelTextX = labelX + statusWidth;
+                const labelTextY = barY + 20;
+                const labelTextWidth = ctx.measureText(chartLabel).width;
+                const backingPad = 3;
+                ctx.fillStyle = 'rgba(0,0,0,0.5)';
+                ctx.fillRect(labelTextX - backingPad, labelTextY - 13, labelTextWidth + backingPad * 2, 16);
+                ctx.fillStyle = '#ffffff';
+                ctx.fillText(chartLabel, labelTextX, labelTextY);
 
                 // Show set time if it's before dawn (right-aligned)
                 if (info.setJD <= dawnJD) {
@@ -725,6 +740,21 @@ const ToDoView = {
             ctx.stroke();
             ctx.globalAlpha = 1.0;
         });
+
+        // Attach canvas click handler
+        if (this._canvasClickHandler) {
+            canvas.removeEventListener('click', this._canvasClickHandler);
+        }
+        this._canvasClickHandler = (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const cx = (e.clientX - rect.left) * scaleX;
+            const cy = (e.clientY - rect.top) * scaleY;
+            const hit = this._chartHitRegions.find(r => cx >= r.x && cx <= r.x + r.w && cy >= r.y && cy <= r.y + r.h);
+            if (hit) this.selectTarget(hit.targetId);
+        };
+        canvas.addEventListener('click', this._canvasClickHandler);
     },
 
     /**
@@ -800,7 +830,7 @@ const ToDoView = {
 
         // Calculate total height accounting for label rows being shorter
         const totalHeight = headerHeight + padding * 2 +
-            cleanRows.reduce((h, row) => h + (row.isLabel ? labelRowHeight : rowHeight), 0);
+              cleanRows.reduce((h, row) => h + (row.isLabel ? labelRowHeight : rowHeight), 0);
         const totalWidth = chartWidth + padding * 2;
 
         canvas.width = totalWidth;
@@ -841,6 +871,9 @@ const ToDoView = {
         ctx.fillText(`${formattedDate}  •  Minimum altitude: ${minAltitude}°`, chartCenter, padding + 15);
         ctx.fillText(`Astronomical dusk: ${duskTime}  •  Astronomical dawn: ${dawnTime}`, chartCenter, padding + 35);
 
+        // Reset hit regions for click handling
+        this._chartHitRegions = [];
+
         // Draw rows
         let currentY = padding + headerHeight;
 
@@ -871,6 +904,9 @@ const ToDoView = {
                 const barY = y + 5;
                 const barHeight = 30;
 
+                // Store hit region for click handling
+                this._chartHitRegions.push({ x: barX, y: barY, w: barWidth, h: barHeight, targetId: info.target.object });
+
                 const isPinned = this.isTargetPinned(info.target.object);
                 const barColor = isPinned ? '#fbbf24' : accentColor;
 
@@ -882,6 +918,9 @@ const ToDoView = {
                 ctx.strokeStyle = barColor;
                 ctx.lineWidth = 1;
                 ctx.strokeRect(barX, barY, barWidth, barHeight);
+
+                // Draw altitude graph inside bar
+                this.drawAltitudeGraph(ctx, info.target, barX, barY, barWidth, barHeight, duskJD, dawnJD, location, isDST);
 
                 ctx.fillStyle = '#ffffff';
                 ctx.font = '12px sans-serif';
@@ -923,15 +962,21 @@ const ToDoView = {
                 }
                 const statusWidth = circleR * 2 + 6;
 
-                // Draw target label
-                ctx.fillStyle = '#ffffff';
+                // Draw target label with dark backing for contrast
                 ctx.font = 'bold 13px sans-serif';
                 ctx.textAlign = 'left';
                 const chartTypeDisplay = OBJECT_TYPES[info.target.type] || info.target.type || '';
                 const chartLabel = chartTypeDisplay
                     ? `${info.target.object} ${chartTypeDisplay}`
                     : info.target.object;
-                ctx.fillText(chartLabel, labelX + statusWidth, barY + 20);
+                const labelTextX = labelX + statusWidth;
+                const labelTextY = barY + 20;
+                const labelTextWidth = ctx.measureText(chartLabel).width;
+                const backingPad = 3;
+                ctx.fillStyle = 'rgba(0,0,0,0.5)';
+                ctx.fillRect(labelTextX - backingPad, labelTextY - 13, labelTextWidth + backingPad * 2, 16);
+                ctx.fillStyle = '#ffffff';
+                ctx.fillText(chartLabel, labelTextX, labelTextY);
 
                 if (info.setJD <= dawnJD) {
                     ctx.font = '12px sans-serif';
@@ -952,6 +997,89 @@ const ToDoView = {
 
             currentY += rowHeight;
         });
+
+        // Attach canvas click handler
+        if (this._canvasClickHandler) {
+            canvas.removeEventListener('click', this._canvasClickHandler);
+        }
+        this._canvasClickHandler = (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const cx = (e.clientX - rect.left) * scaleX;
+            const cy = (e.clientY - rect.top) * scaleY;
+            const hit = this._chartHitRegions.find(r => cx >= r.x && cx <= r.x + r.w && cy >= r.y && cy <= r.y + r.h);
+            if (hit) this.selectTarget(hit.targetId);
+        };
+        canvas.addEventListener('click', this._canvasClickHandler);
+    },
+
+    /**
+     * Draw altitude graph inside a chart bar for a target.
+     * @param {CanvasRenderingContext2D} ctx
+     * @param {Object} target - target object with ra, dec
+     * @param {number} barX - left edge of bar in canvas pixels
+     * @param {number} barY - top edge of bar in canvas pixels
+     * @param {number} barWidth - width of bar in canvas pixels
+     * @param {number} barHeight - height of bar in canvas pixels
+     * @param {number} duskJD - start of window (JD)
+     * @param {number} dawnJD - end of window (JD)
+     * @param {Object} location - location object with latitude, longitude
+     * @param {boolean} isDST
+     */
+    drawAltitudeGraph(ctx, target, barX, barY, barWidth, barHeight, duskJD, dawnJD, location, isDST) {
+        const samplePoints = APP_CONFIG.TODO_ALTITUDE_SAMPLE_POINTS;
+        const style = APP_CONFIG.TODO_ALTITUDE_GRAPH_STYLE;
+        const alpha = APP_CONFIG.TODO_ALTITUDE_GRAPH_ALPHA;
+        const lineWidth = APP_CONFIG.TODO_ALTITUDE_GRAPH_LINE_WIDTH;
+
+        const cssStyles = getComputedStyle(document.documentElement);
+        const graphColor = cssStyles.getPropertyValue('--todo-altitude-graph-color').trim() || 'rgba(255,255,255,0.35)';
+
+        // Sample altitude across dusk-dawn window
+        const points = [];
+        for (let i = 0; i <= samplePoints; i++) {
+            const jd = duskJD + (i / samplePoints) * (dawnJD - duskJD);
+            const alt = getAltitude(jd, target.ra, target.dec, location.latitude, location.longitude);
+            // Map alt 0-90 to bar coordinates (bottom to top of bar)
+            const clampedAlt = Math.max(0, Math.min(90, alt));
+            const px = barX + (i / samplePoints) * barWidth;
+            const py = barY + barHeight - (clampedAlt / 90) * barHeight;
+            points.push({ px, py });
+        }
+
+        ctx.save();
+        // Clip to bar bounds so graph doesn't bleed outside
+        ctx.beginPath();
+        ctx.rect(barX, barY, barWidth, barHeight);
+        ctx.clip();
+
+        ctx.globalAlpha = alpha;
+
+        if (style === 'fill') {
+            ctx.beginPath();
+            ctx.moveTo(points[0].px, barY + barHeight);
+            points.forEach(p => ctx.lineTo(p.px, p.py));
+            ctx.lineTo(points[points.length - 1].px, barY + barHeight);
+            ctx.closePath();
+            ctx.fillStyle = graphColor;
+            ctx.fill();
+            // Outline — fully opaque for contrast
+            ctx.globalAlpha = 1.0;
+            ctx.beginPath();
+            points.forEach((p, i) => i === 0 ? ctx.moveTo(p.px, p.py) : ctx.lineTo(p.px, p.py));
+            ctx.strokeStyle = graphColor;
+            ctx.lineWidth = lineWidth;
+            ctx.stroke();
+        } else {
+            ctx.beginPath();
+            points.forEach((p, i) => i === 0 ? ctx.moveTo(p.px, p.py) : ctx.lineTo(p.px, p.py));
+            ctx.strokeStyle = graphColor;
+            ctx.lineWidth = lineWidth;
+            ctx.stroke();
+        }
+
+        ctx.restore();
     },
 
     /**
@@ -1065,6 +1193,28 @@ const ToDoView = {
     },
 
     /**
+     * Set the current target — shared by list link clicks and canvas bar clicks
+     * @param {string} targetId
+     */
+    selectTarget(targetId) {
+        const target = DataManager.getTargets().find(t => t.object === targetId);
+        if (target) {
+            localStorage.setItem('lastSelectedTarget', JSON.stringify(target));
+            if (typeof VisibilityTargets !== 'undefined') {
+                VisibilityTargets.currentTarget = target;
+            }
+            if (typeof DailyVisibilityCalculations !== 'undefined') {
+                DailyVisibilityCalculations.currentTarget = target;
+            }
+            if (typeof YearlyObservabilityCalculations !== 'undefined') {
+                YearlyObservabilityCalculations.currentTarget = target;
+            }
+            UIManager.updateSidebarCurrentTarget(target.object);
+            UIManager.openObjectDetailModal(target);
+        }
+    },
+
+    /**
      * Attach event listeners to target links and remove buttons
      */
     attachEventListeners() {
@@ -1072,28 +1222,7 @@ const ToDoView = {
         document.querySelectorAll('.todo-target-link').forEach(link => {
             link.addEventListener('click', (e) => {
                 e.preventDefault();
-                const targetId = link.dataset.targetId;
-                const target = DataManager.getTargets().find(t => t.object === targetId);
-                if (target) {
-                    // Save as last selected target (for when user navigates to Target Selection)
-                    localStorage.setItem('lastSelectedTarget', JSON.stringify(target));
-                    // Update current target for all analysis tools — Issue #79
-                    if (typeof VisibilityTargets !== 'undefined') {
-                        VisibilityTargets.currentTarget = target;
-                    }
-                    if (typeof DailyVisibilityCalculations !== 'undefined') {
-                        DailyVisibilityCalculations.currentTarget = target;
-                    }
-                    if (typeof YearlyObservabilityCalculations !== 'undefined') {
-                        YearlyObservabilityCalculations.currentTarget = target;
-                    }
-                    if (typeof YearlyObservabilityCalculations !== 'undefined') {
-                        YearlyObservabilityCalculations.currentTarget = target;
-                    }
-                    // Update sidebar current target display — Issue #79
-                    UIManager.updateSidebarCurrentTarget(target.object);
-                    UIManager.openObjectDetailModal(target);
-                }
+                this.selectTarget(link.dataset.targetId);
             });
         });
 
@@ -1107,7 +1236,7 @@ const ToDoView = {
         });
     },
 
-/**
+    /**
      * Cleanup when view is destroyed
      */
     destroy() {
