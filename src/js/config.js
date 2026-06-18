@@ -29,6 +29,7 @@ const APP_CONFIG = {
 
     // DSS background image cache duration in ms
     DSS_CACHE_DURATION: 15 * 24 * 60 * 60 * 1000,
+    DSS_LARGE_CACHE_DURATION: 2 * 24 * 60 * 60 * 1000,
 
     // Number of the top-ranked targets used to generate combinations
     TOP_RANKED_TARGETS: 37,

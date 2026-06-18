@@ -611,92 +611,38 @@ const FOVView = {
     },
 
     /**
-     * Get cached larger DSS image if still valid (1 day expiry)
+     * Get cached larger DSS image if still valid
      */
     async getDSSLargeFromCache(key) {
-        try {
-            const cached = await DBManager.get('dssCache', key);
-            if (!cached) return null;
-            const age = Date.now() - cached.lastAccessed;
-            if (age > 24 * 60 * 60 * 1000) { // 1 day
-                await DBManager.delete('dssCache', key);
-                return null;
-            }
-            await DBManager.put('dssCache', { ...cached, lastAccessed: Date.now() });
-            return cached.dataUrl;
-        } catch (e) {
-            return null;
-        }
+        return DSSCache.get(key, APP_CONFIG.DSS_LARGE_CACHE_DURATION);
     },
 
     /**
-     * Store larger DSS image in cache (1 day expiry)
+     * Store larger DSS image in cache
      */
     async saveDSSLargeToCache(key, dataUrl) {
-        try {
-            await DBManager.put('dssCache', {
-                id: key,
-                dataUrl: dataUrl,
-                timestamp: Date.now(),
-                lastAccessed: Date.now()
-            });
-        } catch (e) {
-            console.warn('Failed to cache large DSS image:', e);
-        }
+        return DSSCache.save(key, dataUrl);
     },
 
     /**
      * Get cached DSS image if still valid
      */
     async getDSSFromCache(key) {
-        try {
-            const cached = await DBManager.get('dssCache', key);
-            if (!cached) return null;
-            const age = Date.now() - cached.lastAccessed;
-            if (age > APP_CONFIG.DSS_CACHE_DURATION) {
-                await DBManager.delete('dssCache', key);
-                return null;
-            }
-            // Reset lastAccessed on every view
-            await DBManager.put('dssCache', { ...cached, lastAccessed: Date.now() });
-            return cached.dataUrl;
-        } catch (e) {
-            return null;
-        }
+        return DSSCache.get(key, APP_CONFIG.DSS_CACHE_DURATION);
     },
 
     /**
      * Store DSS image in cache
      */
     async saveDSSToCache(key, dataUrl) {
-        try {
-            await DBManager.put('dssCache', {
-                id: key,
-                dataUrl: dataUrl,
-                timestamp: Date.now(),
-                lastAccessed: Date.now()
-            });
-        } catch (e) {
-            console.warn('Failed to cache DSS image:', e);
-        }
+        return DSSCache.save(key, dataUrl);
     },
 
     /**
-     * Purge DSS cache entries not accessed in 15 days
+     * Purge expired DSS cache entries
      */
     async purgeDSSCache() {
-        try {
-            const all = await DBManager.getAll('dssCache');
-            const cutoff = Date.now() - 15 * 24 * 60 * 60 * 1000;
-            for (const entry of all) {
-                const lastAccessed = entry.lastAccessed || entry.timestamp;
-                if (lastAccessed < cutoff) {
-                    await DBManager.delete('dssCache', entry.id);
-                }
-            }
-        } catch (e) {
-            console.warn('Failed to purge DSS cache:', e);
-        }
+        return DSSCache.purge(APP_CONFIG.DSS_CACHE_DURATION);
     },
 
     /**
@@ -742,6 +688,7 @@ const FOVView = {
                 });
                 await this.saveDSSToCache(cacheKey, dataUrl);
                 await this.purgeDSSCache();
+                await DSSCache.purge(APP_CONFIG.DSS_LARGE_CACHE_DURATION);
             } catch (e) {
                 console.warn('DSS fetch error:', e);
                 return;
