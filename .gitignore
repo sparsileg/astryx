@@ -7,3 +7,40 @@ src/data/
 *.BACKUP
 *.BU
 *.tmp
+
+.DS_Store
+node_modules
+/build
+/.svelte-kit
+/package
+.env
+.env.*
+!.env.example
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
+*.pdf
+
+# Rust build output
+target/
+
+# Node / Vite build output
+node_modules/
+dist/
+.svelte-kit/
+
+# Tauri build output
+src-tauri/target/
+
+# Environment
+.env
+.env.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Undo-tree persistent undo files
+.*~undo-tree~
+
+# emacs temp files
+\#*\#
