@@ -166,6 +166,16 @@ const DataManager = {
      */
     async loadTargets() {
         this.targetDatabase = await DBManager.getAll(APP_CONFIG.STORES.TARGETS);
+
+        // In Tauri, if targets table is empty, force a fresh load from CSV
+        // regardless of stored target version. This handles the case where
+        // a userdata restore sets target-version but targets aren't in SQLite.
+        if (typeof window.__TAURI__ !== 'undefined' && this.targetDatabase.length === 0) {
+            const meta = await this.fetchTargetMeta();
+            if (meta) {
+                await this.fetchAndLoadTargets(meta);
+            }
+        }
     },
 
     /**
