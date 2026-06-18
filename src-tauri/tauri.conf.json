@@ -2,7 +2,7 @@
     "$schema": "https://schema.tauri.app/config/2",
     "productName": "Astryx",
     "version": "0.1.0",
-    "identifier": "com.tauri.dev",
+    "identifier": "com.astryx.dev",
     "build": {
         "frontendDist": "../src",
         "devUrl": "http://localhost:1420"
@@ -11,8 +11,8 @@
         "windows": [
             {
                 "title": "Astryx",
-                "width": 800,
-                "height": 600,
+                "width": 1200,
+                "height": 1200,
                 "resizable": true,
                 "fullscreen": false
             }

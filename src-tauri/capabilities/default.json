@@ -11,6 +11,11 @@
         "dialog:default",
         "fs:default",
         "fs:allow-read-file",
-        "fs:allow-write-file"
+        "fs:allow-write-file",
+        "fs:allow-mkdir",
+        "fs:allow-remove",
+        "fs:allow-read-text-file",
+        "fs:allow-write-text-file",
+        "fs:scope-appdata-recursive"
     ]
 }
