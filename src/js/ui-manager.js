@@ -278,7 +278,11 @@ const UIManager = {
             this.openNewBackupModal();
             break;
         case 'new-restore':
-            this.openNewRestoreModal();
+            if (typeof window.__TAURI__ !== 'undefined') {
+                BackupManager.handleRestoreFileSelected();
+            } else {
+                this.openNewRestoreModal();
+            }
             break;
         case 'check-target-updates':
             this.checkForTargetUpdates();
