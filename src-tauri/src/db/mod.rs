@@ -29,6 +29,7 @@ pub fn open_db(app_data_dir: PathBuf) -> Result<Connection> {
 }
 
 /// Current Unix timestamp in seconds.
+#[allow(dead_code)]
 pub fn now_unix() -> i64 {
     use std::time::{SystemTime, UNIX_EPOCH};
     SystemTime::now()
