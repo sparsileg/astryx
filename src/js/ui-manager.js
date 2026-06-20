@@ -20,47 +20,62 @@ const UIManager = {
      * Setup theme selector dropdown
      */
     setupThemeSelector() {
-        const themeSelect = document.getElementById('theme-select');
-        if (themeSelect) {
-            // Set initial value
-            themeSelect.value = SettingsManager.getTheme();
+        const themeTrigger = document.getElementById('theme-dropdown-trigger');
+        const themeDropdown = document.getElementById('theme-dropdown');
+        const themeMenu = document.getElementById('theme-dropdown-menu');
+        const themeLabel = document.getElementById('theme-dropdown-label');
 
-            // Listen for changes
-            themeSelect.addEventListener('change', async (e) => {
-                await SettingsManager.updateTheme(e.target.value);
+        if (!themeTrigger || !themeDropdown || !themeMenu || !themeLabel) return;
 
-                // Wait for CSS to load before re-rendering
-                const themeLink = document.getElementById('theme-css');
-                if (themeLink) {
-                    themeLink.addEventListener('load', () => {
-                        // Re-render yearly observability if it's currently displayed
-                        const yearlyObservabilityContainer = document.getElementById('yearly-observability-container');
-                        if (yearlyObservabilityContainer && yearlyObservabilityContainer.style.display !== 'none' && window.lastYearlyObservabilityGraphData) {
-                            YearlyObservabilityCalculations.renderYearlyObservabilityGraph(
-                                window.lastYearlyObservabilityGraphData.altitudeData,
-                                window.lastYearlyObservabilityGraphData.inputs
-                            );
-                        }
+        // Set initial label
+        const currentTheme = SettingsManager.getTheme();
+        const initialItem = themeMenu.querySelector(`[data-value="${currentTheme}"]`);
+        if (initialItem) themeLabel.textContent = initialItem.textContent;
 
-                        // Re-render sequence planner timeline if it's currently displayed
-                        const seqPlanTimeline = document.getElementById('seq-plan-timeline');
-                        if (seqPlanTimeline && SeqPlanView.calculatedResults?.length > 0 && SeqPlanView.currentSession) {
-                            const events = SeqPlanCalculations.generateTimelineEvents(
-                                SeqPlanView.calculatedResults,
-                                SeqPlanView.currentSession
-                            );
-                            SeqPlanTimeline.render(events, SeqPlanView.currentSession.sessionStartJD, SeqPlanView.currentSession.sessionEndJD, SeqPlanView.currentSession);
-                        }
+        // Toggle open/close
+        themeTrigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            themeDropdown.classList.toggle('open');
+        });
+        // Handle selection
+        themeMenu.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const item = e.target.closest('.target-filter-dropdown-item');
+            if (!item) return;
+            const value = item.dataset.value;
+            themeLabel.textContent = item.textContent;
+            themeDropdown.classList.remove('open');
+            await SettingsManager.updateTheme(value);
 
-                        // Re-render To Do rise time chart if it's currently displayed
-                        const todoRiseChart = document.getElementById('todo-rise-chart');
-                        if (todoRiseChart && typeof ToDoView !== 'undefined' && ToDoView.riseTimeData) {
-                            ToDoView.renderRiseTimeChart();
-                        }
-                    }, { once: true }); // Only listen once
-                }
-            });
-        }
+            // Wait for CSS to load before re-rendering
+            const themeLink = document.getElementById('theme-css');
+            if (themeLink) {
+                themeLink.addEventListener('load', () => {
+                    // Re-render yearly observability if it's currently displayed
+                    const yearlyObservabilityContainer = document.getElementById('yearly-observability-container');
+                    if (yearlyObservabilityContainer && yearlyObservabilityContainer.style.display !== 'none' && window.lastYearlyObservabilityGraphData) {
+                        YearlyObservabilityCalculations.renderYearlyObservabilityGraph(
+                            window.lastYearlyObservabilityGraphData.altitudeData,
+                            window.lastYearlyObservabilityGraphData.inputs
+                        );
+                    }
+                    // Re-render sequence planner timeline if it's currently displayed
+                    const seqPlanTimeline = document.getElementById('seq-plan-timeline');
+                    if (seqPlanTimeline && SeqPlanView.calculatedResults?.length > 0 && SeqPlanView.currentSession) {
+                        const events = SeqPlanCalculations.generateTimelineEvents(
+                            SeqPlanView.calculatedResults,
+                            SeqPlanView.currentSession
+                        );
+                        SeqPlanTimeline.render(events, SeqPlanView.currentSession.sessionStartJD, SeqPlanView.currentSession.sessionEndJD, SeqPlanView.currentSession);
+                    }
+                    // Re-render To Do rise time chart if it's currently displayed
+                    const todoRiseChart = document.getElementById('todo-rise-chart');
+                    if (todoRiseChart && typeof ToDoView !== 'undefined' && ToDoView.riseTimeData) {
+                        ToDoView.renderRiseTimeChart();
+                    }
+                }, { once: true });
+            }
+        });
     },
 
     /**
@@ -1758,21 +1773,29 @@ const UIManager = {
      * Initialize sidebar location dropdown
      */
     initializeSidebarLocationDropdown() {
-        const locationSelect = document.getElementById('sidebar-location-select');
-        if (!locationSelect) return;
+        const trigger = document.getElementById('location-dropdown-trigger');
+        const dropdown = document.getElementById('location-dropdown');
+        const menu = document.getElementById('location-dropdown-menu');
+        if (!trigger || !dropdown || !menu) return;
 
         // Populate dropdown
         this.updateSidebarLocationDropdown();
 
-        // Load saved location
-        const savedLocation = SettingsManager.getSelectedLocation();
-        if (savedLocation) {
-            locationSelect.value = savedLocation;
-        }
+        // Toggle open/close
+        trigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            dropdown.classList.toggle('open');
+        });
 
-        // Handle changes
-        locationSelect.addEventListener('change', async (e) => {
-            const locationName = e.target.value;
+        // Handle selection
+        menu.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const item = e.target.closest('.target-filter-dropdown-item');
+            if (!item) return;
+            const locationName = item.dataset.value;
+            const label = document.getElementById('location-dropdown-label');
+            if (label) label.textContent = locationName || 'Select a location...';
+            dropdown.classList.remove('open');
             if (locationName) {
                 await SettingsManager.setSelectedLocation(locationName);
                 if (!this.locationHasBestMonths(locationName)) {
@@ -1791,24 +1814,35 @@ const UIManager = {
      * Update sidebar location dropdown
      */
     updateSidebarLocationDropdown() {
-        const locationSelect = document.getElementById('sidebar-location-select');
-        if (!locationSelect) return;
+        const menu = document.getElementById('location-dropdown-menu');
+        const label = document.getElementById('location-dropdown-label');
+        if (!menu) return;
 
         const locations = DataManager.getLocations();
-        const currentValue = locationSelect.value;
+        const savedLocation = SettingsManager.getSelectedLocation();
 
-        locationSelect.innerHTML = '<option value="">Select a location...</option>';
+        menu.innerHTML = '';
+
+        // Add placeholder item
+        const placeholder = document.createElement('div');
+        placeholder.className = 'target-filter-dropdown-item';
+        placeholder.dataset.value = '';
+        placeholder.textContent = 'Select a location...';
+        menu.appendChild(placeholder);
 
         Object.keys(locations).forEach(name => {
-            const option = document.createElement('option');
-            option.value = name;
-            option.textContent = name;
-            locationSelect.appendChild(option);
+            const item = document.createElement('div');
+            item.className = 'target-filter-dropdown-item';
+            item.dataset.value = name;
+            item.textContent = name;
+            menu.appendChild(item);
         });
 
-        // Restore selection if still valid
-        if (currentValue && locations[currentValue]) {
-            locationSelect.value = currentValue;
+        // Restore saved selection label
+        if (savedLocation && locations[savedLocation]) {
+            if (label) label.textContent = savedLocation;
+        } else {
+            if (label) label.textContent = 'Select a location...';
         }
     },
 

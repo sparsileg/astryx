@@ -77,6 +77,13 @@
     margin-right: 0.5rem;
 }
 
+#yo-min-alt-dropdown {
+    min-width: 60px;
+    max-width: 60px;
+    display: inline-block;
+    vertical-align: middle;
+}
+
 .yo-header-buttons {
     display: flex;
     gap: 0.5rem;

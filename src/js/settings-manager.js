@@ -126,10 +126,12 @@ const SettingsManager = {
             themeLink.href = `css/themes/${theme}.css`;
         }
 
-        // Update theme selector if it exists
-        const themeSelect = document.getElementById('theme-select');
-        if (themeSelect) {
-            themeSelect.value = theme;
+        // Update theme dropdown label if it exists
+        const themeMenu = document.getElementById('theme-dropdown-menu');
+        const themeLabel = document.getElementById('theme-dropdown-label');
+        if (themeMenu && themeLabel) {
+            const item = themeMenu.querySelector(`[data-value="${theme}"]`);
+            if (item) themeLabel.textContent = item.textContent;
         }
     },
 

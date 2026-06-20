@@ -1,4 +1,4 @@
-/* To Do List View Styles */
+/* todo.css - To Do List View Styles */
 
 #todo-container {
     max-width: 1200px;
@@ -134,6 +134,10 @@
     color: var(--text-primary);
     font-size: 0.9rem;
     cursor: pointer;
+}
+
+#todo-sort-dropdown {
+    min-width: 180px;
 }
 
 .todo-empty-message {

@@ -65,6 +65,11 @@ const App = {
             // Initialize backup reminder system
             BackupReminder.init();
 
+            // Global delegated handler to close all custom dropdowns
+            document.addEventListener('click', () => {
+                document.querySelectorAll('.target-filter-dropdown.open').forEach(d => d.classList.remove('open'));
+            });
+
             // Resume tutorial if flagged before a reload
             const resumeTutorial = localStorage.getItem('resumeTutorialAfterReload');
             if (resumeTutorial) {

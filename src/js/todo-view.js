@@ -46,11 +46,30 @@ const ToDoView = {
      * Initialize sort dropdown and toggle button from template
      */
     addSortDropdown() {
-        const select = document.getElementById('todo-sort-select');
-        if (select) {
-            select.value = this.currentSort;
-            select.addEventListener('change', (e) => {
-                const newSort = e.target.value;
+        const trigger = document.getElementById('todo-sort-trigger');
+        const dropdown = document.getElementById('todo-sort-dropdown');
+        const menu = document.getElementById('todo-sort-menu');
+        const label = document.getElementById('todo-sort-label');
+
+        if (trigger && dropdown && menu && label) {
+            // Set initial label
+            const initialItem = menu.querySelector(`[data-value="${this.currentSort}"]`);
+            if (initialItem) label.textContent = initialItem.textContent;
+
+            // Toggle open/close
+            trigger.addEventListener('click', (e) => {
+                e.stopPropagation();
+                dropdown.classList.toggle('open');
+            });
+
+            // Handle selection
+            menu.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const item = e.target.closest('.target-filter-dropdown-item');
+                if (!item) return;
+                const newSort = item.dataset.value;
+                label.textContent = item.textContent;
+                dropdown.classList.remove('open');
                 if (newSort !== this.currentSort) {
                     this.currentSort = newSort;
                     this.updateToggleButton();
@@ -257,18 +276,18 @@ const ToDoView = {
         }
 
         // Get selected location
-        const locationSelect = document.getElementById('sidebar-location-select');
-        if (!locationSelect || !locationSelect.value) {
+        const locationName = SettingsManager.getSelectedLocation();
+        if (!locationName) {
             todoContainer.innerHTML = `
             <div class="todo-empty-message">
-                <p class="todo-empty-title">⚠️ No location selected</p>
+                <p class="todo-empty-title">   No location selected</p>
                 <p>Please select an observer location from the sidebar to calculate rise times.</p>
             </div>
         `;
             return;
         }
 
-        const location = DataManager.getLocation(locationSelect.value);
+        const location = DataManager.getLocation(locationName);
         if (!location) {
             todoContainer.innerHTML = `
             <div class="todo-empty-message">
