@@ -41,18 +41,29 @@
             <button id="system-menu-btn" class="system-btn tooltip-host" data-tooltip-key="sb_system">≡</button>
           </div>
           <div class="theme-selector">
-            <select id="theme-select" class="tooltip-host" data-tooltip-key="sb_theme">
-              <option value="dark">Dark</option>
-              <option value="light">Light</option>
-              <option value="matrix">Matrix</option>
-              <option value="flat">Flat</option>
-              <option value="night">Night</option>
-            </select>
+            <div class="target-filter-dropdown" id="theme-dropdown">
+              <div class="target-filter-dropdown-trigger" id="theme-dropdown-trigger" class="tooltip-host" data-tooltip-key="sb_theme">
+                <span id="theme-dropdown-label">Dark</span>
+                <span class="target-filter-dropdown-arrow"> </span>
+              </div>
+              <div class="target-filter-dropdown-menu" id="theme-dropdown-menu">
+                <div class="target-filter-dropdown-item" data-value="dark">Dark</div>
+                <div class="target-filter-dropdown-item" data-value="light">Light</div>
+                <div class="target-filter-dropdown-item" data-value="matrix">Matrix</div>
+                <div class="target-filter-dropdown-item" data-value="flat">Flat</div>
+                <div class="target-filter-dropdown-item" data-value="night">Night</div>
+              </div>
+            </div>
           </div>
           <div class="theme-selector" style="margin-top: 0.5rem;">
-            <select id="sidebar-location-select" class="full-width tooltip-host" data-tooltip-key="sb_location">
-              <option value="">Select a location...</option>
-            </select>
+            <div class="target-filter-dropdown" id="location-dropdown">
+              <div class="target-filter-dropdown-trigger" id="location-dropdown-trigger" data-tooltip-key="sb_location">
+                <span id="location-dropdown-label">Select a location...</span>
+                <span class="target-filter-dropdown-arrow"> </span>
+              </div>
+              <div class="target-filter-dropdown-menu" id="location-dropdown-menu">
+              </div>
+            </div>
           </div>
           <button id="sidebar-current-target" class="tooltip-host btn-secondary" data-tooltip-key="sb_currentTgt">Current Target: None</button>
 <!--
@@ -352,23 +363,29 @@
 
               <!-- Month Filter -->
               <div class="form-group form-inline" style="margin-bottom: 0.75rem;">
-                <label for="target-filter-month" class="tooltip-host" style="min-width: 90px;"
+                <label class="tooltip-host" style="min-width: 90px;"
                        data-tooltip-key="ts_month">Visibility:</label>
-                <select id="target-filter-month" style="flex: 1;">
-                  <option value="">Any month</option>
-                  <option value="1">January</option>
-                  <option value="2">February</option>
-                  <option value="3">March</option>
-                  <option value="4">April</option>
-                  <option value="5">May</option>
-                  <option value="6">June</option>
-                  <option value="7">July</option>
-                  <option value="8">August</option>
-                  <option value="9">September</option>
-                  <option value="10">October</option>
-                  <option value="11">November</option>
-                  <option value="12">December</option>
-                </select>
+                <div class="target-filter-dropdown" style="flex: 1;">
+                  <div class="target-filter-dropdown-trigger" id="target-filter-month-trigger">
+                    <span id="target-filter-month-label">Any month</span>
+                    <span class="target-filter-dropdown-arrow"> </span>
+                  </div>
+                  <div class="target-filter-dropdown-menu" id="target-filter-month-menu">
+                    <div class="target-filter-dropdown-item" data-value="">Any month</div>
+                    <div class="target-filter-dropdown-item" data-value="1">January</div>
+                    <div class="target-filter-dropdown-item" data-value="2">February</div>
+                    <div class="target-filter-dropdown-item" data-value="3">March</div>
+                    <div class="target-filter-dropdown-item" data-value="4">April</div>
+                    <div class="target-filter-dropdown-item" data-value="5">May</div>
+                    <div class="target-filter-dropdown-item" data-value="6">June</div>
+                    <div class="target-filter-dropdown-item" data-value="7">July</div>
+                    <div class="target-filter-dropdown-item" data-value="8">August</div>
+                    <div class="target-filter-dropdown-item" data-value="9">September</div>
+                    <div class="target-filter-dropdown-item" data-value="10">October</div>
+                    <div class="target-filter-dropdown-item" data-value="11">November</div>
+                    <div class="target-filter-dropdown-item" data-value="12">December</div>
+                  </div>
+                </div>
               </div>
 
               <!-- Size Filter -->
@@ -488,20 +505,26 @@
           <button id="dv-next-day" class="btn-secondary btn-sm">▶</button>
           <button id="dv-next-week" class="btn-secondary btn-sm">▶▶</button>
           <label class="dv-label">Min Alt</label>
-          <select id="dv-min-altitude" class="dv-select">
-            <option value="5">5°</option>
-            <option value="10">10°</option>
-            <option value="15">15°</option>
-            <option value="20">20°</option>
-            <option value="25">25°</option>
-            <option value="30" selected>30°</option>
-            <option value="35">35°</option>
-            <option value="40">40°</option>
-            <option value="45">45°</option>
-            <option value="50">50°</option>
-            <option value="55">55°</option>
-            <option value="60">60°</option>
-          </select>
+          <div class="target-filter-dropdown" id="dv-min-alt-dropdown">
+            <div class="target-filter-dropdown-trigger" id="dv-min-alt-trigger">
+              <span id="dv-min-alt-label">30°</span>
+              <span class="target-filter-dropdown-arrow"> </span>
+            </div>
+            <div class="target-filter-dropdown-menu" id="dv-min-alt-menu">
+              <div class="target-filter-dropdown-item" data-value="5">5°</div>
+              <div class="target-filter-dropdown-item" data-value="10">10°</div>
+              <div class="target-filter-dropdown-item" data-value="15">15°</div>
+              <div class="target-filter-dropdown-item" data-value="20">20°</div>
+              <div class="target-filter-dropdown-item" data-value="25">25°</div>
+              <div class="target-filter-dropdown-item" data-value="30">30°</div>
+              <div class="target-filter-dropdown-item" data-value="35">35°</div>
+              <div class="target-filter-dropdown-item" data-value="40">40°</div>
+              <div class="target-filter-dropdown-item" data-value="45">45°</div>
+              <div class="target-filter-dropdown-item" data-value="50">50°</div>
+              <div class="target-filter-dropdown-item" data-value="55">55°</div>
+              <div class="target-filter-dropdown-item" data-value="60">60°</div>
+            </div>
+          </div>
           <label class="dv-label"><input type="checkbox" id="dv-use-horizon" checked> Horizon</label>
         </div>
 
@@ -1043,16 +1066,24 @@
               <div class="card-body">
                 <div id="fov-telescope-sensor" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem 1rem; align-items: end; margin-bottom: 1rem;">
                   <div>
-                    <label for="fov-telescope-select">Telescope:</label>
-                    <select id="fov-telescope-select" class="full-width">
-                      <option value="">Select telescope...</option>
-                    </select>
+                    <label>Telescope:</label>
+                    <div class="target-filter-dropdown" id="fov-telescope-dropdown">
+                      <div class="target-filter-dropdown-trigger" id="fov-telescope-trigger">
+                        <span id="fov-telescope-label">Select telescope...</span>
+                        <span class="target-filter-dropdown-arrow"> </span>
+                      </div>
+                      <div class="target-filter-dropdown-menu" id="fov-telescope-menu"></div>
+                    </div>
                   </div>
                   <div>
-                    <label for="fov-sensor-select">Sensor:</label>
-                    <select id="fov-sensor-select" class="full-width">
-                      <option value="">Select sensor...</option>
-                    </select>
+                    <label>Sensor:</label>
+                    <div class="target-filter-dropdown" id="fov-sensor-dropdown">
+                      <div class="target-filter-dropdown-trigger" id="fov-sensor-trigger">
+                        <span id="fov-sensor-label">Select sensor...</span>
+                        <span class="target-filter-dropdown-arrow"> </span>
+                      </div>
+                      <div class="target-filter-dropdown-menu" id="fov-sensor-menu"></div>
+                    </div>
                   </div>
                 </div>
                 <div style="display: flex; gap: 1.2rem; align-items: center; margin-bottom: 0.5rem;">
@@ -1715,12 +1746,18 @@
         <div class="todo-view-header">
           <h2 class="view-title">To Do List</h2>
           <div class="todo-controls">
-            <label for="todo-sort-select" class="todo-sort-label">Sort by:</label>
-            <select id="todo-sort-select" class="todo-sort-select">
-              <option value="rise">Rise Time (Tonight)</option>
-              <option value="type">Type</option>
-              <option value="month">Best Month</option>
-            </select>
+            <label class="todo-sort-label">Sort by:</label>
+            <div class="target-filter-dropdown" id="todo-sort-dropdown">
+              <div class="target-filter-dropdown-trigger" id="todo-sort-trigger">
+                <span id="todo-sort-label">Rise Time (Tonight)</span>
+                <span class="target-filter-dropdown-arrow"> </span>
+              </div>
+              <div class="target-filter-dropdown-menu" id="todo-sort-menu">
+                <div class="target-filter-dropdown-item" data-value="rise">Rise Time (Tonight)</div>
+                <div class="target-filter-dropdown-item" data-value="type">Type</div>
+                <div class="target-filter-dropdown-item" data-value="month">Best Month</div>
+              </div>
+            </div>
             <button id="toggle-rise-chart" class="btn-toggle-chart btn-secondary btn-small" style="visibility:hidden;">📊 Chart</button>
           </div>
         </div>
@@ -2092,21 +2129,33 @@
               <label for="optimizer-date" class="tooltip-host" data-tooltip-key="to_date">Date:</label>
               <input type="date" id="optimizer-date">
 
-              <label for="optimizer-start-time" class="tooltip-host" data-tooltip-key="to_startTime">Start:</label>
-              <select id="optimizer-start-time">
-                <option value="dusk" selected>Dusk</option>
-                <option value="custom">Custom</option>
-              </select>
+              <label class="tooltip-host" data-tooltip-key="to_startTime">Start:</label>
+              <div class="target-filter-dropdown" id="optimizer-start-dropdown">
+                <div class="target-filter-dropdown-trigger" id="optimizer-start-trigger">
+                  <span id="optimizer-start-label">Dusk</span>
+                  <span class="target-filter-dropdown-arrow"> </span>
+                </div>
+                <div class="target-filter-dropdown-menu" id="optimizer-start-menu">
+                  <div class="target-filter-dropdown-item" data-value="dusk">Dusk</div>
+                  <div class="target-filter-dropdown-item" data-value="custom">Custom</div>
+                </div>
+              </div>
               <input type="time" id="optimizer-custom-time" style="opacity:0; pointer-events:none;">
             </div>
 
             <!-- Row 2: Source and Execute -->
             <div class="seq-plan-session-row-1" style="margin-top: 0.75rem;">
-              <label for="optimizer-source" class="tooltip-host" data-tooltip-key="to_source">Source:</label>
-              <select id="optimizer-source">
-                <option value="todo">To Do List</option>
-                <option value="filter" id="optimizer-source-filter" disabled>Filter Targets (none loaded)</option>
-              </select>
+              <label class="tooltip-host" data-tooltip-key="to_source">Source:</label>
+              <div class="target-filter-dropdown" id="optimizer-source-dropdown">
+                <div class="target-filter-dropdown-trigger" id="optimizer-source-trigger">
+                  <span id="optimizer-source-label">To Do List</span>
+                  <span class="target-filter-dropdown-arrow"> </span>
+                </div>
+                <div class="target-filter-dropdown-menu" id="optimizer-source-menu">
+                  <div class="target-filter-dropdown-item" data-value="todo">To Do List</div>
+                  <div class="target-filter-dropdown-item" data-value="filter" id="optimizer-source-filter" style="opacity:0.4;pointer-events:none;">Filter Targets (none loaded)</div>
+                </div>
+              </div>
 
               <button type="button" class="btn-sm btn-primary tooltip-host" id="optimizer-execute-btn"
                       data-tooltip-key="to_findTargets">Find Targets</button>
@@ -2135,20 +2184,26 @@
               <p id="yo-subtitle" class="yo-header-subtitle"></p>
               <div class="form-inline yo-header-controls">
                 <label for="yearly-min-altitude">Minimum Altitude:</label>
-                <select id="yearly-min-altitude">
-                  <option value="5">5°</option>
-                  <option value="10">10°</option>
-                  <option value="15">15°</option>
-                  <option value="20">20°</option>
-                  <option value="25">25°</option>
-                  <option value="30">30°</option>
-                  <option value="35" selected>35°</option>
-                  <option value="40">40°</option>
-                  <option value="45">45°</option>
-                  <option value="50">50°</option>
-                  <option value="55">55°</option>
-                  <option value="60">60°</option>
-                </select>
+                <div class="target-filter-dropdown" id="yo-min-alt-dropdown">
+                  <div class="target-filter-dropdown-trigger" id="yo-min-alt-trigger">
+                    <span id="yo-min-alt-label">35°</span>
+                    <span class="target-filter-dropdown-arrow"> </span>
+                  </div>
+                  <div class="target-filter-dropdown-menu" id="yo-min-alt-menu">
+                    <div class="target-filter-dropdown-item" data-value="5">5°</div>
+                    <div class="target-filter-dropdown-item" data-value="10">10°</div>
+                    <div class="target-filter-dropdown-item" data-value="15">15°</div>
+                    <div class="target-filter-dropdown-item" data-value="20">20°</div>
+                    <div class="target-filter-dropdown-item" data-value="25">25°</div>
+                    <div class="target-filter-dropdown-item" data-value="30">30°</div>
+                    <div class="target-filter-dropdown-item" data-value="35">35°</div>
+                    <div class="target-filter-dropdown-item" data-value="40">40°</div>
+                    <div class="target-filter-dropdown-item" data-value="45">45°</div>
+                    <div class="target-filter-dropdown-item" data-value="50">50°</div>
+                    <div class="target-filter-dropdown-item" data-value="55">55°</div>
+                    <div class="target-filter-dropdown-item" data-value="60">60°</div>
+                  </div>
+                </div>
               </div>
             </div>
             <div class="yo-header-buttons">

@@ -53,15 +53,17 @@ const OptimizerView = {
      * Update the Filter Targets source option based on whether a pool is loaded
      */
     updateFilterSourceOption() {
-        const filterOption = document.getElementById('optimizer-source-filter');
-        if (!filterOption) return;
+        const filterItem = document.getElementById('optimizer-source-filter');
+        if (!filterItem) return;
 
         if (this.filterTargetsPool && this.filterTargetsPool.length > 0) {
-            filterOption.disabled = false;
-            filterOption.textContent = `Filter Targets (${this.filterTargetsPool.length} targets)`;
+            filterItem.style.opacity = '1';
+            filterItem.style.pointerEvents = 'auto';
+            filterItem.textContent = `Filter Targets (${this.filterTargetsPool.length} targets)`;
         } else {
-            filterOption.disabled = true;
-            filterOption.textContent = 'Filter Targets (none loaded)';
+            filterItem.style.opacity = '0.4';
+            filterItem.style.pointerEvents = 'none';
+            filterItem.textContent = 'Filter Targets (none loaded)';
         }
     },
 
@@ -69,19 +71,56 @@ const OptimizerView = {
      * Attach event handlers
      */
     attachEventHandlers() {
-        // Session start selector - show/hide custom time input
-        const startTimeSelect = document.getElementById('optimizer-start-time');
+        // Start time dropdown
+        const startTrigger = document.getElementById('optimizer-start-trigger');
+        const startDropdown = document.getElementById('optimizer-start-dropdown');
+        const startMenu = document.getElementById('optimizer-start-menu');
         const customTimeInput = document.getElementById('optimizer-custom-time');
 
-        if (startTimeSelect && customTimeInput) {
-            startTimeSelect.addEventListener('change', (e) => {
-                if (e.target.value === 'custom') {
-                    customTimeInput.style.opacity = '1';
-                    customTimeInput.style.pointerEvents = 'auto';
-                } else {
-                    customTimeInput.style.opacity = '0';
-                    customTimeInput.style.pointerEvents = 'none';
+        if (startTrigger && startDropdown && startMenu) {
+            startTrigger.addEventListener('click', (e) => {
+                e.stopPropagation();
+                startDropdown.classList.toggle('open');
+                document.getElementById('optimizer-source-dropdown')?.classList.remove('open');
+            });
+            startMenu.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const item = e.target.closest('.target-filter-dropdown-item');
+                if (!item) return;
+                const value = item.dataset.value;
+                const label = document.getElementById('optimizer-start-label');
+                if (label) label.textContent = item.textContent;
+                startDropdown.classList.remove('open');
+                if (customTimeInput) {
+                    if (value === 'custom') {
+                        customTimeInput.style.opacity = '1';
+                        customTimeInput.style.pointerEvents = 'auto';
+                    } else {
+                        customTimeInput.style.opacity = '0';
+                        customTimeInput.style.pointerEvents = 'none';
+                    }
                 }
+            });
+        }
+
+        // Source dropdown
+        const sourceTrigger = document.getElementById('optimizer-source-trigger');
+        const sourceDropdown = document.getElementById('optimizer-source-dropdown');
+        const sourceMenu = document.getElementById('optimizer-source-menu');
+
+        if (sourceTrigger && sourceDropdown && sourceMenu) {
+            sourceTrigger.addEventListener('click', (e) => {
+                e.stopPropagation();
+                sourceDropdown.classList.toggle('open');
+                document.getElementById('optimizer-start-dropdown')?.classList.remove('open');
+            });
+            sourceMenu.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const item = e.target.closest('.target-filter-dropdown-item');
+                if (!item || item.style.pointerEvents === 'none') return;
+                const label = document.getElementById('optimizer-source-label');
+                if (label) label.textContent = item.textContent;
+                sourceDropdown.classList.remove('open');
             });
         }
 
@@ -99,8 +138,10 @@ const OptimizerView = {
      */
     execute() {
         const date = document.getElementById('optimizer-date').value;
-        const source = document.getElementById('optimizer-source').value;
-        const startTimeMode = document.getElementById('optimizer-start-time').value;
+        const sourceLabel = document.getElementById('optimizer-source-label')?.textContent;
+        const source = sourceLabel === 'Filter Targets' || sourceLabel?.startsWith('Filter Targets') ? 'filter' : 'todo';
+        const startLabel = document.getElementById('optimizer-start-label')?.textContent;
+        const startTimeMode = startLabel === 'Custom' ? 'custom' : 'dusk';
         const customStartTime = document.getElementById('optimizer-custom-time').value;
 
         if (!date) {

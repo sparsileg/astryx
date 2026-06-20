@@ -19,8 +19,8 @@ const YearlyObservabilityCalculations = {
         const location = DataManager.getLocation(locationName);
 
         // Try modal element first, fall back to main view element, then default
-        const minAltitudeInput = document.getElementById('yearly-min-altitude') || document.getElementById('min-altitude');
-        const minAltitude = minAltitudeInput ? parseFloat(minAltitudeInput.value) : 35;
+        const yoLabel = document.getElementById('yo-min-alt-label');
+        const minAltitude = yoLabel ? parseFloat(yoLabel.textContent) : 35;
 
         return {
             targetName: this.currentTarget ? this.currentTarget.object : '',
@@ -447,15 +447,38 @@ const YearlyObservabilityCalculations = {
             subtitleEl.innerHTML = peakAltitudeStr + (bestMonthStr ? ' &nbsp;·&nbsp; ' + bestMonthStr : '');
         }
 
-        const minAltSelect = document.getElementById('yearly-min-altitude');
-        if (minAltSelect) {
-            minAltSelect.value = inputs.minAltitude || 35;
-            minAltSelect.addEventListener('change', () => {
-                if (typeof VisibilityTargets !== 'undefined' && VisibilityTargets.currentTarget) {
-                    YearlyObservabilityCalculations.currentTarget = VisibilityTargets.currentTarget;
-                }
-                YearlyObservabilityCalculations.calculateYearly();
-            });
+        const yoTrigger = document.getElementById('yo-min-alt-trigger');
+        const yoDropdown = document.getElementById('yo-min-alt-dropdown');
+        const yoMenu = document.getElementById('yo-min-alt-menu');
+        const yoLabel = document.getElementById('yo-min-alt-label');
+
+        if (yoTrigger && yoDropdown && yoMenu && yoLabel) {
+            // Set initial label
+            const currentVal = inputs.minAltitude || 35;
+            const initialItem = yoMenu.querySelector(`[data-value="${currentVal}"]`);
+            if (initialItem) yoLabel.textContent = initialItem.textContent;
+
+            // Only attach listeners once
+            if (!yoTrigger._listenerAttached) {
+                yoTrigger._listenerAttached = true;
+
+                yoTrigger.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    yoDropdown.classList.toggle('open');
+                });
+
+                yoMenu.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const item = e.target.closest('.target-filter-dropdown-item');
+                    if (!item) return;
+                    yoLabel.textContent = item.textContent;
+                    yoDropdown.classList.remove('open');
+                    if (typeof VisibilityTargets !== 'undefined' && VisibilityTargets.currentTarget) {
+                        YearlyObservabilityCalculations.currentTarget = VisibilityTargets.currentTarget;
+                    }
+                    YearlyObservabilityCalculations.calculateYearly();
+                });
+            }
         }
 
         const helpBtn = document.getElementById('yearly-observability-help-btn');

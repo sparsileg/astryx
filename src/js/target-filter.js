@@ -413,10 +413,14 @@ const TargetFilter = {
         });
         this.updateDropdownLabel('type');
 
-        // Restore month select
-        const monthSelect = document.getElementById('target-filter-month');
-        if (monthSelect && this.filters.month.value !== null) {
-            monthSelect.value = this.filters.month.value;
+        // Restore month dropdown
+        if (this.filters.month.value !== null) {
+            const monthMenu = document.getElementById('target-filter-month-menu');
+            const label = document.getElementById('target-filter-month-label');
+            if (monthMenu && label) {
+                const item = monthMenu.querySelector(`[data-value="${this.filters.month.value}"]`);
+                if (item) label.textContent = item.textContent;
+            }
         }
 
         // Restore size input
@@ -498,8 +502,9 @@ const TargetFilter = {
             catalogTrigger.addEventListener('click', (e) => {
                 e.stopPropagation();
                 catalogDropdown.classList.toggle('open');
-                // Close type dropdown
+                // Close type and month dropdowns
                 document.querySelector('#target-filter-type-trigger')?.parentElement.classList.remove('open');
+                document.querySelector('#target-filter-month-trigger')?.parentElement.classList.remove('open');
             });
         }
 
@@ -510,8 +515,9 @@ const TargetFilter = {
             typeTrigger.addEventListener('click', (e) => {
                 e.stopPropagation();
                 typeDropdown.classList.toggle('open');
-                // Close catalog dropdown
+                // Close catalog and month dropdowns
                 document.querySelector('#target-filter-catalog-trigger')?.parentElement.classList.remove('open');
+                document.querySelector('#target-filter-month-trigger')?.parentElement.classList.remove('open');
             });
         }
 
@@ -592,11 +598,29 @@ const TargetFilter = {
             });
         });
 
-        // Month select
-        const monthSelect = document.getElementById('target-filter-month');
-        if (monthSelect) {
-            monthSelect.addEventListener('change', (e) => {
-                this.filters.month.value = e.target.value ? parseInt(e.target.value) : null;
+        // Month dropdown
+        const monthTrigger = document.getElementById('target-filter-month-trigger');
+        const monthDropdown = monthTrigger?.parentElement;
+        if (monthTrigger && monthDropdown) {
+            monthTrigger.addEventListener('click', (e) => {
+                e.stopPropagation();
+                monthDropdown.classList.toggle('open');
+                document.querySelector('#target-filter-catalog-trigger')?.parentElement.classList.remove('open');
+                document.querySelector('#target-filter-type-trigger')?.parentElement.classList.remove('open');
+            });
+        }
+
+        const monthMenu = document.getElementById('target-filter-month-menu');
+        if (monthMenu) {
+            monthMenu.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const item = e.target.closest('.target-filter-dropdown-item');
+                if (!item) return;
+                const value = item.dataset.value;
+                this.filters.month.value = value ? parseInt(value) : null;
+                const label = document.getElementById('target-filter-month-label');
+                if (label) label.textContent = item.textContent;
+                monthDropdown.classList.remove('open');
                 this.applyFiltersToSearch();
             });
         }
@@ -963,9 +987,10 @@ const TargetFilter = {
         this.updateDropdownLabel('catalog');
         this.updateDropdownLabel('type');
 
-        // Reset other inputs to defaults
-        const monthSelect = document.getElementById('target-filter-month');
-        if (monthSelect) monthSelect.value = '';
+        // Reset month dropdown
+        const monthLabel = document.getElementById('target-filter-month-label');
+        if (monthLabel) monthLabel.textContent = 'Any month';
+        this.filters.month.value = null;
 
         const sizeInput = document.getElementById('target-filter-size');
         if (sizeInput) {

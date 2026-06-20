@@ -117,17 +117,23 @@ const FOVView = {
      * Populate telescope dropdown
      */
     populateTelescopeDropdown() {
-        const dropdown = document.getElementById('fov-telescope-select');
-        if (!dropdown) return;
+        const menu = document.getElementById('fov-telescope-menu');
+        if (!menu) return;
 
-        dropdown.innerHTML = '<option value="">Select telescope...</option>';
+        menu.innerHTML = '';
+        const placeholder = document.createElement('div');
+        placeholder.className = 'target-filter-dropdown-item';
+        placeholder.dataset.value = '';
+        placeholder.textContent = 'Select telescope...';
+        menu.appendChild(placeholder);
 
         const telescopes = DataManager.getTelescopes();
         Object.keys(telescopes).forEach(name => {
-            const option = document.createElement('option');
-            option.value = name;
-            option.textContent = name;
-            dropdown.appendChild(option);
+            const item = document.createElement('div');
+            item.className = 'target-filter-dropdown-item';
+            item.dataset.value = name;
+            item.textContent = name;
+            menu.appendChild(item);
         });
 
         // Refresh event for when telescopes are added/deleted
@@ -141,17 +147,23 @@ const FOVView = {
      * Populate sensor dropdown
      */
     populateSensorDropdown() {
-        const dropdown = document.getElementById('fov-sensor-select');
-        if (!dropdown) return;
+        const menu = document.getElementById('fov-sensor-menu');
+        if (!menu) return;
 
-        dropdown.innerHTML = '<option value="">Select sensor...</option>';
+        menu.innerHTML = '';
+        const placeholder = document.createElement('div');
+        placeholder.className = 'target-filter-dropdown-item';
+        placeholder.dataset.value = '';
+        placeholder.textContent = 'Select sensor...';
+        menu.appendChild(placeholder);
 
         const sensors = DataManager.getSensors();
         Object.keys(sensors).forEach(name => {
-            const option = document.createElement('option');
-            option.value = name;
-            option.textContent = name;
-            dropdown.appendChild(option);
+            const item = document.createElement('div');
+            item.className = 'target-filter-dropdown-item';
+            item.dataset.value = name;
+            item.textContent = name;
+            menu.appendChild(item);
         });
 
         // Refresh event for when sensors are added/deleted
@@ -169,13 +181,13 @@ const FOVView = {
         const savedSensor = SettingsManager.getSelectedSensor();
 
         if (savedTelescope) {
-            const dropdown = document.getElementById('fov-telescope-select');
-            if (dropdown) dropdown.value = savedTelescope;
+            const label = document.getElementById('fov-telescope-label');
+            if (label) label.textContent = savedTelescope;
         }
 
         if (savedSensor) {
-            const dropdown = document.getElementById('fov-sensor-select');
-            if (dropdown) dropdown.value = savedSensor;
+            const label = document.getElementById('fov-sensor-label');
+            if (label) label.textContent = savedSensor;
         }
 
         // Calculate if both are selected
@@ -192,19 +204,47 @@ const FOVView = {
      */
     setupEventListeners() {
         // Telescope selection
-        const telescopeSelect = document.getElementById('fov-telescope-select');
-        if (telescopeSelect) {
-            telescopeSelect.addEventListener('change', async (e) => {
-                await SettingsManager.setSelectedTelescope(e.target.value || null);
+        const telescopeTrigger = document.getElementById('fov-telescope-trigger');
+        const telescopeDropdown = document.getElementById('fov-telescope-dropdown');
+        const telescopeMenu = document.getElementById('fov-telescope-menu');
+        if (telescopeTrigger && telescopeDropdown && telescopeMenu) {
+            telescopeTrigger.addEventListener('click', (e) => {
+                e.stopPropagation();
+                telescopeDropdown.classList.toggle('open');
+                document.getElementById('fov-sensor-dropdown')?.classList.remove('open');
+            });
+            telescopeMenu.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const item = e.target.closest('.target-filter-dropdown-item');
+                if (!item) return;
+                const value = item.dataset.value;
+                const label = document.getElementById('fov-telescope-label');
+                if (label) label.textContent = value || 'Select telescope...';
+                telescopeDropdown.classList.remove('open');
+                await SettingsManager.setSelectedTelescope(value || null);
                 this.calculate();
             });
         }
 
         // Sensor selection
-        const sensorSelect = document.getElementById('fov-sensor-select');
-        if (sensorSelect) {
-            sensorSelect.addEventListener('change', async (e) => {
-                await SettingsManager.setSelectedSensor(e.target.value || null);
+        const sensorTrigger = document.getElementById('fov-sensor-trigger');
+        const sensorDropdown = document.getElementById('fov-sensor-dropdown');
+        const sensorMenu = document.getElementById('fov-sensor-menu');
+        if (sensorTrigger && sensorDropdown && sensorMenu) {
+            sensorTrigger.addEventListener('click', (e) => {
+                e.stopPropagation();
+                sensorDropdown.classList.toggle('open');
+                document.getElementById('fov-telescope-dropdown')?.classList.remove('open');
+            });
+            sensorMenu.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const item = e.target.closest('.target-filter-dropdown-item');
+                if (!item) return;
+                const value = item.dataset.value;
+                const label = document.getElementById('fov-sensor-label');
+                if (label) label.textContent = value || 'Select sensor...';
+                sensorDropdown.classList.remove('open');
+                await SettingsManager.setSelectedSensor(value || null);
                 this.calculate();
             });
         }
@@ -457,11 +497,15 @@ const FOVView = {
      * Calculate and render FOV
      */
     async calculate() {
-        const telescopeName = document.getElementById('fov-telescope-select')?.value;
-        const sensorName = document.getElementById('fov-sensor-select')?.value;
+        const telescopeName = document.getElementById('fov-telescope-label')?.textContent?.trim();
+        const sensorName = document.getElementById('fov-sensor-label')?.textContent?.trim();
+
+        // Treat placeholder text as no selection
+        const telescopeSelected = telescopeName && telescopeName !== 'Select telescope...';
+        const sensorSelected = sensorName && sensorName !== 'Select sensor...';
 
         // Clear results if either is not selected
-        if (!telescopeName || !sensorName) {
+        if (!telescopeSelected || !sensorSelected) {
             this.clearResults();
             return;
         }
@@ -1001,7 +1045,7 @@ const FOVView = {
         this.dssLockedSize = null;
     },
 
-/**
+    /**
      * Clear results and canvas
      */
     clearResults() {

@@ -319,7 +319,24 @@ const DailyVisibilityView = {
         this._addRepeatButton('dv-next-day',   1);
         this._addRepeatButton('dv-next-week',  7);
         document.getElementById('dv-date')?.addEventListener('change', () => this.recalculate());
-        document.getElementById('dv-min-altitude')?.addEventListener('change', () => this.recalculate());
+        const dvMinAltTrigger = document.getElementById('dv-min-alt-trigger');
+        const dvMinAltDropdown = document.getElementById('dv-min-alt-dropdown');
+        const dvMinAltMenu = document.getElementById('dv-min-alt-menu');
+        if (dvMinAltTrigger && dvMinAltDropdown && dvMinAltMenu) {
+            dvMinAltTrigger.addEventListener('click', (e) => {
+                e.stopPropagation();
+                dvMinAltDropdown.classList.toggle('open');
+            });
+            dvMinAltMenu.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const item = e.target.closest('.target-filter-dropdown-item');
+                if (!item) return;
+                const label = document.getElementById('dv-min-alt-label');
+                if (label) label.textContent = item.textContent;
+                dvMinAltDropdown.classList.remove('open');
+                this.recalculate();
+            });
+        }
         document.getElementById('dv-use-horizon')?.addEventListener('change', () => this.recalculate());
     },
 
@@ -352,11 +369,9 @@ const DailyVisibilityView = {
             const dateStr = window.skyglowData?.date || TimeUtils.formatDateForInput(defaultDate);
             dateInput.value = dateStr;
         }
-        const minAlt = document.getElementById('dv-min-altitude');
-        if (minAlt) {
-            const altValue = window.skyglowData?.minAltitude ?? SettingsManager.getGlobalMinAltitude();
-            minAlt.value = String(altValue);
-        }
+        const altValue = window.skyglowData?.minAltitude ?? SettingsManager.getGlobalMinAltitude();
+        const dvMinAltLabel = document.getElementById('dv-min-alt-label');
+        if (dvMinAltLabel) dvMinAltLabel.textContent = `${altValue}°`;
         const useHorizon = document.getElementById('dv-use-horizon');
         if (useHorizon) {
             useHorizon.checked = window.skyglowData?.useHorizon ?? true;
@@ -375,7 +390,8 @@ const DailyVisibilityView = {
 
     recalculate() {
         const dateStr = document.getElementById('dv-date')?.value;
-        const minAltitude = parseFloat(document.getElementById('dv-min-altitude')?.value) || SettingsManager.getGlobalMinAltitude();
+        const dvMinAltLabel = document.getElementById('dv-min-alt-label');
+        const minAltitude = dvMinAltLabel ? parseFloat(dvMinAltLabel.textContent) : SettingsManager.getGlobalMinAltitude();
         const useHorizon = document.getElementById('dv-use-horizon')?.checked ?? true;
         const locationName = SettingsManager.getSelectedLocation();
 

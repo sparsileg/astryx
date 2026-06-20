@@ -10,6 +10,16 @@
     border-color: var(--primary-color);
 }
 
+#optimizer-start-dropdown {
+    min-width: 80px;
+    max-width: 80px;
+}
+
+#optimizer-source-dropdown {
+    min-width: 160px;
+    max-width: 220px;
+}
+
 /* Results summary bar */
 .optimizer-results-summary {
     display: flex;
