@@ -35,7 +35,7 @@ const SeqPlanView = {
         this.setupCollapsibleSections();
         SeqPlanTimeline.init();
 
-        // Add window resize listener to redraw timeline — guard against accumulation
+        // Add window resize listener to redraw timeline   guard against accumulation
         if (!this.resizeListenerAdded) {
             let resizeTimer;
             this._redrawTimeline = () => {
@@ -54,7 +54,7 @@ const SeqPlanView = {
             this.resizeListenerAdded = true;
         }
 
-        // Re-render timeline on resize — Issue #129
+        // Re-render timeline on resize   Issue #129
         const canvasParent = document.getElementById('seq-plan-timeline')?.parentElement;
         if (canvasParent && typeof ResizeObserver !== 'undefined') {
             if (this._resizeObserver) {
@@ -116,26 +116,113 @@ const SeqPlanView = {
     },
 
     /**
+     * Helper: get selected value from a custom dropdown menu
+     */
+    _getDropdownValue(menuId, fallback = '') {
+        return document.getElementById(menuId)
+            ?.querySelector('.target-filter-dropdown-item.selected')
+            ?.dataset.value ?? fallback;
+    },
+
+    /**
+     * Helper: set selected item in a custom dropdown by value, update label
+     */
+    _setDropdownValue(menuId, labelId, value) {
+        const menu = document.getElementById(menuId);
+        if (!menu) return;
+        menu.querySelectorAll('.target-filter-dropdown-item').forEach(item => {
+            item.classList.toggle('selected', item.dataset.value === String(value));
+        });
+        const selected = menu.querySelector('.target-filter-dropdown-item.selected');
+        const label = document.getElementById(labelId);
+        if (label && selected) label.textContent = selected.textContent;
+    },
+
+    /**
+     * Helper: wire a simple custom dropdown (trigger toggle + item selection)
+     * onSelect(value) is called when an item is picked.
+     */
+    _wireDropdown(triggerId, dropdownId, menuId, labelId, onSelect) {
+        const trigger = document.getElementById(triggerId);
+        const dropdown = document.getElementById(dropdownId);
+        const menu = document.getElementById(menuId);
+        if (!trigger || !dropdown || !menu) return;
+
+        trigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            dropdown.classList.toggle('open');
+        });
+
+        menu.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const item = e.target.closest('.target-filter-dropdown-item');
+            if (!item) return;
+            menu.querySelectorAll('.target-filter-dropdown-item').forEach(i => i.classList.remove('selected'));
+            item.classList.add('selected');
+            const label = document.getElementById(labelId);
+            if (label) label.textContent = item.textContent;
+            dropdown.classList.remove('open');
+            if (onSelect) onSelect(item.dataset.value);
+        });
+    },
+
+    /**
      * Populate location dropdown
      */
     populateLocationDropdown() {
-        const select = document.getElementById('seq-plan-location');
-        if (!select) return;
-
-        select.innerHTML = '<option value="">Select location...</option>';
+        const menu = document.getElementById('seq-plan-location-menu');
+        const label = document.getElementById('seq-plan-location-label');
+        const trigger = document.getElementById('seq-plan-location-trigger');
+        const dropdown = document.getElementById('seq-plan-location-dropdown');
+        if (!menu) return;
 
         const locations = DataManager.getLocations();
+        const globalLocation = SettingsManager.getSelectedLocation();
+
+        menu.innerHTML = '';
+
+        const placeholder = document.createElement('div');
+        placeholder.className = 'target-filter-dropdown-item';
+        placeholder.dataset.value = '';
+        placeholder.textContent = 'Select location...';
+        menu.appendChild(placeholder);
+
         Object.keys(locations).forEach(name => {
-            const option = document.createElement('option');
-            option.value = name;
-            option.textContent = name;
-            select.appendChild(option);
+            const item = document.createElement('div');
+            item.className = 'target-filter-dropdown-item';
+            item.dataset.value = name;
+            item.textContent = name;
+            if (name === globalLocation) {
+                item.classList.add('selected');
+            }
+            menu.appendChild(item);
         });
 
-        // Sync to global location on populate
-        const globalLocation = SettingsManager.getSelectedLocation();
-        if (globalLocation && select.querySelector(`option[value="${globalLocation}"]`)) {
-            select.value = globalLocation;
+        // Set label to global location if available
+        if (globalLocation && locations[globalLocation]) {
+            if (label) label.textContent = globalLocation;
+        } else {
+            if (label) label.textContent = 'Select location...';
+        }
+
+        // Wire trigger once
+        if (trigger && !trigger._listenerAttached) {
+            trigger._listenerAttached = true;
+            trigger.addEventListener('click', (e) => {
+                e.stopPropagation();
+                dropdown.classList.toggle('open');
+            });
+
+            menu.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const item = e.target.closest('.target-filter-dropdown-item');
+                if (!item) return;
+                menu.querySelectorAll('.target-filter-dropdown-item').forEach(i => i.classList.remove('selected'));
+                item.classList.add('selected');
+                if (label) label.textContent = item.textContent;
+                dropdown.classList.remove('open');
+                this.debouncedGenerate();
+            });
         }
 
         if (!this._pinnedTargetsHandler) {
@@ -144,54 +231,52 @@ const SeqPlanView = {
             document.addEventListener('pinned-targets-updated', this._pinnedTargetsHandler);
             document.addEventListener('locations-updated', this._locationsHandler);
         }
-
-        // Sync seq-plan location when sidebar location changes
-        const sidebarSelect = document.getElementById('sidebar-location-select');
-        if (sidebarSelect) {
-            sidebarSelect.addEventListener('change', (e) => {
-                const locationName = e.target.value;
-                if (locationName && select.querySelector(`option[value="${locationName}"]`)) {
-                    select.value = locationName;
-                    select.dispatchEvent(new Event('input'));
-                }
-            });
-        }
     },
 
     /**
      * Load saved settings from SettingsManager
      */
     loadSettings() {
-        // Min altitude - always use global default on load
         const globalMinAlt = SettingsManager.getGlobalMinAltitude();
+        this._setDropdownValue('seq-plan-min-altitude-menu', 'seq-plan-min-altitude-label', globalMinAlt);
 
-        const minAltSelect = document.getElementById('seq-plan-min-altitude');
+        this._setDropdownValue('seq-plan-use-horizon-menu', 'seq-plan-use-horizon-label', 'yes');
 
-        if (minAltSelect) {
-            minAltSelect.value = globalMinAlt;
+        this._setDropdownValue(
+            'seq-plan-af-interval-menu', 'seq-plan-af-interval-label',
+            SettingsManager.getSetting('seqPlanAutofocusInterval', 60)
+        );
+        this._setDropdownValue(
+            'seq-plan-af-duration-menu', 'seq-plan-af-duration-label',
+            SettingsManager.getSetting('seqPlanAutofocusDuration', 2)
+        );
+        this._setDropdownValue(
+            'seq-plan-flip-pause-menu', 'seq-plan-flip-pause-label',
+            SettingsManager.getSetting('seqPlanMeridianFlipPause', 4)
+        );
+        this._setDropdownValue(
+            'seq-plan-flip-duration-menu', 'seq-plan-flip-duration-label',
+            SettingsManager.getSetting('seqPlanMeridianFlipDuration', 2)
+        );
+        this._setDropdownValue(
+            'seq-plan-flip-offset-menu', 'seq-plan-flip-offset-label',
+            SettingsManager.getSetting('seqPlanMeridianFlipOffset', 0)
+        );
+        this._setDropdownValue(
+            'seq-plan-cal-duration-menu', 'seq-plan-cal-duration-label',
+            SettingsManager.getSetting('seqPlanCalibrationDuration', 5)
+        );
 
-            // Remove override styling since we're starting with global default
-            minAltSelect.classList.remove('altitude-override-active');
-            minAltSelect.title = '';
-        }
+        const framesPerDither = SettingsManager.getFramesPerDither();
+        this._setDropdownValue(
+            'seq-plan-frames-per-dither-menu', 'seq-plan-frames-per-dither-label',
+            framesPerDither
+        );
+        const ditherUnit = document.getElementById('seq-plan-dither-unit');
+        if (ditherUnit) ditherUnit.textContent = framesPerDither === 0 ? 'no dither' : 'frames';
 
-        document.getElementById('seq-plan-use-horizon').value = 'yes';
         document.getElementById('seq-plan-af-enabled').checked =
             SettingsManager.getSetting('seqPlanAutofocusEnabled', true);
-        document.getElementById('seq-plan-af-interval').value =
-            SettingsManager.getSetting('seqPlanAutofocusInterval', 60);
-        document.getElementById('seq-plan-af-duration').value =
-            SettingsManager.getSetting('seqPlanAutofocusDuration', 2);
-        document.getElementById('seq-plan-flip-pause').value =
-            SettingsManager.getSetting('seqPlanMeridianFlipPause', 4);
-        document.getElementById('seq-plan-flip-duration').value =
-            SettingsManager.getSetting('seqPlanMeridianFlipDuration', 2);
-        document.getElementById('seq-plan-flip-offset').value =
-            SettingsManager.getSetting('seqPlanMeridianFlipOffset', 0);
-        document.getElementById('seq-plan-cal-duration').value =
-            SettingsManager.getSetting('seqPlanCalibrationDuration', 5);
-        document.getElementById('seq-plan-frames-per-dither').value =
-            SettingsManager.getFramesPerDither();
 
         const toleranceCheck = document.getElementById('seq-plan-transition-tolerance');
         if (toleranceCheck) {
@@ -210,117 +295,157 @@ const SeqPlanView = {
      */
     async saveSettings() {
         await SettingsManager.saveSetting('seqPlanMinAltitude',
-                                          parseFloat(document.getElementById('seq-plan-min-altitude').value));
+            parseFloat(this._getDropdownValue('seq-plan-min-altitude-menu', '35')));
 
         await SettingsManager.saveSetting('seqPlanAutofocusEnabled',
-                                          document.getElementById('seq-plan-af-enabled').checked);
+            document.getElementById('seq-plan-af-enabled').checked);
         await SettingsManager.saveSetting('seqPlanAutofocusInterval',
-                                          parseFloat(document.getElementById('seq-plan-af-interval').value));
+            parseFloat(this._getDropdownValue('seq-plan-af-interval-menu', '60')));
         await SettingsManager.saveSetting('seqPlanAutofocusDuration',
-                                          parseFloat(document.getElementById('seq-plan-af-duration').value));
+            parseFloat(this._getDropdownValue('seq-plan-af-duration-menu', '2')));
 
         await SettingsManager.saveSetting('seqPlanMeridianFlipPause',
-                                          parseFloat(document.getElementById('seq-plan-flip-pause').value));
+            parseFloat(this._getDropdownValue('seq-plan-flip-pause-menu', '4')));
         await SettingsManager.saveSetting('seqPlanMeridianFlipDuration',
-                                          parseFloat(document.getElementById('seq-plan-flip-duration').value));
+            parseFloat(this._getDropdownValue('seq-plan-flip-duration-menu', '2')));
         await SettingsManager.saveSetting('seqPlanMeridianFlipOffset',
-                                          parseFloat(document.getElementById('seq-plan-flip-offset').value));
+            parseFloat(this._getDropdownValue('seq-plan-flip-offset-menu', '0')));
 
         await SettingsManager.saveSetting('seqPlanCalibrationDuration',
-                                          parseFloat(document.getElementById('seq-plan-cal-duration').value));
+            parseFloat(this._getDropdownValue('seq-plan-cal-duration-menu', '5')));
         await SettingsManager.setFramesPerDither(
-            parseInt(document.getElementById('seq-plan-frames-per-dither').value));
+            parseInt(this._getDropdownValue('seq-plan-frames-per-dither-menu', '3')));
 
         await SettingsManager.saveSetting('seqPlanTransitionTolerance',
-                                          document.getElementById('seq-plan-transition-tolerance').checked);
+            document.getElementById('seq-plan-transition-tolerance').checked);
     },
 
     /**
      * Attach event handlers
      */
     attachEventHandlers() {
-        // Session settings that require full regeneration with optimization
-        const sessionInputs = [
-            'seq-plan-date',
-            'seq-plan-location',
-            'seq-plan-min-altitude'
-        ];
-
-        sessionInputs.forEach(id => {
-            const element = document.getElementById(id);
-            if (element) {
-                const eventType = element.type === 'checkbox' ? 'change' : 'input';
-                element.addEventListener(eventType, () => {
-                    this.debouncedGenerate(); // Full regeneration with optimization
-                });
-            }
-        });
-
-        // Overhead settings that only need recalculation (no optimization)
-        const overheadInputs = [
-            'seq-plan-af-enabled',
-            'seq-plan-af-interval',
-            'seq-plan-af-duration',
-            'seq-plan-flip-pause',
-            'seq-plan-flip-duration',
-            'seq-plan-flip-offset',
-            'seq-plan-cal-duration',
-            'seq-plan-frames-per-dither'
-        ];
-
-        // Update the frames/no-dither label when dropdown changes
-        const framesPerDitherSelect = document.getElementById('seq-plan-frames-per-dither');
-        const framesPerDitherSpan = framesPerDitherSelect?.nextElementSibling;
-        if (framesPerDitherSelect && framesPerDitherSpan) {
-            const updateDitherLabel = () => {
-                framesPerDitherSpan.textContent = framesPerDitherSelect.value === '0' ? 'no dither' : 'frames';
-            };
-            framesPerDitherSelect.addEventListener('change', updateDitherLabel);
-            updateDitherLabel(); // Set correct label on initial load
+        // Date input triggers full regeneration
+        const dateEl = document.getElementById('seq-plan-date');
+        if (dateEl) {
+            dateEl.addEventListener('input', () => this.debouncedGenerate());
         }
+
+        // Start time dropdown
+        const startTimeMenu = document.getElementById('seq-plan-start-time-menu');
+        const startTimeDropdown = document.getElementById('seq-plan-start-time-dropdown');
+        const customTimeInput = document.getElementById('seq-plan-custom-time');
+
+        this._wireDropdown(
+            'seq-plan-start-time-trigger',
+            'seq-plan-start-time-dropdown',
+            'seq-plan-start-time-menu',
+            'seq-plan-start-time-label',
+            (value) => {
+                if (value === 'custom') {
+                    customTimeInput.style.opacity = '1';
+                    customTimeInput.style.pointerEvents = 'auto';
+                } else {
+                    customTimeInput.style.opacity = '0';
+                    customTimeInput.style.pointerEvents = 'none';
+                }
+                this.debouncedGenerate();
+            }
+        );
+
+        if (customTimeInput) {
+            customTimeInput.addEventListener('change', () => this.debouncedGenerate());
+            customTimeInput.addEventListener('input', () => this.debouncedGenerate());
+        }
+
+        // Min altitude dropdown — triggers full regeneration + override styling
+        const globalMinAlt = SettingsManager.getGlobalMinAltitude();
+        this._wireDropdown(
+            'seq-plan-min-altitude-trigger',
+            'seq-plan-min-altitude-dropdown',
+            'seq-plan-min-altitude-menu',
+            'seq-plan-min-altitude-label',
+            (value) => {
+                const trigger = document.getElementById('seq-plan-min-altitude-trigger');
+                const isOverride = parseInt(value) !== globalMinAlt;
+                if (trigger) {
+                    trigger.classList.toggle('altitude-override-active', isOverride);
+                    trigger.title = isOverride ? `Override active (global default: ${globalMinAlt}°)` : '';
+                }
+                this.debouncedGenerate();
+            }
+        );
+
+        // Use horizon dropdown — triggers full regeneration
+        this._wireDropdown(
+            'seq-plan-use-horizon-trigger',
+            'seq-plan-use-horizon-dropdown',
+            'seq-plan-use-horizon-menu',
+            'seq-plan-use-horizon-label',
+            () => this.debouncedGenerate()
+        );
+
+        // Overhead dropdowns — trigger recalculation only
+        this._wireDropdown(
+            'seq-plan-af-interval-trigger',
+            'seq-plan-af-interval-dropdown',
+            'seq-plan-af-interval-menu',
+            'seq-plan-af-interval-label',
+            () => this.debouncedRecalculate()
+        );
+        this._wireDropdown(
+            'seq-plan-af-duration-trigger',
+            'seq-plan-af-duration-dropdown',
+            'seq-plan-af-duration-menu',
+            'seq-plan-af-duration-label',
+            () => this.debouncedRecalculate()
+        );
+        this._wireDropdown(
+            'seq-plan-flip-pause-trigger',
+            'seq-plan-flip-pause-dropdown',
+            'seq-plan-flip-pause-menu',
+            'seq-plan-flip-pause-label',
+            () => this.debouncedRecalculate()
+        );
+        this._wireDropdown(
+            'seq-plan-flip-duration-trigger',
+            'seq-plan-flip-duration-dropdown',
+            'seq-plan-flip-duration-menu',
+            'seq-plan-flip-duration-label',
+            () => this.debouncedRecalculate()
+        );
+        this._wireDropdown(
+            'seq-plan-flip-offset-trigger',
+            'seq-plan-flip-offset-dropdown',
+            'seq-plan-flip-offset-menu',
+            'seq-plan-flip-offset-label',
+            () => this.debouncedRecalculate()
+        );
+        this._wireDropdown(
+            'seq-plan-cal-duration-trigger',
+            'seq-plan-cal-duration-dropdown',
+            'seq-plan-cal-duration-menu',
+            'seq-plan-cal-duration-label',
+            () => this.debouncedRecalculate()
+        );
+
+        // Frames per dither — updates dither unit span + recalculates
+        this._wireDropdown(
+            'seq-plan-frames-per-dither-trigger',
+            'seq-plan-frames-per-dither-dropdown',
+            'seq-plan-frames-per-dither-menu',
+            'seq-plan-frames-per-dither-label',
+            (value) => {
+                const ditherUnit = document.getElementById('seq-plan-dither-unit');
+                if (ditherUnit) ditherUnit.textContent = value === '0' ? 'no dither' : 'frames';
+                this.debouncedRecalculate();
+            }
+        );
 
         // Sequence optimization checkbox requires full regeneration
         const toleranceInput = document.getElementById('seq-plan-transition-tolerance');
         if (toleranceInput) {
-            toleranceInput.addEventListener('change', () => {
-                this.debouncedGenerate();
-            });
+            toleranceInput.addEventListener('change', () => this.debouncedGenerate());
         }
-
-        overheadInputs.forEach(id => {
-            const element = document.getElementById(id);
-            if (element) {
-                const eventType = element.type === 'checkbox' ? 'change' : 'input';
-                element.addEventListener(eventType, () => {
-                    this.debouncedRecalculate(); // Recalculate without optimization
-                });
-            }
-        });
-
-        // Min altitude dropdown override styling
-        const minAltSelect = document.getElementById('seq-plan-min-altitude');
-        const globalMinAlt = SettingsManager.getGlobalMinAltitude();
-
-        if (minAltSelect) {
-            // Update styling on change
-            minAltSelect.addEventListener('change', () => {
-                const currentValue = parseInt(minAltSelect.value);
-                const isOverride = currentValue !== globalMinAlt;
-
-                if (isOverride) {
-                    minAltSelect.classList.add('altitude-override-active');
-                    minAltSelect.title = `Override active (global default: ${globalMinAlt}°)`;
-                } else {
-                    minAltSelect.classList.remove('altitude-override-active');
-                    minAltSelect.title = '';
-                }
-            });
-        }
-
-        // Use Horizon toggle
-        document.getElementById('seq-plan-use-horizon').addEventListener('change', () => {
-            this.debouncedGenerate();
-        });
 
         // Autofocus checkbox listener to show/hide note
         const afCheckbox = document.getElementById('seq-plan-af-enabled');
@@ -328,12 +453,7 @@ const SeqPlanView = {
         if (afCheckbox && afNote) {
             afCheckbox.addEventListener('change', (e) => {
                 afNote.style.display = e.target.checked ? 'inline' : 'none';
-
-                // Rebuild session config and recalculate to include/exclude autofocus events
-                if (this.currentSession && this.calculatedResults.length > 0) {
-                    this.currentSession = this.buildSessionConfig();
-                    this.recalculateAndUpdate();
-                }
+                this.debouncedRecalculate();
             });
             // Set initial state based on current checkbox value
             afNote.style.display = afCheckbox.checked ? 'inline' : 'none';
@@ -342,30 +462,7 @@ const SeqPlanView = {
         // Reset & Optimize button
         const resetBtn = document.getElementById('seq-plan-reset-btn');
         if (resetBtn) {
-            resetBtn.addEventListener('click', () => {
-                this.resetAndOptimize();
-            });
-        }
-
-        // Start time selector - show/hide custom time input
-        const startTimeSelect = document.getElementById('seq-plan-start-time');
-        const customTimeInput = document.getElementById('seq-plan-custom-time');
-
-        if (startTimeSelect && customTimeInput) {
-            startTimeSelect.addEventListener('change', (e) => {
-                if (e.target.value === 'custom') {
-                    customTimeInput.style.opacity = '1';
-                    customTimeInput.style.pointerEvents = 'auto';
-                } else {
-                    customTimeInput.style.opacity = '0';
-                    customTimeInput.style.pointerEvents = 'none';
-                }
-                this.debouncedGenerate();
-            });
-
-            customTimeInput.addEventListener('change', () => {
-                this.debouncedGenerate();
-            });
+            resetBtn.addEventListener('click', () => this.resetAndOptimize());
         }
     },
 
@@ -373,15 +470,12 @@ const SeqPlanView = {
      * Trigger plan generation with debouncing
      */
     debouncedGenerate() {
-        // Clear existing timer
         if (this.debounceTimer) {
             clearTimeout(this.debounceTimer);
         }
-
-        // Set new timer
         this.debounceTimer = setTimeout(() => {
             this.generatePlan();
-        }, 1000); // Wait 1000ms after last change
+        }, 1000);
     },
 
     /**
@@ -415,7 +509,7 @@ const SeqPlanView = {
         this.currentSession.duskJD = timing.duskJD;
         this.currentSession.dawnJD = timing.dawnJD;
 
-        // Reset allocations to equal split before optimization — prevents manual
+        // Reset allocations to equal split before optimization   prevents manual
         // slider adjustments from polluting results on date/setting changes
         const equalPercent = 100 / this.currentTargets.length;
         this.currentTargets.forEach(target => {
@@ -506,7 +600,7 @@ const SeqPlanView = {
             this.currentSession
         );
 
-        // Store last target's max allocation — set once per plan generation, never during slider interaction
+        // Store last target's max allocation   set once per plan generation, never during slider interaction
         if (this.calculatedResults.length > 0) {
             const precedingPercent = this.calculatedResults
                 .slice(0, this.calculatedResults.length - 1)
@@ -530,7 +624,7 @@ const SeqPlanView = {
      * @returns {boolean} True if valid
      */
     validateInputs() {
-        const location = document.getElementById('seq-plan-location').value;
+        const location = this._getDropdownValue('seq-plan-location-menu');
         if (!location) {
             UIManager.showToast('Please select a location', 'error');
             return false;
@@ -550,24 +644,23 @@ const SeqPlanView = {
      */
     buildSessionConfig() {
         const date = document.getElementById('seq-plan-date').value;
-        const locationName = document.getElementById('seq-plan-location').value;
+        const locationName = this._getDropdownValue('seq-plan-location-menu');
         const location = DataManager.getLocations()[locationName];
-        const minAlt = parseInt(document.getElementById('seq-plan-min-altitude').value);
 
         return {
             date: date,
             location: location,
-            minAltitude: parseInt(document.getElementById('seq-plan-min-altitude').value),
-            useHorizon: document.getElementById('seq-plan-use-horizon').value === 'yes',
-            startTimeMode: document.getElementById('seq-plan-start-time').value,
-            customStartTime: document.getElementById('seq-plan-custom-time').value, // HH:MM format
+            minAltitude: parseInt(this._getDropdownValue('seq-plan-min-altitude-menu', '35')),
+            useHorizon: this._getDropdownValue('seq-plan-use-horizon-menu', 'yes') === 'yes',
+            startTimeMode: this._getDropdownValue('seq-plan-start-time-menu', 'dusk'),
+            customStartTime: document.getElementById('seq-plan-custom-time').value,
             autofocusEnabled: document.getElementById('seq-plan-af-enabled').checked,
-            autofocusInterval: parseInt(document.getElementById('seq-plan-af-interval').value),
-            autofocusDuration: parseInt(document.getElementById('seq-plan-af-duration').value),
-            calibrationDuration: parseInt(document.getElementById('seq-plan-cal-duration').value),
-            meridianFlipPause: parseInt(document.getElementById('seq-plan-flip-pause').value),
-            meridianFlipDuration: parseInt(document.getElementById('seq-plan-flip-duration').value),
-            meridianFlipOffset: parseInt(document.getElementById('seq-plan-flip-offset').value),
+            autofocusInterval: parseInt(this._getDropdownValue('seq-plan-af-interval-menu', '60')),
+            autofocusDuration: parseInt(this._getDropdownValue('seq-plan-af-duration-menu', '2')),
+            calibrationDuration: parseInt(this._getDropdownValue('seq-plan-cal-duration-menu', '5')),
+            meridianFlipPause: parseInt(this._getDropdownValue('seq-plan-flip-pause-menu', '4')),
+            meridianFlipDuration: parseInt(this._getDropdownValue('seq-plan-flip-duration-menu', '2')),
+            meridianFlipOffset: parseInt(this._getDropdownValue('seq-plan-flip-offset-menu', '0')),
             interExposureTime: SettingsManager.getFramesPerDither() === 0
                 ? SettingsManager.getLearnedSubGapS()
                 : SettingsManager.getLearnedSubGapS() + Math.round(SettingsManager.getLearnedDitherDurationS() / SettingsManager.getFramesPerDither()),
@@ -628,7 +721,7 @@ const SeqPlanView = {
         this._modalTargetId = target.targetId;
 
         // Open modal and inject content directly
-        UIManager.openModal(null, `${target.name} — Session Detail`, null);
+        UIManager.openModal(null, `${target.name}   Session Detail`, null);
         const modalBody = document.getElementById('modal-body');
         if (modalBody) {
             modalBody.innerHTML = html + `
@@ -658,7 +751,7 @@ const SeqPlanView = {
         <div class="card-body">
             <p style="display: flex; gap: 2rem; flex-wrap: wrap;">
                 <span><strong>Date:</strong> ${this.currentSession.date}</span>
-                <span><strong>Location:</strong> ${document.getElementById('seq-plan-location').value}</span>
+                <span><strong>Location:</strong> ${this._getDropdownValue('seq-plan-location-menu')}</span>
                 <span><strong>Session:</strong> ${startTime.toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false})} - ${endTime.toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false})} (${duration.toFixed(1)}h)</span>
             </p>
             <h4 style="margin-top: 1.5rem;">Target Sequence:</h4>
@@ -667,14 +760,14 @@ const SeqPlanView = {
         this.calculatedResults.forEach((target, index) => {
             const targetStartTime = jdToDate(target.imagingStartJD);
             const targetEndTime = jdToDate(target.imagingEndJD);
-            const flipWarning = target.meridianFlipJD ? ' • ⚠ Includes meridian flip' : '';
+            const flipWarning = target.meridianFlipJD ? '     Includes meridian flip' : '';
 
             // Main imaging entry (full window)
             html += `
             <p style="margin-bottom: 0.5rem;">
-                <strong>${index + 1}. <a href="#" class="block-link" onclick="SeqPlanView.showTargetDetailModal('${target.targetId}'); return false;">${target.name}</a></strong> •
-                Start: ${targetStartTime.toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false})} •
-                End: ${targetEndTime.toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false})} (${target.imagingMinutes.toFixed(0)}m) •
+                <strong>${index + 1}. <a href="#" class="block-link" onclick="SeqPlanView.showTargetDetailModal('${target.targetId}'); return false;">${target.name}</a></strong>
+                Start: ${targetStartTime.toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false})}
+                End: ${targetEndTime.toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false})} (${target.imagingMinutes.toFixed(0)}m)
                 ${target.exposureCount} × ${target.exposureTime}s${flipWarning}
             </p>
             `;
@@ -689,12 +782,10 @@ const SeqPlanView = {
                 // Helper function to check if a time period overlaps with any horizon violation
                 const overlapsHorizonViolation = (startJD, endJD) => {
                     return horizonViolations.some(hv => {
-                        // Check if periods overlap
                         return (startJD < hv.endJD && endJD > hv.startJD);
                     });
                 };
 
-                // Show violation for "starts early" case (only if not covered by horizon violation and >= 1 minute duration)
                 if (constraint.violationType === 'starts_early' || constraint.violationType === 'both') {
                     const violationMinutes = (constraint.validStartJD - target.imagingStartJD) * 1440;
                     if (violationMinutes >= 1 && !overlapsHorizonViolation(target.imagingStartJD, constraint.validStartJD)) {
@@ -703,15 +794,14 @@ const SeqPlanView = {
 
                         html += `
             <p style="margin-bottom: 0.5rem; margin-left: 0rem;">
-                <span style="color: var(--error-color);">⚠ ${target.name} • Altitude constraint</span> •
-                Start: ${violationStart.toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false})} •
+                <span style="color: var(--error-color);">  ${target.name}   Altitude constraint</span>
+                Start: ${violationStart.toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false})}
                 End: ${violationEnd.toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false})} (${violationMinutes.toFixed(0)}m)
             </p>
                         `;
                     }
                 }
 
-                // Show violation for "ends late" case (only if not covered by horizon violation and >= 1 minute duration)
                 if (constraint.violationType === 'ends_late' || constraint.violationType === 'both') {
                     const violationMinutes = (target.imagingEndJD - constraint.validEndJD) * 1440;
                     if (violationMinutes >= 1 && !overlapsHorizonViolation(constraint.validEndJD, target.imagingEndJD)) {
@@ -720,8 +810,8 @@ const SeqPlanView = {
 
                         html += `
             <p style="margin-bottom: 0.5rem; margin-left: 0rem;">
-                <span style="color: var(--error-color);">⚠ ${target.name} • Altitude constraint</span> •
-                Start: ${violationStart.toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false})} •
+                <span style="color: var(--error-color);">  ${target.name}   Altitude constraint</span>
+                Start: ${violationStart.toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false})}
                 End: ${violationEnd.toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false})} (${violationMinutes.toFixed(0)}m)
             </p>
                         `;
@@ -733,7 +823,6 @@ const SeqPlanView = {
             if (target.horizonViolations && target.horizonViolations.length > 0) {
                 target.horizonViolations.forEach(violation => {
                     const violationMinutes = (violation.endJD - violation.startJD) * 1440;
-                    // Skip violations less than 1 minute
                     if (violationMinutes < 1) return;
 
                     const violationStart = jdToDate(violation.startJD);
@@ -741,8 +830,8 @@ const SeqPlanView = {
 
                     html += `
             <p style="margin-bottom: 0.5rem; margin-left: 0rem;">
-                <span style="color: var(--error-color);">⚠ ${target.name} • Horizon constraint</span> •
-                Start: ${violationStart.toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false})} •
+                <span style="color: var(--error-color);">  ${target.name}   Horizon constraint</span>
+                Start: ${violationStart.toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false})}
                 End: ${violationEnd.toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false})} (${violationMinutes.toFixed(0)}m)
             </p>
                     `;
@@ -760,7 +849,6 @@ const SeqPlanView = {
 
     // ============================================================================
     // PHASE 2 ADDITIONS TO SEQPLAN-VIEW.JS
-    // Add these methods to the SeqPlanView object
     // ============================================================================
 
     /**
@@ -800,7 +888,7 @@ const SeqPlanView = {
                            style="width: 200px;">
                 </div>
                 <div class="seq-plan-allocation-value" id="value-${target.targetId}">
-                    ${target.allocatedPercent.toFixed(0)}% • ${target.exposureCount} × ${target.exposureTime}s
+                    ${target.allocatedPercent.toFixed(0)}%   ${target.exposureCount} × ${target.exposureTime}s
                 </div>
             `;
 
@@ -900,8 +988,6 @@ const SeqPlanView = {
 
     /**
      * Handle slider change with left-to-right priority
-     * Targets to the left are locked, targets to the right absorb changes
-     * Last target can only be reduced (shortens session duration)
      */
     handleSliderChange(targetId, newPercent) {
         const targetIndex = this.calculatedResults.findIndex(t => t.targetId === targetId);
@@ -910,10 +996,8 @@ const SeqPlanView = {
         const oldPercent = this.calculatedResults[targetIndex].allocatedPercent;
         const diff = newPercent - oldPercent;
 
-        // Distribute the difference only among targets to the RIGHT
         const targetsToRight = this.calculatedResults.slice(targetIndex + 1);
 
-        // If last target, cap at stored max — cannot extend past original end time
         if (targetsToRight.length === 0) {
             const lastTarget = this.calculatedResults[targetIndex];
             const maxPercent = this._lastTargetMaxPercent ?? 100;
@@ -927,7 +1011,6 @@ const SeqPlanView = {
             }
             this.calculatedResults[targetIndex].allocatedPercent = newPercent;
         } else {
-            // Normal case: distribute among targets to the right
             const adjustment = -diff / targetsToRight.length;
             this.calculatedResults[targetIndex].allocatedPercent = newPercent;
             targetsToRight.forEach(target => {
@@ -935,17 +1018,14 @@ const SeqPlanView = {
             });
         }
 
-        // Normalize to ensure total is 100% (or less if last target was reduced)
         const total = this.calculatedResults.reduce((sum, t) => sum + t.allocatedPercent, 0);
         if (Math.abs(total - 100) > 0.01 && targetsToRight.length > 0) {
-            // Only normalize if NOT the last target
             const scale = 100 / total;
             this.calculatedResults.forEach(t => {
                 t.allocatedPercent *= scale;
             });
         }
 
-        // Update slider positions for all affected targets
         this.calculatedResults.forEach(target => {
             const slider = document.getElementById(`slider-${target.targetId}`);
             if (slider) {
@@ -954,7 +1034,6 @@ const SeqPlanView = {
             }
         });
 
-        // Recalculate and update
         this.recalculateAndUpdate();
     },
 
@@ -975,13 +1054,11 @@ const SeqPlanView = {
     recalculateAndUpdate() {
         if (this.isInitializing) return;
 
-        // Recalculate with current allocations
         this.calculatedResults = SeqPlanCalculations.calculateExposureCounts(
             this.calculatedResults,
             this.currentSession
         );
 
-        // Check altitude constraints for each target
         this.calculatedResults.forEach(target => {
             const constraint = SeqPlanCalculations.checkTargetAltitudeConstraint(
                 target,
@@ -990,7 +1067,6 @@ const SeqPlanView = {
             target.altitudeConstraint = constraint;
             target.altitudeViolation = !constraint.isValid;
 
-            // Find horizon violations if using horizon profile
             if (this.currentSession.useHorizon && this.currentSession.location.horizon) {
                 target.horizonViolations = SeqPlanCalculations.findHorizonViolations(
                     target.imagingStartJD,
@@ -1007,7 +1083,6 @@ const SeqPlanView = {
             }
         });
 
-        // Update slider values display
         this.calculatedResults.forEach(target => {
             const slider = document.getElementById(`slider-${target.targetId}`);
             const valueDisplay = document.getElementById(`value-${target.targetId}`);
@@ -1015,21 +1090,18 @@ const SeqPlanView = {
                 slider.value = target.allocatedPercent.toFixed(0);
             }
             if (valueDisplay) {
-                valueDisplay.textContent = `${target.allocatedPercent.toFixed(0)}% • ${target.exposureCount} × ${target.exposureTime}s`;
+                valueDisplay.textContent = `${target.allocatedPercent.toFixed(0)}%   ${target.exposureCount} × ${target.exposureTime}s`;
             }
         });
 
-        // Regenerate timeline
         const events = SeqPlanCalculations.generateTimelineEvents(
             this.calculatedResults,
             this.currentSession
         );
         SeqPlanTimeline.render(events, this.currentSession.sessionStartJD, this.currentSession.sessionEndJD, this.currentSession);
 
-        // Update results display
         this.displayResults();
 
-        // Update total images count in footer
         const totalImages = document.getElementById('seq-plan-total-images');
         if (totalImages) {
             const total = this.calculatedResults.reduce((sum, t) => sum + t.exposureCount, 0);
@@ -1059,7 +1131,6 @@ const SeqPlanView = {
         const targetRow = e.target.closest('.seq-plan-target-row');
         if (targetRow && targetRow !== this.draggedElement) {
             const container = targetRow.parentNode;
-            const draggingRect = this.draggedElement.getBoundingClientRect();
             const targetRect = targetRow.getBoundingClientRect();
 
             if (e.clientY < targetRect.top + targetRect.height / 2) {
@@ -1080,16 +1151,13 @@ const SeqPlanView = {
     },
 
     handleDragEnd(e) {
-        // Remove dragging class from the row (not the handle)
         if (this.draggedElement) {
             this.draggedElement.classList.remove('dragging');
         }
 
-        // Get new order from DOM
         const rows = document.querySelectorAll('.seq-plan-target-row');
         const newOrder = Array.from(rows).map(row => row.dataset.targetId);
 
-        // Reorder calculatedResults array
         const reordered = [];
         newOrder.forEach(targetId => {
             const target = this.calculatedResults.find(t => t.targetId === targetId);
@@ -1101,9 +1169,6 @@ const SeqPlanView = {
 
         this.calculatedResults = reordered;
 
-        this.calculatedResults = reordered;
-
-        // Recalculate session window based on new first/last target order
         const sessionWindow = SeqPlanCalculations.calculateSessionWindow(
             reordered,
             this.currentSession.duskJD,
@@ -1118,12 +1183,10 @@ const SeqPlanView = {
         this.currentSession.sessionStartJD = sessionWindow.sessionStartJD;
         this.currentSession.sessionEndJD = sessionWindow.sessionEndJD;
 
-        // Recalculate and update
         this.recalculateAndUpdate();
 
         this.draggedElement = null;
     },
-
 
     /**
      * Reset allocations and re-optimize target order
@@ -1131,10 +1194,8 @@ const SeqPlanView = {
     async resetAndOptimize() {
         if (!this.currentSession || this.calculatedResults.length === 0) return;
 
-        // Rebuild session config to pick up any changed settings (like autofocus)
         this.currentSession = this.buildSessionConfig();
 
-        // Recalculate dusk/dawn timing
         const timing = SeqPlanCalculations.calculateSessionTiming(
             this.currentSession.date,
             this.currentSession.location
@@ -1148,19 +1209,16 @@ const SeqPlanView = {
         this.currentSession.sessionStartJD = timing.duskJD;
         this.currentSession.sessionEndJD = timing.dawnJD;
 
-        // Reset to equal allocation
         const equalPercent = 100 / this.currentTargets.length;
         this.currentTargets.forEach(target => {
             target.allocatedPercent = equalPercent;
         });
 
-        // Re-optimize target order
         const optimizedTargets = SeqPlanOptimizer.optimizeTargetOrder(
             this.currentTargets,
             this.currentSession
         );
 
-        // Recalculate session window based on optimized target order
         const sessionWindow = SeqPlanCalculations.calculateSessionWindow(
             optimizedTargets,
             timing.duskJD,
@@ -1175,14 +1233,12 @@ const SeqPlanView = {
         this.currentSession.sessionStartJD = sessionWindow.sessionStartJD;
         this.currentSession.sessionEndJD = sessionWindow.sessionEndJD;
 
-        // Apply transition optimization (second pass, if enabled and tolerance set)
         const transitionOptimizedTargets = SeqPlanOptimizer.optimizeTransitions(
             optimizedTargets,
             this.currentSession,
             this.currentSession.transitionTolerance
         );
 
-        // Recalculate session window in case transition optimization changed target order
         const transitionSessionWindow = SeqPlanCalculations.calculateSessionWindow(
             transitionOptimizedTargets,
             timing.duskJD,
@@ -1197,16 +1253,13 @@ const SeqPlanView = {
         this.currentSession.sessionStartJD = transitionSessionWindow.sessionStartJD;
         this.currentSession.sessionEndJD = transitionSessionWindow.sessionEndJD;
 
-        // Recalculate with new order and equal allocations
         this.calculatedResults = SeqPlanCalculations.calculateExposureCounts(
             transitionOptimizedTargets,
             this.currentSession
         );
 
-        // Update target list reference
         this.currentTargets = this.calculatedResults;
 
-        // Check altitude constraints for each target
         this.calculatedResults.forEach(target => {
             const constraint = SeqPlanCalculations.checkTargetAltitudeConstraint(
                 target,
@@ -1215,7 +1268,6 @@ const SeqPlanView = {
             target.altitudeConstraint = constraint;
             target.altitudeViolation = !constraint.isValid;
 
-            // Find horizon violations if using horizon profile
             if (this.currentSession.useHorizon && this.currentSession.location.horizon) {
                 target.horizonViolations = SeqPlanCalculations.findHorizonViolations(
                     target.imagingStartJD,
@@ -1232,7 +1284,6 @@ const SeqPlanView = {
             }
         });
 
-        // Regenerate timeline
         const events = SeqPlanCalculations.generateTimelineEvents(
             this.calculatedResults,
             this.currentSession
@@ -1240,7 +1291,6 @@ const SeqPlanView = {
 
         SeqPlanTimeline.render(events, this.currentSession.sessionStartJD, this.currentSession.sessionEndJD, this.currentSession);
 
-        // Update displays
         this.displayResults();
         this.renderTargetAllocation();
 
@@ -1251,12 +1301,9 @@ const SeqPlanView = {
      * Recalculate plan without re-optimizing (for overhead setting changes)
      */
     debouncedRecalculate() {
-        // Clear existing timer
         if (this.debounceTimer) {
             clearTimeout(this.debounceTimer);
         }
-
-        // Set new timer
         this.debounceTimer = setTimeout(() => {
             this.recalculateWithoutOptimization();
         }, 1000);
@@ -1268,13 +1315,10 @@ const SeqPlanView = {
     async recalculateWithoutOptimization() {
         if (!this.currentSession || this.calculatedResults.length === 0) return;
 
-        // Save settings
         await this.saveSettings();
 
-        // Rebuild session config with new overhead settings
         this.currentSession = this.buildSessionConfig();
 
-        // Recalculate dusk and dawn
         const timing = SeqPlanCalculations.calculateSessionTiming(
             this.currentSession.date,
             this.currentSession.location
@@ -1288,7 +1332,6 @@ const SeqPlanView = {
         this.currentSession.duskJD = timing.duskJD;
         this.currentSession.dawnJD = timing.dawnJD;
 
-        // Calculate session window based on first/last target altitude constraints
         const sessionWindow = SeqPlanCalculations.calculateSessionWindow(
             this.calculatedResults,
             timing.duskJD,
@@ -1304,13 +1347,11 @@ const SeqPlanView = {
         this.currentSession.sessionStartJD = sessionWindow.sessionStartJD;
         this.currentSession.sessionEndJD = sessionWindow.sessionEndJD;
 
-        // Recalculate with CURRENT order (no optimization)
         this.calculatedResults = SeqPlanCalculations.calculateExposureCounts(
             this.calculatedResults,
             this.currentSession
         );
 
-        // Check altitude constraints for each target
         this.calculatedResults.forEach(target => {
             const constraint = SeqPlanCalculations.checkTargetAltitudeConstraint(
                 target,
@@ -1319,7 +1360,6 @@ const SeqPlanView = {
             target.altitudeConstraint = constraint;
             target.altitudeViolation = !constraint.isValid;
 
-            // Find horizon violations if using horizon profile
             if (this.currentSession.useHorizon && this.currentSession.location.horizon) {
                 target.horizonViolations = SeqPlanCalculations.findHorizonViolations(
                     target.imagingStartJD,
@@ -1336,7 +1376,6 @@ const SeqPlanView = {
             }
         });
 
-        // Regenerate timeline
         const events = SeqPlanCalculations.generateTimelineEvents(
             this.calculatedResults,
             this.currentSession
@@ -1344,7 +1383,6 @@ const SeqPlanView = {
 
         SeqPlanTimeline.render(events, this.currentSession.sessionStartJD, this.currentSession.sessionEndJD, this.currentSession);
 
-        // Update displays
         this.displayResults();
         this.renderTargetAllocation();
     },
@@ -1374,7 +1412,6 @@ const SeqPlanView = {
                 if (targetBody) {
                     header.classList.toggle('collapsed');
 
-                    // Add tiny delay before collapsing body to prevent rendering glitches
                     if (targetBody.classList.contains('collapsed')) {
                         targetBody.classList.remove('collapsed');
                     } else {
@@ -1387,7 +1424,7 @@ const SeqPlanView = {
         });
     },
 
-/**
+    /**
      * Generate and download a PDF of the sequence plan for a single target.
      */
     downloadPDF(targetId, events, session) {
@@ -1434,8 +1471,8 @@ const SeqPlanView = {
                 tableHeader: { fontSize: 9, bold: true, color: colors.headerText, fillColor: colors.headerBg },
             },
             content: [
-                { text: `${target.name} — Sequence Plan`, style: 'title' },
-                { text: `${session.date}  •  ${session.location.name || ''}`, style: 'subtitle' },
+                { text: `${target.name}   Sequence Plan`, style: 'title' },
+                { text: `${session.date}     ${session.location.name || ''}`, style: 'subtitle' },
                 {
                     table: {
                         headerRows: 1,

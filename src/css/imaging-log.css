@@ -8,6 +8,16 @@
     --sessions-transition: 0.5s;
 }
 
+/* filtering criteria */
+
+#imaging-log-status-dropdown {
+    min-width: 200px;
+}
+
+#imaging-log-sort-dropdown {
+    min-width: 210px;
+}
+
 /* ============================================================================
    Tabs
    ============================================================================ */

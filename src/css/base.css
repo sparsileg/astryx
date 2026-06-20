@@ -1016,7 +1016,8 @@ input[type="range"]::-moz-range-thumb {
 /* Highlight min altitude dropdown when overriding global default */
 select.altitude-override-active,
 #modal-min-altitude-daily.altitude-override-active,
-#modal-min-altitude-yearly.altitude-override-active {
+#modal-min-altitude-yearly.altitude-override-active,
+#seq-plan-min-altitude-trigger.altitude-override-active {
     box-shadow: 0 0 8px var(--warning-color) !important;
     border: 2px solid var(--warning-color) !important;
     outline: none !important;
