@@ -38,7 +38,8 @@
           </div>
           <div class="header-top">
             <h1 id="app-name"></h1>
-            <button id="system-menu-btn" class="system-btn tooltip-host" data-tooltip-key="sb_system">≡</button>
+            <button id="system-menu-btn" class="system-btn
+            tooltip-host" data-tooltip-key="sb_system">≡</button>
           </div>
           <div class="theme-selector">
             <div class="target-filter-dropdown" id="theme-dropdown">
@@ -47,26 +48,33 @@
                 <span class="target-filter-dropdown-arrow"> </span>
               </div>
               <div class="target-filter-dropdown-menu" id="theme-dropdown-menu">
-                <div class="target-filter-dropdown-item" data-value="dark">Dark</div>
-                <div class="target-filter-dropdown-item" data-value="light">Light</div>
-                <div class="target-filter-dropdown-item" data-value="matrix">Matrix</div>
-                <div class="target-filter-dropdown-item" data-value="flat">Flat</div>
-                <div class="target-filter-dropdown-item" data-value="night">Night</div>
+                <div class="target-filter-dropdown-item"
+                data-value="dark">Dark</div>
+                <div class="target-filter-dropdown-item"
+                data-value="light">Light</div>
+                <div class="target-filter-dropdown-item"
+                data-value="matrix">Matrix</div>
+                <div class="target-filter-dropdown-item"
+                data-value="flat">Flat</div>
+                <div class="target-filter-dropdown-item"
+                data-value="night">Night</div>
               </div>
             </div>
           </div>
           <div class="theme-selector" style="margin-top: 0.5rem;">
             <div class="target-filter-dropdown" id="location-dropdown">
               <div class="target-filter-dropdown-trigger" id="location-dropdown-trigger" data-tooltip-key="sb_location">
-                <span id="location-dropdown-label">Select a location...</span>
+                <span id="location-dropdown-label">Select a
+                location...</span>
                 <span class="target-filter-dropdown-arrow"> </span>
               </div>
               <div class="target-filter-dropdown-menu" id="location-dropdown-menu">
               </div>
             </div>
           </div>
-          <button id="sidebar-current-target" class="tooltip-host btn-secondary" data-tooltip-key="sb_currentTgt">Current Target: None</button>
-<!--
+          <button id="sidebar-current-target" class="tooltip-host
+btn-secondary" data-tooltip-key="sb_currentTgt">Current Target:
+None</button> <!--
           <div id="sidebar-current-target" class="tooltip-host btn-primary" data-tooltip-key="sb_currentTgt">
             Current Target: None
           </div>
@@ -76,23 +84,36 @@
         <div class="sidebar-content">
           <ul class="nav-list">
             <li class="nav-item tooltip-host"
-                id="sidebar-target-selection" data-view="target-select" data-tooltip-key="sb_tgtSelect">Target Selection</li>
+                id="sidebar-target-selection"
+                data-view="target-select"
+                data-tooltip-key="sb_tgtSelect">Target Selection</li>
+            <li class="nav-item tooltip-host" id="sidebar-to-do-list"
+                data-view="todo" data-tooltip-key="sb_todoList">To Do
+                List</li>
             <li class="nav-item tooltip-host"
-                id="sidebar-to-do-list" data-view="todo" data-tooltip-key="sb_todoList">To Do List</li>
+                id="sidebar-yearly-observability"
+                data-view="yearly-observability"
+                data-tooltip-key="sb_yearlyObs">Yearly
+                Observability</li>
             <li class="nav-item tooltip-host"
-                id="sidebar-yearly-observability" data-view="yearly-observability" data-tooltip-key="sb_yearlyObs">Yearly Observability</li>
+                id="sidebar-daily-visibility"
+                data-view="daily-visibility"
+                data-tooltip-key="sb_dailyVis">Daily Visibility</li>
+            <li class="nav-item tooltip-host" id="sidebar-viewfinder"
+                data-view="fov"
+                data-tooltip-key="sb_fov">Viewfinder</li>
             <li class="nav-item tooltip-host"
-                id="sidebar-daily-visibility" data-view="daily-visibility" data-tooltip-key="sb_dailyVis">Daily Visibility</li>
+                id="sidebar-target-optimizer" data-view="optimizer"
+                data-tooltip-key="sb_tgtOpt">Target Optimizer</li>
             <li class="nav-item tooltip-host"
-                id="sidebar-viewfinder" data-view="fov" data-tooltip-key="sb_fov">Viewfinder</li>
-            <li class="nav-item tooltip-host"
-                id="sidebar-target-optimizer" data-view="optimizer" data-tooltip-key="sb_tgtOpt">Target Optimizer</li>
-            <li class="nav-item tooltip-host"
-                id="sidebar-sequence-planner" data-view="seqplan" data-tooltip-key="sb_seqPlanner">Sequence Planner</li>
-            <li class="nav-item tooltip-host"
-                id="sidebar-imaging-log" data-view="imaging-log" data-tooltip-key="sb_imgLog">Imaging Log</li>
-            <li class="nav-item tooltip-host"
-                id="sidebar-utilities" data-view="utilities" data-tooltip-key="sb_utils">Utilities</li>
+                id="sidebar-sequence-planner" data-view="seqplan"
+                data-tooltip-key="sb_seqPlanner">Sequence Planner</li>
+            <li class="nav-item tooltip-host" id="sidebar-imaging-log"
+                data-view="imaging-log"
+                data-tooltip-key="sb_imgLog">Imaging Log</li>
+            <li class="nav-item tooltip-host" id="sidebar-utilities"
+                data-view="utilities"
+                data-tooltip-key="sb_utils">Utilities</li>
           </ul>
         </div>
 
@@ -1247,22 +1268,28 @@
         </div>
       </div>
 
-      <!-- Pattern Mode Fields -->
-      <div id="pattern-fields" style="display: none;">
-        <div class="form-group">
-          <label for="program-catalog-prefix">Catalog Prefix <span class="tooltip-icon tooltip-host" data-tooltip-key="ilog_catalogPrefix">?</span></label>
-          <select id="program-catalog-prefix">
-            <option value="">Select catalog...</option>
-          </select>
+        <!-- Pattern Mode Fields -->
+        <div id="pattern-fields" style="display: none;">
+          <div class="form-group">
+            <label class="tooltip-host" data-tooltip-key="ilog_catalogPrefix">Catalog Prefix <span class="tooltip-icon">?</span></label>
+            <div class="target-filter-dropdown" id="program-catalog-prefix-dropdown">
+              <div class="target-filter-dropdown-trigger" id="program-catalog-prefix-trigger">
+                <span id="program-catalog-prefix-label">Select catalog...</span>
+                <span class="target-filter-dropdown-arrow"> </span>
+              </div>
+              <div class="target-filter-dropdown-menu" id="program-catalog-prefix-menu">
+                <div class="target-filter-dropdown-item" data-value="">Select catalog...</div>
+              </div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="program-max-number">Maximum Number <span class="tooltip-icon tooltip-host" data-tooltip-key="ilog_maxNumber">?</span></label>
+            <input type="number"
+                   id="program-max-number"
+                   min="1"
+                   placeholder="e.g., 7840">
+          </div>
         </div>
-        <div class="form-group">
-          <label for="program-max-number">Maximum Number <span class="tooltip-icon tooltip-host" data-tooltip-key="ilog_maxNumber">?</span></label>
-          <input type="number"
-                 id="program-max-number"
-                 min="1"
-                 placeholder="e.g., 7840">
-        </div>
-      </div>
 
       <!-- Manual List Fields -->
       <div id="manual-fields">
@@ -1297,27 +1324,47 @@
             </div>
 
             <div class="form-group">
-              <label for="session-location">Location *</label>
-              <select id="session-location"></select>
+              <label>Location *</label>
+              <div class="target-filter-dropdown" id="session-location-dropdown">
+                <div class="target-filter-dropdown-trigger" id="session-location-trigger">
+                  <span id="session-location-label">Select location...</span>
+                  <span class="target-filter-dropdown-arrow"> </span>
+                </div>
+                <div class="target-filter-dropdown-menu" id="session-location-menu"></div>
+              </div>
             </div>
 
             <div class="form-group">
-              <label for="session-telescope">Telescope *</label>
-              <select id="session-telescope"></select>
+              <label>Telescope *</label>
+              <div class="target-filter-dropdown" id="session-telescope-dropdown">
+                <div class="target-filter-dropdown-trigger" id="session-telescope-trigger">
+                  <span id="session-telescope-label">Select telescope...</span>
+                  <span class="target-filter-dropdown-arrow"> </span>
+                </div>
+                <div class="target-filter-dropdown-menu" id="session-telescope-menu"></div>
+              </div>
             </div>
 
             <div class="form-group">
-              <label for="session-sensor">Sensor *</label>
-              <select id="session-sensor"></select>
+              <label>Sensor *</label>
+              <div class="target-filter-dropdown" id="session-sensor-dropdown">
+                <div class="target-filter-dropdown-trigger" id="session-sensor-trigger">
+                  <span id="session-sensor-label">Select sensor...</span>
+                  <span class="target-filter-dropdown-arrow"> </span>
+                </div>
+                <div class="target-filter-dropdown-menu" id="session-sensor-menu"></div>
+              </div>
             </div>
 
-            <div class="form-group" style="position: relative;">
-              <label for="session-filter">Filter *</label>
-              <select id="session-filter"></select>
-              <input type="text"
-                     id="session-filter-new-input"
-                     placeholder="Enter filter name and press Enter..."
-                     style="display: none; position: absolute; top: 1.75rem; left: 0; right: 0; z-index: 10;">
+            <div class="form-group">
+              <label>Filter *</label>
+              <div class="target-filter-dropdown" id="session-filter-dropdown">
+                <div class="target-filter-dropdown-trigger" id="session-filter-trigger">
+                  <span id="session-filter-label">Select filter...</span>
+                  <span class="target-filter-dropdown-arrow"> </span>
+                </div>
+                <div class="target-filter-dropdown-menu" id="session-filter-menu"></div>
+              </div>
             </div>
           </div>
 
@@ -1341,13 +1388,19 @@
             </div>
 
             <div class="form-group">
-              <label for="session-bin">Bin</label>
-              <select id="session-bin">
-                <option value="1x1" selected>1x1</option>
-                <option value="2x2">2x2</option>
-                <option value="3x3">3x3</option>
-                <option value="4x4">4x4</option>
-              </select>
+              <label>Bin</label>
+              <div class="target-filter-dropdown" id="session-bin-dropdown">
+                <div class="target-filter-dropdown-trigger" id="session-bin-trigger">
+                  <span id="session-bin-label">1x1</span>
+                  <span class="target-filter-dropdown-arrow"> </span>
+                </div>
+                <div class="target-filter-dropdown-menu" id="session-bin-menu">
+                  <div class="target-filter-dropdown-item selected" data-value="1x1">1x1</div>
+                  <div class="target-filter-dropdown-item" data-value="2x2">2x2</div>
+                  <div class="target-filter-dropdown-item" data-value="3x3">3x3</div>
+                  <div class="target-filter-dropdown-item" data-value="4x4">4x4</div>
+                </div>
+              </div>
             </div>
 
             <div class="form-group">
@@ -1418,44 +1471,71 @@
 
           <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 1rem;">
             <div class="form-group">
-              <label for="session-clouds">Clouds</label>
-              <select id="session-clouds">
-                <option value="">Unknown</option>
-                <option value="None">None</option>
-                <option value="Intermittent">Intermittent</option>
-                <option value="Hazy">Hazy</option>
-              </select>
+              <label>Clouds</label>
+              <div class="target-filter-dropdown" id="session-clouds-dropdown">
+                <div class="target-filter-dropdown-trigger" id="session-clouds-trigger">
+                  <span id="session-clouds-label">Unknown</span>
+                  <span class="target-filter-dropdown-arrow"> </span>
+                </div>
+                <div class="target-filter-dropdown-menu" id="session-clouds-menu">
+                  <div class="target-filter-dropdown-item selected" data-value="">Unknown</div>
+                  <div class="target-filter-dropdown-item" data-value="None">None</div>
+                  <div class="target-filter-dropdown-item" data-value="Intermittent">Intermittent</div>
+                  <div class="target-filter-dropdown-item" data-value="Hazy">Hazy</div>
+                </div>
+              </div>
             </div>
+
             <div class="form-group">
-              <label for="session-smoke">Smoke</label>
-              <select id="session-smoke">
-                <option value="">Unknown</option>
-                <option value="None">None</option>
-                <option value="Light">Light</option>
-                <option value="Moderate">Moderate</option>
-              </select>
+              <label>Smoke</label>
+              <div class="target-filter-dropdown" id="session-smoke-dropdown">
+                <div class="target-filter-dropdown-trigger" id="session-smoke-trigger">
+                  <span id="session-smoke-label">Unknown</span>
+                  <span class="target-filter-dropdown-arrow"> </span>
+                </div>
+                <div class="target-filter-dropdown-menu" id="session-smoke-menu">
+                  <div class="target-filter-dropdown-item selected" data-value="">Unknown</div>
+                  <div class="target-filter-dropdown-item" data-value="None">None</div>
+                  <div class="target-filter-dropdown-item" data-value="Light">Light</div>
+                  <div class="target-filter-dropdown-item" data-value="Moderate">Moderate</div>
+                </div>
+              </div>
             </div>
+
             <div class="form-group">
-              <label for="session-seeing">Seeing</label>
-              <select id="session-seeing">
-                <option value="">Unknown</option>
-                <option value="Poor">Poor</option>
-                <option value="Below Average">Below Average</option>
-                <option value="Average">Average</option>
-                <option value="Good">Good</option>
-                <option value="Excellent">Excellent</option>
-              </select>
+              <label>Seeing</label>
+              <div class="target-filter-dropdown" id="session-seeing-dropdown">
+                <div class="target-filter-dropdown-trigger" id="session-seeing-trigger">
+                  <span id="session-seeing-label">Unknown</span>
+                  <span class="target-filter-dropdown-arrow"> </span>
+                </div>
+                <div class="target-filter-dropdown-menu" id="session-seeing-menu">
+                  <div class="target-filter-dropdown-item selected" data-value="">Unknown</div>
+                  <div class="target-filter-dropdown-item" data-value="Poor">Poor</div>
+                  <div class="target-filter-dropdown-item" data-value="Below Average">Below Average</div>
+                  <div class="target-filter-dropdown-item" data-value="Average">Average</div>
+                  <div class="target-filter-dropdown-item" data-value="Good">Good</div>
+                  <div class="target-filter-dropdown-item" data-value="Excellent">Excellent</div>
+                </div>
+              </div>
             </div>
+
             <div class="form-group">
-              <label for="session-transparency">Transparency</label>
-              <select id="session-transparency">
-                <option value="">Unknown</option>
-                <option value="Poor">Poor</option>
-                <option value="Below Average">Below Average</option>
-                <option value="Average">Average</option>
-                <option value="Good">Good</option>
-                <option value="Excellent">Excellent</option>
-              </select>
+              <label>Transparency</label>
+              <div class="target-filter-dropdown" id="session-transparency-dropdown">
+                <div class="target-filter-dropdown-trigger" id="session-transparency-trigger">
+                  <span id="session-transparency-label">Unknown</span>
+                  <span class="target-filter-dropdown-arrow"> </span>
+                </div>
+                <div class="target-filter-dropdown-menu" id="session-transparency-menu">
+                  <div class="target-filter-dropdown-item selected" data-value="">Unknown</div>
+                  <div class="target-filter-dropdown-item" data-value="Poor">Poor</div>
+                  <div class="target-filter-dropdown-item" data-value="Below Average">Below Average</div>
+                  <div class="target-filter-dropdown-item" data-value="Average">Average</div>
+                  <div class="target-filter-dropdown-item" data-value="Good">Good</div>
+                  <div class="target-filter-dropdown-item" data-value="Excellent">Excellent</div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -1578,27 +1658,39 @@
                        style="width: 200px;">
               </div>
               <div style="display: flex; flex-direction: column; gap: 0.25rem;">
-                <label for="imaging-log-project-status-filter">Status <span class="tooltip-icon tooltip-host" data-tooltip-key="ilog_statusFilter">?</span></label>
-                <select id="imaging-log-project-status-filter">
-                  <option value="">All Statuses</option>
-                  <option value="all-but-completed" selected="selected">All But Completed</option>
-                  <option value="Planning">Planning</option>
-                  <option value="Acquiring Data">Acquiring Data</option>
-                  <option value="Acquisition Complete">Acquisition Complete</option>
-                  <option value="Processing">Processing</option>
-                  <option value="Completed">Completed</option>
-                </select>
+                <label>Status <span class="tooltip-icon tooltip-host" data-tooltip-key="ilog_statusFilter">?</span></label>
+                <div class="target-filter-dropdown" id="imaging-log-status-dropdown">
+                  <div class="target-filter-dropdown-trigger" id="imaging-log-status-trigger">
+                    <span id="imaging-log-status-label">All But Completed</span>
+                    <span class="target-filter-dropdown-arrow"> </span>
+                  </div>
+                  <div class="target-filter-dropdown-menu" id="imaging-log-status-menu">
+                    <div class="target-filter-dropdown-item" data-value="">All Statuses</div>
+                    <div class="target-filter-dropdown-item selected" data-value="all-but-completed">All But Completed</div>
+                    <div class="target-filter-dropdown-item" data-value="Planning">Planning</div>
+                    <div class="target-filter-dropdown-item" data-value="Acquiring Data">Acquiring Data</div>
+                    <div class="target-filter-dropdown-item" data-value="Acquisition Complete">Acquisition Complete</div>
+                    <div class="target-filter-dropdown-item" data-value="Processing">Processing</div>
+                    <div class="target-filter-dropdown-item" data-value="Completed">Completed</div>
+                  </div>
+                </div>
               </div>
 
               <div style="display: flex; flex-direction: column; gap: 0.25rem;">
-                <label for="imaging-log-project-sort">Sort By</label>
-                <select id="imaging-log-project-sort">
-                  <option value="modified-desc">Last Modified (newest)</option>
-                  <option value="modified-asc">Last Modified (oldest)</option>
-                  <option value="name-asc">Name (A-Z)</option>
-                  <option value="name-desc">Name (Z-A)</option>
-                  <option value="status">Status</option>
-                </select>
+                <label>Sort By</label>
+                <div class="target-filter-dropdown" id="imaging-log-sort-dropdown">
+                  <div class="target-filter-dropdown-trigger" id="imaging-log-sort-trigger">
+                    <span id="imaging-log-sort-label">Last Modified (newest)</span>
+                    <span class="target-filter-dropdown-arrow"> </span>
+                  </div>
+                  <div class="target-filter-dropdown-menu" id="imaging-log-sort-menu">
+                    <div class="target-filter-dropdown-item selected" data-value="modified-desc">Last Modified (newest)</div>
+                    <div class="target-filter-dropdown-item" data-value="modified-asc">Last Modified (oldest)</div>
+                    <div class="target-filter-dropdown-item" data-value="name-asc">Name (A-Z)</div>
+                    <div class="target-filter-dropdown-item" data-value="name-desc">Name (Z-A)</div>
+                    <div class="target-filter-dropdown-item" data-value="status">Status</div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -1778,7 +1870,7 @@
             <span style="margin-left: 1rem; font-size: 0.85rem; color: var(--text-secondary);">
               Autofocus is assumed for new targets and after meridian flip
             </span>
-            <span class="collapse-icon">▼</span>
+            <span class="collapse-icon"> </span>
           </div>
           <div class="card-body" id="session-settings-body">
             <!-- Row 1: Date and Start -->
@@ -1786,40 +1878,65 @@
               <label for="seq-plan-date" class="tooltip-host" data-tooltip-key="sp_startDate">Date:</label>
               <input type="date" id="seq-plan-date">
 
-              <label for="seq-plan-start-time" class="tooltip-host" data-tooltip-key="sp_startTime">Start:</label>
-              <select id="seq-plan-start-time">
-                <option value="dusk" selected>Dusk</option>
-                <option value="custom">Custom</option>
-              </select>
+              <label class="tooltip-host" data-tooltip-key="sp_startTime">Start:</label>
+              <div class="target-filter-dropdown" id="seq-plan-start-time-dropdown">
+                <div class="target-filter-dropdown-trigger" id="seq-plan-start-time-trigger">
+                  <span id="seq-plan-start-time-label">Dusk</span>
+                  <span class="target-filter-dropdown-arrow"> </span>
+                </div>
+                <div class="target-filter-dropdown-menu" id="seq-plan-start-time-menu">
+                  <div class="target-filter-dropdown-item selected" data-value="dusk">Dusk</div>
+                  <div class="target-filter-dropdown-item" data-value="custom">Custom</div>
+                </div>
+              </div>
               <input type="time" id="seq-plan-custom-time">
             </div>
 
             <!-- Row 2: Location and Min Alt -->
             <div class="seq-plan-session-row-2">
-              <label for="seq-plan-location" class="tooltip-host" data-tooltip-key="sp_location">Location:</label>
-              <select id="seq-plan-location"></select>
+              <label class="tooltip-host" data-tooltip-key="sp_location">Location:</label>
+              <div class="target-filter-dropdown" id="seq-plan-location-dropdown">
+                <div class="target-filter-dropdown-trigger" id="seq-plan-location-trigger">
+                  <span id="seq-plan-location-label">Select location...</span>
+                  <span class="target-filter-dropdown-arrow"> </span>
+                </div>
+                <div class="target-filter-dropdown-menu" id="seq-plan-location-menu">
+                </div>
+              </div>
 
-              <label for="seq-plan-min-altitude" class="tooltip-host" data-tooltip-key="sp_minAltitude">Min Alt:</label>
-              <select id="seq-plan-min-altitude">
-                <option value="5">5°</option>
-                <option value="10">10°</option>
-                <option value="15">15°</option>
-                <option value="20">20°</option>
-                <option value="25">25°</option>
-                <option value="30">30°</option>
-                <option value="35" selected>35°</option>
-                <option value="40">40°</option>
-                <option value="45">45°</option>
-                <option value="50">50°</option>
-                <option value="55">55°</option>
-                <option value="60">60°</option>
-              </select>
+              <label class="tooltip-host" data-tooltip-key="sp_minAltitude">Min Alt:</label>
+              <div class="target-filter-dropdown" id="seq-plan-min-altitude-dropdown">
+                <div class="target-filter-dropdown-trigger" id="seq-plan-min-altitude-trigger">
+                  <span id="seq-plan-min-altitude-label">35°</span>
+                  <span class="target-filter-dropdown-arrow"> </span>
+                </div>
+                <div class="target-filter-dropdown-menu" id="seq-plan-min-altitude-menu">
+                  <div class="target-filter-dropdown-item" data-value="5">5°</div>
+                  <div class="target-filter-dropdown-item" data-value="10">10°</div>
+                  <div class="target-filter-dropdown-item" data-value="15">15°</div>
+                  <div class="target-filter-dropdown-item" data-value="20">20°</div>
+                  <div class="target-filter-dropdown-item" data-value="25">25°</div>
+                  <div class="target-filter-dropdown-item" data-value="30">30°</div>
+                  <div class="target-filter-dropdown-item selected" data-value="35">35°</div>
+                  <div class="target-filter-dropdown-item" data-value="40">40°</div>
+                  <div class="target-filter-dropdown-item" data-value="45">45°</div>
+                  <div class="target-filter-dropdown-item" data-value="50">50°</div>
+                  <div class="target-filter-dropdown-item" data-value="55">55°</div>
+                  <div class="target-filter-dropdown-item" data-value="60">60°</div>
+                </div>
+              </div>
 
-              <label for="seq-plan-use-horizon" class="tooltip-host" data-tooltip-key="sp_horizon">Use Horizon:</label>
-              <select id="seq-plan-use-horizon">
-                <option value="yes">Yes</option>
-                <option value="no">No</option>
-              </select>
+              <label class="tooltip-host" data-tooltip-key="sp_horizon">Use Horizon:</label>
+              <div class="target-filter-dropdown" id="seq-plan-use-horizon-dropdown">
+                <div class="target-filter-dropdown-trigger" id="seq-plan-use-horizon-trigger">
+                  <span id="seq-plan-use-horizon-label">Yes</span>
+                  <span class="target-filter-dropdown-arrow"> </span>
+                </div>
+                <div class="target-filter-dropdown-menu" id="seq-plan-use-horizon-menu">
+                  <div class="target-filter-dropdown-item selected" data-value="yes">Yes</div>
+                  <div class="target-filter-dropdown-item" data-value="no">No</div>
+                </div>
+              </div>
             </div>
 
             <!-- Separator -->
@@ -1834,97 +1951,141 @@
                   Autofocus
                 </label>
 
-                <label for="seq-plan-af-interval" class="tooltip-host" data-tooltip-key="sp_afInterval">AF Interval:</label>
-                <select id="seq-plan-af-interval">
-                  <option value="0">0</option>
-                  <option value="30" selected>30</option>
-                  <option value="60">60</option>
-                  <option value="90">90</option>
-                  <option value="120">120</option>
-                </select>
+                <label class="tooltip-host" data-tooltip-key="sp_afInterval">AF Interval:</label>
+                <div class="target-filter-dropdown" id="seq-plan-af-interval-dropdown">
+                  <div class="target-filter-dropdown-trigger" id="seq-plan-af-interval-trigger">
+                    <span id="seq-plan-af-interval-label">30</span>
+                    <span class="target-filter-dropdown-arrow"> </span>
+                  </div>
+                  <div class="target-filter-dropdown-menu" id="seq-plan-af-interval-menu">
+                    <div class="target-filter-dropdown-item" data-value="0">0</div>
+                    <div class="target-filter-dropdown-item selected" data-value="30">30</div>
+                    <div class="target-filter-dropdown-item" data-value="60">60</div>
+                    <div class="target-filter-dropdown-item" data-value="90">90</div>
+                    <div class="target-filter-dropdown-item" data-value="120">120</div>
+                  </div>
+                </div>
                 <span>min</span>
 
-                <label for="seq-plan-af-duration" class="tooltip-host" data-tooltip-key="sp_afDuration">AF Duration:</label>
-                <select id="seq-plan-af-duration">
-                  <option value="0">0</option>
-                  <option value="1">1</option>
-                  <option value="2" selected>2</option>
-                  <option value="3">3</option>
-                  <option value="4">4</option>
-                  <option value="5">5</option>
-                </select>
+                <label class="tooltip-host" data-tooltip-key="sp_afDuration">AF Duration:</label>
+                <div class="target-filter-dropdown" id="seq-plan-af-duration-dropdown">
+                  <div class="target-filter-dropdown-trigger" id="seq-plan-af-duration-trigger">
+                    <span id="seq-plan-af-duration-label">2</span>
+                    <span class="target-filter-dropdown-arrow"> </span>
+                  </div>
+                  <div class="target-filter-dropdown-menu" id="seq-plan-af-duration-menu">
+                    <div class="target-filter-dropdown-item" data-value="0">0</div>
+                    <div class="target-filter-dropdown-item" data-value="1">1</div>
+                    <div class="target-filter-dropdown-item selected" data-value="2">2</div>
+                    <div class="target-filter-dropdown-item" data-value="3">3</div>
+                    <div class="target-filter-dropdown-item" data-value="4">4</div>
+                    <div class="target-filter-dropdown-item" data-value="5">5</div>
+                  </div>
+                </div>
                 <span>min</span>
+                <span id="seq-plan-af-note" style="display: none; color: var(--text-secondary); font-size: 0.85rem;"></span>
               </div>
 
               <!-- Row 2: Flip -->
               <div class="seq-plan-overhead-row-2">
-                <label for="seq-plan-flip-pause" class="tooltip-host" data-tooltip-key="sp_flipPause">Flip Pause:</label>
-                <select id="seq-plan-flip-pause">
-                  <option value="1">1</option>
-                  <option value="2">2</option>
-                  <option value="3">3</option>
-                  <option value="4" selected>4</option>
-                  <option value="5">5</option>
-                  <option value="6">6</option>
-                  <option value="7">7</option>
-                  <option value="8">8</option>
-                  <option value="9">9</option>
-                  <option value="10">10</option>
-                </select>
+                <label class="tooltip-host" data-tooltip-key="sp_flipPause">Flip Pause:</label>
+                <div class="target-filter-dropdown" id="seq-plan-flip-pause-dropdown">
+                  <div class="target-filter-dropdown-trigger" id="seq-plan-flip-pause-trigger">
+                    <span id="seq-plan-flip-pause-label">4</span>
+                    <span class="target-filter-dropdown-arrow"> </span>
+                  </div>
+                  <div class="target-filter-dropdown-menu" id="seq-plan-flip-pause-menu">
+                    <div class="target-filter-dropdown-item" data-value="1">1</div>
+                    <div class="target-filter-dropdown-item" data-value="2">2</div>
+                    <div class="target-filter-dropdown-item" data-value="3">3</div>
+                    <div class="target-filter-dropdown-item selected" data-value="4">4</div>
+                    <div class="target-filter-dropdown-item" data-value="5">5</div>
+                    <div class="target-filter-dropdown-item" data-value="6">6</div>
+                    <div class="target-filter-dropdown-item" data-value="7">7</div>
+                    <div class="target-filter-dropdown-item" data-value="8">8</div>
+                    <div class="target-filter-dropdown-item" data-value="9">9</div>
+                    <div class="target-filter-dropdown-item" data-value="10">10</div>
+                  </div>
+                </div>
                 <span>min</span>
 
-                <label for="seq-plan-flip-duration" class="tooltip-host" data-tooltip-key="sp_flipDuration">Flip Duration:</label>
-                <select id="seq-plan-flip-duration">
-                  <option value="1">1</option>
-                  <option value="2" selected>2</option>
-                  <option value="3">3</option>
-                  <option value="4">4</option>
-                  <option value="5">5</option>
-                  <option value="6">6</option>
-                  <option value="7">7</option>
-                  <option value="8">8</option>
-                  <option value="9">9</option>
-                  <option value="10">10</option>
-                </select>
+                <label class="tooltip-host" data-tooltip-key="sp_flipDuration">Flip Duration:</label>
+                <div class="target-filter-dropdown" id="seq-plan-flip-duration-dropdown">
+                  <div class="target-filter-dropdown-trigger" id="seq-plan-flip-duration-trigger">
+                    <span id="seq-plan-flip-duration-label">2</span>
+                    <span class="target-filter-dropdown-arrow"> </span>
+                  </div>
+                  <div class="target-filter-dropdown-menu" id="seq-plan-flip-duration-menu">
+                    <div class="target-filter-dropdown-item" data-value="1">1</div>
+                    <div class="target-filter-dropdown-item selected" data-value="2">2</div>
+                    <div class="target-filter-dropdown-item" data-value="3">3</div>
+                    <div class="target-filter-dropdown-item" data-value="4">4</div>
+                    <div class="target-filter-dropdown-item" data-value="5">5</div>
+                    <div class="target-filter-dropdown-item" data-value="6">6</div>
+                    <div class="target-filter-dropdown-item" data-value="7">7</div>
+                    <div class="target-filter-dropdown-item" data-value="8">8</div>
+                    <div class="target-filter-dropdown-item" data-value="9">9</div>
+                    <div class="target-filter-dropdown-item" data-value="10">10</div>
+                  </div>
+                </div>
                 <span>min</span>
 
-                <label for="seq-plan-flip-offset" class="tooltip-host" data-tooltip-key="sp_flipOffset">Flip Offset:</label>
-                <select id="seq-plan-flip-offset">
-                  <option value="1">1</option>
-                  <option value="2">2</option>
-                  <option value="3">3</option>
-                  <option value="4">4</option>
-                  <option value="5">5</option>
-                  <option value="6">6</option>
-                  <option value="7">7</option>
-                  <option value="8">8</option>
-                  <option value="9">9</option>
-                  <option value="10">10</option>
-                </select>
+                <label class="tooltip-host" data-tooltip-key="sp_flipOffset">Flip Offset:</label>
+                <div class="target-filter-dropdown" id="seq-plan-flip-offset-dropdown">
+                  <div class="target-filter-dropdown-trigger" id="seq-plan-flip-offset-trigger">
+                    <span id="seq-plan-flip-offset-label">0</span>
+                    <span class="target-filter-dropdown-arrow"> </span>
+                  </div>
+                  <div class="target-filter-dropdown-menu" id="seq-plan-flip-offset-menu">
+                    <div class="target-filter-dropdown-item selected" data-value="0">0</div>
+                    <div class="target-filter-dropdown-item" data-value="1">1</div>
+                    <div class="target-filter-dropdown-item" data-value="2">2</div>
+                    <div class="target-filter-dropdown-item" data-value="3">3</div>
+                    <div class="target-filter-dropdown-item" data-value="4">4</div>
+                    <div class="target-filter-dropdown-item" data-value="5">5</div>
+                    <div class="target-filter-dropdown-item" data-value="6">6</div>
+                    <div class="target-filter-dropdown-item" data-value="7">7</div>
+                    <div class="target-filter-dropdown-item" data-value="8">8</div>
+                    <div class="target-filter-dropdown-item" data-value="9">9</div>
+                    <div class="target-filter-dropdown-item" data-value="10">10</div>
+                  </div>
+                </div>
                 <span>min</span>
               </div>
 
               <!-- Row 3: Calibration and Frames per Dither -->
               <div class="seq-plan-overhead-row-3">
-                <label for="seq-plan-cal-duration" class="tooltip-host" data-tooltip-key="sp_calibration">Guide Calibration:</label>
-                <select id="seq-plan-cal-duration">
-                  <option value="1">1</option>
-                  <option value="2">2</option>
-                  <option value="3">3</option>
-                  <option value="4">4</option>
-                  <option value="5" selected>5</option>
-                  <option value="6">6</option>
-                </select>
+                <label class="tooltip-host" data-tooltip-key="sp_calibration">Guide Calibration:</label>
+                <div class="target-filter-dropdown" id="seq-plan-cal-duration-dropdown">
+                  <div class="target-filter-dropdown-trigger" id="seq-plan-cal-duration-trigger">
+                    <span id="seq-plan-cal-duration-label">5</span>
+                    <span class="target-filter-dropdown-arrow"> </span>
+                  </div>
+                  <div class="target-filter-dropdown-menu" id="seq-plan-cal-duration-menu">
+                    <div class="target-filter-dropdown-item" data-value="1">1</div>
+                    <div class="target-filter-dropdown-item" data-value="2">2</div>
+                    <div class="target-filter-dropdown-item" data-value="3">3</div>
+                    <div class="target-filter-dropdown-item" data-value="4">4</div>
+                    <div class="target-filter-dropdown-item selected" data-value="5">5</div>
+                    <div class="target-filter-dropdown-item" data-value="6">6</div>
+                  </div>
+                </div>
                 <span>min</span>
 
-                <label for="seq-plan-frames-per-dither" class="tooltip-host" data-tooltip-key="sp_framesPerDither">Frames per Dither:</label>
-                <select id="seq-plan-frames-per-dither">
-                  <option value="0">0</option>
-                  <option value="1">1</option>
-                  <option value="2">2</option>
-                  <option value="3" selected>3</option>
-                </select>
-                <span>frames</span>
+                <label class="tooltip-host" data-tooltip-key="sp_framesPerDither">Frames per Dither:</label>
+                <div class="target-filter-dropdown" id="seq-plan-frames-per-dither-dropdown">
+                  <div class="target-filter-dropdown-trigger" id="seq-plan-frames-per-dither-trigger">
+                    <span id="seq-plan-frames-per-dither-label">3</span>
+                    <span class="target-filter-dropdown-arrow"> </span>
+                  </div>
+                  <div class="target-filter-dropdown-menu" id="seq-plan-frames-per-dither-menu">
+                    <div class="target-filter-dropdown-item" data-value="0">0</div>
+                    <div class="target-filter-dropdown-item" data-value="1">1</div>
+                    <div class="target-filter-dropdown-item" data-value="2">2</div>
+                    <div class="target-filter-dropdown-item selected" data-value="3">3</div>
+                  </div>
+                </div>
+                <span id="seq-plan-dither-unit">frames</span>
               </div>
             </div>
           </div>
@@ -1947,7 +2108,7 @@
             <div id="seq-plan-allocation-footer" style="display: none; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--border-color); display: flex; align-items: center; gap: 1.5rem;">
               <input type="checkbox" id="seq-plan-transition-tolerance" class="tooltip-host" data-tooltip-key="sp_transitionTolerance">
               <label for="seq-plan-transition-tolerance">Sequence Optimization</label>
-              <span style="color: var(--text-secondary);">•</span>
+              <span style="color: var(--text-secondary);"> </span>
               <span id="seq-plan-total-images" style="color: var(--text-secondary); font-size: 0.9rem;"></span>
             </div>
             <datalist id="exposure-times-global">
