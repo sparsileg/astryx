@@ -584,6 +584,26 @@ const UIManager = {
         });
 
         this.populateManageLocationsModal();
+
+        const trigger = document.getElementById('manage-bortle-trigger');
+        const dropdown = document.getElementById('manage-bortle-dropdown');
+        const menu = document.getElementById('manage-bortle-menu');
+        const label = document.getElementById('manage-bortle-label');
+        if (trigger && dropdown && menu) {
+            trigger.addEventListener('click', (e) => {
+                e.stopPropagation();
+                dropdown.classList.toggle('open');
+            });
+            menu.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const item = e.target.closest('.target-filter-dropdown-item');
+                if (!item) return;
+                menu.querySelectorAll('.target-filter-dropdown-item').forEach(i => i.classList.remove('selected'));
+                item.classList.add('selected');
+                if (label) label.textContent = item.textContent;
+                dropdown.classList.remove('open');
+            });
+        }
     },
 
     /**
@@ -648,7 +668,15 @@ const UIManager = {
         document.getElementById('manage-longitude').value = location.longitude;
         document.getElementById('manage-elevation').value = location.elevation;
         document.getElementById('manage-timezone').value = location.timezone;
-        document.getElementById('manage-bortle').value = location.bortle;
+        const bortleMenu = document.getElementById('manage-bortle-menu');
+        const bortleLabel = document.getElementById('manage-bortle-label');
+        if (bortleMenu) {
+            bortleMenu.querySelectorAll('.target-filter-dropdown-item').forEach(item => {
+                item.classList.toggle('selected', item.dataset.value === String(location.bortle));
+            });
+            const selected = bortleMenu.querySelector('.target-filter-dropdown-item.selected');
+            if (bortleLabel && selected) bortleLabel.textContent = selected.textContent;
+        }
 
         // Populate horizon data
         const horizonTextarea = document.getElementById('manage-horizon');
@@ -698,7 +726,7 @@ const UIManager = {
         const lonInput = document.getElementById('manage-longitude');
         const elevInput = document.getElementById('manage-elevation');
         const tzInput = document.getElementById('manage-timezone');
-        const bortleInput = document.getElementById('manage-bortle');
+        const bortleInput = document.getElementById('manage-bortle-menu');
         const horizonInput = document.getElementById('manage-horizon');
 
         const name = nameInput.value.trim();
@@ -706,7 +734,7 @@ const UIManager = {
         const longitude = parseFloat(lonInput.value);
         const elevation = parseInt(elevInput.value);
         const timezone = parseInt(tzInput.value);
-        const bortle = parseInt(bortleInput.value);
+        const bortle = parseInt(bortleInput?.querySelector('.target-filter-dropdown-item.selected')?.dataset.value ?? '4');
 
         // Validation
         if (!name) {
@@ -894,33 +922,65 @@ const UIManager = {
      * Populate best months tools modal
      */
     populateBestMonthsModal() {
-        const locationSelect = document.getElementById('best-months-location-select');
+        const menu = document.getElementById('best-months-location-menu');
+        const label = document.getElementById('best-months-location-label');
+        const trigger = document.getElementById('best-months-location-trigger');
+        const dropdown = document.getElementById('best-months-location-dropdown');
+        if (!menu) return;
 
-        if (locationSelect) {
-            const locations = DataManager.getLocations();
-            locationSelect.innerHTML = '<option value="">Select a location...</option>';
-            locationSelect.innerHTML += '<option value="__ALL__">All Locations</option>';
+        const locations = DataManager.getLocations();
+        const currentLocation = SettingsManager.getSelectedLocation();
 
-            Object.keys(locations).forEach(name => {
-                const option = document.createElement('option');
-                option.value = name;
-                option.textContent = name;
-                locationSelect.appendChild(option);
-            });
+        menu.innerHTML = '';
 
-            // Select current location if set
-            const currentLocation = SettingsManager.getSelectedLocation();
-            if (currentLocation) {
-                locationSelect.value = currentLocation;
-            }
+        const placeholder = document.createElement('div');
+        placeholder.className = 'target-filter-dropdown-item';
+        placeholder.dataset.value = '';
+        placeholder.textContent = 'Select...';
+        menu.appendChild(placeholder);
+
+        const allItem = document.createElement('div');
+        allItem.className = 'target-filter-dropdown-item';
+        allItem.dataset.value = '__ALL__';
+        allItem.textContent = 'All Locations';
+        menu.appendChild(allItem);
+
+        Object.keys(locations).forEach(name => {
+            const item = document.createElement('div');
+            item.className = 'target-filter-dropdown-item';
+            item.dataset.value = name;
+            item.textContent = name;
+            if (name === currentLocation) item.classList.add('selected');
+            menu.appendChild(item);
+        });
+
+        if (currentLocation && locations[currentLocation]) {
+            if (label) label.textContent = currentLocation;
         }
+
+        if (trigger) {
+            trigger.addEventListener('click', (e) => {
+                e.stopPropagation();
+                dropdown.classList.toggle('open');
+            });
+        }
+
+        menu.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const item = e.target.closest('.target-filter-dropdown-item');
+            if (!item) return;
+            menu.querySelectorAll('.target-filter-dropdown-item').forEach(i => i.classList.remove('selected'));
+            item.classList.add('selected');
+            if (label) label.textContent = item.textContent;
+            dropdown.classList.remove('open');
+        });
     },
 
     /**
      * Start best month calculation
      */
     async startVisibilityCalculation(modalBody) {
-        const locationName = modalBody.querySelector('#best-months-location-select')?.value;
+        const locationName = modalBody.querySelector('#best-months-location-menu')?.querySelector('.target-filter-dropdown-item.selected')?.dataset.value ?? '';
         const calculateAllLocations = (locationName === '__ALL__');
 
         if (!locationName || locationName === '') {
@@ -1165,94 +1225,154 @@ const UIManager = {
      */
     populateSettingsModal() {
         const dstConfig = SettingsManager.getDSTConfig();
-        const dstModeSelect = document.getElementById('dst-mode');
-        if (dstModeSelect) {
-            dstModeSelect.value = dstConfig.mode;
-            // Show/hide custom dates
-            const customDates = document.getElementById('custom-dates');
-            if (customDates) {
-                customDates.style.display = dstConfig.mode === 'custom' ? 'block' : 'none';
+
+        // DST mode dropdown
+        const dstModeMenu = document.getElementById('dst-mode-menu');
+        const dstModeLabel = document.getElementById('dst-mode-label');
+        const dstModeTrigger = document.getElementById('dst-mode-trigger');
+        const dstModeDropdown = document.getElementById('dst-mode-dropdown');
+        if (dstModeMenu) {
+            // Set selected item
+            dstModeMenu.querySelectorAll('.target-filter-dropdown-item').forEach(item => {
+                item.classList.toggle('selected', item.dataset.value === dstConfig.mode);
+            });
+            const selected = dstModeMenu.querySelector('.target-filter-dropdown-item.selected');
+            if (dstModeLabel && selected) dstModeLabel.textContent = selected.textContent;
+
+            // Wire trigger
+            if (dstModeTrigger) {
+                dstModeTrigger.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    dstModeDropdown.classList.toggle('open');
+                });
             }
-            // Set custom dates if they exist
-            if (dstConfig.startDate) {
-                const startInput = document.getElementById('dst-start');
-                if (startInput) {
-                    startInput.value = dstConfig.startDate.toISOString().split('T')[0];
-                }
-            }
-            if (dstConfig.endDate) {
-                const endInput = document.getElementById('dst-end');
-                if (endInput) {
-                    endInput.value = dstConfig.endDate.toISOString().split('T')[0];
-                }
-            }
-            // Listen for mode changes
-            dstModeSelect.addEventListener('change', () => {
-                if (customDates) {
-                    customDates.style.display = dstModeSelect.value === 'custom' ? 'block' : 'none';
-                }
+
+            // Handle selection + show/hide custom dates
+            dstModeMenu.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const item = e.target.closest('.target-filter-dropdown-item');
+                if (!item) return;
+                dstModeMenu.querySelectorAll('.target-filter-dropdown-item').forEach(i => i.classList.remove('selected'));
+                item.classList.add('selected');
+                if (dstModeLabel) dstModeLabel.textContent = item.textContent;
+                dstModeDropdown.classList.remove('open');
             });
         }
 
         // Global minimum altitude
-        const minAltSelect = document.getElementById('global-min-altitude');
-        if (minAltSelect) {
-            minAltSelect.value = SettingsManager.getGlobalMinAltitude();
+        const minAltMenu = document.getElementById('global-min-altitude-menu');
+        const minAltLabel = document.getElementById('global-min-altitude-label');
+        const minAltTrigger = document.getElementById('global-min-altitude-trigger');
+        const minAltDropdown = document.getElementById('global-min-altitude-dropdown');
+        if (minAltMenu) {
+            const minAlt = String(SettingsManager.getGlobalMinAltitude());
+            minAltMenu.querySelectorAll('.target-filter-dropdown-item').forEach(item => {
+                item.classList.toggle('selected', item.dataset.value === minAlt);
+            });
+            const selected = minAltMenu.querySelector('.target-filter-dropdown-item.selected');
+            if (minAltLabel && selected) minAltLabel.textContent = selected.textContent;
+
+            if (minAltTrigger) {
+                minAltTrigger.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    minAltDropdown.classList.toggle('open');
+                });
+            }
+            minAltMenu.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const item = e.target.closest('.target-filter-dropdown-item');
+                if (!item) return;
+                minAltMenu.querySelectorAll('.target-filter-dropdown-item').forEach(i => i.classList.remove('selected'));
+                item.classList.add('selected');
+                if (minAltLabel) minAltLabel.textContent = item.textContent;
+                minAltDropdown.classList.remove('open');
+            });
         }
 
         // Filter defaults
         const filterMinSizeInput = document.getElementById('filter-min-size');
-        if (filterMinSizeInput) {
-            filterMinSizeInput.value = SettingsManager.getFilterMinSize();
-        }
+        if (filterMinSizeInput) filterMinSizeInput.value = SettingsManager.getFilterMinSize();
 
         const filterMaxMagInput = document.getElementById('filter-max-mag');
-        if (filterMaxMagInput) {
-            filterMaxMagInput.value = SettingsManager.getFilterMaxMag();
-        }
+        if (filterMaxMagInput) filterMaxMagInput.value = SettingsManager.getFilterMaxMag();
 
         // Auto-backup toggle
         const autoBackupCheckbox = document.getElementById('auto-backup-enabled');
-        if (autoBackupCheckbox) {
-            autoBackupCheckbox.checked = SettingsManager.getAutoBackupEnabled();
-        }
+        if (autoBackupCheckbox) autoBackupCheckbox.checked = SettingsManager.getAutoBackupEnabled();
 
         // Backup delay
-        const backupDelaySelect = document.getElementById('backup-delay-minutes');
-        if (backupDelaySelect) {
-            backupDelaySelect.value = SettingsManager.getBackupDelayMinutes();
+        const backupDelayMenu = document.getElementById('backup-delay-menu');
+        const backupDelayLabel = document.getElementById('backup-delay-label');
+        const backupDelayTrigger = document.getElementById('backup-delay-trigger');
+        const backupDelayDropdown = document.getElementById('backup-delay-dropdown');
+        if (backupDelayMenu) {
+            const delay = String(SettingsManager.getBackupDelayMinutes());
+            backupDelayMenu.querySelectorAll('.target-filter-dropdown-item').forEach(item => {
+                item.classList.toggle('selected', item.dataset.value === delay);
+            });
+            const selected = backupDelayMenu.querySelector('.target-filter-dropdown-item.selected');
+            if (backupDelayLabel && selected) backupDelayLabel.textContent = selected.textContent;
+
+            if (backupDelayTrigger) {
+                backupDelayTrigger.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    backupDelayDropdown.classList.toggle('open');
+                });
+            }
+            backupDelayMenu.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const item = e.target.closest('.target-filter-dropdown-item');
+                if (!item) return;
+                backupDelayMenu.querySelectorAll('.target-filter-dropdown-item').forEach(i => i.classList.remove('selected'));
+                item.classList.add('selected');
+                if (backupDelayLabel) backupDelayLabel.textContent = item.textContent;
+                backupDelayDropdown.classList.remove('open');
+            });
         }
 
         // Backup reminder interval
-        const backupReminderSelect = document.getElementById('backup-reminder-days');
-        if (backupReminderSelect) {
-            backupReminderSelect.value = SettingsManager.getBackupReminderDays();
+        const backupReminderMenu = document.getElementById('backup-reminder-menu');
+        const backupReminderLabel = document.getElementById('backup-reminder-label');
+        const backupReminderTrigger = document.getElementById('backup-reminder-trigger');
+        const backupReminderDropdown = document.getElementById('backup-reminder-dropdown');
+        if (backupReminderMenu) {
+            const days = String(SettingsManager.getBackupReminderDays());
+            backupReminderMenu.querySelectorAll('.target-filter-dropdown-item').forEach(item => {
+                item.classList.toggle('selected', item.dataset.value === days);
+            });
+            const selected = backupReminderMenu.querySelector('.target-filter-dropdown-item.selected');
+            if (backupReminderLabel && selected) backupReminderLabel.textContent = selected.textContent;
+
+            if (backupReminderTrigger) {
+                backupReminderTrigger.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    backupReminderDropdown.classList.toggle('open');
+                });
+            }
+            backupReminderMenu.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const item = e.target.closest('.target-filter-dropdown-item');
+                if (!item) return;
+                backupReminderMenu.querySelectorAll('.target-filter-dropdown-item').forEach(i => i.classList.remove('selected'));
+                item.classList.add('selected');
+                if (backupReminderLabel) backupReminderLabel.textContent = item.textContent;
+                backupReminderDropdown.classList.remove('open');
+            });
         }
 
         // Optimizer candidate count
         const optimizerCountInput = document.getElementById('optimizer-candidate-count');
-        if (optimizerCountInput) {
-            optimizerCountInput.value = SettingsManager.getOptimizerCandidateCount();
-        }
+        if (optimizerCountInput) optimizerCountInput.value = SettingsManager.getOptimizerCandidateCount();
     },
 
     /**
      * Save settings from modal
      */
     async saveSettingsFromModal(modalBody) {
-        const dstMode = modalBody.querySelector('#dst-mode')?.value;
-        const config = { mode: dstMode };
-        if (dstMode === 'custom') {
-            const startDate = modalBody.querySelector('#dst-start')?.value;
-            const endDate = modalBody.querySelector('#dst-end')?.value;
-            if (startDate && endDate) {
-                config.startDate = new Date(startDate);
-                config.endDate = new Date(endDate);
-            }
-        }
-        await SettingsManager.updateDSTConfig(config);
+        const dstMode = modalBody.querySelector('#dst-mode-menu')?.querySelector('.target-filter-dropdown-item.selected')?.dataset.value ?? 'auto';
+        await SettingsManager.updateDSTConfig({ mode: dstMode });
 
-        const minAlt = modalBody.querySelector('#global-min-altitude')?.value;
+        const minAlt = modalBody.querySelector('#global-min-altitude-menu')?.querySelector('.target-filter-dropdown-item.selected')?.dataset.value;
         if (minAlt) {
             await SettingsManager.updateGlobalMinAltitude(parseInt(minAlt));
         }
@@ -1260,12 +1380,12 @@ const UIManager = {
         const autoBackup = modalBody.querySelector('#auto-backup-enabled')?.checked ?? true;
         await SettingsManager.setAutoBackupEnabled(autoBackup);
 
-        const backupDelay = modalBody.querySelector('#backup-delay-minutes')?.value;
+        const backupDelay = modalBody.querySelector('#backup-delay-menu')?.querySelector('.target-filter-dropdown-item.selected')?.dataset.value;
         if (backupDelay) {
             await SettingsManager.setBackupDelayMinutes(parseInt(backupDelay));
         }
 
-        const backupReminderDays = modalBody.querySelector('#backup-reminder-days')?.value;
+        const backupReminderDays = modalBody.querySelector('#backup-reminder-menu')?.querySelector('.target-filter-dropdown-item.selected')?.dataset.value;
         if (backupReminderDays) {
             await SettingsManager.setBackupReminderDays(parseInt(backupReminderDays));
         }
