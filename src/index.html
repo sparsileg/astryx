@@ -639,30 +639,41 @@ None</button> <!--
         <!-- Row 1: DST Mode | Min Altitude -->
         <div class="settings-two-col">
           <div class="form-group form-inline">
-            <label for="dst-mode" class="tooltip-host" data-tooltip-key="set_DST">DST Mode</label>
-            <select id="dst-mode">
-              <option value="auto">Automatic</option>
-              <option value="custom">Custom Dates</option>
-              <option value="always">Always Active</option>
-              <option value="never">Never Active</option>
-            </select>
+            <label class="tooltip-host" data-tooltip-key="set_DST">DST Mode</label>
+            <div class="target-filter-dropdown" id="dst-mode-dropdown">
+              <div class="target-filter-dropdown-trigger" id="dst-mode-trigger">
+                <span id="dst-mode-label">Automatic</span>
+                <span class="target-filter-dropdown-arrow"> </span>
+              </div>
+              <div class="target-filter-dropdown-menu" id="dst-mode-menu">
+                <div class="target-filter-dropdown-item selected" data-value="auto">Automatic</div>
+                <div class="target-filter-dropdown-item" data-value="always">Always Active</div>
+                <div class="target-filter-dropdown-item" data-value="never">Never Active</div>
+              </div>
+            </div>
           </div>
           <div class="form-group form-inline">
-            <label for="global-min-altitude" class="tooltip-host" data-tooltip-key="set_minAlt">Min Altitude</label>
-            <select id="global-min-altitude">
-              <option value="5">5°</option>
-              <option value="10">10°</option>
-              <option value="15">15°</option>
-              <option value="20">20°</option>
-              <option value="25">25°</option>
-              <option value="30">30°</option>
-              <option value="35" selected>35°</option>
-              <option value="40">40°</option>
-              <option value="45">45°</option>
-              <option value="50">50°</option>
-              <option value="55">55°</option>
-              <option value="60">60°</option>
-            </select>
+            <label class="tooltip-host" data-tooltip-key="set_minAlt">Min Altitude</label>
+            <div class="target-filter-dropdown" id="global-min-altitude-dropdown">
+              <div class="target-filter-dropdown-trigger" id="global-min-altitude-trigger">
+                <span id="global-min-altitude-label">35°</span>
+                <span class="target-filter-dropdown-arrow"> </span>
+              </div>
+              <div class="target-filter-dropdown-menu" id="global-min-altitude-menu">
+                <div class="target-filter-dropdown-item" data-value="5">5°</div>
+                <div class="target-filter-dropdown-item" data-value="10">10°</div>
+                <div class="target-filter-dropdown-item" data-value="15">15°</div>
+                <div class="target-filter-dropdown-item" data-value="20">20°</div>
+                <div class="target-filter-dropdown-item" data-value="25">25°</div>
+                <div class="target-filter-dropdown-item" data-value="30">30°</div>
+                <div class="target-filter-dropdown-item selected" data-value="35">35°</div>
+                <div class="target-filter-dropdown-item" data-value="40">40°</div>
+                <div class="target-filter-dropdown-item" data-value="45">45°</div>
+                <div class="target-filter-dropdown-item" data-value="50">50°</div>
+                <div class="target-filter-dropdown-item" data-value="55">55°</div>
+                <div class="target-filter-dropdown-item" data-value="60">60°</div>
+              </div>
+            </div>
           </div>
         </div>
         <!-- Row 3: Filter defaults - Min Size | Max Magnitude -->
@@ -680,37 +691,36 @@ None</button> <!--
         <div style="display: flex; align-items: center; gap: 0.5rem;">
           <label for="auto-backup-enabled" style="margin-bottom: 0; display: inline;" class="tooltip-host" data-tooltip-key="set_autoBU">Automatic backups on change</label>
           <input type="checkbox" id="auto-backup-enabled">
-          <label for="backup-delay-minutes" style="margin-bottom: 0; display: inline; margin-left: 1rem;" class="tooltip-host" data-tooltip-key="set_backupDelay">Minutes before backup</label>
-          <select id="backup-delay-minutes">
-            <option value="1">1</option>
-            <option value="5">5</option>
-            <option value="20">20</option>
-            <option value="60" selected>60</option>
-          </select>
+          <label style="margin-bottom: 0; display: inline; margin-left: 1rem;" class="tooltip-host" data-tooltip-key="set_backupDelay">Minutes before backup</label>
+          <div class="target-filter-dropdown" id="backup-delay-dropdown">
+            <div class="target-filter-dropdown-trigger" id="backup-delay-trigger">
+              <span id="backup-delay-label">60</span>
+              <span class="target-filter-dropdown-arrow"> </span>
+            </div>
+            <div class="target-filter-dropdown-menu" id="backup-delay-menu">
+              <div class="target-filter-dropdown-item" data-value="1">1</div>
+              <div class="target-filter-dropdown-item" data-value="5">5</div>
+              <div class="target-filter-dropdown-item" data-value="20">20</div>
+              <div class="target-filter-dropdown-item selected" data-value="60">60</div>
+            </div>
+          </div>
         </div>
         <!-- Row 5: Backup reminder interval -->
         <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem;">
-          <label for="backup-reminder-days" style="margin-bottom: 0; display: inline;">Backup reminder every</label>
-          <select id="backup-reminder-days">
-            <option value="1">1</option>
-            <option value="3">3</option>
-            <option value="7" selected>7</option>
-            <option value="30">30</option>
-          </select>
-          <span>days</span>
-        </div>
-        <!-- Row 5: Custom DST dates (conditional) -->
-        <div id="custom-dates" style="display: none;">
-          <div class="settings-two-col" style="margin-top: 0.5rem;">
-            <div class="form-group">
-              <label for="dst-start">DST Start Date</label>
-              <input type="date" id="dst-start">
+          <label style="margin-bottom: 0; display: inline;">Backup reminder every</label>
+          <div class="target-filter-dropdown" id="backup-reminder-dropdown">
+            <div class="target-filter-dropdown-trigger" id="backup-reminder-trigger">
+              <span id="backup-reminder-label">7</span>
+              <span class="target-filter-dropdown-arrow"> </span>
             </div>
-            <div class="form-group">
-              <label for="dst-end">DST End Date</label>
-              <input type="date" id="dst-end">
+            <div class="target-filter-dropdown-menu" id="backup-reminder-menu">
+              <div class="target-filter-dropdown-item" data-value="1">1</div>
+              <div class="target-filter-dropdown-item" data-value="3">3</div>
+              <div class="target-filter-dropdown-item selected" data-value="7">7</div>
+              <div class="target-filter-dropdown-item" data-value="30">30</div>
             </div>
           </div>
+          <span>days</span>
         </div>
       </div>
     </template>
@@ -736,18 +746,24 @@ None</button> <!--
               <input type="number" id="manage-timezone" step="1" placeholder="e.g., -5 for EST" min="-12" max="14">
             </div>
             <div class="form-group">
-              <label class="tooltip-host" data-tooltip-key="ml_bortle" for="manage-bortle">Bortle Scale*</label>
-              <select id="manage-bortle">
-                <option value="1">1 - Excellent dark sky</option>
-                <option value="2">2 - Typical truly dark site</option>
-                <option value="3">3 - Rural sky</option>
-                <option value="4">4 - Rural/suburban transition</option>
-                <option value="5">5 - Suburban sky</option>
-                <option value="6">6 - Bright suburban sky</option>
-                <option value="7">7 - Suburban/urban transition</option>
-                <option value="8">8 - City sky</option>
-                <option value="9">9 - Inner-city sky</option>
-              </select>
+              <label class="tooltip-host" data-tooltip-key="ml_bortle">Bortle Scale*</label>
+              <div class="target-filter-dropdown" id="manage-bortle-dropdown">
+                <div class="target-filter-dropdown-trigger" id="manage-bortle-trigger">
+                  <span id="manage-bortle-label">1 - Excellent dark sky</span>
+                  <span class="target-filter-dropdown-arrow"> </span>
+                </div>
+                <div class="target-filter-dropdown-menu" id="manage-bortle-menu">
+                  <div class="target-filter-dropdown-item selected" data-value="1">1 - Excellent dark sky</div>
+                  <div class="target-filter-dropdown-item" data-value="2">2 - Typical truly dark site</div>
+                  <div class="target-filter-dropdown-item" data-value="3">3 - Rural sky</div>
+                  <div class="target-filter-dropdown-item" data-value="4">4 - Rural/suburban transition</div>
+                  <div class="target-filter-dropdown-item" data-value="5">5 - Suburban sky</div>
+                  <div class="target-filter-dropdown-item" data-value="6">6 - Bright suburban sky</div>
+                  <div class="target-filter-dropdown-item" data-value="7">7 - Suburban/urban transition</div>
+                  <div class="target-filter-dropdown-item" data-value="8">8 - City sky</div>
+                  <div class="target-filter-dropdown-item" data-value="9">9 - Inner-city sky</div>
+                </div>
+              </div>
             </div>
           </div>
           <!-- Row 2: Latitude, Longitude, Elevation -->
@@ -1798,11 +1814,17 @@ None</button> <!--
         </p>
 
         <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
-          <label for="best-months-location-select" style="white-space: nowrap;">Location:</label>
-          <select id="best-months-location-select" style="flex: 1; max-width: 200px;">
-            <option value="">Select...</option>
-            <option value="__ALL__">All Locations</option>
-          </select>
+          <label style="white-space: nowrap;">Location:</label>
+          <div class="target-filter-dropdown" id="best-months-location-dropdown" style="flex: 1; max-width: 200px;">
+            <div class="target-filter-dropdown-trigger" id="best-months-location-trigger">
+              <span id="best-months-location-label">Select...</span>
+              <span class="target-filter-dropdown-arrow"> </span>
+            </div>
+            <div class="target-filter-dropdown-menu" id="best-months-location-menu">
+              <div class="target-filter-dropdown-item" data-value="">Select...</div>
+              <div class="target-filter-dropdown-item" data-value="__ALL__">All Locations</div>
+            </div>
+          </div>
           <button class="btn-secondary" id="best-months-calculate" data-action="calculate">Calculate</button>
         </div>
 
