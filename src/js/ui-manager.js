@@ -199,7 +199,12 @@ const UIManager = {
      * Open a help page in a new browser tab
      */
     openHelpPage(filename) {
-        window.open(`help/${filename}`, '_blank');
+        const url = `https://astryx.tools/help/${filename}`;
+        if (typeof window.__TAURI__ !== 'undefined') {
+            window.__TAURI__.shell.open(url);
+        } else {
+            window.open(`help/${filename}`, '_blank');
+        }
     },
 
     /**
