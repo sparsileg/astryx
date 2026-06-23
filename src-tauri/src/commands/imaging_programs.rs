@@ -39,11 +39,7 @@ pub fn create_program(program: serde_json::Value, state: State<Arc<AstryxState>>
     let id = tx.last_insert_rowid();
     insert_program_targets(&tx, id, &program)?;
     tx.commit().map_err(|e| e.to_string())?;
-
-    fetch_program(
-        &state.db.lock().expect("db lock poisoned"),
-        id,
-    )?.ok_or_else(|| "program not found after insert".to_string())
+    fetch_program(&db, id)?.ok_or_else(|| "program not found after insert".to_string())
 }
 
 #[tauri::command]
@@ -68,11 +64,7 @@ pub fn update_program(id: i64, program: serde_json::Value, state: State<Arc<Astr
         .map_err(|e| e.to_string())?;
     insert_program_targets(&tx, id, &program)?;
     tx.commit().map_err(|e| e.to_string())?;
-
-    fetch_program(
-        &state.db.lock().expect("db lock poisoned"),
-        id,
-    )?.ok_or_else(|| "program not found after update".to_string())
+    fetch_program(&db, id)?.ok_or_else(|| "program not found after update".to_string())
 }
 
 #[tauri::command]
