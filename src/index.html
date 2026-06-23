@@ -2227,15 +2227,23 @@
                 <div class="form-row" style="margin-bottom: 0.75rem;">
                   <div>
                     <label for="dust-telescope-select">Telescope</label>
-                    <select id="dust-telescope-select" class="full-width">
-                      <option value="">Select telescope...</option>
-                    </select>
+                    <div class="astryx-dropdown" id="dust-telescope-dropdown">
+                    <div class="astryx-dropdown-trigger" id="dust-telescope-trigger">
+                      <span id="dust-telescope-label">Select telescope...</span>
+                      <span class="astryx-dropdown-arrow"> </span>
+                    </div>
+                    <div class="astryx-dropdown-menu" id="dust-telescope-menu"></div>
+                  </div>
                   </div>
                   <div>
-                    <label for="dust-sensor-select">Sensor</label>
-                    <select id="dust-sensor-select" class="full-width">
-                      <option value="">Select sensor...</option>
-                    </select>
+                    <label for="dust-sensor-label">Sensor</label>
+                    <div class="astryx-dropdown" id="dust-sensor-dropdown">
+                      <div class="astryx-dropdown-trigger" id="dust-sensor-trigger">
+                        <span id="dust-sensor-label">Select sensor...</span>
+                        <span class="astryx-dropdown-arrow"> </span>
+                      </div>
+                      <div class="astryx-dropdown-menu" id="dust-sensor-menu"></div>
+                    </div>
                   </div>
                 </div>
                 <div id="util-dust-mote-params">
