@@ -40,7 +40,7 @@ const UIManager = {
         // Handle selection
         themeMenu.addEventListener('click', async (e) => {
             e.stopPropagation();
-            const item = e.target.closest('.target-filter-dropdown-item');
+            const item = e.target.closest('.astryx-dropdown-item');
             if (!item) return;
             const value = item.dataset.value;
             themeLabel.textContent = item.textContent;
@@ -398,12 +398,12 @@ const UIManager = {
                         onAction('save', modalBody);
                     }
                 });
-            } else if (templateId === 'manage-project-template') {
+                } else if (templateId === 'manage-project-template') {
                 saveBtn = document.createElement('button');
                 saveBtn.id = 'modal-save-btn';
                 saveBtn.className = 'btn-primary btn-sm';
                 saveBtn.textContent = 'Save Project';
-                saveBtn.addEventListener('click', () => {
+                saveBtn.addEventListener('click', (e) => {
                     if (onAction) {
                         onAction('save', modalBody);
                     }
@@ -601,9 +601,9 @@ const UIManager = {
             });
             menu.addEventListener('click', (e) => {
                 e.stopPropagation();
-                const item = e.target.closest('.target-filter-dropdown-item');
+                const item = e.target.closest('.astryx-dropdown-item');
                 if (!item) return;
-                menu.querySelectorAll('.target-filter-dropdown-item').forEach(i => i.classList.remove('selected'));
+                menu.querySelectorAll('.astryx-dropdown-item').forEach(i => i.classList.remove('selected'));
                 item.classList.add('selected');
                 if (label) label.textContent = item.textContent;
                 dropdown.classList.remove('open');
@@ -676,10 +676,10 @@ const UIManager = {
         const bortleMenu = document.getElementById('manage-bortle-menu');
         const bortleLabel = document.getElementById('manage-bortle-label');
         if (bortleMenu) {
-            bortleMenu.querySelectorAll('.target-filter-dropdown-item').forEach(item => {
+            bortleMenu.querySelectorAll('.astryx-dropdown-item').forEach(item => {
                 item.classList.toggle('selected', item.dataset.value === String(location.bortle));
             });
-            const selected = bortleMenu.querySelector('.target-filter-dropdown-item.selected');
+            const selected = bortleMenu.querySelector('.astryx-dropdown-item.selected');
             if (bortleLabel && selected) bortleLabel.textContent = selected.textContent;
         }
 
@@ -739,7 +739,7 @@ const UIManager = {
         const longitude = parseFloat(lonInput.value);
         const elevation = parseInt(elevInput.value);
         const timezone = parseInt(tzInput.value);
-        const bortle = parseInt(bortleInput?.querySelector('.target-filter-dropdown-item.selected')?.dataset.value ?? '4');
+        const bortle = parseInt(bortleInput?.querySelector('.astryx-dropdown-item.selected')?.dataset.value ?? '4');
 
         // Validation
         if (!name) {
@@ -939,20 +939,20 @@ const UIManager = {
         menu.innerHTML = '';
 
         const placeholder = document.createElement('div');
-        placeholder.className = 'target-filter-dropdown-item';
+        placeholder.className = 'astryx-dropdown-item';
         placeholder.dataset.value = '';
         placeholder.textContent = 'Select...';
         menu.appendChild(placeholder);
 
         const allItem = document.createElement('div');
-        allItem.className = 'target-filter-dropdown-item';
+        allItem.className = 'astryx-dropdown-item';
         allItem.dataset.value = '__ALL__';
         allItem.textContent = 'All Locations';
         menu.appendChild(allItem);
 
         Object.keys(locations).forEach(name => {
             const item = document.createElement('div');
-            item.className = 'target-filter-dropdown-item';
+            item.className = 'astryx-dropdown-item';
             item.dataset.value = name;
             item.textContent = name;
             if (name === currentLocation) item.classList.add('selected');
@@ -972,9 +972,9 @@ const UIManager = {
 
         menu.addEventListener('click', (e) => {
             e.stopPropagation();
-            const item = e.target.closest('.target-filter-dropdown-item');
+            const item = e.target.closest('.astryx-dropdown-item');
             if (!item) return;
-            menu.querySelectorAll('.target-filter-dropdown-item').forEach(i => i.classList.remove('selected'));
+            menu.querySelectorAll('.astryx-dropdown-item').forEach(i => i.classList.remove('selected'));
             item.classList.add('selected');
             if (label) label.textContent = item.textContent;
             dropdown.classList.remove('open');
@@ -985,7 +985,7 @@ const UIManager = {
      * Start best month calculation
      */
     async startVisibilityCalculation(modalBody) {
-        const locationName = modalBody.querySelector('#best-months-location-menu')?.querySelector('.target-filter-dropdown-item.selected')?.dataset.value ?? '';
+        const locationName = modalBody.querySelector('#best-months-location-menu')?.querySelector('.astryx-dropdown-item.selected')?.dataset.value ?? '';
         const calculateAllLocations = (locationName === '__ALL__');
 
         if (!locationName || locationName === '') {
@@ -1238,10 +1238,10 @@ const UIManager = {
         const dstModeDropdown = document.getElementById('dst-mode-dropdown');
         if (dstModeMenu) {
             // Set selected item
-            dstModeMenu.querySelectorAll('.target-filter-dropdown-item').forEach(item => {
+            dstModeMenu.querySelectorAll('.astryx-dropdown-item').forEach(item => {
                 item.classList.toggle('selected', item.dataset.value === dstConfig.mode);
             });
-            const selected = dstModeMenu.querySelector('.target-filter-dropdown-item.selected');
+            const selected = dstModeMenu.querySelector('.astryx-dropdown-item.selected');
             if (dstModeLabel && selected) dstModeLabel.textContent = selected.textContent;
 
             // Wire trigger
@@ -1255,9 +1255,9 @@ const UIManager = {
             // Handle selection + show/hide custom dates
             dstModeMenu.addEventListener('click', (e) => {
                 e.stopPropagation();
-                const item = e.target.closest('.target-filter-dropdown-item');
+                const item = e.target.closest('.astryx-dropdown-item');
                 if (!item) return;
-                dstModeMenu.querySelectorAll('.target-filter-dropdown-item').forEach(i => i.classList.remove('selected'));
+                dstModeMenu.querySelectorAll('.astryx-dropdown-item').forEach(i => i.classList.remove('selected'));
                 item.classList.add('selected');
                 if (dstModeLabel) dstModeLabel.textContent = item.textContent;
                 dstModeDropdown.classList.remove('open');
@@ -1271,10 +1271,10 @@ const UIManager = {
         const minAltDropdown = document.getElementById('global-min-altitude-dropdown');
         if (minAltMenu) {
             const minAlt = String(SettingsManager.getGlobalMinAltitude());
-            minAltMenu.querySelectorAll('.target-filter-dropdown-item').forEach(item => {
+            minAltMenu.querySelectorAll('.astryx-dropdown-item').forEach(item => {
                 item.classList.toggle('selected', item.dataset.value === minAlt);
             });
-            const selected = minAltMenu.querySelector('.target-filter-dropdown-item.selected');
+            const selected = minAltMenu.querySelector('.astryx-dropdown-item.selected');
             if (minAltLabel && selected) minAltLabel.textContent = selected.textContent;
 
             if (minAltTrigger) {
@@ -1285,9 +1285,9 @@ const UIManager = {
             }
             minAltMenu.addEventListener('click', (e) => {
                 e.stopPropagation();
-                const item = e.target.closest('.target-filter-dropdown-item');
+                const item = e.target.closest('.astryx-dropdown-item');
                 if (!item) return;
-                minAltMenu.querySelectorAll('.target-filter-dropdown-item').forEach(i => i.classList.remove('selected'));
+                minAltMenu.querySelectorAll('.astryx-dropdown-item').forEach(i => i.classList.remove('selected'));
                 item.classList.add('selected');
                 if (minAltLabel) minAltLabel.textContent = item.textContent;
                 minAltDropdown.classList.remove('open');
@@ -1312,10 +1312,10 @@ const UIManager = {
         const backupDelayDropdown = document.getElementById('backup-delay-dropdown');
         if (backupDelayMenu) {
             const delay = String(SettingsManager.getBackupDelayMinutes());
-            backupDelayMenu.querySelectorAll('.target-filter-dropdown-item').forEach(item => {
+            backupDelayMenu.querySelectorAll('.astryx-dropdown-item').forEach(item => {
                 item.classList.toggle('selected', item.dataset.value === delay);
             });
-            const selected = backupDelayMenu.querySelector('.target-filter-dropdown-item.selected');
+            const selected = backupDelayMenu.querySelector('.astryx-dropdown-item.selected');
             if (backupDelayLabel && selected) backupDelayLabel.textContent = selected.textContent;
 
             if (backupDelayTrigger) {
@@ -1326,9 +1326,9 @@ const UIManager = {
             }
             backupDelayMenu.addEventListener('click', (e) => {
                 e.stopPropagation();
-                const item = e.target.closest('.target-filter-dropdown-item');
+                const item = e.target.closest('.astryx-dropdown-item');
                 if (!item) return;
-                backupDelayMenu.querySelectorAll('.target-filter-dropdown-item').forEach(i => i.classList.remove('selected'));
+                backupDelayMenu.querySelectorAll('.astryx-dropdown-item').forEach(i => i.classList.remove('selected'));
                 item.classList.add('selected');
                 if (backupDelayLabel) backupDelayLabel.textContent = item.textContent;
                 backupDelayDropdown.classList.remove('open');
@@ -1342,10 +1342,10 @@ const UIManager = {
         const backupReminderDropdown = document.getElementById('backup-reminder-dropdown');
         if (backupReminderMenu) {
             const days = String(SettingsManager.getBackupReminderDays());
-            backupReminderMenu.querySelectorAll('.target-filter-dropdown-item').forEach(item => {
+            backupReminderMenu.querySelectorAll('.astryx-dropdown-item').forEach(item => {
                 item.classList.toggle('selected', item.dataset.value === days);
             });
-            const selected = backupReminderMenu.querySelector('.target-filter-dropdown-item.selected');
+            const selected = backupReminderMenu.querySelector('.astryx-dropdown-item.selected');
             if (backupReminderLabel && selected) backupReminderLabel.textContent = selected.textContent;
 
             if (backupReminderTrigger) {
@@ -1356,9 +1356,9 @@ const UIManager = {
             }
             backupReminderMenu.addEventListener('click', (e) => {
                 e.stopPropagation();
-                const item = e.target.closest('.target-filter-dropdown-item');
+                const item = e.target.closest('.astryx-dropdown-item');
                 if (!item) return;
-                backupReminderMenu.querySelectorAll('.target-filter-dropdown-item').forEach(i => i.classList.remove('selected'));
+                backupReminderMenu.querySelectorAll('.astryx-dropdown-item').forEach(i => i.classList.remove('selected'));
                 item.classList.add('selected');
                 if (backupReminderLabel) backupReminderLabel.textContent = item.textContent;
                 backupReminderDropdown.classList.remove('open');
@@ -1374,10 +1374,10 @@ const UIManager = {
      * Save settings from modal
      */
     async saveSettingsFromModal(modalBody) {
-        const dstMode = modalBody.querySelector('#dst-mode-menu')?.querySelector('.target-filter-dropdown-item.selected')?.dataset.value ?? 'auto';
+        const dstMode = modalBody.querySelector('#dst-mode-menu')?.querySelector('.astryx-dropdown-item.selected')?.dataset.value ?? 'auto';
         await SettingsManager.updateDSTConfig({ mode: dstMode });
 
-        const minAlt = modalBody.querySelector('#global-min-altitude-menu')?.querySelector('.target-filter-dropdown-item.selected')?.dataset.value;
+        const minAlt = modalBody.querySelector('#global-min-altitude-menu')?.querySelector('.astryx-dropdown-item.selected')?.dataset.value;
         if (minAlt) {
             await SettingsManager.updateGlobalMinAltitude(parseInt(minAlt));
         }
@@ -1385,12 +1385,12 @@ const UIManager = {
         const autoBackup = modalBody.querySelector('#auto-backup-enabled')?.checked ?? true;
         await SettingsManager.setAutoBackupEnabled(autoBackup);
 
-        const backupDelay = modalBody.querySelector('#backup-delay-menu')?.querySelector('.target-filter-dropdown-item.selected')?.dataset.value;
+        const backupDelay = modalBody.querySelector('#backup-delay-menu')?.querySelector('.astryx-dropdown-item.selected')?.dataset.value;
         if (backupDelay) {
             await SettingsManager.setBackupDelayMinutes(parseInt(backupDelay));
         }
 
-        const backupReminderDays = modalBody.querySelector('#backup-reminder-menu')?.querySelector('.target-filter-dropdown-item.selected')?.dataset.value;
+        const backupReminderDays = modalBody.querySelector('#backup-reminder-menu')?.querySelector('.astryx-dropdown-item.selected')?.dataset.value;
         if (backupReminderDays) {
             await SettingsManager.setBackupReminderDays(parseInt(backupReminderDays));
         }
@@ -1915,7 +1915,7 @@ const UIManager = {
         // Handle selection
         menu.addEventListener('click', async (e) => {
             e.stopPropagation();
-            const item = e.target.closest('.target-filter-dropdown-item');
+            const item = e.target.closest('.astryx-dropdown-item');
             if (!item) return;
             const locationName = item.dataset.value;
             const label = document.getElementById('location-dropdown-label');
@@ -1950,14 +1950,14 @@ const UIManager = {
 
         // Add placeholder item
         const placeholder = document.createElement('div');
-        placeholder.className = 'target-filter-dropdown-item';
+        placeholder.className = 'astryx-dropdown-item';
         placeholder.dataset.value = '';
         placeholder.textContent = 'Select a location...';
         menu.appendChild(placeholder);
 
         Object.keys(locations).forEach(name => {
             const item = document.createElement('div');
-            item.className = 'target-filter-dropdown-item';
+            item.className = 'astryx-dropdown-item';
             item.dataset.value = name;
             item.textContent = name;
             menu.appendChild(item);

@@ -452,7 +452,7 @@ const TargetFilter = {
         if (catalogMenu) {
             const checkboxesHTML = this.filters.catalog.available
                   .map(catalog => `
-                    <div class="target-filter-dropdown-item">
+                    <div class="astryx-dropdown-item">
                         <input type="checkbox" id="catalog-${catalog}" value="${catalog}">
                         <label for="catalog-${catalog}">${catalog}</label>
                     </div>
@@ -474,7 +474,7 @@ const TargetFilter = {
                 .map(type => {
                     const displayName = OBJECT_TYPES[type] || type;
                     return `
-                        <div class="target-filter-dropdown-item">
+                        <div class="astryx-dropdown-item">
                             <input type="checkbox" id="type-${type}" value="${type}">
                             <label for="type-${type}">${displayName}</label>
                         </div>
@@ -524,7 +524,7 @@ const TargetFilter = {
         // Close dropdowns when clicking outside
         if (!this._documentClickHandler) {
             this._documentClickHandler = () => {
-                document.querySelectorAll('.target-filter-dropdown').forEach(dd => {
+                document.querySelectorAll('.astryx-dropdown').forEach(dd => {
                     dd.classList.remove('open');
                 });
             };
@@ -614,7 +614,7 @@ const TargetFilter = {
         if (monthMenu) {
             monthMenu.addEventListener('click', (e) => {
                 e.stopPropagation();
-                const item = e.target.closest('.target-filter-dropdown-item');
+                const item = e.target.closest('.astryx-dropdown-item');
                 if (!item) return;
                 const value = item.dataset.value;
                 this.filters.month.value = value ? parseInt(value) : null;
@@ -979,7 +979,7 @@ const TargetFilter = {
         this.resetFilters();
 
         // Clear checkboxes
-        document.querySelectorAll('.target-filter-dropdown-menu input[type="checkbox"]').forEach(cb => {
+        document.querySelectorAll('.astryx-dropdown-menu input[type="checkbox"]').forEach(cb => {
             cb.checked = false;
         });
 

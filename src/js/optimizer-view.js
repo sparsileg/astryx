@@ -85,7 +85,7 @@ const OptimizerView = {
             });
             startMenu.addEventListener('click', (e) => {
                 e.stopPropagation();
-                const item = e.target.closest('.target-filter-dropdown-item');
+                const item = e.target.closest('.astryx-dropdown-item');
                 if (!item) return;
                 const value = item.dataset.value;
                 const label = document.getElementById('optimizer-start-label');
@@ -116,7 +116,7 @@ const OptimizerView = {
             });
             sourceMenu.addEventListener('click', (e) => {
                 e.stopPropagation();
-                const item = e.target.closest('.target-filter-dropdown-item');
+                const item = e.target.closest('.astryx-dropdown-item');
                 if (!item || item.style.pointerEvents === 'none') return;
                 const label = document.getElementById('optimizer-source-label');
                 if (label) label.textContent = item.textContent;

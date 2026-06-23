@@ -329,7 +329,7 @@ const DailyVisibilityView = {
             });
             dvMinAltMenu.addEventListener('click', (e) => {
                 e.stopPropagation();
-                const item = e.target.closest('.target-filter-dropdown-item');
+                const item = e.target.closest('.astryx-dropdown-item');
                 if (!item) return;
                 const label = document.getElementById('dv-min-alt-label');
                 if (label) label.textContent = item.textContent;

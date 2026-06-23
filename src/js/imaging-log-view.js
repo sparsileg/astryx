@@ -51,16 +51,17 @@ const ImagingLogView = {
         const statusTrigger = document.getElementById('imaging-log-status-trigger');
         const statusDropdown = document.getElementById('imaging-log-status-dropdown');
         const statusMenu = document.getElementById('imaging-log-status-menu');
-        if (statusTrigger && statusDropdown && statusMenu) {
+        if (statusTrigger && statusDropdown && statusMenu && !statusTrigger._listenerAttached) {
+            statusTrigger._listenerAttached = true;
             statusTrigger.addEventListener('click', (e) => {
                 e.stopPropagation();
                 statusDropdown.classList.toggle('open');
             });
             statusMenu.addEventListener('click', (e) => {
                 e.stopPropagation();
-                const item = e.target.closest('.target-filter-dropdown-item');
+                const item = e.target.closest('.astryx-dropdown-item');
                 if (!item) return;
-                statusMenu.querySelectorAll('.target-filter-dropdown-item').forEach(i => i.classList.remove('selected'));
+                statusMenu.querySelectorAll('.astryx-dropdown-item').forEach(i => i.classList.remove('selected'));
                 item.classList.add('selected');
                 document.getElementById('imaging-log-status-label').textContent = item.textContent;
                 statusDropdown.classList.remove('open');
@@ -72,16 +73,17 @@ const ImagingLogView = {
         const sortTrigger = document.getElementById('imaging-log-sort-trigger');
         const sortDropdown = document.getElementById('imaging-log-sort-dropdown');
         const sortMenu = document.getElementById('imaging-log-sort-menu');
-        if (sortTrigger && sortDropdown && sortMenu) {
+        if (sortTrigger && sortDropdown && sortMenu && !sortTrigger._listenerAttached) {
+            sortTrigger._listenerAttached = true;
             sortTrigger.addEventListener('click', (e) => {
                 e.stopPropagation();
                 sortDropdown.classList.toggle('open');
             });
             sortMenu.addEventListener('click', (e) => {
                 e.stopPropagation();
-                const item = e.target.closest('.target-filter-dropdown-item');
+                const item = e.target.closest('.astryx-dropdown-item');
                 if (!item) return;
-                sortMenu.querySelectorAll('.target-filter-dropdown-item').forEach(i => i.classList.remove('selected'));
+                sortMenu.querySelectorAll('.astryx-dropdown-item').forEach(i => i.classList.remove('selected'));
                 item.classList.add('selected');
                 document.getElementById('imaging-log-sort-label').textContent = item.textContent;
                 sortDropdown.classList.remove('open');
@@ -130,7 +132,7 @@ const ImagingLogView = {
 
         // Apply filters
         const searchQuery = document.getElementById('imaging-log-project-search')?.value.toLowerCase() || '';
-        const statusFilter = document.getElementById('imaging-log-status-menu')?.querySelector('.target-filter-dropdown-item.selected')?.dataset.value ?? '';
+        const statusFilter = document.getElementById('imaging-log-status-menu')?.querySelector('.astryx-dropdown-item.selected')?.dataset.value ?? '';
 
         let filteredProjects;
 
@@ -158,7 +160,7 @@ const ImagingLogView = {
         }
 
         // Apply sort
-        const sortValue = document.getElementById('imaging-log-sort-menu')?.querySelector('.target-filter-dropdown-item.selected')?.dataset.value ?? 'modified-desc';
+        const sortValue = document.getElementById('imaging-log-sort-menu')?.querySelector('.astryx-dropdown-item.selected')?.dataset.value ?? 'modified-desc';
         filteredProjects = this.sortProjects(filteredProjects, sortValue);
 
         if (filteredProjects.length === 0) {
@@ -333,9 +335,9 @@ const ImagingLogView = {
 
         const title = projectId ? 'Edit Project' : 'New Project';
 
-        this.openModal('manage-project-template', title, async (action, modalBody) => {
+        this.openModal('manage-project-template', title, (action, modalBody) => {
             if (action === 'save') {
-                await this.handleSaveProject(modalBody);
+                ImagingLogView.handleSaveProject(modalBody);
             }
         });
 
@@ -348,6 +350,7 @@ const ImagingLogView = {
      * Initialize project modal
      */
     async initializeProjectModal(projectId) {
+        this._wireSessionDropdown('project-status-trigger', 'project-status-dropdown', 'project-status-menu', 'project-status-label');
         const expandBtn = document.getElementById('project-notes-expand-btn');
         const notesTextarea = document.getElementById('project-notes');
         if (expandBtn && notesTextarea) {
@@ -377,7 +380,6 @@ const ImagingLogView = {
         } else {
             console.log('Elements not found!');
         }
-
         // Set up target search
         const searchInput = document.getElementById('project-target-search');
         if (searchInput) {
@@ -385,14 +387,12 @@ const ImagingLogView = {
                 this.searchTargetsForProject(e.target.value);
             });
         }
-
         if (projectId) {
             const project = await ImagingLogManager.getProject(projectId);
             document.getElementById('project-name').value = project.name;
-            document.getElementById('project-status').value = project.status;
+            this._setSessionDropdownValue('project-status-menu', 'project-status-label', project.status);
             document.getElementById('project-published-link').value = project.publishedLink || '';
             document.getElementById('project-notes').value = project.notes || '';
-
             this.selectedTargets = [...project.targetDesignations];
             this.renderSelectedTargets();
         } else {
@@ -516,9 +516,9 @@ const ImagingLogView = {
      */
     async handleSaveProject(modalBody) {
         const name = document.getElementById('project-name')?.value.trim();
-        const status = document.getElementById('project-status')?.value;
-        const notes = document.getElementById('project-notes')?.value.trim();
-        const publishedLink = document.getElementById('project-published-link')?.value.trim();
+        const status = this._getSessionDropdownValue('project-status-menu');
+        const notes = document.getElementById('project-notes')?.value?.trim() ?? '';
+        const publishedLink = document.getElementById('project-published-link')?.value?.trim() ?? '';
 
         if (publishedLink && !/^https?:\/\/.+/.test(publishedLink)) {
             UIManager.showToast('Published link must be a valid http:// or https:// URL', 'error');
@@ -609,7 +609,7 @@ const ImagingLogView = {
      */
     _getSessionDropdownValue(menuId) {
         return document.getElementById(menuId)
-            ?.querySelector('.target-filter-dropdown-item.selected')
+            ?.querySelector('.astryx-dropdown-item.selected')
             ?.dataset.value ?? '';
     },
 
@@ -620,10 +620,10 @@ const ImagingLogView = {
         const menu = document.getElementById(menuId);
         if (!menu) return;
         const strVal = String(value ?? '');
-        menu.querySelectorAll('.target-filter-dropdown-item').forEach(item => {
+        menu.querySelectorAll('.astryx-dropdown-item').forEach(item => {
             item.classList.toggle('selected', item.dataset.value === strVal);
         });
-        const selected = menu.querySelector('.target-filter-dropdown-item.selected');
+        const selected = menu.querySelector('.astryx-dropdown-item.selected');
         const label = document.getElementById(labelId);
         if (label && selected) label.textContent = selected.textContent;
     },
@@ -639,14 +639,14 @@ const ImagingLogView = {
         menu.innerHTML = '';
 
         const ph = document.createElement('div');
-        ph.className = 'target-filter-dropdown-item';
+        ph.className = 'astryx-dropdown-item';
         ph.dataset.value = '';
         ph.textContent = placeholder;
         menu.appendChild(ph);
 
         names.forEach(name => {
             const item = document.createElement('div');
-            item.className = 'target-filter-dropdown-item';
+            item.className = 'astryx-dropdown-item';
             item.dataset.value = name;
             item.textContent = name;
             menu.appendChild(item);
@@ -671,9 +671,9 @@ const ImagingLogView = {
 
         menu.addEventListener('click', (e) => {
             e.stopPropagation();
-            const item = e.target.closest('.target-filter-dropdown-item');
+            const item = e.target.closest('.astryx-dropdown-item');
             if (!item) return;
-            menu.querySelectorAll('.target-filter-dropdown-item').forEach(i => i.classList.remove('selected'));
+            menu.querySelectorAll('.astryx-dropdown-item').forEach(i => i.classList.remove('selected'));
             item.classList.add('selected');
             const label = document.getElementById(labelId);
             if (label) label.textContent = item.textContent;
@@ -1325,7 +1325,7 @@ const ImagingLogView = {
         if (catalogPrefixMenu) {
             catalogPrefixMenu.innerHTML = '';
             const placeholder = document.createElement('div');
-            placeholder.className = 'target-filter-dropdown-item';
+            placeholder.className = 'astryx-dropdown-item';
             placeholder.dataset.value = '';
             placeholder.textContent = 'Select catalog...';
             catalogPrefixMenu.appendChild(placeholder);
@@ -1339,7 +1339,7 @@ const ImagingLogView = {
             });
             Array.from(prefixSet).sort().forEach(prefix => {
                 const item = document.createElement('div');
-                item.className = 'target-filter-dropdown-item';
+                item.className = 'astryx-dropdown-item';
                 item.dataset.value = prefix;
                 item.textContent = prefix;
                 catalogPrefixMenu.appendChild(item);
@@ -1353,9 +1353,9 @@ const ImagingLogView = {
                 });
                 catalogPrefixMenu.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    const item = e.target.closest('.target-filter-dropdown-item');
+                    const item = e.target.closest('.astryx-dropdown-item');
                     if (!item) return;
-                    catalogPrefixMenu.querySelectorAll('.target-filter-dropdown-item').forEach(i => i.classList.remove('selected'));
+                    catalogPrefixMenu.querySelectorAll('.astryx-dropdown-item').forEach(i => i.classList.remove('selected'));
                     item.classList.add('selected');
                     if (catalogPrefixLabel) catalogPrefixLabel.textContent = item.textContent;
                     catalogPrefixDropdown.classList.remove('open');
@@ -1394,10 +1394,10 @@ const ImagingLogView = {
                     const prefixMenu = document.getElementById('program-catalog-prefix-menu');
                     const prefixLabel = document.getElementById('program-catalog-prefix-label');
                     if (prefixMenu) {
-                        prefixMenu.querySelectorAll('.target-filter-dropdown-item').forEach(i => {
+                        prefixMenu.querySelectorAll('.astryx-dropdown-item').forEach(i => {
                             i.classList.toggle('selected', i.dataset.value === program.catalogPrefix);
                         });
-                        const selected = prefixMenu.querySelector('.target-filter-dropdown-item.selected');
+                        const selected = prefixMenu.querySelector('.astryx-dropdown-item.selected');
                         if (prefixLabel && selected) prefixLabel.textContent = selected.textContent;
                     }
                 } else {
@@ -1426,7 +1426,7 @@ const ImagingLogView = {
             };
 
             if (patternRadio.checked) {
-                const prefix = document.getElementById('program-catalog-prefix-menu')?.querySelector('.target-filter-dropdown-item.selected')?.dataset.value?.trim() ?? '';
+                const prefix = document.getElementById('program-catalog-prefix-menu')?.querySelector('.astryx-dropdown-item.selected')?.dataset.value?.trim() ?? '';
                 const maxNum = parseInt(maxNumberField.value);
 
                 if (!prefix) {
@@ -1505,7 +1505,7 @@ const ImagingLogView = {
         if (catalogPrefixMenu) {
             catalogPrefixMenu.innerHTML = '';
             const placeholder = document.createElement('div');
-            placeholder.className = 'target-filter-dropdown-item';
+            placeholder.className = 'astryx-dropdown-item';
             placeholder.dataset.value = '';
             placeholder.textContent = 'Select catalog...';
             catalogPrefixMenu.appendChild(placeholder);
@@ -1519,7 +1519,7 @@ const ImagingLogView = {
             });
             Array.from(prefixSet).sort().forEach(prefix => {
                 const item = document.createElement('div');
-                item.className = 'target-filter-dropdown-item';
+                item.className = 'astryx-dropdown-item';
                 item.dataset.value = prefix;
                 item.textContent = prefix;
                 catalogPrefixMenu.appendChild(item);
@@ -1533,9 +1533,9 @@ const ImagingLogView = {
                 });
                 catalogPrefixMenu.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    const item = e.target.closest('.target-filter-dropdown-item');
+                    const item = e.target.closest('.astryx-dropdown-item');
                     if (!item) return;
-                    catalogPrefixMenu.querySelectorAll('.target-filter-dropdown-item').forEach(i => i.classList.remove('selected'));
+                    catalogPrefixMenu.querySelectorAll('.astryx-dropdown-item').forEach(i => i.classList.remove('selected'));
                     item.classList.add('selected');
                     if (catalogPrefixLabel) catalogPrefixLabel.textContent = item.textContent;
                     catalogPrefixDropdown.classList.remove('open');
@@ -1569,10 +1569,10 @@ const ImagingLogView = {
                     if (maxField) maxField.value = program.maxNumber;
                     document.getElementById('program-max-number').value = program.maxNumber;
                     if (catalogPrefixMenu) {
-                        catalogPrefixMenu.querySelectorAll('.target-filter-dropdown-item').forEach(i => {
+                        catalogPrefixMenu.querySelectorAll('.astryx-dropdown-item').forEach(i => {
                             i.classList.toggle('selected', i.dataset.value === program.catalogPrefix);
                         });
-                        const selected = catalogPrefixMenu.querySelector('.target-filter-dropdown-item.selected');
+                        const selected = catalogPrefixMenu.querySelector('.astryx-dropdown-item.selected');
                         if (catalogPrefixLabel && selected) catalogPrefixLabel.textContent = selected.textContent;
                     }
                 } else {
@@ -1594,7 +1594,7 @@ const ImagingLogView = {
         }
         const programData = { name: name };
         if (patternRadio && patternRadio.checked) {
-            const prefix = document.getElementById('program-catalog-prefix-menu')?.querySelector('.target-filter-dropdown-item.selected')?.dataset.value?.trim() ?? '';
+            const prefix = document.getElementById('program-catalog-prefix-menu')?.querySelector('.astryx-dropdown-item.selected')?.dataset.value?.trim() ?? '';
             const maxNum = parseInt(document.getElementById('program-max-number')?.value);
             if (!prefix) {
                 UIManager.showToast('Catalog prefix is required', 'error');
@@ -2029,8 +2029,8 @@ const ImagingLogView = {
         const statusMenu = document.getElementById('imaging-log-status-menu');
         const statusLabel = document.getElementById('imaging-log-status-label');
         if (statusMenu) {
-            statusMenu.querySelectorAll('.target-filter-dropdown-item').forEach(i => i.classList.remove('selected'));
-            const allItem = statusMenu.querySelector('.target-filter-dropdown-item[data-value=""]');
+            statusMenu.querySelectorAll('.astryx-dropdown-item').forEach(i => i.classList.remove('selected'));
+            const allItem = statusMenu.querySelector('.astryx-dropdown-item[data-value=""]');
             if (allItem) {
                 allItem.classList.add('selected');
                 if (statusLabel) statusLabel.textContent = allItem.textContent;

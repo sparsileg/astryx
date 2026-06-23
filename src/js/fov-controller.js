@@ -122,7 +122,7 @@ const FOVView = {
 
         menu.innerHTML = '';
         const placeholder = document.createElement('div');
-        placeholder.className = 'target-filter-dropdown-item';
+        placeholder.className = 'astryx-dropdown-item';
         placeholder.dataset.value = '';
         placeholder.textContent = 'Select telescope...';
         menu.appendChild(placeholder);
@@ -130,7 +130,7 @@ const FOVView = {
         const telescopes = DataManager.getTelescopes();
         Object.keys(telescopes).forEach(name => {
             const item = document.createElement('div');
-            item.className = 'target-filter-dropdown-item';
+            item.className = 'astryx-dropdown-item';
             item.dataset.value = name;
             item.textContent = name;
             menu.appendChild(item);
@@ -152,7 +152,7 @@ const FOVView = {
 
         menu.innerHTML = '';
         const placeholder = document.createElement('div');
-        placeholder.className = 'target-filter-dropdown-item';
+        placeholder.className = 'astryx-dropdown-item';
         placeholder.dataset.value = '';
         placeholder.textContent = 'Select sensor...';
         menu.appendChild(placeholder);
@@ -160,7 +160,7 @@ const FOVView = {
         const sensors = DataManager.getSensors();
         Object.keys(sensors).forEach(name => {
             const item = document.createElement('div');
-            item.className = 'target-filter-dropdown-item';
+            item.className = 'astryx-dropdown-item';
             item.dataset.value = name;
             item.textContent = name;
             menu.appendChild(item);
@@ -215,7 +215,7 @@ const FOVView = {
             });
             telescopeMenu.addEventListener('click', async (e) => {
                 e.stopPropagation();
-                const item = e.target.closest('.target-filter-dropdown-item');
+                const item = e.target.closest('.astryx-dropdown-item');
                 if (!item) return;
                 const value = item.dataset.value;
                 const label = document.getElementById('fov-telescope-label');
@@ -238,7 +238,7 @@ const FOVView = {
             });
             sensorMenu.addEventListener('click', async (e) => {
                 e.stopPropagation();
-                const item = e.target.closest('.target-filter-dropdown-item');
+                const item = e.target.closest('.astryx-dropdown-item');
                 if (!item) return;
                 const value = item.dataset.value;
                 const label = document.getElementById('fov-sensor-label');
