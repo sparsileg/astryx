@@ -98,58 +98,100 @@ const UtilitiesView = {
      * Populate dust mote calculator dropdowns
      */
     renderDustMoteCalculator() {
-        const telescopeSelect = document.getElementById('dust-telescope-select');
-        const sensorSelect = document.getElementById('dust-sensor-select');
-        if (!telescopeSelect || !sensorSelect) return;
+        const telescopeMenu = document.getElementById('dust-telescope-menu');
+        const telescopeTrigger = document.getElementById('dust-telescope-trigger');
+        const telescopeDropdown = document.getElementById('dust-telescope-dropdown');
+        const telescopeLabel = document.getElementById('dust-telescope-label');
+        const sensorMenu = document.getElementById('dust-sensor-menu');
+        const sensorTrigger = document.getElementById('dust-sensor-trigger');
+        const sensorDropdown = document.getElementById('dust-sensor-dropdown');
+        const sensorLabel = document.getElementById('dust-sensor-label');
+        if (!telescopeMenu || !sensorMenu) return;
 
-        // Populate telescopes
         const telescopes = DataManager.getTelescopes();
-        telescopeSelect.innerHTML = '<option value="">Select telescope...</option>';
-        Object.keys(telescopes).forEach(name => {
-            const option = document.createElement('option');
-            option.value = name;
-            option.textContent = name;
-            telescopeSelect.appendChild(option);
-        });
-
-        // Populate sensors
         const sensors = DataManager.getSensors();
-        sensorSelect.innerHTML = '<option value="">Select sensor...</option>';
-        Object.keys(sensors).forEach(name => {
-            const option = document.createElement('option');
-            option.value = name;
-            option.textContent = name;
-            sensorSelect.appendChild(option);
+
+        // Populate telescope dropdown
+        telescopeMenu.innerHTML = '';
+        const telPlaceholder = document.createElement('div');
+        telPlaceholder.className = 'astryx-dropdown-item';
+        telPlaceholder.dataset.value = '';
+        telPlaceholder.textContent = 'Select telescope...';
+        telescopeMenu.appendChild(telPlaceholder);
+        Object.keys(telescopes).forEach(name => {
+            const item = document.createElement('div');
+            item.className = 'astryx-dropdown-item';
+            item.dataset.value = name;
+            item.textContent = name;
+            telescopeMenu.appendChild(item);
         });
 
-        // Auto-fill focal ratio when telescope selected
-        telescopeSelect.addEventListener('change', () => {
-            const tel = telescopes[telescopeSelect.value];
+        // Populate sensor dropdown
+        sensorMenu.innerHTML = '';
+        const senPlaceholder = document.createElement('div');
+        senPlaceholder.className = 'astryx-dropdown-item';
+        senPlaceholder.dataset.value = '';
+        senPlaceholder.textContent = 'Select sensor...';
+        sensorMenu.appendChild(senPlaceholder);
+        Object.keys(sensors).forEach(name => {
+            const item = document.createElement('div');
+            item.className = 'astryx-dropdown-item';
+            item.dataset.value = name;
+            item.textContent = name;
+            sensorMenu.appendChild(item);
+        });
+
+        // Wire telescope trigger
+        telescopeTrigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            telescopeDropdown.classList.toggle('open');
+        });
+
+        // Wire telescope menu selection
+        telescopeMenu.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const item = e.target.closest('.astryx-dropdown-item');
+            if (!item) return;
+            telescopeMenu.querySelectorAll('.astryx-dropdown-item').forEach(i => i.classList.remove('selected'));
+            item.classList.add('selected');
+            telescopeLabel.textContent = item.textContent;
+            telescopeDropdown.classList.remove('open');
+
+            const tel = telescopes[item.dataset.value];
             const focalRatioInput = document.getElementById('dust-focal-ratio');
             if (tel && focalRatioInput) {
-                const fRatio = (tel.focalLength / tel.aperture).toFixed(1);
-                focalRatioInput.value = fRatio;
+                focalRatioInput.value = (tel.focalLength / tel.aperture).toFixed(1);
             } else if (focalRatioInput) {
                 focalRatioInput.value = '';
             }
+            this.calculateDustMote();
         });
 
-        // Auto-fill pixel size when sensor selected
-        sensorSelect.addEventListener('change', () => {
-            const sensor = sensors[sensorSelect.value];
+        // Wire sensor trigger
+        sensorTrigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            sensorDropdown.classList.toggle('open');
+        });
+
+        // Wire sensor menu selection
+        sensorMenu.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const item = e.target.closest('.astryx-dropdown-item');
+            if (!item) return;
+            sensorMenu.querySelectorAll('.astryx-dropdown-item').forEach(i => i.classList.remove('selected'));
+            item.classList.add('selected');
+            sensorLabel.textContent = item.textContent;
+            sensorDropdown.classList.remove('open');
+
+            const sensor = sensors[item.dataset.value];
             const pixelSizeInput = document.getElementById('dust-pixel-size');
             if (sensor && pixelSizeInput) {
-                // Use average of X and Y pixel size
-                const avgPixelSize = ((sensor.pixelSizeX + sensor.pixelSizeY) / 2).toFixed(2);
-                pixelSizeInput.value = avgPixelSize;
+                pixelSizeInput.value = ((sensor.pixelSizeX + sensor.pixelSizeY) / 2).toFixed(2);
             } else if (pixelSizeInput) {
                 pixelSizeInput.value = '';
             }
             this.calculateDustMote();
         });
-
-        // Dynamically recalculate when telescope or sensor dropdowns change
-        telescopeSelect.addEventListener('change', () => this.calculateDustMote());
 
         // Dynamically recalculate when manual inputs change
         ['dust-focal-ratio', 'dust-pixel-size', 'dust-spot-pixels'].forEach(id => {
