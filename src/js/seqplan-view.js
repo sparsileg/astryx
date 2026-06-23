@@ -120,7 +120,7 @@ const SeqPlanView = {
      */
     _getDropdownValue(menuId, fallback = '') {
         return document.getElementById(menuId)
-            ?.querySelector('.target-filter-dropdown-item.selected')
+            ?.querySelector('.astryx-dropdown-item.selected')
             ?.dataset.value ?? fallback;
     },
 
@@ -130,10 +130,10 @@ const SeqPlanView = {
     _setDropdownValue(menuId, labelId, value) {
         const menu = document.getElementById(menuId);
         if (!menu) return;
-        menu.querySelectorAll('.target-filter-dropdown-item').forEach(item => {
+        menu.querySelectorAll('.astryx-dropdown-item').forEach(item => {
             item.classList.toggle('selected', item.dataset.value === String(value));
         });
-        const selected = menu.querySelector('.target-filter-dropdown-item.selected');
+        const selected = menu.querySelector('.astryx-dropdown-item.selected');
         const label = document.getElementById(labelId);
         if (label && selected) label.textContent = selected.textContent;
     },
@@ -155,9 +155,9 @@ const SeqPlanView = {
 
         menu.addEventListener('click', (e) => {
             e.stopPropagation();
-            const item = e.target.closest('.target-filter-dropdown-item');
+            const item = e.target.closest('.astryx-dropdown-item');
             if (!item) return;
-            menu.querySelectorAll('.target-filter-dropdown-item').forEach(i => i.classList.remove('selected'));
+            menu.querySelectorAll('.astryx-dropdown-item').forEach(i => i.classList.remove('selected'));
             item.classList.add('selected');
             const label = document.getElementById(labelId);
             if (label) label.textContent = item.textContent;
@@ -182,14 +182,14 @@ const SeqPlanView = {
         menu.innerHTML = '';
 
         const placeholder = document.createElement('div');
-        placeholder.className = 'target-filter-dropdown-item';
+        placeholder.className = 'astryx-dropdown-item';
         placeholder.dataset.value = '';
         placeholder.textContent = 'Select location...';
         menu.appendChild(placeholder);
 
         Object.keys(locations).forEach(name => {
             const item = document.createElement('div');
-            item.className = 'target-filter-dropdown-item';
+            item.className = 'astryx-dropdown-item';
             item.dataset.value = name;
             item.textContent = name;
             if (name === globalLocation) {
@@ -215,9 +215,9 @@ const SeqPlanView = {
 
             menu.addEventListener('click', (e) => {
                 e.stopPropagation();
-                const item = e.target.closest('.target-filter-dropdown-item');
+                const item = e.target.closest('.astryx-dropdown-item');
                 if (!item) return;
-                menu.querySelectorAll('.target-filter-dropdown-item').forEach(i => i.classList.remove('selected'));
+                menu.querySelectorAll('.astryx-dropdown-item').forEach(i => i.classList.remove('selected'));
                 item.classList.add('selected');
                 if (label) label.textContent = item.textContent;
                 dropdown.classList.remove('open');

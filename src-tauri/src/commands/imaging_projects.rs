@@ -43,10 +43,7 @@ pub fn create_project(project: serde_json::Value, state: State<Arc<AstryxState>>
 
     tx.commit().map_err(|e| e.to_string())?;
 
-    fetch_project_with_conn(
-        &state.db.lock().expect("db lock poisoned"),
-        id
-    )?.ok_or_else(|| "project not found after insert".to_string())
+    fetch_project_with_conn(&db, id)?.ok_or_else(|| "project not found after insert".to_string())
 }
 
 #[tauri::command]
@@ -74,10 +71,7 @@ pub fn update_project(id: i64, project: serde_json::Value, state: State<Arc<Astr
 
     tx.commit().map_err(|e| e.to_string())?;
 
-    fetch_project_with_conn(
-        &state.db.lock().expect("db lock poisoned"),
-        id
-    )?.ok_or_else(|| "project not found after update".to_string())
+    fetch_project_with_conn(&db, id)?.ok_or_else(|| "project not found after update".to_string())
 }
 
 #[tauri::command]

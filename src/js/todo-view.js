@@ -65,7 +65,7 @@ const ToDoView = {
             // Handle selection
             menu.addEventListener('click', (e) => {
                 e.stopPropagation();
-                const item = e.target.closest('.target-filter-dropdown-item');
+                const item = e.target.closest('.astryx-dropdown-item');
                 if (!item) return;
                 const newSort = item.dataset.value;
                 label.textContent = item.textContent;

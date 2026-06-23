@@ -469,7 +469,7 @@ const YearlyObservabilityCalculations = {
 
                 yoMenu.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    const item = e.target.closest('.target-filter-dropdown-item');
+                    const item = e.target.closest('.astryx-dropdown-item');
                     if (!item) return;
                     yoLabel.textContent = item.textContent;
                     yoDropdown.classList.remove('open');

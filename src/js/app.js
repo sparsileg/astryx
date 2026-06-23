@@ -67,7 +67,7 @@ const App = {
 
             // Global delegated handler to close all custom dropdowns
             document.addEventListener('click', () => {
-                document.querySelectorAll('.target-filter-dropdown.open').forEach(d => d.classList.remove('open'));
+                document.querySelectorAll('.astryx-dropdown.open').forEach(d => d.classList.remove('open'));
             });
 
             // Resume tutorial if flagged before a reload
