@@ -741,15 +741,13 @@ const ImagingLogView = {
             document.getElementById('session-temp-setpoint').value = session.tempSetpoint !== undefined ? session.tempSetpoint : -20;
             document.getElementById('session-gain').value = session.gain !== undefined ? session.gain : 101;
             document.getElementById('session-offset').value = session.offset !== undefined ? session.offset : 70;
-            document.getElementById('session-moon-illumination').value = session.moonIllumination || '';
+            document.getElementById('session-moon-illumination').value = session.moonIllumination ?? '';
 
             if (session.moonSet) {
-                const moonSetTime = new Date(session.moonSet).toTimeString().slice(0, 5);
-                document.getElementById('session-moon-set').value = moonSetTime;
+                document.getElementById('session-moon-set').value = session.moonSet;
             }
             if (session.moonRise) {
-                const moonRiseTime = new Date(session.moonRise).toTimeString().slice(0, 5);
-                document.getElementById('session-moon-rise').value = moonRiseTime;
+                document.getElementById('session-moon-rise').value = session.moonRise;
             }
 
             document.getElementById('session-angle-from-moon').value = session.angleFromMoon || '';
@@ -927,8 +925,8 @@ const ImagingLogView = {
 
         const moonSetTime = document.getElementById('session-moon-set').value;
         const moonRiseTime = document.getElementById('session-moon-rise').value;
-        const moonSet = moonSetTime ? `${date}T${moonSetTime}:00Z` : null;
-        const moonRise = moonRiseTime ? `${date}T${moonRiseTime}:00Z` : null;
+        const moonSet = moonSetTime || null;
+        const moonRise = moonRiseTime || null;
 
         const angleFromMoon = parseInt(document.getElementById('session-angle-from-moon').value) || 0;
         const clouds = this._getSessionDropdownValue('session-clouds-menu');
