@@ -1570,7 +1570,7 @@ const ImagingLogView = {
                     document.getElementById('program-max-number').value = program.maxNumber;
                     if (catalogPrefixMenu) {
                         catalogPrefixMenu.querySelectorAll('.astryx-dropdown-item').forEach(i => {
-                            i.classList.toggle('selected', i.dataset.value === program.catalogPrefix);
+                            i.classList.toggle('selected', i.dataset.value.toUpperCase() === program.catalogPrefix?.toUpperCase());
                         });
                         const selected = catalogPrefixMenu.querySelector('.astryx-dropdown-item.selected');
                         if (catalogPrefixLabel && selected) catalogPrefixLabel.textContent = selected.textContent;
