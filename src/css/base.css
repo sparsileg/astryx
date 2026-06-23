@@ -1023,6 +1023,10 @@ select.altitude-override-active,
     outline: none !important;
 }
 
+.input-invalid {
+    outline: 2px solid var(--warning-color);
+}
+
 /* Utilities */
 #util-dust-mote-params {
     display: grid;

@@ -353,8 +353,12 @@ const SeqPlanView = {
         );
 
         if (customTimeInput) {
-            customTimeInput.addEventListener('change', () => this.debouncedGenerate());
-            customTimeInput.addEventListener('input', () => this.debouncedGenerate());
+            customTimeInput.addEventListener('input', () => {
+                const val = customTimeInput.value;
+                const valid = /^\d{2}:\d{2}$/.test(val) && parseInt(val.slice(0, 2)) < 24 && parseInt(val.slice(3)) < 60;
+                customTimeInput.classList.toggle('input-invalid', val.length > 0 && !valid);
+                if (valid) this.debouncedGenerate();
+            });
         }
 
         // Min altitude dropdown — triggers full regeneration + override styling
