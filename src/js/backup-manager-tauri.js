@@ -129,17 +129,20 @@ const BackupManagerTauri = {
         try {
             const backupData = await this.generateBackupData(selectedStores);
             const dtg = TimeUtils.nowDTG();
-            const defaultFilename = `${APP_CONFIG.APP_NAME}-v${APP_CONFIG.APP_VERSION}-d${APP_CONFIG.DB_VERSION}-userdata-${dtg}.json`;
+            const defaultFilename = `${APP_CONFIG.APP_NAME}-v${APP_CONFIG.APP_VERSION}-d${APP_CONFIG.DB_VERSION}-userdata-${dtg}.zip`;
 
             const savePath = await window.__TAURI__.dialog.save({
                 defaultPath: defaultFilename,
-                filters: [{ name: 'JSON Backup', extensions: ['json'] }]
+                filters: [{ name: 'Astryx Backup', extensions: ['zip'] }]
             });
 
             if (!savePath) return; // User cancelled
 
             const jsonString = JSON.stringify(backupData, null, 2);
-            await window.__TAURI__.fs.writeTextFile(savePath, jsonString);
+            const zip = new JSZip();
+            zip.file(defaultFilename, jsonString);
+            const zipBlob = await zip.generateAsync({ type: 'uint8array', compression: 'DEFLATE' });
+            await window.__TAURI__.fs.writeFile(savePath, zipBlob);
 
             await SettingsManager.saveSetting('lastBackupTimestamp', TimeUtils.nowDTG());
             BackupReminder.onBackupComplete();
