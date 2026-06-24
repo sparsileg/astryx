@@ -121,7 +121,7 @@ const DailyVisibilityCalculations = {
         }
 
         // Calculate moon rise and set times - use full day bounds
-        const moonRiseSet = this.calculateMoonRiseSet(noonWindow.startJD, noonWindow.endJD, latitude, longitude);
+        const moonRiseSet = calculateMoonRiseSet(noonWindow.startJD, noonWindow.endJD, latitude, longitude, elevation);
 
         // Calculate blocked time if horizon is being used
         let blockedMinutes = 0;
@@ -175,40 +175,6 @@ const DailyVisibilityCalculations = {
         };
     },
 
-
-    /**
-     * Calculate moon rise and set times within the noon-to-noon window
-     * Uses same search window as target rise/set for consistency
-     */
-    calculateMoonRiseSet(searchStart, searchEnd, latitude, longitude) {
-        let moonrise = null;
-        let moonset = null;
-        let lastAltitude = null;
-
-        const step = 1 / 1440; // 1 minute
-        let jd = searchStart;
-
-        while (jd <= searchEnd) {
-            const moonPos = getMoonPosition(jd);
-            const altitude = getAltitude(jd, moonPos.ra, moonPos.dec, latitude, longitude);
-
-            if (lastAltitude !== null) {
-                // Detect rising (crossing 0° upward)
-                if (lastAltitude < 0 && altitude >= 0 && !moonrise) {
-                    moonrise = jd;
-                }
-                // Detect setting (crossing 0° downward)
-                if (lastAltitude >= 0 && altitude < 0 && !moonset) {
-                    moonset = jd;
-                }
-            }
-
-            lastAltitude = altitude;
-            jd += step;
-        }
-
-        return { moonrise, moonset };
-    },
 
     /**
      * Assemble skyglowData object for a single date/target/location.
