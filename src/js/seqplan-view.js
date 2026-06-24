@@ -7,7 +7,6 @@ const SeqPlanView = {
     currentSession: null,
     currentTargets: [],
     calculatedResults: [],
-    draggedElement: null,
     debounceTimer: null,
     isInitializing: false,
     resizeListenerAdded: false,
@@ -869,7 +868,10 @@ const SeqPlanView = {
             row.dataset.targetId = target.targetId;
 
             row.innerHTML = `
-                <div class="seq-plan-drag-handle">&#8942;&#8942;</div>
+                <div class="seq-plan-move-buttons">
+                    <button class="seq-plan-move-up" title="Move up">&#8963;</button>
+                    <button class="seq-plan-move-down" title="Move down">&#8964;</button>
+                </div>
                 <div class="seq-plan-target-name">${target.name}</div>
                 <div style="display: flex; align-items: center; gap: 0.3rem;">
                     <input type="number"
@@ -968,25 +970,35 @@ const SeqPlanView = {
             }
         });
 
-        // Drag and drop listeners - only on the drag handle
-        const handles = document.querySelectorAll('.seq-plan-drag-handle');
-        handles.forEach(handle => {
-            const row = handle.closest('.seq-plan-target-row');
-            handle.draggable = true;
-
-            handle.addEventListener('dragstart', (e) => {
-                this.draggedElement = row;
-                row.classList.add('dragging');
-                e.dataTransfer.effectAllowed = 'move';
+        // Up/down move buttons
+        document.querySelectorAll('.seq-plan-move-up').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const row = btn.closest('.seq-plan-target-row');
+                const targetId = row.dataset.targetId;
+                const index = this.calculatedResults.findIndex(t => t.targetId === targetId);
+                if (index <= 0) return;
+                [this.calculatedResults[index - 1], this.calculatedResults[index]] =
+                    [this.calculatedResults[index], this.calculatedResults[index - 1]];
+                this.calculatedResults[index].orderOverridden = true;
+                this.calculatedResults[index - 1].orderOverridden = true;
+                this._afterReorder();
             });
         });
 
-        // Dragover and drop on rows (not handles)
-        const rows = document.querySelectorAll('.seq-plan-target-row');
-        rows.forEach(row => {
-            row.addEventListener('dragover', (e) => this.handleDragOver(e));
-            row.addEventListener('drop', (e) => this.handleDrop(e));
-            row.addEventListener('dragend', (e) => this.handleDragEnd(e));
+        document.querySelectorAll('.seq-plan-move-down').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const row = btn.closest('.seq-plan-target-row');
+                const targetId = row.dataset.targetId;
+                const index = this.calculatedResults.findIndex(t => t.targetId === targetId);
+                if (index >= this.calculatedResults.length - 1) return;
+                [this.calculatedResults[index], this.calculatedResults[index + 1]] =
+                    [this.calculatedResults[index + 1], this.calculatedResults[index]];
+                this.calculatedResults[index].orderOverridden = true;
+                this.calculatedResults[index + 1].orderOverridden = true;
+                this._afterReorder();
+            });
         });
     },
 
@@ -1113,68 +1125,11 @@ const SeqPlanView = {
         }
     },
 
-    // ========================================================================
-    // Drag and Drop Handlers
-    // ========================================================================
 
-    draggedElement: null,
 
-    handleDragStart(e) {
-        this.draggedElement = e.target;
-        e.target.classList.add('dragging');
-        e.dataTransfer.effectAllowed = 'move';
-        e.dataTransfer.setData('text/html', e.target.innerHTML);
-    },
-
-    handleDragOver(e) {
-        if (e.preventDefault) {
-            e.preventDefault();
-        }
-        e.dataTransfer.dropEffect = 'move';
-
-        const targetRow = e.target.closest('.seq-plan-target-row');
-        if (targetRow && targetRow !== this.draggedElement) {
-            const container = targetRow.parentNode;
-            const targetRect = targetRow.getBoundingClientRect();
-
-            if (e.clientY < targetRect.top + targetRect.height / 2) {
-                container.insertBefore(this.draggedElement, targetRow);
-            } else {
-                container.insertBefore(this.draggedElement, targetRow.nextSibling);
-            }
-        }
-
-        return false;
-    },
-
-    handleDrop(e) {
-        if (e.stopPropagation) {
-            e.stopPropagation();
-        }
-        return false;
-    },
-
-    handleDragEnd(e) {
-        if (this.draggedElement) {
-            this.draggedElement.classList.remove('dragging');
-        }
-
-        const rows = document.querySelectorAll('.seq-plan-target-row');
-        const newOrder = Array.from(rows).map(row => row.dataset.targetId);
-
-        const reordered = [];
-        newOrder.forEach(targetId => {
-            const target = this.calculatedResults.find(t => t.targetId === targetId);
-            if (target) {
-                target.orderOverridden = true;
-                reordered.push(target);
-            }
-        });
-
-        this.calculatedResults = reordered;
-
+    _afterReorder() {
         const sessionWindow = SeqPlanCalculations.calculateSessionWindow(
-            reordered,
+            this.calculatedResults,
             this.currentSession.duskJD,
             this.currentSession.dawnJD,
             this.currentSession.location,
@@ -1186,10 +1141,8 @@ const SeqPlanView = {
         );
         this.currentSession.sessionStartJD = sessionWindow.sessionStartJD;
         this.currentSession.sessionEndJD = sessionWindow.sessionEndJD;
-
         this.recalculateAndUpdate();
-
-        this.draggedElement = null;
+        this.renderTargetAllocation();
     },
 
     /**
