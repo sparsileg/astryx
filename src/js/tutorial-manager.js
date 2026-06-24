@@ -5,7 +5,6 @@
  */
 
 const TutorialManager = {
-
     /**
      * Save progress for a tutorial
      * @param {string} tutorialId
@@ -21,7 +20,7 @@ const TutorialManager = {
         });
     },
 
-/**
+    /**
      * Load progress for a tutorial
      * @param {string} tutorialId
      * @returns {Object|null}
