@@ -217,90 +217,39 @@ function calculateHorizonDepression(elevationMeters) {
 
 
 /**
- * Find moonrise and moonset times within the noon-to-noon observation window
- * Searches every minute to ensure no events are missed
- * @param {number} duskJD - Dusk Julian Date
- * @param {number} dawnJD - Dawn Julian Date
+ * Calculate moon rise and set times within a search window
+ * Uses horizon depression due to observer elevation
+ * @param {number} searchStart - Start Julian Date
+ * @param {number} searchEnd - End Julian Date
  * @param {number} latitude - Observer latitude (degrees)
- * @param {number} longitude - Observer longitude (degrees, West is negative)
+ * @param {number} longitude - Observer longitude (degrees)
  * @param {number} elevation - Observer elevation (meters)
- * @param {string} obsDate - Observation date string (YYYY-MM-DD)
- * @param {number} timezone - Timezone offset from UTC
- * @returns {Object} { moonrise: JD, moonset: JD }
+ * @returns {Object} { moonrise: JD|null, moonset: JD|null }
  */
-function findMoonRiseSet(duskJD, dawnJD, latitude, longitude, elevation, obsDate, timezone) {
+function calculateMoonRiseSet(searchStart, searchEnd, latitude, longitude, elevation) {
     const horizonDepression = calculateHorizonDepression(elevation);
-
-    // Calculate noon-to-noon window using the SAME method as daily visibility timeline
-    const dateParts = obsDate.split('-');
-    const localNoonDate = new Date(
-        parseInt(dateParts[0]),
-        parseInt(dateParts[1]) - 1,
-        parseInt(dateParts[2]),
-        12, 0, 0
-    );
-
-    // Convert to JD treating it as UTC (matching daily visibility timeline approach)
-    const noonStartJD = TimeUtils.dateToJD(localNoonDate);
-    const noonEndJD = noonStartJD + 1;
-
-    console.log('=== MOON RISE/SET SEARCH ===');
-    console.log('Observation date:', obsDate);
-    console.log('Dusk JD:', duskJD, 'Time:', TimeUtils.jdToDate(duskJD).toISOString());
-    console.log('Noon start JD:', noonStartJD, 'Time:', TimeUtils.jdToDate(noonStartJD).toISOString());
-    console.log('Noon end JD:', noonEndJD, 'Time:', TimeUtils.jdToDate(noonEndJD).toISOString());
-    console.log('Horizon depression:', horizonDepression);
-
-    const oneMinute = 1 / 1440; // 1 minute in JD units
-
+    const step = 1 / 1440; // 1 minute
     let moonrise = null;
     let moonset = null;
+    let lastAltitude = null;
+    let jd = searchStart;
 
-    // Get starting altitude
-    const moonPosStart = getMoonPosition(noonStartJD);
-    let prevAltitude = getAltitude(noonStartJD, moonPosStart.ra, moonPosStart.dec, latitude, longitude);
-    console.log('Starting moon altitude at noon:', prevAltitude.toFixed(2));
+    while (jd <= searchEnd) {
+        const moonPos = getMoonPosition(jd);
+        const altitude = getAltitude(jd, moonPos.ra, moonPos.dec, latitude, longitude);
 
-    // Search every minute through the entire noon-to-noon window
-    let currentJD = noonStartJD + oneMinute;
-    let checkCount = 0;
-
-    while (currentJD <= noonEndJD) {
-        const moonPos = getMoonPosition(currentJD);
-        const moonAltitude = getAltitude(currentJD, moonPos.ra, moonPos.dec, latitude, longitude);
-
-        // Check for rise (going from below to above horizon)
-        if (prevAltitude < horizonDepression && moonAltitude >= horizonDepression) {
-            if (!moonrise) {
-                moonrise = currentJD;
-                console.log('MOONRISE found at JD:', currentJD, 'Time:', TimeUtils.jdToDate(currentJD).toISOString());
+        if (lastAltitude !== null) {
+            if (lastAltitude < horizonDepression && altitude >= horizonDepression && !moonrise) {
+                moonrise = jd;
+            }
+            if (lastAltitude >= horizonDepression && altitude < horizonDepression && !moonset) {
+                moonset = jd;
             }
         }
 
-        // Check for set (going from above to below horizon)
-        if (prevAltitude >= horizonDepression && moonAltitude < horizonDepression) {
-            if (!moonset) {
-                moonset = currentJD;
-                console.log('MOONSET found at JD:', currentJD, 'Time:', TimeUtils.jdToDate(currentJD).toISOString());
-            }
-        }
-
-        // Stop if we've found both events
-        if (moonrise && moonset) {
-            break;
-        }
-
-        prevAltitude = moonAltitude;
-        currentJD += oneMinute;
-        checkCount++;
+        lastAltitude = altitude;
+        jd += step;
     }
 
-    console.log('Checked', checkCount, 'minutes');
-    console.log('Final results - Moonrise:', moonrise ? TimeUtils.jdToDate(moonrise).toISOString() : 'none');
-    console.log('Final results - Moonset:', moonset ? TimeUtils.jdToDate(moonset).toISOString() : 'none');
-
-    return {
-        moonrise,
-        moonset
-    };
+    return { moonrise, moonset };
 }

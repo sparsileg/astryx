@@ -856,16 +856,24 @@ const ImagingLogView = {
             const moonPhase = getMoonPhase(jd);
             document.getElementById('session-moon-illumination').value = Math.round(moonPhase.illumination);
 
-            const moonRiseSet = findMoonRiseSet(jd, jd + 1, location.latitude, location.longitude, location.elevation, dateStr, location.timezone);
+            const isDST = SettingsManager.isDSTActive(new Date(year, month - 1, day), location.timezone);
+            const noonWindow = getNoonToNoonWindow(dateStr, location.timezone, isDST);
+            const moonRiseSet = calculateMoonRiseSet(noonWindow.startJD, noonWindow.endJD, location.latitude, location.longitude, location.elevation);
 
             if (moonRiseSet.moonrise) {
-                const riseDate = jdToDate(moonRiseSet.moonrise);
-                document.getElementById('session-moon-rise').value = riseDate.toTimeString().slice(0, 5);
+                const riseDate = TimeUtils.jdToDate(moonRiseSet.moonrise);
+                const isDSTRise = SettingsManager.isDSTActive(riseDate, location.timezone);
+                const riseOffset = isDSTRise ? location.timezone + 1 : location.timezone;
+                const riseLocal = new Date(riseDate.getTime() + riseOffset * 3600000);
+                document.getElementById('session-moon-rise').value = riseLocal.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', timeZone: 'UTC' });
             }
 
             if (moonRiseSet.moonset) {
-                const setDate = jdToDate(moonRiseSet.moonset);
-                document.getElementById('session-moon-set').value = setDate.toTimeString().slice(0, 5);
+                const setDate = TimeUtils.jdToDate(moonRiseSet.moonset);
+                const isDSTSet = SettingsManager.isDSTActive(setDate, location.timezone);
+                const setOffset = isDSTSet ? location.timezone + 1 : location.timezone;
+                const setLocal = new Date(setDate.getTime() + setOffset * 3600000);
+                document.getElementById('session-moon-set').value = setLocal.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', timeZone: 'UTC' });
             }
 
             const transitJD = this.findTargetTransit(jd, target.ra, target.dec, location.latitude, location.longitude);
