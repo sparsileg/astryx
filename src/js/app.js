@@ -301,12 +301,13 @@ const App = {
             FOVView.render();
             break;
 
-            /* sequence planner */
+        /* sequence planner */
         case 'seqplan':
             document.getElementById('app').innerHTML = '';
             const seqPlanTemplate = document.getElementById('seq-plan-view-template');
             const seqPlanContent = seqPlanTemplate.content.cloneNode(true);
             document.getElementById('app').appendChild(seqPlanContent);
+            this.currentView = SeqPlanView;
             SeqPlanView.init();
             break;
 
@@ -316,6 +317,7 @@ const App = {
             const imagingLogTemplate = document.getElementById('imaging-log-view-template');
             const imagingLogContent = imagingLogTemplate.content.cloneNode(true);
             document.getElementById('app').appendChild(imagingLogContent);
+            this.currentView = ImagingLogView;
             ImagingLogView.init();
             break;
 
@@ -325,6 +327,7 @@ const App = {
             const utilitiesTemplate = document.getElementById('utilities-view-template');
             const utilitiesContent = utilitiesTemplate.content.cloneNode(true);
             document.getElementById('app').appendChild(utilitiesContent);
+            this.currentView = UtilitiesView;
             UtilitiesView.init();
             break;
 
@@ -334,6 +337,7 @@ const App = {
             const optimizerTemplate = document.getElementById('optimizer-view-template');
             const optimizerContent = optimizerTemplate.content.cloneNode(true);
             document.getElementById('app').appendChild(optimizerContent);
+            this.currentView = OptimizerView;
             OptimizerView.init();
             break;
 
