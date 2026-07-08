@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Astryx Tools — a small constellation of tools: astrophotography planning and processing, flashcards, and book tracking.">
+<title>Astryx Tools</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Julius+Sans+One&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:       #0B1026;   /* deep twilight, not black */
+    --surface:  #121A38;
+    --surface2: #182148;
+    --line:     #26305C;
+    --ink:      #E8ECF8;
+    --muted:    #8A94B8;
+
+    /* one accent per tool — stellar-classification style */
+    --astryx:    #F2C14E;  /* star gold */
+    --photyx:    #E4536B;  /* hydrogen-alpha crimson */
+    --mindforge: #37D67A;  /* matrix green */
+    --scriptum:  #7C9EF5;  /* ink periwinkle */
+
+    --display: 'Julius Sans One', sans-serif;
+    --body:    'IBM Plex Sans', sans-serif;
+    --mono:    'IBM Plex Mono', monospace;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--body);
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  a { color: inherit; }
+
+  .wrap {
+    max-width: 1060px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+  }
+
+  /* ---------- Hero ---------- */
+
+  header {
+    padding: 4.5rem 0 3rem;
+    text-align: center;
+  }
+
+  .wordmark {
+    font-family: var(--display);
+    font-size: clamp(1.9rem, 5vw, 3rem);
+    letter-spacing: 0.35em;
+    text-indent: 0.35em; /* balance the trailing letterspace */
+    text-transform: uppercase;
+  }
+  .wordmark .tld { color: var(--muted); }
+
+  .tagline {
+    margin-top: 0.75rem;
+    color: var(--muted);
+    font-size: 1.05rem;
+  }
+
+  /* The signature: the four tools as a small constellation */
+  .constellation {
+    display: block;
+    margin: 2.25rem auto 0;
+    width: min(420px, 80vw);
+    height: auto;
+  }
+  .constellation line {
+    stroke: var(--line);
+    stroke-width: 1;
+  }
+  .constellation .star { r: 4; }
+  .constellation .halo {
+    r: 9;
+    fill: none;
+    stroke-width: 1;
+    opacity: 0.35;
+  }
+  .s-astryx    { fill: var(--astryx);    stroke: var(--astryx); }
+  .s-photyx    { fill: var(--photyx);    stroke: var(--photyx); }
+  .s-mindforge { fill: var(--mindforge); stroke: var(--mindforge); }
+  .s-scriptum  { fill: var(--scriptum);  stroke: var(--scriptum); }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .constellation .halo {
+      animation: twinkle 4s ease-in-out infinite;
+    }
+    .constellation .halo:nth-of-type(2) { animation-delay: 1s; }
+    .constellation .halo:nth-of-type(3) { animation-delay: 2s; }
+    .constellation .halo:nth-of-type(4) { animation-delay: 3s; }
+    @keyframes twinkle {
+      0%, 100% { opacity: 0.15; }
+      50%      { opacity: 0.5; }
+    }
+  }
+
+  /* ---------- Cards ---------- */
+
+  main { padding-bottom: 4rem; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.25rem;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 1.6rem 1.6rem 1.4rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    border-top: 3px solid var(--accent, var(--line));
+  }
+  .card.astryx    { --accent: var(--astryx); }
+  .card.photyx    { --accent: var(--photyx); }
+  .card.mindforge { --accent: var(--mindforge); }
+  .card.scriptum  { --accent: var(--scriptum); }
+
+  .card h2 {
+    font-family: var(--display);
+    font-weight: 400;
+    font-size: 1.35rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+
+  .badges {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+  .badge {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 0.15rem 0.6rem;
+  }
+
+  .card p {
+    color: var(--muted);
+    font-size: 0.95rem;
+    flex-grow: 1;
+  }
+
+  .actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-top: 0.25rem;
+  }
+
+  .btn {
+    font-family: var(--mono);
+    font-size: 0.85rem;
+    text-decoration: none;
+    border-radius: 6px;
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--line);
+    transition: background 0.15s ease, border-color 0.15s ease;
+  }
+  .btn.primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--bg);
+    font-weight: 500;
+  }
+  .btn.primary:hover { filter: brightness(1.12); }
+  .btn.quiet {
+    color: var(--ink);
+    background: transparent;
+  }
+  .btn.quiet:hover {
+    background: var(--surface2);
+    border-color: var(--muted);
+  }
+  .btn.soon {
+    color: var(--muted);
+    background: transparent;
+    border-style: dashed;
+    cursor: default;
+  }
+
+  .btn:focus-visible {
+    outline: 2px solid var(--ink);
+    outline-offset: 2px;
+  }
+
+  /* ---------- Footer ---------- */
+
+  footer {
+    border-top: 1px solid var(--line);
+    padding: 1.5rem 0 2.5rem;
+    text-align: center;
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 0.8rem;
+  }
+  footer a {
+    color: var(--muted);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  footer a:hover { color: var(--ink); }
+</style>
+</head>
+<body>
+
+<header class="wrap">
+  <h1 class="wordmark">Astryx<span class="tld">.tools</span></h1>
+  <p class="tagline">A small constellation of tools — for the night sky, and for keeping a mind and a library in order.</p>
+
+  <!-- Signature: the four tools drawn as a constellation -->
+  <svg class="constellation" viewBox="0 0 420 130" role="img" aria-label="Four stars joined into a constellation, one per tool">
+    <line x1="60"  y1="90" x2="170" y2="40"/>
+    <line x1="170" y1="40" x2="265" y2="85"/>
+    <line x1="265" y1="85" x2="365" y2="35"/>
+    <circle class="halo s-astryx"    cx="60"  cy="90"/>
+    <circle class="halo s-photyx"    cx="170" cy="40"/>
+    <circle class="halo s-mindforge" cx="265" cy="85"/>
+    <circle class="halo s-scriptum"  cx="365" cy="35"/>
+    <circle class="star s-astryx"    cx="60"  cy="90"/>
+    <circle class="star s-photyx"    cx="170" cy="40"/>
+    <circle class="star s-mindforge" cx="265" cy="85"/>
+    <circle class="star s-scriptum"  cx="365" cy="35"/>
+  </svg>
+</header>
+
+<main class="wrap">
+  <div class="grid">
+
+    <section class="card astryx">
+      <h2>Astryx</h2>
+      <div class="badges"><span class="badge">web</span></div>
+      <p>Astrophotography session planning — figure out what's in the sky, when it's worth shooting, and how to frame it before you haul the gear outside.</p>
+      <div class="actions">
+        <a class="btn primary" href="https://app.astryx.tools">Open Astryx</a>
+        <a class="btn quiet" href="https://github.com/sparsileg/astryx">GitHub</a>
+      </div>
+    </section>
+
+    <section class="card photyx">
+      <h2>Photyx</h2>
+      <div class="badges"><span class="badge">desktop</span></div>
+      <p>Astrophotography pre-processing and filtering — cull, grade, and prepare your subs before they ever reach the stacking stage.</p>
+      <div class="actions">
+        <a class="btn primary" href="https://github.com/sparsileg/Photyx">GitHub</a>
+      </div>
+    </section>
+
+    <section class="card mindforge">
+      <h2>Mindforge</h2>
+      <div class="badges"><span class="badge">web</span><span class="badge">pwa</span></div>
+      <p>Spaced-repetition flashcards — build decks, study on a schedule that adapts to how well you actually remember, and keep a streak going.</p>
+      <div class="actions">
+        <a class="btn primary" href="https://mindforge.astryx.tools">Open Mindforge</a>
+        <a class="btn quiet" href="https://github.com/sparsileg/mindforge">GitHub</a>
+      </div>
+    </section>
+
+    <section class="card scriptum">
+      <h2>Scriptum</h2>
+      <div class="badges"><span class="badge">desktop</span><span class="badge">web</span></div>
+      <p>A book management system — track what you've read, what's next, and the library you actually own.</p>
+      <div class="actions">
+        <span class="btn soon">Web version coming soon</span>
+        <a class="btn quiet" href="https://github.com/sparsileg/scriptum">GitHub</a>
+      </div>
+    </section>
+
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    Built by <a href="https://github.com/sparsileg">sparsileg</a>
+  </div>
+</footer>
+
+</body>
+</html>
