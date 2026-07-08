@@ -197,11 +197,12 @@ function calculateSkyLight(moonAltitude, targetAltitude, separation, moonIllumin
  * @returns {number|null} Dusk JD when sun goes below -18°, or null if no dusk
  */
 function findAstronomicalDusk(localDate, latitude, longitude, timezone, isDST) {
-    // Start from noon of the specified date
-    const localNoon = new Date(localDate.getFullYear(), localDate.getMonth(), localDate.getDate(), 12, 0, 0);
-    // Adjust timezone for DST if needed
+    // Start from noon of the specified date. Built via Date.UTC so the
+    // browser's local timezone never enters the calculation — otherwise
+    // localNoon.getTime() already carries the browser's offset, and
+    // subtracting offsetHours applies the location's offset a second time.
     const offsetHours = isDST ? timezone + 1 : timezone;
-    const utcNoon = new Date(localNoon.getTime() - offsetHours * 3600000);
+    const utcNoon = new Date(Date.UTC(localDate.getFullYear(), localDate.getMonth(), localDate.getDate(), 12, 0, 0) - offsetHours * 3600000);
     const noonJD = dateToJD(utcNoon);
 
     const targetAlt = -18;
@@ -235,13 +236,14 @@ function findAstronomicalDusk(localDate, latitude, longitude, timezone, isDST) {
  * @returns {number|null} Dawn JD when sun comes above -18°, or null if no dawn
  */
 function findNextAstronomicalDawn(localDate, latitude, longitude, timezone, isDST) {
-    // Start from midnight of the NEXT day
+    // Start from midnight of the NEXT day. Built via Date.UTC so the
+    // browser's local timezone never enters the calculation — otherwise
+    // localMidnight.getTime() already carries the browser's offset, and
+    // subtracting offsetHours applies the location's offset a second time.
     const nextDay = new Date(localDate);
     nextDay.setDate(nextDay.getDate() + 1);
-    const localMidnight = new Date(nextDay.getFullYear(), nextDay.getMonth(), nextDay.getDate(), 0, 0, 0);
-    // Adjust timezone for DST if needed
     const offsetHours = isDST ? timezone + 1 : timezone;
-    const utcMidnight = new Date(localMidnight.getTime() - offsetHours * 3600000);
+    const utcMidnight = new Date(Date.UTC(nextDay.getFullYear(), nextDay.getMonth(), nextDay.getDate(), 0, 0, 0) - offsetHours * 3600000);
     const midnightJD = dateToJD(utcMidnight);
 
     const targetAlt = -18;

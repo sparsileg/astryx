@@ -28,10 +28,13 @@ const DailyVisibilityCalculations = {
         // Find astronomical dusk (sun at -18°)
         const duskJD = this.findSunAltitudeJD(noonJD, latitude, longitude, -18, true);
 
-        // Find astronomical dawn (sun at -18°, search starting 6 hours after dusk)
+        // Find astronomical dawn (sun at -18°): start one minute past dusk,
+        // where the sun is still just below -18, so the first-sample-at-or-above
+        // -18 scan finds true dawn even on short summer nights. (The old
+        // dusk+6h start overshot true dawn whenever the night was under 6h.)
         let dawnJD = null;
         if (duskJD) {
-            const searchStartJD = duskJD + 6/24;
+            const searchStartJD = duskJD + 1/1440;
             dawnJD = this.findSunAltitudeJD(searchStartJD, latitude, longitude, -18, false);
         }
 
