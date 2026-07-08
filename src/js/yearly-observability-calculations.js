@@ -326,11 +326,15 @@ const YearlyObservabilityCalculations = {
         const utcNoon = new Date(localNoon.getTime() - offsetHours * 3600000);
         const noonJD = TimeUtils.dateToJD(utcNoon);
 
-        // Find astronomical dusk and dawn (sun at -18°)
+        // Find astronomical dusk and dawn (sun at -18°): dawn search starts one
+        // minute past dusk, where the sun is still just below -18, so the
+        // first-sample-at-or-above -18 scan finds true dawn even on short
+        // summer nights. (The old dusk+6h start overshot true dawn whenever
+        // the night was under 6h.)
         const duskJD = DailyVisibilityCalculations.findSunAltitudeJD(noonJD, inputs.latitude, inputs.longitude, -18, true);
         let dawnJD = null;
         if (duskJD) {
-            const searchStartJD = duskJD + 6/24;
+            const searchStartJD = duskJD + 1/1440;
             dawnJD = DailyVisibilityCalculations.findSunAltitudeJD(searchStartJD, inputs.latitude, inputs.longitude, -18, false);
         }
 
