@@ -1,5 +1,5 @@
 {
-  "name": "astryx-app",
+  "name": "astryx",
   "compatibility_date": "2026-07-08",
   "assets": {
     "directory": "./src"
