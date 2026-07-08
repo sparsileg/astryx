@@ -21,10 +21,13 @@ const SeqPlanCalculations = {
             12, 0, 0
         );
 
+        // location objects don't carry an isDST property — compute it the
+        // same way every other caller does (todo-view, best-months, yearly)
+        const isDST = SettingsManager.isDSTActive(localDate, location.timezone);
         const duskJD = findAstronomicalDusk(localDate, location.latitude, location.longitude,
-                                            location.timezone, location.isDST);
+                                            location.timezone, isDST);
         const dawnJD = findNextAstronomicalDawn(localDate, location.latitude, location.longitude,
-                                                location.timezone, location.isDST);
+                                                location.timezone, isDST);
 
         if (!duskJD || !dawnJD) {
             return null;
