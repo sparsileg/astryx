@@ -26,38 +26,6 @@ function getSunPosition(jd) {
     };
 }
 
-/**
- * Find JD when sun reaches target altitude
- */
-function findSunAltitudeJD(startJD, latitude, longitude, targetAltitude, searchForward) {
-    const step = searchForward ? 1/1440 : -1/1440; // 1 minute steps
-    let jd = startJD;
-
-    // Get initial sun altitude
-    let sunPos = getSunPosition(jd);
-    let previousAltitude = getAltitude(jd, sunPos.ra, sunPos.dec, latitude, longitude);
-
-    for (let i = 0; i < 2880; i++) { // Max 48 hours of searching
-        jd += step;
-        sunPos = getSunPosition(jd);
-        const currentAltitude = getAltitude(jd, sunPos.ra, sunPos.dec, latitude, longitude);
-
-        // Check if we've crossed the target altitude
-        if (searchForward) {
-            if (previousAltitude >= targetAltitude && currentAltitude < targetAltitude) {
-                return jd;
-            }
-        } else {
-            if (previousAltitude <= targetAltitude && currentAltitude > targetAltitude) {
-                return jd;
-            }
-        }
-
-        previousAltitude = currentAltitude;
-    }
-
-    return null;
-}
 
 /**
  * Combine two brightness magnitudes

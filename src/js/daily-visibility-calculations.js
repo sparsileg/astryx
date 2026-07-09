@@ -10,44 +10,26 @@ const DailyVisibilityCalculations = {
      * Uses the same algorithm as the original app
      */
     calculateTwilightTimes(date, latitude, longitude, timezone, dstConfig) {
-        // Create a local noon date for this observation date
+        // Parse the date string into a local-noon Date object — findAstronomicalDusk/
+        // findNextAstronomicalDawn build their own timezone-independent instant
+        // internally from this, via the single canonical implementation in astro-sun.js.
         const dateParts = date.split('-');
-        const localNoon = new Date(
+        const localDate = new Date(
             parseInt(dateParts[0]),
             parseInt(dateParts[1]) - 1,
             parseInt(dateParts[2]),
             12, 0, 0
         );
+        const isDST = SettingsManager.isDSTActive(localDate, timezone);
 
-        // Adjust for timezone offset before converting to JD
-        const isDST = SettingsManager.isDSTActive(localNoon, timezone);
-        const offsetHours = isDST ? timezone + 1 : timezone;
-        const utcNoon = new Date(localNoon.getTime() - offsetHours * 3600000);
-        const noonJD = TimeUtils.dateToJD(utcNoon);
-
-        // Find astronomical dusk (sun at -18°)
-        const duskJD = this.findSunAltitudeJD(noonJD, latitude, longitude, -18, true);
-
-        // Find astronomical dawn (sun at -18°): start one minute past dusk,
-        // where the sun is still just below -18, so the first-sample-at-or-above
-        // -18 scan finds true dawn even on short summer nights. (The old
-        // dusk+6h start overshot true dawn whenever the night was under 6h.)
-        let dawnJD = null;
-        if (duskJD) {
-            const searchStartJD = duskJD + 1/1440;
-            dawnJD = this.findSunAltitudeJD(searchStartJD, latitude, longitude, -18, false);
-        }
+        const duskJD = findAstronomicalDusk(localDate, latitude, longitude, timezone, isDST);
+        const dawnJD = findNextAstronomicalDawn(localDate, latitude, longitude, timezone, isDST);
 
         // Convert JD to local time strings
         if (duskJD && dawnJD) {
-            // Convert JD to UTC date
             const duskUTC = TimeUtils.jdToDate(duskJD);
             const dawnUTC = TimeUtils.jdToDate(dawnJD);
 
-            // Determine DST status
-            const isDST = SettingsManager.isDSTActive(localNoon, timezone);
-
-            // Format as local time strings
             return {
                 duskJD: duskJD,
                 dawnJD: dawnJD,
@@ -59,30 +41,6 @@ const DailyVisibilityCalculations = {
         return { duskJD: null, dawnJD: null, dusk: null, dawn: null };
     },
 
-    /**
-     * Find JD when sun reaches target altitude
-     */
-    findSunAltitudeJD(startJD, latitude, longitude, targetAltitude, searchUp) {
-        let jd = startJD;
-        const step = 1 / 1440; // 1 minute
-        const maxIterations = 1440 * 2; // Up to 2 days
-
-        for (let i = 0; i < maxIterations; i++) {
-            const sunPos = getSunPosition(jd);
-            const altitude = getAltitude(jd, sunPos.ra, sunPos.dec, latitude, longitude);
-
-            if (searchUp && altitude <= targetAltitude) {
-                return jd;
-            }
-            if (!searchUp && altitude >= targetAltitude) {
-                return jd;
-            }
-
-            jd += step;
-        }
-
-        return null;
-    },
 
     /**
      * Calculate results for a single day
