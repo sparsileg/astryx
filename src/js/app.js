@@ -331,7 +331,7 @@ const App = {
             UtilitiesView.init();
             break;
 
-            /* target optimizer */
+        /* target optimizer */
         case 'optimizer':
             document.getElementById('app').innerHTML = '';
             const optimizerTemplate = document.getElementById('optimizer-view-template');
@@ -339,6 +339,16 @@ const App = {
             document.getElementById('app').appendChild(optimizerContent);
             this.currentView = OptimizerView;
             OptimizerView.init();
+            break;
+
+            /* algorithm validation self-test */
+        case 'validate-algorithms':
+            document.getElementById('app').innerHTML = '';
+            const algorithmValidationTemplate = document.getElementById('algorithm-validation-view-template');
+            const algorithmValidationContent = algorithmValidationTemplate.content.cloneNode(true);
+            document.getElementById('app').appendChild(algorithmValidationContent);
+            this.currentView = AlgorithmValidationView;
+            AlgorithmValidationView.init();
             break;
 
         default:
