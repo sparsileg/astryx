@@ -174,23 +174,58 @@ function findAstronomicalDusk(localDate, latitude, longitude, timezone, isDST) {
     const noonJD = dateToJD(utcNoon);
 
     const targetAlt = -18;
-    const step = 1/1440; // 1 minute
-    const maxIterations = 1440; // Search up to 24 hours
 
-    // Search forward from noon until sun altitude <= -18°
+    // Coarse-then-refine search (perf): scan at 10-minute steps to bracket
+    // the -18 crossing, then binary-search within that bracket down to
+    // 1-minute precision — same result as the old 1-minute linear scan
+    // (to the minute), ~10x fewer getSunPosition/getAltitude evaluations.
+    const coarseStep = 10/1440;
+    const maxCoarseIterations = 144; // 24 hours / 10 min
+
     let jd = noonJD;
-    for (let i = 0; i < maxIterations; i++) {
-        const sunPos = getSunPosition(jd);
-        const altitude = getAltitude(jd, sunPos.ra, sunPos.dec, latitude, longitude);
+    let sunPos = getSunPosition(jd);
+    let altitude = getAltitude(jd, sunPos.ra, sunPos.dec, latitude, longitude);
 
-        if (altitude <= targetAlt) {
-            return jd;
-        }
-
-        jd += step;
+    if (altitude <= targetAlt) {
+        return jd; // Already below threshold at noon (edge case, e.g. polar)
     }
 
-    return null; // No astronomical dusk found (e.g., polar regions in summer)
+    let bracketStartJD = null;
+    let bracketEndJD = null;
+
+    for (let i = 1; i <= maxCoarseIterations; i++) {
+        jd = noonJD + i * coarseStep;
+        sunPos = getSunPosition(jd);
+        altitude = getAltitude(jd, sunPos.ra, sunPos.dec, latitude, longitude);
+
+        if (altitude <= targetAlt) {
+            bracketStartJD = jd - coarseStep;
+            bracketEndJD = jd;
+            break;
+        }
+    }
+
+    if (bracketStartJD === null) {
+        return null; // No astronomical dusk found (e.g., polar regions in summer)
+    }
+
+    // Refine within the 10-minute bracket to 1-minute precision
+    let lowJD = bracketStartJD;  // altitude > targetAlt here
+    let highJD = bracketEndJD;   // altitude <= targetAlt here
+    const refineTolerance = 1/1440;
+
+    while ((highJD - lowJD) > refineTolerance) {
+        const midJD = (lowJD + highJD) / 2;
+        const midSunPos = getSunPosition(midJD);
+        const midAltitude = getAltitude(midJD, midSunPos.ra, midSunPos.dec, latitude, longitude);
+        if (midAltitude <= targetAlt) {
+            highJD = midJD;
+        } else {
+            lowJD = midJD;
+        }
+    }
+
+    return highJD;
 }
 
 
@@ -215,21 +250,60 @@ function findNextAstronomicalDawn(localDate, latitude, longitude, timezone, isDS
     const midnightJD = dateToJD(utcMidnight);
 
     const targetAlt = -18;
-    const step = 1/1440; // 1 minute
-    const maxIterations = 1440; // Search up to 24 hours
 
-    // Search forward from midnight until sun altitude >= -18°
+    // Coarse-then-refine search (perf): scan at 10-minute steps to bracket
+    // the -18 crossing, then binary-search within that bracket down to
+    // 1-minute precision — same result as the old 1-minute linear scan
+    // (to the minute), ~10x fewer getSunPosition/getAltitude evaluations.
+    const coarseStep = 10/1440;
+    const maxCoarseIterations = 144; // 24 hours / 10 min
+
     let jd = midnightJD;
-    for (let i = 0; i < maxIterations; i++) {
-        const sunPos = getSunPosition(jd);
-        const altitude = getAltitude(jd, sunPos.ra, sunPos.dec, latitude, longitude);
+    let sunPos = getSunPosition(jd);
+    let altitude = getAltitude(jd, sunPos.ra, sunPos.dec, latitude, longitude);
 
-        if (altitude >= targetAlt) {
-            return jd;
-        }
-
-        jd += step;
+    if (altitude >= targetAlt) {
+        return jd; // Already above threshold at midnight (edge case, e.g. polar)
     }
 
-    return null; // No astronomical dawn found (e.g., polar regions in winter)
+    let bracketStartJD = null;
+    let bracketEndJD = null;
+
+    for (let i = 1; i <= maxCoarseIterations; i++) {
+        jd = midnightJD + i * coarseStep;
+        sunPos = getSunPosition(jd);
+        altitude = getAltitude(jd, sunPos.ra, sunPos.dec, latitude, longitude);
+
+        if (altitude >= targetAlt) {
+            bracketStartJD = jd - coarseStep;
+            bracketEndJD = jd;
+            break;
+        }
+    }
+
+    if (bracketStartJD === null) {
+        return null; // No astronomical dawn found (e.g., polar regions in winter)
+    }
+
+    // Refine within the 10-minute bracket to 1-minute precision
+    let lowJD = bracketStartJD;  // altitude < targetAlt here
+    let highJD = bracketEndJD;   // altitude >= targetAlt here
+    const refineTolerance = 1/1440;
+
+    while ((highJD - lowJD) > refineTolerance) {
+        const midJD = (lowJD + highJD) / 2;
+        const midSunPos = getSunPosition(midJD);
+        const midAltitude = getAltitude(midJD, midSunPos.ra, midSunPos.dec, latitude, longitude);
+        if (midAltitude >= targetAlt) {
+            highJD = midJD;
+        } else {
+            lowJD = midJD;
+        }
+    }
+
+    return highJD;
 }
+
+// ----------------------------------------------------------------------
+// ----------------------------------------------------------------------
+// ----------------------------------------------------------------------

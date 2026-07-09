@@ -132,11 +132,18 @@ const YearlyObservabilityCalculations = {
 
     /**
      * Calculate total accumulated dark hours above threshold
+     * @param {number} [duskJD] - Pre-computed dusk JD (perf: avoids recomputing
+     *     when the caller already has it for this date — see calculateYearlyAltitudeData's
+     *     per-day twilight cache). Falls back to computing it when omitted, so this
+     *     function remains usable standalone.
+     * @param {number} [dawnJD] - Pre-computed dawn JD, same as above.
      */
-    calculateTotalDarkHours(date, ra, dec, latitude, longitude, timezone, minAltitude) {
-        const isDST = SettingsManager.isDSTActive(date, timezone);
-        const duskJD = findAstronomicalDusk(date, latitude, longitude, timezone, isDST);
-        const dawnJD = findNextAstronomicalDawn(date, latitude, longitude, timezone, isDST);
+    calculateTotalDarkHours(date, ra, dec, latitude, longitude, timezone, minAltitude, duskJD = null, dawnJD = null) {
+        if (duskJD === null || dawnJD === null) {
+            const isDST = SettingsManager.isDSTActive(date, timezone);
+            duskJD = findAstronomicalDusk(date, latitude, longitude, timezone, isDST);
+            dawnJD = findNextAstronomicalDawn(date, latitude, longitude, timezone, isDST);
+        }
 
         if (!duskJD || !dawnJD) {
             return 0;
@@ -171,16 +178,28 @@ const YearlyObservabilityCalculations = {
         const transitWeight = typeConfig.transitWeight;
         const darkHoursWeight = typeConfig.darkHoursWeight;
 
+        // Per-day twilight cache (perf): dusk/dawn depend only on date/location,
+        // not on the target, so compute each pair once here and reuse it across
+        // every downstream call for that day (calculateTotalDarkHours x2,
+        // calculateImagingScore, and the peak-altitude scan below) instead of
+        // each one recomputing independently. Keyed by dayOffset.
+        const twilightCache = new Map();
+
         // First pass: find max dark hours for normalization
         let maxDarkHours = 0;
         for (let dayOffset = 0; dayOffset < 365; dayOffset++) {
             const date = new Date(startDate);
             date.setDate(startDate.getDate() + dayOffset);
 
+            const isDST = SettingsManager.isDSTActive(date, inputs.timezone);
+            const duskJD = findAstronomicalDusk(date, inputs.latitude, inputs.longitude, inputs.timezone, isDST);
+            const dawnJD = findNextAstronomicalDawn(date, inputs.latitude, inputs.longitude, inputs.timezone, isDST);
+            twilightCache.set(dayOffset, { duskJD, dawnJD });
+
             const darkHours = this.calculateTotalDarkHours(
                 date, inputs.ra, inputs.dec,
                 inputs.latitude, inputs.longitude, inputs.timezone,
-                typeAltitudeThreshold
+                typeAltitudeThreshold, duskJD, dawnJD
             );
             if (darkHours > maxDarkHours) {
                 maxDarkHours = darkHours;
@@ -192,10 +211,10 @@ const YearlyObservabilityCalculations = {
             const date = new Date(startDate);
             date.setDate(startDate.getDate() + dayOffset);
 
-            // Find astronomical dusk and dawn for this date
-            const isDST = SettingsManager.isDSTActive(date, inputs.timezone);
-            const duskJD = findAstronomicalDusk(date, inputs.latitude, inputs.longitude, inputs.timezone, isDST);
-            const dawnJD = findNextAstronomicalDawn(date, inputs.latitude, inputs.longitude, inputs.timezone, isDST);
+            // Reuse the dusk/dawn computed in the first pass instead of
+            // recomputing (perf: this was the second of four recomputations
+            // per day before caching).
+            const { duskJD, dawnJD } = twilightCache.get(dayOffset);
 
             let targetAltitude = null;
             let observabilityScore = 0;
@@ -230,11 +249,11 @@ const YearlyObservabilityCalculations = {
                     );
                     const transitScore = 1 - (distanceFromMidnight / 12);
 
-                    // 2. Dark hours score
+                    // 2. Dark hours score (reuses this day's cached dusk/dawn)
                     const darkHours = this.calculateTotalDarkHours(
                         date, inputs.ra, inputs.dec,
                         inputs.latitude, inputs.longitude, inputs.timezone,
-                        typeAltitudeThreshold
+                        typeAltitudeThreshold, duskJD, dawnJD
                     );
                     const darkHoursScore = maxDarkHours > 0 ? (darkHours / maxDarkHours) : 0;
 
@@ -274,8 +293,9 @@ const YearlyObservabilityCalculations = {
             }
 
             // Calculate imaging quality score if requested (legacy)
+            // Reuses this day's cached dusk/dawn instead of recomputing.
             let imagingScore = null;
-            imagingScore = this.calculateImagingScore(date, inputs);
+            imagingScore = this.calculateImagingScore(date, inputs, duskJD, dawnJD);
 
             data.push({
                 dayIndex: dayOffset,
@@ -310,15 +330,21 @@ const YearlyObservabilityCalculations = {
     /**
      * Calculate imaging quality score for a given night
      * Score = (observable_hours / 12) × (1 - moon_illum) × min(1, separation_deg / 90) × 100
+     * @param {number} [duskJD] - Pre-computed dusk JD (perf: see calculateYearlyAltitudeData's
+     *     per-day twilight cache). Falls back to computing it when omitted, so this
+     *     function remains usable standalone.
+     * @param {number} [dawnJD] - Pre-computed dawn JD, same as above.
      */
-    calculateImagingScore(date, inputs) {
-        // Find astronomical dusk and dawn (sun at -18°) via the single
-        // canonical implementation in astro-sun.js, which builds its own
-        // timezone-independent noon/midnight instant internally — no
-        // manual noon/offset construction needed here anymore.
-        const isDST = SettingsManager.isDSTActive(date, inputs.timezone);
-        const duskJD = findAstronomicalDusk(date, inputs.latitude, inputs.longitude, inputs.timezone, isDST);
-        const dawnJD = findNextAstronomicalDawn(date, inputs.latitude, inputs.longitude, inputs.timezone, isDST);
+    calculateImagingScore(date, inputs, duskJD = null, dawnJD = null) {
+        if (duskJD === null || dawnJD === null) {
+            // Find astronomical dusk and dawn (sun at -18°) via the single
+            // canonical implementation in astro-sun.js, which builds its own
+            // timezone-independent noon/midnight instant internally — no
+            // manual noon/offset construction needed here anymore.
+            const isDST = SettingsManager.isDSTActive(date, inputs.timezone);
+            duskJD = findAstronomicalDusk(date, inputs.latitude, inputs.longitude, inputs.timezone, isDST);
+            dawnJD = findNextAstronomicalDawn(date, inputs.latitude, inputs.longitude, inputs.timezone, isDST);
+        }
 
         if (!duskJD || !dawnJD) {
             // No astronomical darkness on this night
@@ -590,7 +616,7 @@ const YearlyObservabilityCalculations = {
             // Month tick mark at top edge of graph
             const topTickMark = document.createElementNS('http://www.w3.org/2000/svg', 'line');
             topTickMark.setAttribute('x1', padding.left + x);
-            topTickMark.setAttribute('y1', padding.top);
+            topTickMark.setAttribute('y1', padding.top - 8);
             topTickMark.setAttribute('x2', padding.left + x);
             topTickMark.setAttribute('y2', padding.top - 8);
             topTickMark.setAttribute('stroke', textSecondary);
