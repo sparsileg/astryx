@@ -20,7 +20,7 @@ const YearlyObservabilityCalculations = {
 
         // Try modal element first, fall back to main view element, then default
         const yoLabel = document.getElementById('yo-min-alt-label');
-        const minAltitude = yoLabel ? parseFloat(yoLabel.textContent) : 35;
+        const minAltitude = yoLabel ? parseFloat(yoLabel.textContent) : APP_CONFIG.DEFAULT_YEARLY_MIN_ALTITUDE;
 
         return {
             targetName: this.currentTarget ? this.currentTarget.object : '',
@@ -292,7 +292,8 @@ const YearlyObservabilityCalculations = {
                 observabilityScore = 0;
             }
 
-            // Calculate imaging quality score if requested (legacy)
+            // Calculate imaging quality score (always computed — consumed by full-moon
+            // peak markers, which read imagingScore.moonIllum; not conditional/legacy)
             // Reuses this day's cached dusk/dawn instead of recomputing.
             let imagingScore = null;
             imagingScore = this.calculateImagingScore(date, inputs, duskJD, dawnJD);
@@ -466,7 +467,7 @@ const YearlyObservabilityCalculations = {
 
         if (yoTrigger && yoDropdown && yoMenu && yoLabel) {
             // Set initial label
-            const currentVal = inputs.minAltitude || 35;
+            const currentVal = inputs.minAltitude || APP_CONFIG.DEFAULT_YEARLY_MIN_ALTITUDE;
             const initialItem = yoMenu.querySelector(`[data-value="${currentVal}"]`);
             if (initialItem) yoLabel.textContent = initialItem.textContent;
 

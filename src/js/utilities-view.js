@@ -27,7 +27,7 @@ const UtilitiesView = {
     renderWeatherForecasts() {
         const container = document.getElementById('utilities-weather-list');
         if (!container) return;
-        console.log('In renderWeatherForecasts()');
+        Log.debug('In renderWeatherForecasts()');
 
         const locations = DataManager.getLocations();
 
@@ -68,7 +68,7 @@ const UtilitiesView = {
     renderLightPollutionInfo() {
         const container = document.getElementById('utilities-light-pollution-info');
         if (!container) return;
-        console.log('In renderLightPollutionInfo()');
+        Log.debug('In renderLightPollutionInfo()');
 
         const locations = DataManager.getLocations();
 
@@ -286,15 +286,6 @@ const UtilitiesView = {
             };
             reader.readAsText(file);
         });
-    },
-
-    /**
-     * Escape HTML to prevent XSS
-     */
-    escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
     },
 
     /**

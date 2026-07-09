@@ -600,10 +600,6 @@ const DailyVisibilityView = {
         document.getElementById('target-rise-set').innerHTML = riseSetHTML;
 
         // Display blocked time
-        console.log('populateTargetDetails - data.blockedMinutes:', data.blockedMinutes);
-        console.log('populateTargetDetails - full data:', data);
-
-        // Display blocked time
         const blockedElement = document.getElementById('target-blocked');
         if (blockedElement) {
             if (data.blockedMinutes !== undefined && data.blockedMinutes > 0) {

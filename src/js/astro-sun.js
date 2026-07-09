@@ -22,7 +22,10 @@ function getSunPosition(jd) {
 
     return {
         ra: radiansToDegrees(alpha) / 15.0, // Convert to hours
-        dec: radiansToDegrees(delta)
+        dec: radiansToDegrees(delta),
+        // True ecliptic longitude, normalized to [0, 360). Added for Issue #207
+        // (accurate waxing/waning determination in getMoonPhase).
+        lambda: ((lambda % 360) + 360) % 360
     };
 }
 

@@ -290,7 +290,7 @@ const DataManager = {
 
             await DBManager.clear(APP_CONFIG.STORES.TARGETS);
             await this.importTargets(parsed.targets, String(meta.version));
-            console.log(`Target database loaded: ${parsed.targets.length} targets (version ${meta.version})`);
+            Log.debug(`Target database loaded: ${parsed.targets.length} targets (version ${meta.version})`);
 
             if (parsed.targets.length !== meta.count) {
                 console.warn(`Count mismatch: expected ${meta.count}, loaded ${parsed.targets.length}`);

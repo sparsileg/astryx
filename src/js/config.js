@@ -15,7 +15,7 @@
 const APP_CONFIG = {
     APP_NAME: 'Astryx',
     APP_TITLE: 'Astryx - Astrophotography Planning Tool',
-    APP_VERSION: '1.3.8',
+    APP_VERSION: '1.3.9',
     DB_NAME: 'astryx-db',
     DB_VERSION: 8,
     TARGET_DATA_PATH: './data/',
@@ -36,6 +36,7 @@ const APP_CONFIG = {
 
     // UI constants
     DEFAULT_MIN_ALTITUDE: 30,
+    DEFAULT_YEARLY_MIN_ALTITUDE: 35, // fallback minimum altitude for Yearly Observability (Issue #218)
     DEFAULT_TIMEZONE: -5,
     MAX_SEARCH_RESULTS: 101, // maximum search results you can set
     DEFAULT_MIN_SIZE: 4.0,   // target filter arc minutes
@@ -84,7 +85,8 @@ const APP_CONFIG = {
     FEATURES: {
         OPTIMIZER_COMBINATIONS: true,  // Issue #38 - combination mode for target optimizer
         CLOUD_COVER: true,             // Issue #81 - cloud cover strip on daily visibility timeline (experimental)
-        TRANSITION_OPTIMIZATION: true  // Issue #109 - sequence transition optimization
+        TRANSITION_OPTIMIZATION: true, // Issue #109 - sequence transition optimization
+        DEBUG_LOGGING: false           // Issue #177 - gate for per-render/per-interaction console.log noise
     },
 
     // Sequence transition optimization settings
@@ -260,4 +262,16 @@ const CATALOG_MAP = {
     'RCW': 'Extra',
     'Sh': 'Sharpless',
     'vdB': 'Extra'
+};
+
+/**
+ * Lightweight debug logger (Issue #177).
+ * Gated by APP_CONFIG.FEATURES.DEBUG_LOGGING — silent by default in production.
+ * Startup milestones and warn/error calls are NOT routed through this; they
+ * remain plain console.log/warn/error since they're useful in bug reports.
+ */
+const Log = {
+    debug(...args) {
+        if (APP_CONFIG.FEATURES.DEBUG_LOGGING) console.log(...args);
+    }
 };

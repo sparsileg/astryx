@@ -14,7 +14,7 @@ const ImagingLogView = {
      * Initialize view
      */
     async init() {
-        console.log('Initializing Imaging Log View');
+        Log.debug('Initializing Imaging Log View');
 
         // Set up tab switching
         const tabButtons = document.querySelectorAll('.imaging-log-tab-btn');
@@ -214,9 +214,9 @@ const ImagingLogView = {
                 <div class="project-card-header" onclick="ImagingLogView.toggleProjectSessions(${project.id})">
                     <div style="flex: 1;">
                         <div class="project-card-title">
-                    ${this.escapeHtml(project.name)}
+                    ${HtmlUtils.escapeHtml(project.name)}
                     ${project.publishedLink
-                        ? `<a href="${this.escapeHtml(project.publishedLink)}" target="_blank" rel="noopener noreferrer"
+                        ? `<a href="${HtmlUtils.escapeHtml(project.publishedLink)}" target="_blank" rel="noopener noreferrer"
                               title="View published image" class="project-published-link" onclick="event.stopPropagation()"> </a>`
                         : `<span title="Edit project to add published image link" class="project-published-link-inactive"> </span>`
                     }
@@ -277,10 +277,10 @@ const ImagingLogView = {
                 return `
                                         <tr onclick="ImagingLogView.showSessionModal(${session.id}, ${project.id})">
                                             <td>${this.formatSessionDate(session.date)}</td>
-                                            <td>${this.escapeHtml(session.filter)}</td>
+                                            <td>${HtmlUtils.escapeHtml(session.filter)}</td>
                                             <td>${exposureCount} × ${session.subLength}s</td>
                                             <td>${this.formatIntegrationTime(integrationSeconds)}</td>
-                                            <td>${this.escapeHtml(session.location)}</td>
+                                            <td>${HtmlUtils.escapeHtml(session.location)}</td>
                                             <td onclick="event.stopPropagation()">
                                                 <button class="btn-danger btn-sm"
                                                         onclick="ImagingLogView.deleteSession(${session.id})">
@@ -378,7 +378,7 @@ const ImagingLogView = {
                 }
             });
         } else {
-            console.log('Elements not found!');
+            Log.debug('Elements not found!');
         }
         // Set up target search
         const searchInput = document.getElementById('project-target-search');
@@ -430,8 +430,8 @@ const ImagingLogView = {
 
             html += `
                 <div class="target-search-result"
-                     onclick="ImagingLogView.addTargetToProject('${this.escapeHtml(target.object)}')">
-                    ${this.escapeHtml(displayName)}
+                     onclick="ImagingLogView.addTargetToProject('${HtmlUtils.escapeHtml(target.object)}')">
+                    ${HtmlUtils.escapeHtml(displayName)}
                 </div>
             `;
         });
@@ -493,15 +493,15 @@ const ImagingLogView = {
             if (target && target.other) {
                 const otherDesignations = target.other.split(',').map(d => d.trim()).filter(d => d.length > 0);
                 if (otherDesignations.length > 0) {
-                    alsoText = ` <span style="color: var(--text-secondary); font-size: 0.9em;">(also: ${this.escapeHtml(otherDesignations.join(', '))})</span>`;
+                    alsoText = ` <span style="color: var(--text-secondary); font-size: 0.9em;">(also: ${HtmlUtils.escapeHtml(otherDesignations.join(', '))})</span>`;
                 }
             }
 
             html += `
                 <div class="selected-target-item">
-                    <span>${this.escapeHtml(displayName)}${alsoText}</span>
+                    <span>${HtmlUtils.escapeHtml(displayName)}${alsoText}</span>
                     <button class="btn-danger btn-sm"
-                            onclick="ImagingLogView.removeTargetFromProject('${this.escapeHtml(designation)}')">
+                            onclick="ImagingLogView.removeTargetFromProject('${HtmlUtils.escapeHtml(designation)}')">
                         Remove
                     </button>
                 </div>
@@ -1112,15 +1112,6 @@ const ImagingLogView = {
     },
 
     /**
-     * Escape HTML to prevent XSS
-     */
-    escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    },
-
-    /**
      * Format session date without timezone issues
      */
     formatSessionDate(dateStr) {
@@ -1204,7 +1195,7 @@ const ImagingLogView = {
                 <div class="project-card-header">
                     <div style="flex: 1;">
                         <div class="project-card-title">
-                            ${this.escapeHtml(program.name)}
+                            ${HtmlUtils.escapeHtml(program.name)}
                             ${isPattern ? `<span style="color: var(--text-secondary); font-size: 0.85em; margin-left: 0.5rem;">(${program.catalogPrefix} 1-${program.maxNumber})</span>` : ''}
                         </div>
                     </div>
@@ -1498,7 +1489,7 @@ const ImagingLogView = {
     },
 
     async initializeImportProgramModal(programId) {
-        console.log('initializeImportProgramModal called');
+        Log.debug('initializeImportProgramModal called');
         const patternRadio = document.getElementById('program-type-pattern');
         const manualRadio = document.getElementById('program-type-manual');
         const patternFields = document.getElementById('pattern-fields');
@@ -1690,7 +1681,7 @@ const ImagingLogView = {
                     </summary>
                     <div style="max-height: 200px; overflow-y: auto; padding: 0.5rem; background: var(--hover-bg); border-radius: 4px;">
                         ${results.matched.map(m =>
-                            `<div>${this.escapeHtml(m.input)}   ${this.escapeHtml(m.target.object)}</div>`
+                            `<div>${HtmlUtils.escapeHtml(m.input)}   ${HtmlUtils.escapeHtml(m.target.object)}</div>`
                         ).join('')}
                     </div>
                 </details>
@@ -1705,7 +1696,7 @@ const ImagingLogView = {
                     </summary>
                     <div style="max-height: 200px; overflow-y: auto; padding: 0.5rem; background: var(--hover-bg); border-radius: 4px; margin-bottom: 0.5rem;">
                         ${results.failed.map(f =>
-                            `<div>${this.escapeHtml(f.input)}</div>`
+                            `<div>${HtmlUtils.escapeHtml(f.input)}</div>`
                         ).join('')}
                     </div>
                     <button class="btn-secondary btn-sm" onclick="ImagingLogView.exportMissingTargetsCSV()">
@@ -1880,7 +1871,7 @@ const ImagingLogView = {
                     const projectLinks = targetProjects.map(proj =>
                         `<span onclick="ImagingLogView.navigateToProject('${proj.id}')"
                                style="cursor: pointer; color: var(--primary-color); text-decoration: underline;">
-                            ${this.escapeHtml(proj.name)}
+                            ${HtmlUtils.escapeHtml(proj.name)}
                         </span>`
                     ).join(', ');
 
@@ -1930,7 +1921,7 @@ const ImagingLogView = {
                 <div class="info-card" style="margin-bottom: 1rem; padding: 1rem;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
                         <strong style="font-size: 1.05rem;">
-                            ${this.escapeHtml(program.name)}
+                            ${HtmlUtils.escapeHtml(program.name)}
                             ${isPattern ? `<span style="color: var(--text-secondary); font-size: 0.85em; margin-left: 0.5rem;">(${program.catalogPrefix} 1-${program.maxNumber})</span>` : ''}
                         </strong>
                         <span class="project-status-badge ${progress.imaged === progress.total && progress.total > 0 ? 'status-completed' : 'status-acquiring-data'}">
@@ -2068,10 +2059,10 @@ const ImagingLogView = {
                     if (chevron) chevron.classList.add('expanded');
                     if (addButton) addButton.style.display = 'inline-block';
                 } else {
-                    console.log('Sessions already visible or container not found');
+                    Log.debug('Sessions already visible or container not found');
                 }
             } else {
-                console.log('Project card NOT found!');
+                Log.debug('Project card NOT found!');
             }
         }, 200);
     }

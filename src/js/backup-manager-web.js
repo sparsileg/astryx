@@ -822,7 +822,7 @@ const BackupManagerWeb = {
      * Restore a single data store from backup
      */
     async restoreDataStore(storeKey, backupData) {
-        console.log('restoreDataStore called for:', storeKey);
+        Log.debug('restoreDataStore called for:', storeKey);
         // Map store keys to actual store names and backup data keys
         const storeMapping = {
             'settings': { storeName: APP_CONFIG.STORES.SETTINGS, backupKey: 'settings', isArray: false },

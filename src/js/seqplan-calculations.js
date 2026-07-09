@@ -406,7 +406,7 @@ const SeqPlanCalculations = {
             const midnightJD = dateToJD(dateAtMidnight);
             const timeOffset = (utcHours + utcMins / 60) / 24;
             let customJD = midnightJD + timeOffset;
-            console.log('Custom time debug:', {
+            Log.debug('Custom time debug:', {
                 customStartTime,
                 hours, minutes,
                 timezone, utcOffset,
