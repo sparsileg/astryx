@@ -11,13 +11,13 @@ Cloudflare Pages projects are the unit of deployment. The fix for your
 update pain is to stop treating astryx.tools as one website and make it
 five small ones:
 
-| Pages project        | Custom domain              | Contents                          |
-|----------------------|----------------------------|-----------------------------------|
-| `astryx-landing`     | `astryx.tools` (root)      | The landing page (just built)     |
-| `astryx-app`         | `app.astryx.tools`         | Astryx (moved off the root)       |
-| `mindforge`          | `mindforge.astryx.tools`   | Mindforge (replaces the `.pages.dev` URL as primary) |
-| `scriptum`           | `scriptum.astryx.tools`    | Scriptum web version, when ready  |
-| *(none for Photyx)*  | —                          | Desktop-only; GitHub releases     |
+| Pages project       | Custom domain            | Contents                                             |
+| ------------------- | ------------------------ | ---------------------------------------------------- |
+| `astryx-landing`    | `astryx.tools` (root)    | The landing page (just built)                        |
+| `astryx-app`        | `app.astryx.tools`       | Astryx (moved off the root)                          |
+| `mindforge`         | `mindforge.astryx.tools` | Mindforge (replaces the `.pages.dev` URL as primary) |
+| `scriptum`          | `scriptum.astryx.tools`  | Scriptum web version, when ready                     |
+| *(none for Photyx)* | —                        | Desktop-only; GitHub releases                        |
 
 Each project deploys completely independently: pushing a Mindforge fix
 never touches the landing page, Astryx, or anything else. The landing
@@ -37,14 +37,34 @@ that tool.
 
 ## 2. Fixing the deployment workflow itself
 
-You're right that a **direct upload** to Pages replaces the whole
-deployment — there is no "replace one file" in that mode. But there are
-two better modes, and either one dissolves the problem:
+### Git-connected projects — push to deploy
 
-### Option A (recommended): Git-connected projects — push to deploy
 
-Connect each Pages project to its GitHub repo (Pages dashboard → Create
-project → Connect to Git → pick the repo, set the production branch).
+**Step 1 — Find the Worker's exact name**  
+Dashboard → Workers & Pages → click into the astryx Worker → note the exact name shown at the top (this is what has to match in your config file).
+
+**Step 2 — Add `wrangler.jsonc` to the repo root**, using that exact name:
+
+```jsonc
+{
+  "name": "<exact-name-from-dashboard>",
+  "compatibility_date": "2026-07-08",
+  "assets": {
+    "directory": "./src"
+  }
+}
+```
+
+Commit and push to `main`.
+
+**Step 3 — Connect Git on the existing Worker**  
+Worker's Settings → Builds (or "Build & deployments") → connect to `sparsileg/astryx`, production branch `main`, deploy command `npx wrangler deploy` (default), root directory `/`.
+
+**Step 4 — Watch the first Git-triggered build**  
+Check the Deployments tab — confirm it succeeds and doesn't complain about a name mismatch or missing config.
+
+**Step 5 — Verify on the `workers.dev` URL before touching DNS**, same as before.
+
 After that, **deployment is just `git push`** — which you're already
 doing via GitHub Desktop as your normal workflow. No upload step exists
 at all anymore; committing a one-line fix to Mindforge and pushing *is*
@@ -60,17 +80,7 @@ and the output directory to the folder containing `index.html` (for
 Mindforge that's `src/`, if the repo keeps sources under `src/` — set
 "Root directory" or "Build output directory" accordingly per repo).
 
-### Option B: `wrangler pages deploy` from the command line
 
-If a repo isn't ready to be the deploy source, `npx wrangler pages
-deploy <folder> --project-name=<project>` uploads a folder as a new
-deployment. It still conceptually replaces the deployment — but wrangler
-uploads only files whose hashes changed, and since each project is now
-one small tool, "the whole site" is a few hundred KB. Fine as a stopgap;
-Option A is the end state.
-
-Either way, the thing that made updates painful — one giant project
-where everything rides together — is gone the moment the split happens.
 
 ---
 

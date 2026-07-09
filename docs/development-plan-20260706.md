@@ -144,6 +144,7 @@ executed cold by Sonnet 5 under your methodology (one change at a
 time, BEFORE/AFTER, test each step).
 
 ### Phase 0 — Finish current stabilization (already in flight)
+
 Complete existing GitHub issues 163 (four native selects remain), 168
 Part 2 (modal dropdown clipping), 169 (`tauri-plugin-shell` links —
 note: the plugin is already registered in `lib.rs` and
@@ -153,6 +154,7 @@ JS-side switch from `window.open()`).
 **Gate:** Tauri/Linux build has no visibly broken controls.
 
 ### Phase 1 — Correctness & error-handling foundation
+
 Issues 01–07. This phase directly serves "error-free UX with accurate
 results" and must precede packaging — you don't want installers in
 users' hands while IPC failures are silent.
@@ -164,6 +166,7 @@ Priority order within phase: 01 (IPC errors) → 02 (Rust panics) → 04
 toast, not silence; astro test page is green.
 
 ### Phase 2 — Desktop packaging & distribution
+
 Issues 08–12. Ship real installers: deb/rpm (Linux), NSIS/MSI
 (Windows), dmg (macOS via GitHub Actions). CSP enablement (08, 09)
 sits here because installers are what strangers run.
@@ -172,6 +175,7 @@ sits here because installers are what strangers run.
 creates its data dir, and survives a restart with data intact.
 
 ### Phase 3 — Responsive / mobile web foundation
+
 Issues 13–17. Strategy: **CSS-responsive adaptation of the existing
 DOM as the default**, with per-view exceptions only for the canvas
 charts (detailed in Issue 16). Ends with a PWA manifest + service
@@ -187,9 +191,11 @@ core loop: pick target → check tonight's visibility → check yearly →
 pin → plan.
 
 ### Phase 4 — Android decision + build
+
 Issue 20 (spike). **Recommendation: PWA-first, native-later.**
 
 Reasoning against jumping straight to a Tauri Android build:
+
 - Phase 3 gives you an installable Android experience (PWA) at
   near-zero marginal cost, on the identical codebase — maximum
   maintainability.
@@ -208,11 +214,13 @@ not a commitment. The `mobile_entry_point` attribute already in
 `lib.rs` means the spike is cheap.
 
 ### Phase 5 — Accessibility & polish
+
 Issues 18, 19. Consolidate `window.*` globals; give `astryx-dropdown`
 keyboard navigation and ARIA. Neither blocks anything above; both
 raise the quality floor.
 
 ### Deliberately NOT proposed
+
 - No framework, no bundler, no TypeScript migration, no index.html
   split, no rearchitecting the 69-script load order. All violate the
   no-rewrite constraint for marginal benefit.
@@ -224,28 +232,28 @@ raise the quality floor.
 
 ## Part 3 — Issue Index
 
-| # | File | Title | Size | Labels |
-|---|------|-------|------|--------|
-| 01 | issue-01 | Centralized error handling for Tauri IPC calls | M | tauri, bug, ux |
-| 02 | issue-02 | Rust commands: return errors instead of panicking on mutex lock | S | tauri, rust |
-| 03 | issue-03 | Defensive canvas guards in SeqPlanTimeline (+ `window` shadow fix) | S | bug |
-| 04 | issue-04 | Golden-value regression test page for astronomy calculations | L | quality, testing |
-| 05 | issue-05 | Gate console logging behind APP_CONFIG.DEBUG | S | tech-debt |
-| 06 | issue-06 | Centralize escapeHtml into a shared utility | S | tech-debt, security |
-| 07 | issue-07 | Escape user-provided strings in innerHTML templates | M | security |
-| 08 | issue-08 | Replace inline onclick handlers with addEventListener | S | tech-debt, security |
-| 09 | issue-09 | Enable Content Security Policy (Tauri + web) | M | security |
-| 10 | issue-10 | Sane window defaults + remember window state | S | tauri, packaging |
-| 11 | issue-11 | Production packaging metadata (Cargo.toml, tauri.conf.json) | S | packaging |
-| 12 | issue-12 | GitHub Actions: build installers for Linux, Windows, macOS | M | packaging, ci |
-| 13 | issue-13 | Responsive foundation: breakpoints + mobile sidebar drawer | L | mobile |
-| 14 | issue-14 | Touch-friendly tooltips and tap targets | M | mobile |
-| 15 | issue-15 | Responsive tables: card layout on narrow screens | M | mobile |
-| 16 | issue-16 | Chart views on small screens (per-view strategy) | L | mobile |
-| 17 | issue-17 | PWA: manifest + service worker for installable mobile web | M | mobile |
-| 18 | issue-18 | Consolidate window.* globals into managers | M | tech-debt |
-| 19 | issue-19 | Keyboard navigation + ARIA for astryx-dropdown | M | a11y |
-| 20 | issue-20 | Spike: Tauri v2 Android build feasibility | M | android, spike |
+| #   | File     | Title                                                              | Size | Labels              |
+| --- | -------- | ------------------------------------------------------------------ | ---- | ------------------- |
+| 01  | issue-01 | Centralized error handling for Tauri IPC calls                     | M    | tauri, bug, ux      |
+| 02  | issue-02 | Rust commands: return errors instead of panicking on mutex lock    | S    | tauri, rust         |
+| 03  | issue-03 | Defensive canvas guards in SeqPlanTimeline (+ `window` shadow fix) | S    | bug                 |
+| 04  | issue-04 | Golden-value regression test page for astronomy calculations       | L    | quality, testing    |
+| 05  | issue-05 | Gate console logging behind APP_CONFIG.DEBUG                       | S    | tech-debt           |
+| 06  | issue-06 | Centralize escapeHtml into a shared utility                        | S    | tech-debt, security |
+| 07  | issue-07 | Escape user-provided strings in innerHTML templates                | M    | security            |
+| 08  | issue-08 | Replace inline onclick handlers with addEventListener              | S    | tech-debt, security |
+| 09  | issue-09 | Enable Content Security Policy (Tauri + web)                       | M    | security            |
+| 10  | issue-10 | Sane window defaults + remember window state                       | S    | tauri, packaging    |
+| 11  | issue-11 | Production packaging metadata (Cargo.toml, tauri.conf.json)        | S    | packaging           |
+| 12  | issue-12 | GitHub Actions: build installers for Linux, Windows, macOS         | M    | packaging, ci       |
+| 13  | issue-13 | Responsive foundation: breakpoints + mobile sidebar drawer         | L    | mobile              |
+| 14  | issue-14 | Touch-friendly tooltips and tap targets                            | M    | mobile              |
+| 15  | issue-15 | Responsive tables: card layout on narrow screens                   | M    | mobile              |
+| 16  | issue-16 | Chart views on small screens (per-view strategy)                   | L    | mobile              |
+| 17  | issue-17 | PWA: manifest + service worker for installable mobile web          | M    | mobile              |
+| 18  | issue-18 | Consolidate window.* globals into managers                         | M    | tech-debt           |
+| 19  | issue-19 | Keyboard navigation + ARIA for astryx-dropdown                     | M    | a11y                |
+| 20  | issue-20 | Spike: Tauri v2 Android build feasibility                          | M    | android, spike      |
 
 Sizing: **S** = one short session, a handful of changes · **M** = one
 to two sessions · **L** = multi-session, phased internally.

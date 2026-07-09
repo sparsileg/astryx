@@ -69,6 +69,7 @@ These are flagged inside the files, but collected here so you can pre-decide:
 **Reviewed in depth:** astro-core, astro-sun, astro-moon, astro-target, daily-visibility-calculations, yearly-observability-calculations, optimizer-calculations, fov-calculations, seqplan-timeline, seqplan-view (partially), app.js, db-manager trio, the Rust command layer, migrations, tauri.conf, capabilities, all CSS (structurally).
 
 **Worth a future review pass, in rough priority order:**
+
 1. **`seqplan-calculations.js` + `seqplan-optimizer.js`** — scheduling and transition-optimization math; only the twilight call site has been examined. Same class of risk as the files that yielded the calc batch.
 2. **`best-months.js`** — consumes the (buggy, soon fixed) twilight functions across 365 days; verify its own math and whether its cached results need invalidation after the twilight fixes land (**likely yes — best-months data computed before the fixes embeds wrong summer windows; a recalc prompt or cache version bump may be needed. Worth checking before the twilight fixes ship.**)
 3. **`asiair-log-parser.js` + `phd2-log-parser.js`** — parsing untrusted input files; robustness and the escaping story (ties to the escape-user-strings issue).
