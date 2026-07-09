@@ -11,10 +11,11 @@
         "windows": [
             {
                 "title": "Astryx",
-                "x": 1900,
-                "y": 100,
-                "width": 1800,
-                "height": 1800,
+                "width": 1400,
+                "height": 900,
+                "minWidth": 1200,
+                "minHeight": 800,
+                "center": true,
                 "resizable": true,
                 "fullscreen": false
             }

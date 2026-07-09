@@ -9,7 +9,7 @@ const DailyVisibilityCalculations = {
      * Calculate astronomical twilight times for a given date
      * Uses the same algorithm as the original app
      */
-    calculateTwilightTimes(date, latitude, longitude, timezone, dstConfig) {
+    calculateTwilightTimes(date, latitude, longitude, timezone) {
         // Parse the date string into a local-noon Date object — findAstronomicalDusk/
         // findNextAstronomicalDawn build their own timezone-independent instant
         // internally from this, via the single canonical implementation in astro-sun.js.
@@ -45,9 +45,9 @@ const DailyVisibilityCalculations = {
     /**
      * Calculate results for a single day
      */
-    calculateSingleDay(dateStr, duskJD, dawnJD, targetName, ra, dec, latitude, longitude, elevation, timezone, minAltitude, dstConfig, horizonArray = null) {
+    calculateSingleDay(dateStr, duskJD, dawnJD, ra, dec, latitude, longitude, elevation, timezone, minAltitude, horizonArray = null) {
         if (!duskJD || !dawnJD) {
-            console.log(`No dark sky on ${dateStr}`);
+            Log.debug(`No dark sky on ${dateStr}`);
             return null;
         }
         // Calculate noon-to-noon search window for rise/set times
@@ -86,7 +86,7 @@ const DailyVisibilityCalculations = {
 
         // Calculate blocked time if horizon is being used
         let blockedMinutes = 0;
-        console.log('Blocked time calculation:', {
+        Log.debug('Blocked time calculation:', {
             horizonArray: horizonArray,
             riseJD: riseJD,
             setJD: setJD,
@@ -115,7 +115,7 @@ const DailyVisibilityCalculations = {
 
             // Convert steps to minutes
             blockedMinutes = Math.round(blockedSteps * stepSize * 1440); // 1440 minutes per day
-            console.log('Blocked time result:', {
+            Log.debug('Blocked time result:', {
                 blockedSteps: blockedSteps,
                 stepSize: stepSize,
                 blockedMinutes: blockedMinutes
@@ -145,13 +145,11 @@ const DailyVisibilityCalculations = {
         const location = DataManager.getLocation(locationName);
         if (!location) return null;
 
-        const dstConfig = SettingsManager.getDSTConfig();
         const twilight = this.calculateTwilightTimes(
             dateStr,
             location.latitude,
             location.longitude,
-            location.timezone,
-            dstConfig
+            location.timezone
         );
         if (!twilight.duskJD || !twilight.dawnJD) return null;
 
@@ -161,7 +159,6 @@ const DailyVisibilityCalculations = {
             dateStr,
             twilight.duskJD,
             twilight.dawnJD,
-            target.object,
             target.ra,
             target.dec,
             location.latitude,
@@ -169,7 +166,6 @@ const DailyVisibilityCalculations = {
             location.elevation,
             location.timezone,
             minAltitude,
-            dstConfig,
             horizonArray
         );
         if (!dayResult) return null;

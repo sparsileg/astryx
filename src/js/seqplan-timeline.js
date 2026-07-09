@@ -27,7 +27,7 @@ const SeqPlanTimeline = {
      */
     init() {
         this.canvas = document.getElementById('seq-plan-timeline');
-        if (!this.canvas) return;
+        if (!this.canvas) { this.ctx = null; return; }
 
         // Force complete canvas reset by changing dimensions
         const containerWidth = this.canvas.parentElement.clientWidth;
@@ -112,6 +112,7 @@ const SeqPlanTimeline = {
 
         // Reinitialize to recalculate canvas width on resize
         this.init();
+        if (!this.canvas || !this.ctx) return;
 
         this.clear();
 
@@ -275,26 +276,26 @@ const SeqPlanTimeline = {
                 targetWindows.set(event.targetId, { start: event.startJD, end: event.endJD });
             } else if (event.transitJD && targetWindows.has(event.targetId)) {
                 // Expand window if we have multiple blocks (before/after flip)
-                const window = targetWindows.get(event.targetId);
-                window.start = Math.min(window.start, event.startJD);
-                window.end = Math.max(window.end, event.endJD);
+                const imagingWindow = targetWindows.get(event.targetId);
+                imagingWindow.start = Math.min(imagingWindow.start, event.startJD);
+                imagingWindow.end = Math.max(imagingWindow.end, event.endJD);
             }
         });
 
         let markerCount = 0;
         // Draw transit markers - only if transit occurs during imaging window
         targetTransits.forEach((transitJD, targetId) => {
-            const window = targetWindows.get(targetId);
+            const imagingWindow = targetWindows.get(targetId);
 
             // Only draw if transit occurs DURING this target's imaging window
-            if (transitJD >= window.start && transitJD <= window.end &&
+            if (transitJD >= imagingWindow.start && transitJD <= imagingWindow.end &&
                 transitJD >= sessionStartJD && transitJD <= sessionEndJD) {
                 const transitX = this.jdToX(transitJD, sessionStartJD, sessionEndJD);
                 const markerX = transitX - 3.5;
                 const markerY = this.LABEL_AREA_HEIGHT + 0;
                 this.drawTransitMarker(markerX, markerY);
             } else {
-                console.log('Transit outside imaging window - skipping marker for', targetId);
+                Log.debug('Transit outside imaging window - skipping marker for', targetId);
             }
         });
 

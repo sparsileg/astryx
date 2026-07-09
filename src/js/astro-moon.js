@@ -87,7 +87,15 @@ function getMoonPosition(jd) {
 
     const dec = radiansToDegrees(delta);
 
-    return { ra: ra, dec: dec };
+    return {
+        ra: ra,
+        dec: dec,
+        // True ecliptic longitude, normalized to [0, 360). Added for Issue #207
+        // (accurate waxing/waning determination in getMoonPhase). `lambda` above
+        // is already L0 + deltaL before the % 360 truncation, so this reuses it
+        // rather than recomputing.
+        lambda: ((lambda % 360) + 360) % 360
+    };
 }
 
 /**
@@ -112,45 +120,22 @@ function getMoonPhase(jd) {
                           Math.cos(sunDec) * Math.cos(moonDec) * Math.cos(sunRA - moonRA);
     const elongation = Math.acos(Math.max(-1, Math.min(1, cosElongation)));
 
-    // Calculate phase angle (angle at the Moon between Earth and Sun)
-    // This requires the distances
-
-    // Get Moon's distance (in Earth radii) using approximation
-    const T = (jd - 2451545.0) / 36525.0;
-    const D = 297.8501921 + 445267.1114034 * T; // Mean elongation
-    const M = 357.5291092 + 35999.0502909 * T;  // Sun's mean anomaly
-    const M1 = 134.9633964 + 477198.8675055 * T; // Moon's mean anomaly
-
-    // Moon's distance in Earth radii (approximate)
-    const moonDistance = 60.2666 - 3.5169 * Math.cos(degreesToRadians(M1))
-                         - 0.1126 * Math.cos(degreesToRadians(2 * D - M1));
-
-    // Sun's distance in AU
-    const sunDistance = 1.00014 - 0.01671 * Math.cos(degreesToRadians(M))
-                        - 0.00014 * Math.cos(degreesToRadians(2 * M));
-
-    // Convert sun distance to Earth radii (1 AU ≈ 23454.78 Earth radii)
-    const sunDistanceER = sunDistance * 23454.78;
-
-    // Phase angle at the moon (angle Earth-Moon-Sun)
-    // This is the supplement of the elongation
+    // Phase angle at the moon (Earth–Moon–Sun angle), using the distance-free
+    // approximation: phaseAngle ≈ π − elongation (error < 0.2°, negligible for illumination)
     const phaseAngle = Math.PI - elongation;
 
     // Calculate illuminated fraction using Meeus formula
     // k = (1 + cos(i)) / 2
     const illuminatedFraction = (1 + Math.cos(phaseAngle)) / 2;
 
-    // Determine waxing or waning using ecliptic longitudes
-    // Sun's ecliptic longitude
-    const sunL = (280.46646 + 36000.76983 * T + 0.0003032 * T * T) % 360;
-
-    // Moon's ecliptic longitude
-    const moonL = (218.3164477 + 481267.88123421 * T - 0.0015786 * T * T) % 360;
-
-    // Calculate phase angle (0-360 degrees)
-    // When moon is ahead of sun (greater longitude), it's waxing
-    const longitudeDiff = (moonL - sunL + 360) % 360;
-    const isWaxing = longitudeDiff > 0 && longitudeDiff < 180;
+    // Determine waxing or waning using TRUE ecliptic longitudes (Issue #207).
+    // Mean longitudes can differ from true by up to ~8° combined (moon ±6.3°,
+    // sun ±1.9°); with elongation changing ~12.2°/day, that mean-vs-true gap
+    // was enough to flip waxing/waning within ~±16h of true new/full moon.
+    // moonPos.lambda / sunPos.lambda are already true longitudes, normalized
+    // to [0, 360), from getMoonPosition/getSunPosition — no extra computation.
+    const longitudeDiff = (moonPos.lambda - sunPos.lambda + 360) % 360;
+    const isWaxing = longitudeDiff < 180;
 
     // Use elongation for phase value
     let phase = radiansToDegrees(elongation);

@@ -18,11 +18,9 @@ function isTargetVisibleDuringWindow(duskJD, dawnJD, raHours, decDeg, latitude, 
     const stepSize = APP_CONFIG.TARGET_SEARCH_STEP_SIZE;
     const steps = Math.ceil((dawnJD - duskJD) / stepSize);
 
-    let maxAlt = -90;
     for (let i = 0; i <= steps; i++) {
         const testJD = duskJD + i * stepSize;
         const altitude = getAltitude(testJD, raHours, decDeg, latitude, longitude);
-        if (altitude > maxAlt) maxAlt = altitude;
         if (altitude >= minAltitude) {
             return true;
         }
@@ -102,12 +100,12 @@ function findTargetSet(startJD, endJD, raHours, decDeg, latitude, longitude, min
 
     // If visible at end, any earlier set was temporary (obstruction) - return null
     if (visibleAtEnd) {
-        console.log(`  Target visible at end of window - no final set`);
+        Log.debug(`  Target visible at end of window - no final set`);
         return null;
     }
 
     if (!lastSetJD) {
-        console.log(`  No set found - target stays invisible throughout`);
+        Log.debug(`  No set found - target stays invisible throughout`);
     }
     return lastSetJD; // Return the LAST set time found
 }

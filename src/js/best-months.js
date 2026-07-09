@@ -45,7 +45,7 @@ const BestMonths = {
         let visibleCount = 0;
         let notVisibleCount = 0;
 
-        console.log(`Calculating best months for ${totalTargets} targets...`);
+        Log.debug(`Calculating best months for ${totalTargets} targets...`);
 
         // Calculate for each target
         for (const target of targets) {
@@ -134,7 +134,7 @@ const BestMonths = {
      * Returns a Map keyed by day offset (0-364)
      */
     buildTwilightCache(location) {
-        console.log('Pre-calculating twilight times for 365 days...');
+        Log.debug('Pre-calculating twilight times for 365 days...');
         const twilightCache = new Map();
         const startDate = new Date(new Date().getFullYear(), 0, 1);
 
@@ -150,7 +150,7 @@ const BestMonths = {
             });
         }
 
-        console.log('Twilight cache complete');
+        Log.debug('Twilight cache complete');
         return twilightCache;
     },
 

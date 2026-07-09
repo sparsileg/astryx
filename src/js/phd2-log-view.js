@@ -41,7 +41,7 @@ const Phd2LogView = {
         accordion.innerHTML = `
             <div class="analysis-accordion-header" onclick="this.parentElement.classList.toggle('open')">
                 <span class="analysis-accordion-arrow">▶</span>
-                <span class="analysis-accordion-title">${this.escapeHtml(title)}</span>
+                <span class="analysis-accordion-title">${HtmlUtils.escapeHtml(title)}</span>
             </div>
             <div class="analysis-accordion-body">
                 ${reportHtml}
@@ -69,7 +69,7 @@ const Phd2LogView = {
 
         // --- Header ---
         html += `
-            <h3 class="session-report-title">PHD2 Guide Report — ${this.escapeHtml(date)}</h3>
+            <h3 class="session-report-title">PHD2 Guide Report — ${HtmlUtils.escapeHtml(date)}</h3>
         `;
 
         // --- Equipment ---
@@ -77,11 +77,11 @@ const Phd2LogView = {
             <h4 class="session-report-section">Equipment</h4>
             <table class="session-table">
                 <tbody>
-                    <tr><td>Camera</td><td>${this.escapeHtml(equipment.camera || '—')}</td></tr>
+                    <tr><td>Camera</td><td>${HtmlUtils.escapeHtml(equipment.camera || '—')}</td></tr>
                     <tr><td>Pixel Scale</td><td>${equipment.pixelScale != null ? equipment.pixelScale + '"/px' : '—'}</td></tr>
                     <tr><td>Focal Length</td><td>${equipment.focalLength != null ? equipment.focalLength + ' mm' : '—'}</td></tr>
                     <tr><td>Guide Exposure</td><td>${equipment.exposureMs != null ? (equipment.exposureMs / 1000).toFixed(1) + 's' : '—'}</td></tr>
-                    <tr><td>Mount</td><td>${this.escapeHtml(equipment.mount || '—')}</td></tr>
+                    <tr><td>Mount</td><td>${HtmlUtils.escapeHtml(equipment.mount || '—')}</td></tr>
                 </tbody>
             </table>
         `;
@@ -163,7 +163,7 @@ const Phd2LogView = {
             html += `<h4 class="session-report-section">Anomalies & Events</h4><ul class="session-report-notes">`;
             for (const a of anomalies) {
                 const icon = a.severity === 'critical' ? '🔴' : a.severity === 'warning' ? '🟡' : 'ℹ️';
-                html += `<li>${icon} <strong>Session ${a.session}</strong> (${a.timeRange}, line ${a.startLine}): ${this.escapeHtml(a.message)}</li>`;
+                html += `<li>${icon} <strong>Session ${a.session}</strong> (${a.timeRange}, line ${a.startLine}): ${HtmlUtils.escapeHtml(a.message)}</li>`;
             }
             html += `</ul>`;
         } else {
@@ -175,7 +175,7 @@ const Phd2LogView = {
             html += `<h4 class="session-report-section">Recommendations</h4><ul class="session-report-notes">`;
             for (const r of recommendations) {
                 const icon = r.priority === 'high' ? '🔴' : r.priority === 'medium' ? '🟡' : '🔵';
-                html += `<li>${icon} ${this.escapeHtml(r.message)}</li>`;
+                html += `<li>${icon} ${HtmlUtils.escapeHtml(r.message)}</li>`;
             }
             html += `</ul>`;
         }
@@ -338,13 +338,6 @@ const Phd2LogView = {
                 ${lines.map(l => `<p>${l}</p>`).join('')}
             </div>
         `;
-    },
-
-    escapeHtml(text) {
-        if (!text) return '';
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
     },
 
     // -------------------------------------------------------------------------

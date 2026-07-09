@@ -552,7 +552,22 @@ const DBManagerTauri = {
 
 // ── invoke helper ─────────────────────────────────────────────────────────────
 // Thin wrapper so handlers can call invoke() without the full Tauri path.
+// All ~40 store handler methods route through this single function, so
+// centralizing error handling here covers every Rust command call site —
+// no per-handler try/catch needed (see Issue #173).
 
-function invoke(command, args = {}) {
-    return window.__TAURI__.core.invoke(command, args);
+async function invoke(command, args = {}) {
+    try {
+        return await window.__TAURI__.core.invoke(command, args);
+    } catch (e) {
+        console.error(`DBManagerTauri: ${command} failed:`, e);
+        if (typeof UIManager !== 'undefined' && UIManager.showToast) {
+            UIManager.showToast(`Database error: ${command} failed`, 'error');
+        }
+        throw e; // re-throw so callers' existing logic still sees the failure
+    }
 }
+
+// ----------------------------------------------------------------------
+// ----------------------------------------------------------------------
+// ----------------------------------------------------------------------

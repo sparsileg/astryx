@@ -21,7 +21,7 @@ const AsiairLogView = {
         if (existing) existing.remove();
 
         const sessionDate = this._formatSessionDate(parsed.events);
-        const title = `Session Report — ${this.escapeHtml(parsed.target)} — ${sessionDate}`;
+        const title = `Session Report — ${HtmlUtils.escapeHtml(parsed.target)} — ${sessionDate}`;
         const reportHtml = this._buildReportHtml(parsed);
 
         const accordion = document.createElement('div');
@@ -60,7 +60,7 @@ const AsiairLogView = {
 
         // --- Header ---
         html += `
-            <h3 class="session-report-title">${this.escapeHtml(target)} — Session Detail</h3>
+            <h3 class="session-report-title">${HtmlUtils.escapeHtml(target)} — Session Detail</h3>
             <p class="session-report-subtitle">${sessionDate}</p>
             <p class="session-report-note-small">AF duration includes guide settle &nbsp;•&nbsp; Guide Calibration duration includes guide settle</p>
         `;
@@ -85,7 +85,7 @@ const AsiairLogView = {
             if (!label) return;
             html += `
                 <tr>
-                    <td>${this.escapeHtml(target)}</td>
+                    <td>${HtmlUtils.escapeHtml(target)}</td>
                     <td>${label}</td>
                     <td>${AsiairLogParser.fmtTime(e.start)}</td>
                     <td>${AsiairLogParser.fmtTime(e.end)}</td>
@@ -266,11 +266,6 @@ const AsiairLogView = {
         return minutes.toFixed(1) + 'm';
     },
 
-    escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    },
 
     downloadPDF(parsed) {
         const { target, summary, recommendations, events } = parsed;

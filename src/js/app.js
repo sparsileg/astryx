@@ -208,7 +208,7 @@ const App = {
                 sidebar.classList.add('collapsed');
             }
         } else {
-            console.log('Sidebar or toggle button not found!');
+            Log.debug('Sidebar or toggle button not found!');
         }
     },
 
@@ -252,7 +252,7 @@ const App = {
      * Load a view
      */
     loadView(viewName, params = {}) {
-        console.log('LOAD VIEW:', viewName);
+        Log.debug('LOAD VIEW:', viewName);
 
         // Cleanup current view
         if (this.currentView && this.currentView.destroy) {

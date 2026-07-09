@@ -280,8 +280,8 @@ const OptimizerCalculations = {
             type:       target.type || '',
             ra:         target.ra,
             dec:        target.dec,
-            sizeMin:    target.size_min || null,  // arcmin
-            sizeMax:    target.size_max || null,  // arcmin
+            sizeMin:    target.size_min ?? null,  // arcmin
+            sizeMax:    target.size_max ?? null,  // arcmin
             // STUB: telescope/sensor + size compatibility scoring
             // Future: compare sizeMax against FOV to flag targets too large or too small
             //         for the current equipment profile
