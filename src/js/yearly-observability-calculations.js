@@ -2,8 +2,8 @@
  * yearly-observability-calculations.js
  * Yearly Observability calculations and graph rendering.
  * Extracted from daily-visibility-calculations.js.
- * Depends on DailyVisibilityCalculations for shared astronomical functions
- * (findSunAltitudeJD).
+ * Dusk/dawn calculations use the shared astro-sun.js implementation
+ * (findAstronomicalDusk / findNextAstronomicalDawn).
  */
 
 const YearlyObservabilityCalculations = {
@@ -312,31 +312,13 @@ const YearlyObservabilityCalculations = {
      * Score = (observable_hours / 12) × (1 - moon_illum) × min(1, separation_deg / 90) × 100
      */
     calculateImagingScore(date, inputs) {
-        // Get local noon for this date
-        const localNoon = new Date(
-            date.getFullYear(),
-            date.getMonth(),
-            date.getDate(),
-            12, 0, 0
-        );
-
-        // Convert to UTC
-        const isDST = SettingsManager.isDSTActive(localNoon, inputs.timezone);
-        const offsetHours = isDST ? inputs.timezone + 1 : inputs.timezone;
-        const utcNoon = new Date(localNoon.getTime() - offsetHours * 3600000);
-        const noonJD = TimeUtils.dateToJD(utcNoon);
-
-        // Find astronomical dusk and dawn (sun at -18°): dawn search starts one
-        // minute past dusk, where the sun is still just below -18, so the
-        // first-sample-at-or-above -18 scan finds true dawn even on short
-        // summer nights. (The old dusk+6h start overshot true dawn whenever
-        // the night was under 6h.)
-        const duskJD = DailyVisibilityCalculations.findSunAltitudeJD(noonJD, inputs.latitude, inputs.longitude, -18, true);
-        let dawnJD = null;
-        if (duskJD) {
-            const searchStartJD = duskJD + 1/1440;
-            dawnJD = DailyVisibilityCalculations.findSunAltitudeJD(searchStartJD, inputs.latitude, inputs.longitude, -18, false);
-        }
+        // Find astronomical dusk and dawn (sun at -18°) via the single
+        // canonical implementation in astro-sun.js, which builds its own
+        // timezone-independent noon/midnight instant internally — no
+        // manual noon/offset construction needed here anymore.
+        const isDST = SettingsManager.isDSTActive(date, inputs.timezone);
+        const duskJD = findAstronomicalDusk(date, inputs.latitude, inputs.longitude, inputs.timezone, isDST);
+        const dawnJD = findNextAstronomicalDawn(date, inputs.latitude, inputs.longitude, inputs.timezone, isDST);
 
         if (!duskJD || !dawnJD) {
             // No astronomical darkness on this night
