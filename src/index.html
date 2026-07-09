@@ -161,6 +161,9 @@
           <div class="menu-item submenu-item menu-item-disabled" data-action="import-targets">
             Import Target Database
           </div>
+          <div class="menu-item submenu-item" data-action="validate-algorithms">
+            Validate Algorithms
+          </div>
         </div>
 
         <div class="menu-item" data-action="new-backup">
@@ -2311,6 +2314,55 @@
       </template>
       <!-- END OF Backup Reminder Modal Template -->
 
+      <!-- Algorithm Validation View Template -->
+      <template id="algorithm-validation-view-template">
+        <div class="view-container">
+          <h2 class="view-title">Validate Algorithms</h2>
+
+          <div class="card" id="algorithm-validation-info">
+            <div class="card-body">
+              <p id="algorithm-validation-explanation">
+                This page runs a suite of regression tests against Astryx's astronomy calculation
+                engine to confirm results haven't silently drifted from known-good values. Most
+                tests are <strong>externally verified</strong> — checked against independent
+                sources such as USNO, timeanddate.com, or Stellarium at fixed coordinates and
+                dates. A smaller set are <strong>snapshot tests</strong> — compared only against
+                a previously recorded value from this same codebase, used where no reliable
+                external reference exists or where matching one isn't meaningful. Moon rise/set
+                calculations fall into this category: due to the mean-parallax approximation and
+                truncated lunar position series used, results carry an inherent 2&ndash;5 minute
+                residual versus external sources. This is expected behavior, not a bug, so those
+                cases are validated against themselves rather than against the tolerance used
+                elsewhere on this page.
+              </p>
+            </div>
+          </div>
+
+          <div class="card" id="algorithm-validation-results-card">
+            <div class="card-header">
+              <h3>Test Results</h3>
+              <span id="algorithm-validation-summary">0/0 tests</span>
+            </div>
+            <div class="card-body">
+              <table class="session-table" id="algorithm-validation-table">
+                <thead>
+                  <tr>
+                    <th>Test</th>
+                    <th>Expected</th>
+                    <th>Actual</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="algorithm-validation-tbody">
+                  <!-- Test result rows populated by AlgorithmValidationView -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </template>
+      <!-- END OF Algorithm Validation View Template -->
+
       <!-- Target Optimizer View Template -->
       <template id="optimizer-view-template">
         <div class="view-container view-bg-icon view-bg-icon-optimizer">
@@ -2707,6 +2759,7 @@
       <script src="js/utilities-view.js"></script>
       <script src="js/optimizer-calculations.js"></script>
       <script src="js/optimizer-view.js"></script>
+      <script src="js/algorithm-validation-view.js"></script>
       <script src="js/tutorials/tutorial-admin-tools.js"></script>
       <script src="js/tutorials/tutorial-backup-restore.js"></script>
       <script src="js/tutorials/tutorial-daily-visibility.js"></script>

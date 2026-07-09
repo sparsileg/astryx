@@ -15,7 +15,7 @@
 const APP_CONFIG = {
     APP_NAME: 'Astryx',
     APP_TITLE: 'Astryx - Astrophotography Planning Tool',
-    APP_VERSION: '1.3.7',
+    APP_VERSION: '1.3.8',
     DB_NAME: 'astryx-db',
     DB_VERSION: 8,
     TARGET_DATA_PATH: './data/',
@@ -103,7 +103,14 @@ const APP_CONFIG = {
     TODO_ALTITUDE_SAMPLE_POINTS: 24,     // number of samples across dusk-dawn window
     TODO_ALTITUDE_GRAPH_STYLE: 'fill',   // 'fill' or 'line'
     TODO_ALTITUDE_GRAPH_ALPHA: 0.65,     // opacity of fill or line
-    TODO_ALTITUDE_GRAPH_LINE_WIDTH: 4.0  // line width (used for both 'line' mode and fill outline)
+    TODO_ALTITUDE_GRAPH_LINE_WIDTH: 4.0, // line width (used for both 'line' mode and fill outline)
+
+    // Validate Algorithms view (Issue #176) — global tolerance for time-based
+    // regression test comparisons, in minutes. Single shared value, no per-test
+    // override. Note: moon rise/set tests are snapshot-only (see astro-moon.js
+    // test entries) because their inherent ~2-5 min residual vs external sources
+    // would fail this tolerance by design, not due to a bug.
+    ALGORITHM_VALIDATION_TOLERANCE_MINUTES: 2
 };
 
 /**

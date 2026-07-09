@@ -307,6 +307,9 @@ const UIManager = {
         case 'check-target-updates':
             this.checkForTargetUpdates();
             break;
+        case 'validate-algorithms':
+            window.location.hash = '#validate-algorithms';
+            break;
         case 'clear-all-targets':
             this.clearAllTargets();
             break;
