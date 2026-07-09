@@ -153,7 +153,10 @@ function getLST(jd, longitude) {
 // ============================================================================
 
 /**
- * Calculate angular separation between two celestial objects
+ * Calculate angular separation between two celestial objects.
+ * RA units: HOURS (matches target database's native RA unit).
+ * Haversine formula â€” numerically stable at all separations, including
+ * sub-arcminute ones where acos-based formulas lose precision (Issue #202).
  * @param {number} ra1 - Right ascension of first object (hours)
  * @param {number} dec1 - Declination of first object (degrees)
  * @param {number} ra2 - Right ascension of second object (hours)
@@ -166,10 +169,14 @@ function getAngularSeparation(ra1, dec1, ra2, dec2) {
     const ra2_rad = hoursToRadians(ra2);
     const dec2_rad = degreesToRadians(dec2);
 
-    const cos_sep = Math.sin(dec1_rad) * Math.sin(dec2_rad) +
-                   Math.cos(dec1_rad) * Math.cos(dec2_rad) * Math.cos(ra1_rad - ra2_rad);
+    const deltaRA = ra2_rad - ra1_rad;
+    const deltaDec = dec2_rad - dec1_rad;
 
-    return radiansToDegrees(Math.acos(Math.max(-1, Math.min(1, cos_sep))));
+    const a = Math.sin(deltaDec / 2) ** 2 +
+              Math.cos(dec1_rad) * Math.cos(dec2_rad) * Math.sin(deltaRA / 2) ** 2;
+    const c = 2 * Math.asin(Math.sqrt(Math.min(1, a)));
+
+    return radiansToDegrees(c);
 }
 
 // ============================================================================
@@ -207,7 +214,7 @@ function getAltitude(jd, raHours, decDeg, latitude, longitude) {
  * @param {number} decDeg - Declination in degrees
  * @param {number} latitude - Observer's latitude in degrees
  * @param {number} longitude - Observer's longitude in degrees (West is negative)
- * @returns {number} Azimuth in degrees (0° = North, 90° = East, 180° = South, 270° = West)
+ * @returns {number} Azimuth in degrees (0Â° = North, 90Â° = East, 180Â° = South, 270Â° = West)
  */
 function getAzimuth(jd, raHours, decDeg, latitude, longitude) {
     const lst = getLST(jd, longitude);
@@ -235,32 +242,6 @@ function getAzimuth(jd, raHours, decDeg, latitude, longitude) {
 }
 
 /**
- * Calculate angular separation between two celestial coordinates
- * @param {number} ra1 - Right ascension of first object (degrees)
- * @param {number} dec1 - Declination of first object (degrees)
- * @param {number} ra2 - Right ascension of second object (degrees)
- * @param {number} dec2 - Declination of second object (degrees)
- * @returns {number} Angular separation in degrees
- */
-function angularSeparation(ra1, dec1, ra2, dec2) {
-    // Convert to radians
-    const ra1Rad = degreesToRadians(ra1);
-    const dec1Rad = degreesToRadians(dec1);
-    const ra2Rad = degreesToRadians(ra2);
-    const dec2Rad = degreesToRadians(dec2);
-
-    // Haversine formula for angular separation
-    const deltaRA = ra2Rad - ra1Rad;
-    const deltaDec = dec2Rad - dec1Rad;
-
-    const a = Math.sin(deltaDec / 2) ** 2 +
-              Math.cos(dec1Rad) * Math.cos(dec2Rad) * Math.sin(deltaRA / 2) ** 2;
-    const c = 2 * Math.asin(Math.sqrt(a));
-
-    return radiansToDegrees(c);
-}
-
-/**
  * Get interpolated horizon elevation at a given azimuth
  * @param {number} azimuth - Azimuth in degrees (0-360)
  * @param {Array} horizonArray - Array of {azimuth, elevation} points
@@ -268,7 +249,7 @@ function angularSeparation(ra1, dec1, ra2, dec2) {
  */
 function getHorizonElevationAtAzimuth(azimuth, horizonArray) {
     if (!horizonArray || horizonArray.length === 0) {
-        return 0; // No horizon data = flat horizon at 0°
+        return 0; // No horizon data = flat horizon at 0Â°
     }
 
     // Normalize azimuth to 0-360
@@ -290,7 +271,7 @@ function getHorizonElevationAtAzimuth(azimuth, horizonArray) {
         }
     }
 
-    // Handle wrap-around case (e.g., azimuth = 5°, points at 350° and 10°)
+    // Handle wrap-around case (e.g., azimuth = 5Â°, points at 350Â° and 10Â°)
     let azBefore = before.azimuth;
     let azAfter = after.azimuth;
 
@@ -330,3 +311,7 @@ function isAboveHorizon(altitude, azimuth, minAltitude, horizonArray) {
 
     return true;
 }
+
+// ----------------------------------------------------------------------
+// ----------------------------------------------------------------------
+// ----------------------------------------------------------------------
