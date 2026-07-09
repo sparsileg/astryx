@@ -204,15 +204,21 @@ function getMoonPhase(jd) {
  * @returns {number} Horizon depression in degrees
  */
 function calculateHorizonDepression(elevationMeters) {
-    // Standard atmospheric refraction
-    const standardRefraction = -0.833;
+    // Moon rise/set threshold for GEOCENTRIC altitude: refraction + semidiameter
+    // + topocentric parallax folded in per Meeus ch.15: h0 = 0.7275*parallax - 0.5667
+    // ≈ +0.125 deg for mean lunar parallax 0.9507 deg (replaces the solar-style
+    // -0.833 deg threshold, which omitted the moon's parallax entirely).
+    const moonRiseSetThreshold = 0.125;
 
-    // Geometric horizon depression due to elevation
-    const elevationKm = elevationMeters / 1000;
-    const geometricDepression = -Math.sqrt(2 * elevationKm);
+    // Geometric horizon dip: sqrt(2h/R) RADIANS, converted to degrees.
+    // (Previous code took sqrt(2h) with h in km and treated the raw result
+    // as degrees — dimensionally wrong, ~40-50% too large at typical elevations.)
+    const EARTH_RADIUS_M = 6371000;
+    const h = elevationMeters ?? 0; // guard: some locations may have no elevation set
+    const geometricDepression = -radiansToDegrees(Math.sqrt(2 * h / EARTH_RADIUS_M));
 
     // Combined effect
-    return standardRefraction + geometricDepression;
+    return moonRiseSetThreshold + geometricDepression;
 }
 
 
