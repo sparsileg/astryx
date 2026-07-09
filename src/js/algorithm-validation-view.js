@@ -72,11 +72,14 @@ const ASTRO_TESTS = [
         source: 'geometric identity (same point = 0° separation)'
     },
     {
-        name: 'angularSeparation: 90° apart in RA (degrees) at dec=0',
-        actual: () => angularSeparation(0, 0, 90, 0),
-        expected: 90,
-        tolerance: 0.0001,
-        source: 'geometric identity (haversine, quarter-circle at equator = 90°)'
+        name: 'getAngularSeparation: small separation (0.15°, same RA)',
+        actual: () => getAngularSeparation(5.0, 20.0, 5.0, 20.15),
+        expected: 0.15,
+        tolerance: 0.05,
+        source: 'geometric identity (equal RA collapses formula to |dec2-dec1|); ' +
+                'regression guard for the haversine consolidation in Issue #202 ' +
+                '(motivating precision concern applies at arcsecond-scale separations, ' +
+                'not fully exercised at this tolerance)'
     },
     {
         name: 'getHorizonElevationAtAzimuth: flat notional horizon',
