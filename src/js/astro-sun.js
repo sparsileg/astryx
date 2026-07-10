@@ -20,8 +20,11 @@ function getSunPosition(jd) {
     const alpha = Math.atan2(Math.cos(epsilon) * Math.sin(lambdaRad), Math.cos(lambdaRad));
     const delta = Math.asin(Math.sin(epsilon) * Math.sin(lambdaRad));
 
+    let ra = radiansToDegrees(alpha) / 15.0; // Convert to hours
+    if (ra < 0) ra += 24;
+
     return {
-        ra: radiansToDegrees(alpha) / 15.0, // Convert to hours
+        ra: ra,
         dec: radiansToDegrees(delta),
         // True ecliptic longitude, normalized to [0, 360). Added for Issue #207
         // (accurate waxing/waning determination in getMoonPhase).
