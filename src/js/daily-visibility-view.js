@@ -783,8 +783,8 @@ const DailyVisibilityView = {
 
         // Generate strategic gradient stops (original uses 200 points)
         const strategicPoints = [];
-        for (let i = 0; i <= 200; i++) {
-            const fraction = i / 200;
+        for (let i = 0; i <= 100; i++) {
+            const fraction = i / 100;
             const currentJD = timelineData.timelineStartJD + fraction * (timelineData.timelineEndJD - timelineData.timelineStartJD);
 
             const sunPos = getSunPosition(currentJD);
@@ -1017,51 +1017,144 @@ const DailyVisibilityView = {
     },
 
     /**
+     * Build (jd, horizonElevation) samples whose straight-line connection
+     * reproduces the horizon profile exactly, with no fixed-rate sampling.
+     *
+     * The drawn line max(minAltitude, horizonElevation(azimuth(t))) only has
+     * kinks at: (a) times when the target azimuth crosses a horizon-array
+     * breakpoint azimuth, and (b) times when horizon elevation crosses
+     * minAltitude. A single shared coarse azimuth scan brackets every (a)
+     * crossing; bisection (coarse-then-refine, same pattern as the rise/set
+     * searches) pins each to its exact time with the exact breakpoint
+     * elevation. (b) crossings are then solved between adjacent samples that
+     * straddle minAltitude. The coarse scan doubles as the base grid for the
+     * smooth curvature between kinks.
+     *
+     * Known limitation: a target transiting within ~1° of zenith swings
+     * azimuth ~180° in minutes; such a swing inside one coarse step is
+     * indistinguishable from the 0/360 wrap jump and is skipped. The old
+     * fixed-sampling code had the same blind spot.
+     */
+    buildHorizonLineSamples(horizonArray, minAltitude, startJD, endJD, ra, dec, latitude, longitude) {
+        const wrap180 = d => ((d % 360) + 540) % 360 - 180;
+        const azAt = jd => getAzimuth(jd, ra, dec, latitude, longitude);
+        const elevAt = jd => getHorizonElevationAtAzimuth(azAt(jd), horizonArray);
+        const BISECT_ITERS = 30;
+
+        // 1. Shared coarse scan — also serves as the base grid
+        const coarseSteps = 288; // every 5 minutes across the 24h window
+        const scan = [];
+        for (let i = 0; i <= coarseSteps; i++) {
+            const jd = startJD + (i / coarseSteps) * (endJD - startJD);
+            scan.push({ jd, az: azAt(jd) });
+        }
+
+        const samples = scan.map(s => ({
+            jd: s.jd,
+            elev: getHorizonElevationAtAzimuth(s.az, horizonArray)
+        }));
+
+        // 2. Exact breakpoint crossings: for each horizon point, every time
+        // the target azimuth crosses it, refined by bisection, pinned to the
+        // exact breakpoint elevation.
+        for (const hp of horizonArray) {
+            for (let i = 1; i < scan.length; i++) {
+                const d1 = wrap180(scan[i - 1].az - hp.azimuth);
+                const d2 = wrap180(scan[i].az - hp.azimuth);
+                if (d1 === 0) {
+                    samples.push({ jd: scan[i - 1].jd, elev: hp.elevation });
+                    continue;
+                }
+                // Sign change that is NOT the antipodal 0/360 wrap jump
+                if (Math.sign(d1) !== Math.sign(d2) && Math.abs(d2 - d1) < 180) {
+                    let lo = scan[i - 1].jd, hi = scan[i].jd, dLo = d1;
+                    for (let iter = 0; iter < BISECT_ITERS; iter++) {
+                        const mid = (lo + hi) / 2;
+                        const dm = wrap180(azAt(mid) - hp.azimuth);
+                        if (dm === 0) { lo = mid; hi = mid; break; }
+                        if (Math.sign(dm) === Math.sign(dLo)) { lo = mid; dLo = dm; }
+                        else { hi = mid; }
+                    }
+                    samples.push({ jd: (lo + hi) / 2, elev: hp.elevation });
+                }
+            }
+        }
+
+        samples.sort((a, b) => a.jd - b.jd);
+
+        // 3. Exact max() switch points: where adjacent samples straddle
+        // minAltitude, bisect so the drawn corner sits exactly on the line.
+        const switches = [];
+        for (let i = 1; i < samples.length; i++) {
+            const g1 = samples[i - 1].elev - minAltitude;
+            const g2 = samples[i].elev - minAltitude;
+            if ((g1 < 0 && g2 > 0) || (g1 > 0 && g2 < 0)) {
+                let lo = samples[i - 1].jd, hi = samples[i].jd, gLo = g1;
+                for (let iter = 0; iter < BISECT_ITERS; iter++) {
+                    const mid = (lo + hi) / 2;
+                    const gm = elevAt(mid) - minAltitude;
+                    if (gm === 0) { lo = mid; hi = mid; break; }
+                    if (Math.sign(gm) === Math.sign(gLo)) { lo = mid; gLo = gm; }
+                    else { hi = mid; }
+                }
+                switches.push({ jd: (lo + hi) / 2, elev: minAltitude });
+            }
+        }
+
+        samples.push(...switches);
+        samples.sort((a, b) => a.jd - b.jd);
+        return samples;
+    },
+
+
+    /**
      * Draw merged minimum altitude and horizon line
-     * Shows the effective minimum: max(minAltitude, horizonElevation) at each azimuth
+     * Shows the effective minimum: max(minAltitude, horizonElevation) at each azimuth.
+     * Point list is built geometrically (see buildHorizonLineSamples) rather than
+     * by fixed-rate sampling, so narrow horizon features are never missed.
      */
     drawMinimumAltitudeLine(timeline, minAltitude, data) {
         // Check if horizon usage is enabled
         const useHorizon = data?.useHorizon ?? true; // Default to true
         const location = DataManager.getLocation(data.locationName);
         const horizonArray = (useHorizon && location) ? location.horizon : null;
-
         const targetRA = data.ra;
         const targetDEC = data.dec;
         const latitude = data.latitude;
         const longitude = data.longitude;
-
         if (isNaN(targetRA) || isNaN(targetDEC)) return;
-
         // Get timeline bounds from the timeline div
         const timelineStartJD = parseFloat(timeline.dataset.startJd);
         const timelineEndJD = parseFloat(timeline.dataset.endJd);
-
         if (isNaN(timelineStartJD) || isNaN(timelineEndJD)) return;
 
-        // Sample points across timeline
-        const numPoints = 200;
-        const points = [];
-
-        for (let i = 0; i <= numPoints; i++) {
-            const fraction = i / numPoints;
-            const currentJD = timelineStartJD + fraction * (timelineEndJD - timelineStartJD);
-
-            // Calculate azimuth at this time
-            const azimuth = getAzimuth(currentJD, targetRA, targetDEC, latitude, longitude);
-
-            // Get horizon elevation at this azimuth
-            const horizonElevation = getHorizonElevationAtAzimuth(azimuth, horizonArray);
-
-            // Effective minimum is the higher of minAltitude or horizon
-            const effectiveMin = Math.max(minAltitude, horizonElevation);
-
-            // Convert to Y position
-            const yPosition = this.TIMELINE_HEIGHT - (effectiveMin / 90) * this.TIMELINE_HEIGHT;
-            const xPosition = fraction * 100;
-
-            points.push({ x: xPosition, y: Math.max(0, Math.min(this.TIMELINE_HEIGHT, yPosition)) });
+        // Build sample list geometrically (no fixed-rate sampling)
+        let samples;
+        if (!horizonArray || horizonArray.length === 0) {
+            // No horizon in play: flat line at minAltitude, two points suffice
+            samples = [
+                { jd: timelineStartJD, elev: minAltitude },
+                { jd: timelineEndJD, elev: minAltitude }
+            ];
+        } else {
+            samples = this.buildHorizonLineSamples(
+                horizonArray, minAltitude,
+                timelineStartJD, timelineEndJD,
+                targetRA, targetDEC, latitude, longitude
+            );
         }
+
+        // Convert (jd, elev) samples to chart points
+        const timelineDuration = timelineEndJD - timelineStartJD;
+        const points = samples.map(s => {
+            const fraction = (s.jd - timelineStartJD) / timelineDuration;
+            const effectiveMin = Math.max(minAltitude, s.elev);
+            const yPosition = this.TIMELINE_HEIGHT - (effectiveMin / 90) * this.TIMELINE_HEIGHT;
+            return {
+                x: fraction * 100,
+                y: Math.max(0, Math.min(this.TIMELINE_HEIGHT, yPosition))
+            };
+        });
 
         // Create SVG for min altitude line
         const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -1073,12 +1166,10 @@ const DailyVisibilityView = {
         svg.style.pointerEvents = 'none';
         svg.setAttribute('viewBox', '0 0 100 ' + this.TIMELINE_HEIGHT);
         svg.setAttribute('preserveAspectRatio', 'none');
-
         // Create path
         const pathData = points.map((p, i) => {
             return `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`;
         }).join(' ');
-
         // Draw black outline (thicker)
         const outlinePath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
         outlinePath.setAttribute('d', pathData);
@@ -1087,7 +1178,6 @@ const DailyVisibilityView = {
         outlinePath.setAttribute('stroke-width', 3);
         outlinePath.setAttribute('vector-effect', 'non-scaling-stroke');
         svg.appendChild(outlinePath);
-
         const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
         path.setAttribute('d', pathData);
         path.setAttribute('fill', 'none');
@@ -1095,10 +1185,93 @@ const DailyVisibilityView = {
         path.setAttribute('stroke-width', '2');
         path.setAttribute('stroke-dasharray', '5,5'); // Dashed line
         path.setAttribute('vector-effect', 'non-scaling-stroke');
-
         svg.appendChild(path);
         timeline.appendChild(svg);
     },
+
+    /**
+     * Draw merged minimum altitude and horizon line
+     * Shows the effective minimum: max(minAltitude, horizonElevation) at each azimuth
+     */
+    // drawMinimumAltitudeLine(timeline, minAltitude, data) {
+    //     // Check if horizon usage is enabled
+    //     const useHorizon = data?.useHorizon ?? true; // Default to true
+    //     const location = DataManager.getLocation(data.locationName);
+    //     const horizonArray = (useHorizon && location) ? location.horizon : null;
+
+    //     const targetRA = data.ra;
+    //     const targetDEC = data.dec;
+    //     const latitude = data.latitude;
+    //     const longitude = data.longitude;
+
+    //     if (isNaN(targetRA) || isNaN(targetDEC)) return;
+
+    //     // Get timeline bounds from the timeline div
+    //     const timelineStartJD = parseFloat(timeline.dataset.startJd);
+    //     const timelineEndJD = parseFloat(timeline.dataset.endJd);
+
+    //     if (isNaN(timelineStartJD) || isNaN(timelineEndJD)) return;
+
+    //     // Sample points across timeline
+    //     const numPoints = 200;
+    //     const points = [];
+
+    //     for (let i = 0; i <= numPoints; i++) {
+    //         const fraction = i / numPoints;
+    //         const currentJD = timelineStartJD + fraction * (timelineEndJD - timelineStartJD);
+
+    //         // Calculate azimuth at this time
+    //         const azimuth = getAzimuth(currentJD, targetRA, targetDEC, latitude, longitude);
+
+    //         // Get horizon elevation at this azimuth
+    //         const horizonElevation = getHorizonElevationAtAzimuth(azimuth, horizonArray);
+
+    //         // Effective minimum is the higher of minAltitude or horizon
+    //         const effectiveMin = Math.max(minAltitude, horizonElevation);
+
+    //         // Convert to Y position
+    //         const yPosition = this.TIMELINE_HEIGHT - (effectiveMin / 90) * this.TIMELINE_HEIGHT;
+    //         const xPosition = fraction * 100;
+
+    //         points.push({ x: xPosition, y: Math.max(0, Math.min(this.TIMELINE_HEIGHT, yPosition)) });
+    //     }
+
+    //     // Create SVG for min altitude line
+    //     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    //     svg.style.position = 'absolute';
+    //     svg.style.top = '0';
+    //     svg.style.left = '0';
+    //     svg.style.width = '100%';
+    //     svg.style.height = this.TIMELINE_HEIGHT + 'px';
+    //     svg.style.pointerEvents = 'none';
+    //     svg.setAttribute('viewBox', '0 0 100 ' + this.TIMELINE_HEIGHT);
+    //     svg.setAttribute('preserveAspectRatio', 'none');
+
+    //     // Create path
+    //     const pathData = points.map((p, i) => {
+    //         return `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`;
+    //     }).join(' ');
+
+    //     // Draw black outline (thicker)
+    //     const outlinePath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    //     outlinePath.setAttribute('d', pathData);
+    //     outlinePath.setAttribute('fill', 'none');
+    //     outlinePath.setAttribute('stroke', '#000000');
+    //     outlinePath.setAttribute('stroke-width', 3);
+    //     outlinePath.setAttribute('vector-effect', 'non-scaling-stroke');
+    //     svg.appendChild(outlinePath);
+
+    //     const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    //     path.setAttribute('d', pathData);
+    //     path.setAttribute('fill', 'none');
+    //     path.setAttribute('stroke', 'rgba(255, 255, 0, 0.5)'); // Yellow, semi-transparent
+    //     path.setAttribute('stroke-width', '2');
+    //     path.setAttribute('stroke-dasharray', '5,5'); // Dashed line
+    //     path.setAttribute('vector-effect', 'non-scaling-stroke');
+
+    //     svg.appendChild(path);
+    //     timeline.appendChild(svg);
+    // },
 
     /**
      * Find when target crosses meridian (maximum altitude)

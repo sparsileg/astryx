@@ -242,9 +242,15 @@ function getAzimuth(jd, raHours, decDeg, latitude, longitude) {
 }
 
 /**
- * Get interpolated horizon elevation at a given azimuth
+ * Get interpolated horizon elevation at a given azimuth.
+ * CONTRACT: horizonArray must already be sorted by azimuth ascending.
+ * This invariant is guaranteed by DataManager (sorted on every save, and
+ * migrated on load for pre-existing data) — see sortHorizonByAzimuth /
+ * isHorizonSorted in data-manager.js. This function does not sort
+ * defensively; doing so on every call was measured as wasted work inside
+ * the rise/set/visibility search loops (Issue #206).
  * @param {number} azimuth - Azimuth in degrees (0-360)
- * @param {Array} horizonArray - Array of {azimuth, elevation} points
+ * @param {Array} horizonArray - Array of {azimuth, elevation} points, pre-sorted by azimuth
  * @returns {number} Interpolated elevation in degrees
  */
 function getHorizonElevationAtAzimuth(azimuth, horizonArray) {
@@ -255,8 +261,12 @@ function getHorizonElevationAtAzimuth(azimuth, horizonArray) {
     // Normalize azimuth to 0-360
     azimuth = ((azimuth % 360) + 360) % 360;
 
-    // Sort horizon points by azimuth (in case they're not sorted)
-    const sorted = [...horizonArray].sort((a, b) => a.azimuth - b.azimuth);
+    const sorted = horizonArray;
+
+    // Single-point horizon: nothing to interpolate between (Issue #206)
+    if (sorted.length === 1) {
+        return sorted[0].elevation;
+    }
 
     // Find the two points to interpolate between
     let before = sorted[sorted.length - 1]; // Wrap around: last point
@@ -280,6 +290,11 @@ function getHorizonElevationAtAzimuth(azimuth, horizonArray) {
         if (azimuth < before.azimuth) {
             azimuth += 360;
         }
+    }
+
+    // Degenerate pair (duplicate azimuth): no interpolation possible (Issue #206)
+    if (azAfter === azBefore) {
+        return before.elevation;
     }
 
     // Linear interpolation
