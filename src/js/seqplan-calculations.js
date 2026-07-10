@@ -486,6 +486,22 @@ const SeqPlanCalculations = {
 
     /**
      * Check if target's imaging window violates altitude constraints
+     *
+     * IMPORTANT (Issue found 2026-07): this checks validity at the exact
+     * boundaries of the target's ASSIGNED imaging window (imagingStartJD/
+     * imagingEndJD), not "first rise anywhere in the whole dusk-to-dawn
+     * night." A target that's already valid at imagingStartJD but dips
+     * briefly later (e.g. a transient horizon obstruction) must NOT be
+     * flagged here — that dip is findHorizonViolations' job, and it
+     * already reports it correctly. The previous version searched
+     * findTargetRise across the whole night, which — for an
+     * already-risen target that later dips and recovers — mistook the
+     * recovery-from-dip crossing for "the rise," producing a bogus wide
+     * 'starts_early' violation that duplicated (and mislabeled) a real,
+     * narrower horizon violation. Checking validity directly at the
+     * boundary first, and only searching if that boundary is actually
+     * invalid, avoids ever making that mistake.
+     *
      * @param {Object} target - Target with imagingStartJD and imagingEndJD
      * @param {Object} session - Session configuration with location and minAltitude
      * @returns {Object} { isValid, validStartJD, validEndJD, violationType }
@@ -493,48 +509,65 @@ const SeqPlanCalculations = {
     checkTargetAltitudeConstraint(target, session) {
         const location = session.location;
         const minAlt = session.minAltitude;
+        const horizonArray = session.useHorizon ? session.location.horizon : null;
 
-        const riseJD = findTargetRise(
-            session.duskJD,
-            session.dawnJD,
-            target.ra,
-            target.dec,
-            location.latitude,
-            location.longitude,
-            minAlt,
-            session.useHorizon ? session.location.horizon : null
-        );
-
-        const setJD = findTargetSet(
-            session.duskJD,
-            session.dawnJD,
-            target.ra,
-            target.dec,
-            location.latitude,
-            location.longitude,
-            minAlt,
-            session.useHorizon ? session.location.horizon : null
-        );
-
-        let validStartJD = riseJD || session.sessionStartJD;
-        let validEndJD = setJD || session.sessionEndJD;
-
+        let validStartJD = target.imagingStartJD;
+        let validEndJD = target.imagingEndJD;
         let violationType = null;
         let isValid = true;
 
-        if (!riseJD && !setJD) {
-            const altitude = getAltitude(session.sessionStartJD, target.ra, target.dec,
-                                         location.latitude, location.longitude);
-            if (altitude < minAlt) {
-                violationType = 'never_visible';
-                isValid = false;
-            }
-        } else {
-            if (target.imagingStartJD < validStartJD) {
+        // Is the target actually valid at the moment its assigned window starts?
+        const altAtStart = getAltitude(target.imagingStartJD, target.ra, target.dec,
+                                        location.latitude, location.longitude);
+        const azAtStart = getAzimuth(target.imagingStartJD, target.ra, target.dec,
+                                      location.latitude, location.longitude);
+        const validAtStart = isAboveHorizon(altAtStart, azAtStart, minAlt, horizonArray);
+
+        // Is it still valid at the moment its assigned window ends?
+        const altAtEnd = getAltitude(target.imagingEndJD, target.ra, target.dec,
+                                      location.latitude, location.longitude);
+        const azAtEnd = getAzimuth(target.imagingEndJD, target.ra, target.dec,
+                                    location.latitude, location.longitude);
+        const validAtEnd = isAboveHorizon(altAtEnd, azAtEnd, minAlt, horizonArray);
+
+        if (validAtStart && validAtEnd) {
+            // Boundaries are fine. Any mid-window dip (e.g. a transient
+            // horizon obstruction) is reported separately by
+            // findHorizonViolations — not this function's concern.
+            return { isValid: true, validStartJD, validEndJD, violationType: null };
+        }
+
+        if (!validAtStart) {
+            // Search only within the assigned window itself — never the
+            // whole night — so we find the true start-of-validity for
+            // THIS window, not an unrelated recovery event elsewhere.
+            const riseJD = findTargetRise(
+                target.imagingStartJD, target.imagingEndJD,
+                target.ra, target.dec,
+                location.latitude, location.longitude,
+                minAlt, horizonArray
+            );
+            if (riseJD) {
+                validStartJD = riseJD;
                 violationType = 'starts_early';
                 isValid = false;
+            } else {
+                // Never valid anywhere within the assigned window
+                violationType = 'never_visible';
+                isValid = false;
+                return { isValid, validStartJD: target.imagingEndJD, validEndJD: target.imagingEndJD, violationType };
             }
-            if (target.imagingEndJD > validEndJD) {
+        }
+
+        if (!validAtEnd) {
+            const setJD = findTargetSet(
+                target.imagingStartJD, target.imagingEndJD,
+                target.ra, target.dec,
+                location.latitude, location.longitude,
+                minAlt, horizonArray
+            );
+            if (setJD) {
+                validEndJD = setJD;
                 violationType = violationType ? 'both' : 'ends_late';
                 isValid = false;
             }
