@@ -30,9 +30,30 @@ const DataManager = {
         }
     },
 
-    // ============================================================================
+// ============================================================================
     // Locations
     // ============================================================================
+
+    /**
+     * Sort a horizon array by azimuth ascending. Single source of truth for
+     * horizon ordering (Issue #206) — getHorizonElevationAtAzimuth relies on
+     * this invariant and does not sort internally.
+     */
+    sortHorizonByAzimuth(horizon) {
+        return [...horizon].sort((a, b) => a.azimuth - b.azimuth);
+    },
+
+    /**
+     * Check whether a horizon array is already sorted by azimuth, so the
+     * startup migration can skip writing back locations that don't need it
+     * (Issue #206).
+     */
+    isHorizonSorted(horizon) {
+        for (let i = 1; i < horizon.length; i++) {
+            if (horizon[i].azimuth < horizon[i - 1].azimuth) return false;
+        }
+        return true;
+    },
 
     /**
      * Load all locations from IndexedDB
@@ -50,6 +71,21 @@ const DataManager = {
                 horizon: loc.horizon || APP_CONFIG.NOTIONAL_HORIZON
             };
         });
+
+        // One-time migration guard: fix any horizon that predates the
+        // sorted-on-save invariant (Issue #206). Check-then-write so an
+        // already-sorted fleet of locations costs zero DB writes.
+        for (const name of Object.keys(this.locations)) {
+            const horizon = this.locations[name].horizon;
+            if (!this.isHorizonSorted(horizon)) {
+                Log.debug(`Sorting out-of-order horizon for location "${name}" (Issue #206 migration)`);
+                this.locations[name].horizon = this.sortHorizonByAzimuth(horizon);
+                await DBManager.put(APP_CONFIG.STORES.LOCATIONS, {
+                    name: name,
+                    ...this.locations[name]
+                });
+            }
+        }
     },
 
     /**
@@ -74,6 +110,9 @@ const DataManager = {
         if (!location.horizon) {
             location.horizon = APP_CONFIG.NOTIONAL_HORIZON;
         }
+
+        // Guarantee sorted-by-azimuth invariant on every save (Issue #206)
+        location.horizon = this.sortHorizonByAzimuth(location.horizon);
 
         this.locations[name] = location;
         await DBManager.put(APP_CONFIG.STORES.LOCATIONS, {
