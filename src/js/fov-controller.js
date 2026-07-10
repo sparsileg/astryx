@@ -525,9 +525,6 @@ const FOVView = {
         // Calculate FOV
         const fovData = FOVCalculations.calculateFOV(telescope, sensor);
 
-        // Store effective focal length for target fit check
-        FOVCalculations.effectiveFocalLength = fovData.effectiveFocalLength;
-
         // Calculate field coverage if target exists
         let fieldCoverage = null;
         if (this.currentTarget && this.currentTarget.size_max && this.currentTarget.size_min) {

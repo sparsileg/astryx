@@ -119,37 +119,6 @@ const FOVCalculations = {
         };
     },
 
-    /**
-     * Check if target fits within FOV
-     * @param {number} targetSizeMax - Target max dimension in arcminutes
-     * @param {number} targetSizeMin - Target min dimension in arcminutes
-     * @param {number} fovWidthArcmin - FOV width in arcminutes
-     * @param {number} fovHeightArcmin - FOV height in arcminutes
-     * @returns {object} {fits: boolean, recommendation: string}
-     */
-    checkTargetFit(targetSizeMax, targetSizeMin, fovWidthArcmin, fovHeightArcmin) {
-        const minFOV = Math.min(fovWidthArcmin, fovHeightArcmin);
-        const maxFOV = Math.max(fovWidthArcmin, fovHeightArcmin);
-
-        // Target fits if both dimensions fit within FOV
-        const fits = targetSizeMax <= maxFOV && targetSizeMin <= minFOV;
-
-        let recommendation = '';
-        if (!fits) {
-            // Calculate recommended focal length
-            // We want the target to occupy about 70% of the smaller FOV dimension
-            const targetOccupancy = 0.7;
-            const targetMaxForCalc = Math.max(targetSizeMax, targetSizeMin);
-
-            // Simpler approach: ratio of current FOV to target size
-            const ratio = minFOV / targetMaxForCalc;
-            const recommendedFL = Math.round(this.effectiveFocalLength * ratio * targetOccupancy);
-
-            recommendation = `Target does not fit in field of view. Consider a telescope with ~${recommendedFL}mm effective focal length for this target.`;
-        }
-
-        return { fits, recommendation };
-    },
 
     /**
      * Get full moon diameter in arcminutes (average)
