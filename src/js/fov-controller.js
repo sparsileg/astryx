@@ -11,6 +11,9 @@ const FOVView = {
     actualModeState: null,
     dssLockedSize: null,
     lastToastKey: null,
+    dssRenderGeneration: 0,
+    lastDSSFailureToastKey: null,
+    _lastPurgeCheck: 0,
 
     /**
      * Render the FOV view
@@ -43,7 +46,12 @@ const FOVView = {
         this.dssLockedSize = null;
         this.lastToastKey = null;
         this.largerMode = false;
+        this.dssRenderGeneration = 0;
         this.actualModeState = null;
+        this._offsetCenter = null;
+        this.lastDSSFailureToastKey = null;
+        // _lastPurgeCheck intentionally NOT reset here — purge cadence (Issue #221)
+        // tracks across view loads within the app session, not per-visit.
         FOVCanvas.dssImage = null;
         FOVCanvas.dragBoxAngle = 0;
 
@@ -687,6 +695,34 @@ const FOVView = {
     },
 
     /**
+     * Purge both DSS cache tiers, but only if DSS_PURGE_CHECK_INTERVAL has
+     * elapsed since the last check (Issue #221). Previously both purges ran
+     * synchronously on every single cache miss — a full cache scan on nearly
+     * every telescope switch. Now purge runs at most once per that interval,
+     * tracked in-memory for the current app session.
+     */
+    async maybePurgeDSSCache() {
+        const now = Date.now();
+        if (now - this._lastPurgeCheck < APP_CONFIG.DSS_PURGE_CHECK_INTERVAL) return;
+        this._lastPurgeCheck = now;
+        await this.purgeDSSCache();
+        await DSSCache.purge(APP_CONFIG.DSS_LARGE_CACHE_DURATION);
+    },
+
+    /**
+     * Show a toast when DSS rendering totally fails — cache had nothing AND
+     * the network fetch also failed (Issue #221). Cache-internal read errors
+     * stay as console.warn only; this is only for the case where the user
+     * would otherwise see no explanation for a blank/stale canvas.
+     * Deduped per cache key so rapid retries (e.g. holding rotate) don't spam toasts.
+     */
+    notifyDSSRenderFailure(cacheKey) {
+        if (this.lastDSSFailureToastKey === cacheKey) return;
+        this.lastDSSFailureToastKey = cacheKey;
+        UIManager.showToast('Could not load DSS background image — check your internet connection.', 'error', 8000);
+    },
+
+    /**
      * Fetch DSS image and draw on canvas
      */
     async fetchAndRenderDSS(fovData) {
@@ -694,6 +730,12 @@ const FOVView = {
             console.warn('No target coordinates for DSS fetch');
             return;
         }
+
+        // Generation guard (Issue #221): if a newer fetchAndRenderDSS/fetchAndRenderDSSLarge
+        // call starts before this one finishes, this call's result is stale and must not
+        // paint the canvas — prevents rapid telescope switching from racing and showing
+        // the wrong telescope's image.
+        const myGeneration = ++this.dssRenderGeneration;
 
         // Use offset center from Wider mode drag box if available — Issue #96
         const raDeg = this._offsetCenter ? this._offsetCenter.raDeg : this.currentTarget.ra * 15;
@@ -709,6 +751,8 @@ const FOVView = {
         // Check cache first
         let dataUrl = await this.getDSSFromCache(cacheKey);
 
+        if (myGeneration !== this.dssRenderGeneration) return;
+
         if (!dataUrl) {
             const url = `${APP_CONFIG.APIS.DSS}` +
                 `&ra=${raDeg.toFixed(6)}&dec=${decDeg.toFixed(6)}` +
@@ -719,6 +763,7 @@ const FOVView = {
                 const response = await fetch(url);
                 if (!response.ok) {
                     console.warn('DSS fetch failed:', response.status);
+                    this.notifyDSSRenderFailure(cacheKey);
                     return;
                 }
                 const blob = await response.blob();
@@ -728,17 +773,21 @@ const FOVView = {
                     reader.readAsDataURL(blob);
                 });
                 await this.saveDSSToCache(cacheKey, dataUrl);
-                await this.purgeDSSCache();
-                await DSSCache.purge(APP_CONFIG.DSS_LARGE_CACHE_DURATION);
+                await this.maybePurgeDSSCache();
             } catch (e) {
                 console.warn('DSS fetch error:', e);
+                this.notifyDSSRenderFailure(cacheKey);
                 return;
             }
         }
 
+        if (myGeneration !== this.dssRenderGeneration) return;
+
         // Draw image on canvas
         const img = new Image();
         img.onload = () => {
+            if (myGeneration !== this.dssRenderGeneration) return;
+
             FOVCanvas.clear();
 
             const width = FOVCanvas.canvas.width;
@@ -790,7 +839,7 @@ const FOVView = {
         img.src = dataUrl;
     },
 
-/**
+    /**
      * Fetch and render larger DSS image (3x FOV) for panning mode
      */
     async fetchAndRenderDSSLarge(fovData) {
@@ -798,6 +847,9 @@ const FOVView = {
             console.warn('No target coordinates for large DSS fetch');
             return;
         }
+
+        // Generation guard (Issue #221) — see fetchAndRenderDSS for rationale.
+        const myGeneration = ++this.dssRenderGeneration;
 
         const raDeg = this.currentTarget.ra * 15;
         const decDeg = this.currentTarget.dec;
@@ -809,6 +861,8 @@ const FOVView = {
 
         let dataUrl = await this.getDSSLargeFromCache(cacheKey);
 
+        if (myGeneration !== this.dssRenderGeneration) return;
+
         if (!dataUrl) {
             const url = `${APP_CONFIG.APIS.DSS}` +
                 `&ra=${raDeg.toFixed(6)}&dec=${decDeg.toFixed(6)}` +
@@ -819,6 +873,7 @@ const FOVView = {
                 const response = await fetch(url);
                 if (!response.ok) {
                     console.warn('Large DSS fetch failed:', response.status);
+                    this.notifyDSSRenderFailure(cacheKey);
                     return;
                 }
                 const blob = await response.blob();
@@ -830,9 +885,12 @@ const FOVView = {
                 await this.saveDSSLargeToCache(cacheKey, dataUrl);
             } catch (e) {
                 console.warn('Large DSS fetch error:', e);
+                this.notifyDSSRenderFailure(cacheKey);
                 return;
             }
         }
+
+        if (myGeneration !== this.dssRenderGeneration) return;
 
         // Store for use by canvas drag rendering
         this.largeDSSDataUrl = dataUrl;
@@ -840,6 +898,8 @@ const FOVView = {
 
         const img = new Image();
         img.onload = () => {
+            if (myGeneration !== this.dssRenderGeneration) return;
+
             FOVCanvas.largeImage = img;
             FOVCanvas.initDragBox(fovData.fovWidthArcmin, fovData.fovHeightArcmin);
             FOVCanvas.setupDragListeners(() => {

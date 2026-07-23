@@ -15,7 +15,7 @@
 const APP_CONFIG = {
     APP_NAME: 'Astryx',
     APP_TITLE: 'Astryx - Astrophotography Planning Tool',
-    APP_VERSION: '1.3.12',
+    APP_VERSION: '1.3.13a',
     DB_NAME: 'astryx-db',
     DB_VERSION: 8,
     TARGET_DATA_PATH: './data/',
@@ -30,6 +30,9 @@ const APP_CONFIG = {
     // DSS background image cache duration in ms
     DSS_CACHE_DURATION: 15 * 24 * 60 * 60 * 1000,
     DSS_LARGE_CACHE_DURATION: 2 * 24 * 60 * 60 * 1000,
+    // Chunk size (bytes) for base64 conversion of cached DSS images — avoids
+    // spreading large byte arrays into String.fromCharCode all at once.
+    DSS_BASE64_CHUNK_SIZE: 8192,
 
     // Number of the top-ranked targets used to generate combinations
     TOP_RANKED_TARGETS: 37,
