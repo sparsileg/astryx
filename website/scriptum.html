@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Scriptum — a book management system.">
+<title>Scriptum — Astryx Tools</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Julius+Sans+One&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body class="accent-scriptum">
+
+<header class="wrap sub-header">
+  <a class="back-link" href="index.html">&larr; Astryx.tools</a>
+  <h1 class="page-title">Scriptum</h1>
+  <p class="page-subtitle">A book management system</p>
+</header>
+
+<main class="wrap">
+  <div class="slideshow">
+    <div class="slides">
+
+      <article class="slide is-active">
+        <div class="mock-panel" aria-hidden="true">
+          <div class="panel-head"><span><span class="dot"></span>LIBRARY</span><span>142 books</span></div>
+          <div class="mock-grid-thumbs">
+            <div class="thumb keep"><span class="mark">R</span></div>
+            <div class="thumb keep"><span class="mark">F</span></div>
+            <div class="thumb reject"><span class="mark">T</span></div>
+            <div class="thumb keep"><span class="mark">F</span></div>
+            <div class="thumb reject"><span class="mark">T</span></div>
+            <div class="thumb keep"><span class="mark">F</span></div>
+            <div class="thumb keep"><span class="mark">R</span></div>
+            <div class="thumb reject"><span class="mark">T</span></div>
+          </div>
+        </div>
+        <div class="slide-text">
+          <span class="slide-eyebrow">01 &mdash; Track</span>
+          <h2>See your shelf at a glance</h2>
+          <p>Every book you own or want gets a home, tagged as reading, finished, or next up.</p>
+        </div>
+      </article>
+
+      <article class="slide">
+        <div class="mock-panel" aria-hidden="true">
+          <div class="panel-head"><span><span class="dot"></span>CURRENTLY READING</span><span>2 books</span></div>
+          <div class="mock-list">
+            <div class="mock-row"><span class="name">Project Hail Mary</span><span class="pill">62%</span></div>
+            <div class="mock-row"><span class="name">The Hobbit</span><span class="pill">12%</span></div>
+          </div>
+        </div>
+        <div class="slide-text">
+          <span class="slide-eyebrow">02 &mdash; Log</span>
+          <h2>Pick up right where you left off</h2>
+          <p>A quick log after each sitting keeps your page count honest, and shows how close you are to done.</p>
+        </div>
+      </article>
+
+      <article class="slide">
+        <div class="mock-panel" aria-hidden="true">
+          <div class="panel-head"><span><span class="dot"></span>2026 SO FAR</span><span>31 books</span></div>
+          <div class="mock-bars">
+            <div class="bar-col"><div class="bar" style="height:30%;"></div><span class="bar-label">Jan</span></div>
+            <div class="bar-col"><div class="bar" style="height:55%;"></div><span class="bar-label">Feb</span></div>
+            <div class="bar-col"><div class="bar" style="height:40%;"></div><span class="bar-label">Mar</span></div>
+            <div class="bar-col"><div class="bar" style="height:80%;"></div><span class="bar-label">Apr</span></div>
+            <div class="bar-col"><div class="bar" style="height:65%;"></div><span class="bar-label">May</span></div>
+            <div class="bar-col"><div class="bar" style="height:95%;"></div><span class="bar-label">Jun</span></div>
+          </div>
+        </div>
+        <div class="slide-text">
+          <span class="slide-eyebrow">03 &mdash; Reflect</span>
+          <h2>Watch your reading add up</h2>
+          <p>Totals by month and genre turn a shelf of books into a shape you can actually see.</p>
+        </div>
+      </article>
+
+    </div>
+
+    <div class="slide-controls">
+      <button class="nav-arrow prev" aria-label="Previous">&lsaquo;</button>
+      <div class="dots">
+        <button class="dot is-active" data-index="0" aria-label="Slide 1"></button>
+        <button class="dot" data-index="1" aria-label="Slide 2"></button>
+        <button class="dot" data-index="2" aria-label="Slide 3"></button>
+      </div>
+      <button class="nav-arrow next" aria-label="Next">&rsaquo;</button>
+    </div>
+  </div>
+
+  <div class="cta-row">
+    <span class="btn soon">Web version coming soon</span>
+    <a class="btn quiet" href="https://github.com/sparsileg/scriptum">GitHub</a>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    Built by <a href="https://github.com/sparsileg">sparsileg</a>
+  </div>
+</footer>
+
+<script src="nav.js"></script>
+</body>
+</html>

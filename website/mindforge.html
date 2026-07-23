@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Mindforge — spaced-repetition flashcards.">
+<title>Mindforge — Astryx Tools</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Julius+Sans+One&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body class="accent-mindforge">
+
+<header class="wrap sub-header">
+  <a class="back-link" href="index.html">&larr; Astryx.tools</a>
+  <h1 class="page-title">Mindforge</h1>
+  <p class="page-subtitle">Spaced-repetition flashcards</p>
+</header>
+
+<main class="wrap">
+  <div class="slideshow">
+    <div class="slides">
+
+      <article class="slide is-active">
+        <div class="mock-panel" aria-hidden="true">
+          <div class="panel-head"><span><span class="dot"></span>DECKS</span><span>3 active</span></div>
+          <div class="mock-list">
+            <div class="mock-row"><span class="name">Spanish Verbs</span><span class="pill">128 cards</span></div>
+            <div class="mock-row"><span class="name">Organic Chemistry</span><span class="pill">64 cards</span></div>
+            <div class="mock-row"><span class="name">Star Names</span><span class="pill">40 cards</span></div>
+          </div>
+        </div>
+        <div class="slide-text">
+          <span class="slide-eyebrow">01 &mdash; Build</span>
+          <h2>Organize what you're learning</h2>
+          <p>Group cards into decks for whatever you're studying, from language drills to exam prep.</p>
+        </div>
+      </article>
+
+      <article class="slide">
+        <div class="mock-panel" aria-hidden="true">
+          <div class="panel-head"><span><span class="dot"></span>TODAY'S REVIEW</span><span>18 due</span></div>
+          <div class="mock-flip">
+            <div class="flip-face"><span class="tag">Front</span><span class="word">&iquest;C&oacute;mo est&aacute;s?</span></div>
+            <span class="flip-arrow">&rarr;</span>
+            <div class="flip-face"><span class="tag">Back</span><span class="word">How are you?</span><span class="sub">informal</span></div>
+          </div>
+        </div>
+        <div class="slide-text">
+          <span class="slide-eyebrow">02 &mdash; Study</span>
+          <h2>Review on a schedule that adapts</h2>
+          <p>Cards you know well show up less; cards you're shaky on come back sooner, so study time goes where it's actually needed.</p>
+        </div>
+      </article>
+
+      <article class="slide">
+        <div class="mock-panel" aria-hidden="true">
+          <div class="panel-head"><span><span class="dot"></span>STREAK</span><span>23 days</span></div>
+          <div class="mock-heatmap">
+            <div class="cell" style="opacity:.9"></div><div class="cell" style="opacity:.3"></div><div class="cell" style="opacity:.7"></div><div class="cell" style="opacity:1"></div><div class="cell" style="opacity:.5"></div><div class="cell" style="opacity:.8"></div><div class="cell" style="opacity:.2"></div>
+            <div class="cell" style="opacity:.6"></div><div class="cell" style="opacity:1"></div><div class="cell" style="opacity:.4"></div><div class="cell" style="opacity:.9"></div><div class="cell" style="opacity:.7"></div><div class="cell" style="opacity:.3"></div><div class="cell" style="opacity:1"></div>
+            <div class="cell" style="opacity:.5"></div><div class="cell" style="opacity:.8"></div><div class="cell" style="opacity:1"></div><div class="cell" style="opacity:.6"></div><div class="cell" style="opacity:.2"></div><div class="cell" style="opacity:.9"></div><div class="cell" style="opacity:.7"></div>
+            <div class="cell" style="opacity:1"></div><div class="cell" style="opacity:.4"></div><div class="cell" style="opacity:.8"></div><div class="cell" style="opacity:1"></div><div class="cell" style="opacity:.6"></div><div class="cell" style="opacity:.3"></div><div class="cell" style="opacity:.9"></div>
+          </div>
+        </div>
+        <div class="slide-text">
+          <span class="slide-eyebrow">03 &mdash; Stay consistent</span>
+          <h2>Watch the habit build</h2>
+          <p>A quiet daily streak keeps momentum visible, so skipping a day feels like something worth avoiding.</p>
+        </div>
+      </article>
+
+    </div>
+
+    <div class="slide-controls">
+      <button class="nav-arrow prev" aria-label="Previous">&lsaquo;</button>
+      <div class="dots">
+        <button class="dot is-active" data-index="0" aria-label="Slide 1"></button>
+        <button class="dot" data-index="1" aria-label="Slide 2"></button>
+        <button class="dot" data-index="2" aria-label="Slide 3"></button>
+      </div>
+      <button class="nav-arrow next" aria-label="Next">&rsaquo;</button>
+    </div>
+  </div>
+
+  <div class="cta-row">
+    <a class="btn primary" href="https://mindforge.astryx.tools">Open Mindforge</a>
+    <a class="btn quiet" href="https://github.com/sparsileg/mindforge">GitHub</a>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    Built by <a href="https://github.com/sparsileg">sparsileg</a>
+  </div>
+</footer>
+
+<script src="nav.js"></script>
+</body>
+</html>
