@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Photyx — astrophotography pre-processing and filtering.">
+<title>Photyx — Astryx Tools</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Julius+Sans+One&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body class="accent-photyx">
+
+<header class="wrap sub-header">
+  <a class="back-link" href="index.html">&larr; Astryx.tools</a>
+  <h1 class="page-title">Photyx</h1>
+  <p class="page-subtitle">Astrophotography pre-processing and filtering</p>
+</header>
+
+<main class="wrap">
+  <div class="slideshow">
+    <div class="slides">
+
+      <article class="slide is-active">
+        <div class="mock-panel" aria-hidden="true">
+          <div class="panel-head"><span><span class="dot"></span>CULL QUEUE</span><span>214 subs</span></div>
+          <div class="mock-grid-thumbs">
+            <div class="thumb keep"><span class="mark">&check;</span></div>
+            <div class="thumb keep"><span class="mark">&check;</span></div>
+            <div class="thumb reject"><span class="mark">&times;</span></div>
+            <div class="thumb keep"><span class="mark">&check;</span></div>
+            <div class="thumb reject"><span class="mark">&times;</span></div>
+            <div class="thumb keep"><span class="mark">&check;</span></div>
+            <div class="thumb keep"><span class="mark">&check;</span></div>
+            <div class="thumb reject"><span class="mark">&times;</span></div>
+          </div>
+        </div>
+        <div class="slide-text">
+          <span class="slide-eyebrow">01 &mdash; Cull</span>
+          <h2>Throw out the bad subs in minutes</h2>
+          <p>Flip through your frames and keep or reject with a keystroke, so hours of subs become minutes of decisions.</p>
+        </div>
+      </article>
+
+      <article class="slide">
+        <div class="mock-panel" aria-hidden="true">
+          <div class="panel-head"><span><span class="dot"></span>FRAME QUALITY</span><span>top 5</span></div>
+          <div class="mock-bars">
+            <div class="bar-col"><div class="bar" style="height:52%;"></div><span class="bar-label">01</span></div>
+            <div class="bar-col"><div class="bar" style="height:88%;"></div><span class="bar-label">02</span></div>
+            <div class="bar-col"><div class="bar" style="height:71%;"></div><span class="bar-label">03</span></div>
+            <div class="bar-col"><div class="bar" style="height:95%;"></div><span class="bar-label">04</span></div>
+            <div class="bar-col"><div class="bar" style="height:63%;"></div><span class="bar-label">05</span></div>
+          </div>
+        </div>
+        <div class="slide-text">
+          <span class="slide-eyebrow">02 &mdash; Grade</span>
+          <h2>See quality at a glance</h2>
+          <p>Star roundness, background noise, and gradient scores line up side by side, so the frames worth stacking are obvious.</p>
+        </div>
+      </article>
+
+      <article class="slide">
+        <div class="mock-panel" aria-hidden="true">
+          <div class="panel-head"><span><span class="dot"></span>READY FOR STACKING</span><span>3 batches</span></div>
+          <div class="mock-list">
+            <div class="mock-row"><span class="name">Lights_M31_Batch1</span><span class="pill muted">Queued</span></div>
+            <div class="mock-row"><span class="name">Darks_Set_A</span><span class="pill">Exported</span></div>
+            <div class="mock-row"><span class="name">Flats_Session12</span><span class="pill muted">Queued</span></div>
+          </div>
+        </div>
+        <div class="slide-text">
+          <span class="slide-eyebrow">03 &mdash; Hand off</span>
+          <h2>Hand off a clean stack</h2>
+          <p>Approved subs get organized and renamed automatically, so your stacking software opens a folder that's already sorted.</p>
+        </div>
+      </article>
+
+    </div>
+
+    <div class="slide-controls">
+      <button class="nav-arrow prev" aria-label="Previous">&lsaquo;</button>
+      <div class="dots">
+        <button class="dot is-active" data-index="0" aria-label="Slide 1"></button>
+        <button class="dot" data-index="1" aria-label="Slide 2"></button>
+        <button class="dot" data-index="2" aria-label="Slide 3"></button>
+      </div>
+      <button class="nav-arrow next" aria-label="Next">&rsaquo;</button>
+    </div>
+  </div>
+
+  <div class="cta-row">
+    <a class="btn primary" href="https://github.com/sparsileg/Photyx">GitHub</a>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    Built by <a href="https://github.com/sparsileg">sparsileg</a>
+  </div>
+</footer>
+
+<script src="nav.js"></script>
+</body>
+</html>

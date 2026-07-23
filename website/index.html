@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Astryx Tools — a small constellation of tools: astrophotography planning and processing, flashcards, and book tracking.">
+<title>Astryx Tools</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Julius+Sans+One&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="wrap">
+  <h1 class="wordmark">Astryx<span class="tld">.tools</span></h1>
+  <p class="tagline">A small constellation of tools — for the night sky, and for keeping a mind and a library in order.</p>
+
+  <svg class="constellation" viewBox="0 0 420 130" role="img" aria-label="Four stars joined into a constellation, one per tool">
+    <line x1="60"  y1="90" x2="170" y2="40"/>
+    <line x1="170" y1="40" x2="265" y2="85"/>
+    <line x1="265" y1="85" x2="365" y2="35"/>
+    <circle class="halo s-astryx"    cx="60"  cy="90"/>
+    <circle class="halo s-photyx"    cx="170" cy="40"/>
+    <circle class="halo s-mindforge" cx="265" cy="85"/>
+    <circle class="halo s-scriptum"  cx="365" cy="35"/>
+    <circle class="star s-astryx"    cx="60"  cy="90"/>
+    <circle class="star s-photyx"    cx="170" cy="40"/>
+    <circle class="star s-mindforge" cx="265" cy="85"/>
+    <circle class="star s-scriptum"  cx="365" cy="35"/>
+  </svg>
+</header>
+
+<main class="wrap">
+  <div class="grid">
+
+    <!-- ASTRYX — hero card, spans the full grid width -->
+    <section class="card astryx hero">
+      <div class="hero-top">
+        <span class="hero-eyebrow">Flagship &middot; astrophotography planning</span>
+        <div class="badges"><span class="badge">web</span></div>
+      </div>
+
+      <div class="hero-body">
+        <div class="hero-copy">
+          <h2>Astryx</h2>
+          <p class="lede">Know what's worth shooting before you haul the gear outside. Astryx lays out what's in the sky tonight, when it clears your horizon, and how it'll actually frame in your rig.</p>
+
+          <ul class="feature-list">
+            <li>
+              <svg width="14" height="14" viewBox="0 0 14 14"><circle cx="7" cy="7" r="6" fill="none" stroke="#F2C14E" stroke-width="1.3"/><circle cx="7" cy="7" r="2" fill="#F2C14E"/></svg>
+              <span><b>Plan the night —</b> <span class="desc">altitude, transit time, and moon interference for any target, at your exact location.</span></span>
+            </li>
+            <li>
+              <svg width="14" height="14" viewBox="0 0 14 14"><rect x="1.5" y="1.5" width="11" height="11" fill="none" stroke="#F2C14E" stroke-width="1.3" rx="1.5"/><path d="M4 7h6M7 4v6" stroke="#F2C14E" stroke-width="1.3"/></svg>
+              <span><b>Frame it first —</b> <span class="desc">preview field of view for your scope and camera before the target ever rises.</span></span>
+            </li>
+            <li>
+              <svg width="14" height="14" viewBox="0 0 14 14"><path d="M2 11 L5 6 L8 8 L12 3" fill="none" stroke="#F2C14E" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <span><b>Track your sessions —</b> <span class="desc">log conditions and outcomes so next time's plan is better than this one.</span></span>
+            </li>
+          </ul>
+
+          <div class="actions">
+            <a class="btn primary" href="https://app.astryx.tools">Open Astryx</a>
+            <a class="btn tour" href="astryx.html">See how it works</a>
+            <a class="btn quiet" href="https://github.com/sparsileg/astryx">GitHub</a>
+          </div>
+        </div>
+
+        <div class="hero-visual" aria-hidden="true">
+          <div class="panel-head"><span><span class="dot"></span>TONIGHT'S PLAN</span><span>42.3&deg;N</span></div>
+
+          <div class="panel-target">
+            <div class="name">M31 &middot; Andromeda Galaxy</div>
+            <div class="cat">Galaxy &middot; mag 3.4</div>
+          </div>
+
+          <div class="panel-stats">
+            <div class="stat"><div class="label">Window</div><div class="value">9:42p&ndash;1:15a</div></div>
+            <div class="stat"><div class="label">Peak alt</div><div class="value accent">61&deg;</div></div>
+            <div class="stat"><div class="label">Moon</div><div class="value">12%</div></div>
+          </div>
+
+          <div class="panel-chart">
+            <svg viewBox="0 0 300 60">
+              <polyline points="0,50 30,44 60,34 90,22 120,13 150,9 180,13 210,22 240,34 270,44 300,50" fill="none" stroke="#F2C14E" stroke-width="2"/>
+              <line x1="0" y1="55" x2="300" y2="55" stroke="#26305C" stroke-width="1"/>
+              <circle cx="150" cy="9" r="3" fill="#F2C14E"/>
+            </svg>
+          </div>
+
+          <div class="panel-frame">
+            <div class="panel-frame-label">Framing preview</div>
+            <svg viewBox="0 0 300 140">
+              <rect width="300" height="140" fill="#0B1026"/>
+              <ellipse cx="150" cy="70" rx="70" ry="46" fill="#E4536B" opacity="0.16"/>
+              <ellipse cx="130" cy="60" rx="42" ry="26" fill="#E4536B" opacity="0.22"/>
+              <ellipse cx="175" cy="85" rx="30" ry="18" fill="#7C9EF5" opacity="0.14"/>
+              <circle cx="60" cy="24" r="1" fill="#E8ECF8" opacity="0.7"/>
+              <circle cx="245" cy="35" r="1.2" fill="#E8ECF8" opacity="0.6"/>
+              <circle cx="270" cy="100" r="1" fill="#E8ECF8" opacity="0.5"/>
+              <circle cx="40" cy="110" r="1.3" fill="#E8ECF8" opacity="0.6"/>
+              <circle cx="200" cy="20" r="1" fill="#E8ECF8" opacity="0.5"/>
+              <rect x="75" y="25" width="150" height="90" fill="none" stroke="#F2C14E" stroke-width="1.5"/>
+              <path d="M75 40V25H90 M210 25H225V40 M225 100V115H210 M90 115H75V100" fill="none" stroke="#F2C14E" stroke-width="1.5"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Secondary tools -->
+    <div class="secondary-row" style="grid-column: 1 / -1;">
+      <p class="secondary-heading">Also in the constellation</p>
+      <div class="grid">
+
+        <section class="card photyx">
+          <h2>Photyx</h2>
+          <div class="badges"><span class="badge">desktop</span></div>
+          <p>Astrophotography pre-processing and filtering — cull, grade, and prepare your subs before they ever reach the stacking stage.</p>
+          <a class="learn-more" href="photyx.html">See screenshots &amp; details &rarr;</a>
+          <div class="actions">
+            <a class="btn primary" href="https://github.com/sparsileg/Photyx">GitHub</a>
+          </div>
+        </section>
+
+        <section class="card mindforge">
+          <h2>Mindforge</h2>
+          <div class="badges"><span class="badge">web</span><span class="badge">pwa</span></div>
+          <p>Spaced-repetition flashcards — build decks, study on a schedule that adapts to how well you actually remember, and keep a streak going.</p>
+          <a class="learn-more" href="mindforge.html">See screenshots &amp; details &rarr;</a>
+          <div class="actions">
+            <a class="btn primary" href="https://mindforge.astryx.tools">Open Mindforge</a>
+            <a class="btn quiet" href="https://github.com/sparsileg/mindforge">GitHub</a>
+          </div>
+        </section>
+
+        <section class="card scriptum">
+          <h2>Scriptum</h2>
+          <div class="badges"><span class="badge">desktop</span><span class="badge">web</span></div>
+          <p>A book management system — track what you've read, what's next, and the library you actually own.</p>
+          <a class="learn-more" href="scriptum.html">See screenshots &amp; details &rarr;</a>
+          <div class="actions">
+            <span class="btn soon">Web version coming soon</span>
+            <a class="btn quiet" href="https://github.com/sparsileg/scriptum">GitHub</a>
+          </div>
+        </section>
+
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    Built by <a href="https://github.com/sparsileg">sparsileg</a>
+  </div>
+</footer>
+
+</body>
+</html>

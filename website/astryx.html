@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Astryx — astrophotography session planning.">
+<title>Astryx — Astryx Tools</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Julius+Sans+One&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body class="accent-astryx">
+
+<header class="wrap sub-header">
+  <a class="back-link" href="index.html">&larr; Astryx.tools</a>
+  <h1 class="page-title">Astryx</h1>
+  <p class="page-subtitle">Astrophotography session planning</p>
+</header>
+
+<main class="wrap">
+  <div class="slideshow">
+    <div class="slides">
+
+      <article class="slide is-active">
+        <div class="mock-panel" aria-hidden="true">
+          <div class="panel-head"><span><span class="dot"></span>TONIGHT'S PLAN</span><span>3 targets</span></div>
+          <div class="mock-list">
+            <div class="mock-row"><span class="name">M31 &middot; Andromeda Galaxy</span><span class="pill">peak 61&deg;</span></div>
+            <div class="mock-row"><span class="name">M42 &middot; Orion Nebula</span><span class="pill">rising</span></div>
+            <div class="mock-row"><span class="name">M13 &middot; Hercules Cluster</span><span class="pill muted">low</span></div>
+          </div>
+        </div>
+        <div class="slide-text">
+          <span class="slide-eyebrow">01 &mdash; Plan</span>
+          <h2>See the whole night at a glance</h2>
+          <p>Astryx checks altitude, transit time, and moon phase for every target on your list, so you know before dark which ones are actually worth the setup time.</p>
+        </div>
+      </article>
+
+      <article class="slide">
+        <div class="mock-panel" aria-hidden="true">
+          <div class="panel-frame" style="border-top:none;">
+            <div class="panel-frame-label">Framing preview &middot; Pleiades</div>
+            <svg viewBox="0 0 300 140">
+              <rect width="300" height="140" fill="#0B1026"/>
+              <circle cx="150" cy="60" r="3" fill="#E8ECF8"/>
+              <circle cx="168" cy="50" r="2" fill="#E8ECF8"/>
+              <circle cx="135" cy="48" r="1.6" fill="#E8ECF8"/>
+              <circle cx="160" cy="78" r="1.8" fill="#E8ECF8"/>
+              <circle cx="140" cy="80" r="1.4" fill="#E8ECF8"/>
+              <circle cx="180" cy="70" r="1.4" fill="#E8ECF8"/>
+              <circle cx="120" cy="65" r="1.2" fill="#E8ECF8"/>
+              <ellipse cx="150" cy="62" rx="55" ry="34" fill="#7C9EF5" opacity="0.08"/>
+              <rect x="75" y="25" width="150" height="90" fill="none" stroke="#F2C14E" stroke-width="1.5"/>
+              <path d="M75 40V25H90 M210 25H225V40 M225 100V115H210 M90 115H75V100" fill="none" stroke="#F2C14E" stroke-width="1.5"/>
+            </svg>
+          </div>
+        </div>
+        <div class="slide-text">
+          <span class="slide-eyebrow">02 &mdash; Frame</span>
+          <h2>Frame it before you set up</h2>
+          <p>Match your scope and camera to get an accurate field-of-view preview, so you're not discovering the crop only after the shutter clicks.</p>
+        </div>
+      </article>
+
+      <article class="slide">
+        <div class="mock-panel" aria-hidden="true">
+          <div class="panel-head"><span><span class="dot"></span>SESSION LOG</span><span>last 3</span></div>
+          <div class="mock-list">
+            <div class="mock-row"><span class="name">Jul 12 &middot; M31 &middot; 3.5h</span><span class="pill">Good</span></div>
+            <div class="mock-row"><span class="name">Jul 06 &middot; M27 &middot; 40m</span><span class="pill muted">Clouded out</span></div>
+            <div class="mock-row"><span class="name">Jun 29 &middot; M13 &middot; 2h</span><span class="pill">Partial</span></div>
+          </div>
+        </div>
+        <div class="slide-text">
+          <span class="slide-eyebrow">03 &mdash; Learn</span>
+          <h2>Learn from every night out</h2>
+          <p>Log conditions and results after each session, so your planning gets sharper the more you shoot.</p>
+        </div>
+      </article>
+
+    </div>
+
+    <div class="slide-controls">
+      <button class="nav-arrow prev" aria-label="Previous">&lsaquo;</button>
+      <div class="dots">
+        <button class="dot is-active" data-index="0" aria-label="Slide 1"></button>
+        <button class="dot" data-index="1" aria-label="Slide 2"></button>
+        <button class="dot" data-index="2" aria-label="Slide 3"></button>
+      </div>
+      <button class="nav-arrow next" aria-label="Next">&rsaquo;</button>
+    </div>
+  </div>
+
+  <div class="cta-row">
+    <a class="btn primary" href="https://app.astryx.tools">Open Astryx</a>
+    <a class="btn quiet" href="https://github.com/sparsileg/astryx">GitHub</a>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    Built by <a href="https://github.com/sparsileg">sparsileg</a>
+  </div>
+</footer>
+
+<script src="nav.js"></script>
+</body>
+</html>
