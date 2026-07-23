@@ -89,61 +89,52 @@ const DSSCache = {
     // ─── Tauri filesystem backend ─────────────────────────────────────────────
 
     _cacheDir: null,
-    _indexPath: null,
-    _index: null,
 
     async _ensureInit() {
         if (this._cacheDir) return;
         const { appDataDir, join } = window.__TAURI__.path;
         const appData = await appDataDir();
         this._cacheDir = await join(appData, 'dss-cache');
-        this._indexPath = await join(this._cacheDir, 'index.json');
         const { mkdir } = window.__TAURI__.fs;
         await mkdir(this._cacheDir, { recursive: true }).catch(() => {});
-        await this._loadIndex();
-    },
-
-    async _loadIndex() {
-        try {
-            const { readTextFile } = window.__TAURI__.fs;
-            const text = await readTextFile(this._indexPath);
-            this._index = JSON.parse(text);
-        } catch (e) {
-            this._index = {};
-        }
-    },
-
-    async _saveIndex() {
-        try {
-            const { writeTextFile } = window.__TAURI__.fs;
-            await writeTextFile(this._indexPath, JSON.stringify(this._index));
-        } catch (e) {
-            console.warn('DSSCache: failed to write index:', e);
-        }
     },
 
     async _getFromFile(key, duration) {
         try {
             await this._ensureInit();
-            const entry = this._index[key];
-            if (!entry) return null;
-            const age = Date.now() - (entry.lastAccessed ?? entry.timestamp);
+            const { join } = window.__TAURI__.path;
+            const { readFile, stat } = window.__TAURI__.fs;
+            const filePath = await join(this._cacheDir, key + '.jpg');
+            const info = await stat(filePath);
+            const age = Date.now() - info.mtime.getTime();
             if (age > duration) {
                 await this._deleteFile(key);
                 return null;
             }
-            const { join } = window.__TAURI__.path;
-            const { readFile } = window.__TAURI__.fs;
-            const filePath = await join(this._cacheDir, key + '.jpg');
             const bytes = await readFile(filePath);
-            const base64 = btoa(String.fromCharCode(...new Uint8Array(bytes)));
-            // Update lastAccessed
-            this._index[key].lastAccessed = Date.now();
-            await this._saveIndex();
+            const base64 = this._bytesToBase64(bytes);
             return 'data:image/jpeg;base64,' + base64;
         } catch (e) {
             return null;
         }
+    },
+
+    /**
+     * Convert bytes to base64 in fixed-size chunks (Issue #221).
+     * btoa(String.fromCharCode(...bytes)) spreads the entire array as
+     * individual call arguments — slow for larger images and a potential
+     * RangeError ("Maximum call stack size exceeded") on large ones.
+     * Chunking avoids both.
+     */
+    _bytesToBase64(bytes) {
+        const CHUNK_SIZE = APP_CONFIG.DSS_BASE64_CHUNK_SIZE;
+        const byteArray = new Uint8Array(bytes);
+        let binary = '';
+        for (let i = 0; i < byteArray.length; i += CHUNK_SIZE) {
+            const chunk = byteArray.subarray(i, i + CHUNK_SIZE);
+            binary += String.fromCharCode(...chunk);
+        }
+        return btoa(binary);
     },
 
     async _saveToFile(key, dataUrl) {
@@ -160,9 +151,6 @@ const DSSCache = {
             }
             const filePath = await join(this._cacheDir, key + '.jpg');
             await writeFile(filePath, bytes);
-            const now = Date.now();
-            this._index[key] = { timestamp: now, lastAccessed: now };
-            await this._saveIndex();
         } catch (e) {
             console.warn('DSSCache: failed to save file:', e);
         }
@@ -174,8 +162,6 @@ const DSSCache = {
             const { removeFile } = window.__TAURI__.fs;
             const filePath = await join(this._cacheDir, key + '.jpg');
             await removeFile(filePath).catch(() => {});
-            delete this._index[key];
-            await this._saveIndex();
         } catch (e) {
             console.warn('DSSCache: failed to delete file:', e);
         }
@@ -184,12 +170,16 @@ const DSSCache = {
     async _purgeFiles(duration) {
         try {
             await this._ensureInit();
+            const { join } = window.__TAURI__.path;
+            const { readDir, stat, removeFile } = window.__TAURI__.fs;
+            const entries = await readDir(this._cacheDir);
             const cutoff = Date.now() - duration;
-            for (const key of Object.keys(this._index)) {
-                const entry = this._index[key];
-                const lastAccessed = entry.lastAccessed ?? entry.timestamp;
-                if (lastAccessed < cutoff) {
-                    await this._deleteFile(key);
+            for (const entry of entries) {
+                if (!entry.name || !entry.name.endsWith('.jpg')) continue;
+                const filePath = await join(this._cacheDir, entry.name);
+                const info = await stat(filePath);
+                if (info.mtime.getTime() < cutoff) {
+                    await removeFile(filePath).catch(() => {});
                 }
             }
         } catch (e) {
