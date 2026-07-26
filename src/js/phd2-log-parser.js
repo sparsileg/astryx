@@ -101,11 +101,14 @@ const Phd2LogParser = {
                 if (m) eq.mount = m[1].trim();
             }
             if (eq.raAlgorithm === null) {
-                const m = line.match(/^RA Guide algorithm = ([^,]+)/);
+                // #231 item 2: was matching "RA Guide algorithm =", but the
+                // actual log format is "X guide algorithm =" — always null
+                // before this fix (log-format-survey.md §3.2).
+                const m = line.match(/^X guide algorithm = ([^,]+)/);
                 if (m) eq.raAlgorithm = m[1].trim();
             }
             if (eq.decAlgorithm === null) {
-                const m = line.match(/^Dec Guide algorithm = ([^,]+)/);
+                const m = line.match(/^Y guide algorithm = ([^,]+)/);
                 if (m) eq.decAlgorithm = m[1].trim();
             }
             // Stop once we have all equipment info (before first Guiding Begins)
@@ -129,6 +132,14 @@ const Phd2LogParser = {
     // this session. Only called for Guiding Begins, never Calibration Begins,
     // so calibration headers (46 of 557 in the corpus) never leak into a
     // session's equipment by construction.
+    //
+    // #231: expanded from pixel scale/binning-only to the full design doc
+    // §4.2 field set, returned as three sibling objects (equipment,
+    // geometry, rates) matching the GuideSession shape rather than one flat
+    // object. xAngle/xRate/yAngle/yRate/parity turned out to live on the
+    // same "Mount = ..." line as the mount string itself, not on a separate
+    // per-calibration line as the design doc's naming might suggest —
+    // confirmed against the raw 2026-05-11 log before writing these regexes.
     _extractSessionHeader(lines, startIdx) {
         const eq = {
             pixelScaleArcsec: null,
@@ -139,6 +150,33 @@ const Phd2LogParser = {
             mount: null,
             searchRegionPx: null,
             starMassTolerancePct: null,
+            ditherScale: null,
+            ditherAxes: null,
+            serverEnabled: null,
+            raAlgorithm: null,
+            raAggression: null,
+            raHysteresis: null,
+            raMinMove: null,
+            decAlgorithm: null,
+            decAggression: null,
+            decMinMove: null,
+            backlashComp: null,
+        };
+        const geometry = {
+            decDeg: null,
+            hourAngleHr: null,
+            pierSide: null,
+            lockPosition: null,
+            starPosition: null,
+            initialHfdPx: null,
+            frameSize: null,
+        };
+        const rates = {
+            xAngle: null,
+            xRate: null,
+            yAngle: null,
+            yRate: null,
+            parity: null,
         };
 
         const limit = Math.min(startIdx + this.HEADER_SCAN_LIMIT, lines.length);
@@ -183,9 +221,103 @@ const Phd2LogParser = {
                 const m = line.match(/^Mount = ([^,]+)/);
                 if (m) eq.mount = m[1].trim();
             }
+
+            // --- Dither / server (Dither = ... line) ---
+            if (eq.ditherAxes === null && line.startsWith('Dither = ')) {
+                const m = line.match(/^Dither = ([^,]+)/);
+                if (m) eq.ditherAxes = m[1].trim();
+                const scaleMatch = line.match(/Dither scale = ([\d.]+)/);
+                if (scaleMatch) eq.ditherScale = parseFloat(scaleMatch[1]);
+                if (line.includes('Server enabled')) eq.serverEnabled = true;
+                else if (line.includes('Server disabled')) eq.serverEnabled = false;
+            }
+
+            // --- Camera line also carries frame size (geometry) ---
+            if (geometry.frameSize === null) {
+                const m = line.match(/full size = (\d+) x (\d+)/);
+                if (m) geometry.frameSize = { w: parseInt(m[1]), h: parseInt(m[2]) };
+            }
+
+            // --- Mount line also carries calibration rates + parity ---
+            if (rates.xAngle === null) {
+                const m = line.match(/xAngle = (-?[\d.]+)/);
+                if (m) rates.xAngle = parseFloat(m[1]);
+            }
+            if (rates.xRate === null) {
+                const m = line.match(/xRate = ([\d.]+)/);
+                if (m) rates.xRate = parseFloat(m[1]);
+            }
+            if (rates.yAngle === null) {
+                const m = line.match(/yAngle = (-?[\d.]+)/);
+                if (m) rates.yAngle = parseFloat(m[1]);
+            }
+            if (rates.yRate === null) {
+                const m = line.match(/yRate = ([\d.]+)/);
+                if (m) rates.yRate = parseFloat(m[1]);
+            }
+            if (rates.parity === null) {
+                const m = line.match(/parity = ([^,]+)/);
+                if (m) rates.parity = m[1].trim();
+            }
+
+            // --- X/Y guide algorithm lines (also fixes the RA/Dec-Guide
+            // naming bug from #231 item 2, at the per-session level this
+            // time — the top-level _extractEquipment fix above covers the
+            // whole-log summary field) ---
+            if (eq.raAlgorithm === null && line.startsWith('X guide algorithm = ')) {
+                const m = line.match(/^X guide algorithm = ([^,]+)/);
+                if (m) eq.raAlgorithm = m[1].trim();
+                const hyst = line.match(/Hysteresis = ([\d.]+)/);
+                if (hyst) eq.raHysteresis = parseFloat(hyst[1]);
+                const agg = line.match(/Aggression = ([\d.]+)/);
+                if (agg) eq.raAggression = parseFloat(agg[1]);
+                const minMove = line.match(/Minimum move = ([\d.]+)/);
+                if (minMove) eq.raMinMove = parseFloat(minMove[1]);
+            }
+            if (eq.decAlgorithm === null && line.startsWith('Y guide algorithm = ')) {
+                const m = line.match(/^Y guide algorithm = ([^,]+)/);
+                if (m) eq.decAlgorithm = m[1].trim();
+                const minMove = line.match(/Minimum move = ([\d.]+)/);
+                if (minMove) eq.decMinMove = parseFloat(minMove[1]);
+                // Dec's Aggression is a whole-number percent ("55%"), unlike
+                // RA's decimal fraction ("0.450") — stored as given, units
+                // differ between the two axes because PHD2 itself reports
+                // Hysteresis and Resist Switch aggression differently.
+                const agg = line.match(/Aggression = (\d+)%/);
+                if (agg) eq.decAggression = parseInt(agg[1]);
+            }
+
+            // --- Backlash comp ---
+            if (eq.backlashComp === null && line.startsWith('Backlash comp = ')) {
+                const pulseMatch = line.match(/pulse = (\d+)/);
+                eq.backlashComp = {
+                    enabled: !line.includes('disabled'),
+                    pulseMs: pulseMatch ? parseInt(pulseMatch[1]) : null,
+                };
+            }
+
+            // --- Geometry: Dec/hour angle/pier side ---
+            if (geometry.decDeg === null && line.startsWith('Dec = ')) {
+                const decMatch = line.match(/^Dec = (-?[\d.]+)/);
+                if (decMatch) geometry.decDeg = parseFloat(decMatch[1]);
+                const haMatch = line.match(/Hour angle = (-?[\d.]+)/);
+                if (haMatch) geometry.hourAngleHr = parseFloat(haMatch[1]);
+                const pierMatch = line.match(/Pier side = (\w+)/);
+                if (pierMatch) geometry.pierSide = pierMatch[1];
+            }
+
+            // --- Geometry: lock/star position, HFD ---
+            if (geometry.lockPosition === null && line.startsWith('Lock position = ')) {
+                const lockMatch = line.match(/Lock position = ([\d.]+), ([\d.]+)/);
+                if (lockMatch) geometry.lockPosition = { x: parseFloat(lockMatch[1]), y: parseFloat(lockMatch[2]) };
+                const starMatch = line.match(/Star position = ([\d.]+), ([\d.]+)/);
+                if (starMatch) geometry.starPosition = { x: parseFloat(starMatch[1]), y: parseFloat(starMatch[2]) };
+                const hfdMatch = line.match(/HFD = ([\d.]+) px/);
+                if (hfdMatch) geometry.initialHfdPx = parseFloat(hfdMatch[1]);
+            }
         }
 
-        return eq;
+        return { equipment: eq, geometry, rates };
     },
 
     _extractSessions(lines, fallbackPixelScale) {
@@ -205,13 +337,16 @@ const Phd2LogParser = {
                 const m = line.match(/Guiding Begins at (.+)/);
                 if (m) {
                     sessionNum++;
+                    const header = this._extractSessionHeader(lines, i + 1);
                     current = {
                         num: sessionNum,
                         startTime: m[1].trim(),
                         startLine: i + 1,
                         endTime: null,
                         endLine: null,
-                        equipment: this._extractSessionHeader(lines, i + 1),
+                        equipment: header.equipment,
+                        geometry: header.geometry,
+                        rates: header.rates,
                         frames: [],
                         drops: [],
                         ditherEvents: [],
