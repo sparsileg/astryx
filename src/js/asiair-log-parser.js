@@ -7,6 +7,8 @@ const AsiairLogParser = {
 
     /**
      * Parse an ASIAir Autorun log text into structured session data.
+     * Performs no writes — see updateLearnedValues() for the deliberate,
+     * explicitly-invoked counterpart (ELR.p1-4).
      * @param {string} text - Raw log file contents
      * @returns {object} Parsed session data
      */
@@ -18,14 +20,12 @@ const AsiairLogParser = {
         const date = this._extractDate(lines);
         const exposure = this._extractExposure(lines);
         const totalSubs = this._extractTotalSubs(lines);
-        const events = this._extractEvents(lines);
-        const summary = this._computeSummary(events);
-        const recommendations = this._computeRecommendations(events, summary, exposure);
+        const { events, parseFailures } = this._extractEvents(lines);
+        const wallClock = this._extractWallClock(lines);
+        const summary = this._computeSummary(events, wallClock.wallClockS);
+        const recommendations = this._computeRecommendations(events, summary, exposure, parseFailures);
 
-        // Update learned values in SettingsManager via EMA (issue #145)
-        this._updateLearnedValues(recommendations);
-
-        return { target, date, exposure, totalSubs, events, summary, recommendations };
+        return { target, date, exposure, totalSubs, events, parseFailures, wallClock, summary, recommendations };
     },
 
     /**
@@ -94,6 +94,42 @@ const AsiairLogParser = {
         return '';
     },
 
+    // Actual wall-clock span of the session — from [Autorun|Begin] to
+    // [Autorun|End] (or, for a manually-stopped run, the last line in the
+    // log with a parseable timestamp). Needed for Change 2's reconciliation
+    // since totalTrackedS is a sum of individually-measured event
+    // durations and can't be assumed to equal the real elapsed time.
+    _extractWallClock(lines) {
+        let start = null;
+        let end = null;
+
+        for (const line of lines) {
+            if (line.includes('[Autorun|Begin]')) {
+                start = this._parseTimestamp(line);
+                break;
+            }
+        }
+
+        for (let i = lines.length - 1; i >= 0; i--) {
+            if (lines[i].includes('[Autorun|End]') || lines[i].includes('Stop Autorun Manually')) {
+                end = this._parseTimestamp(lines[i]);
+                break;
+            }
+        }
+        if (!end) {
+            for (let i = lines.length - 1; i >= 0; i--) {
+                const t = this._parseTimestamp(lines[i]);
+                if (t) { end = t; break; }
+            }
+        }
+
+        return {
+            start,
+            end,
+            wallClockS: (start && end) ? (end - start) / 1000 : null,
+        };
+    },
+
     _extractExposure(lines) {
         for (const line of lines) {
             const m = line.match(/Shooting \d+ light frames, exposure ([\d.]+)s/);
@@ -116,12 +152,56 @@ const AsiairLogParser = {
         return new Date(m[1].replace(/\//g, '-').replace(' ', 'T'));
     },
 
+    // Single source of truth for recognizing a settle terminator line.
+    // Returns 'done' | 'timeout' | 'failed', or null if the line isn't one.
+    _matchSettleTerminator(line) {
+        if (line.includes('[Guide] Settle Done')) return 'done';
+        if (line.includes('[Guide] Settle Timeout')) return 'timeout';
+        if (line.includes('[Guide] Settle failed')) return 'failed';
+        return null;
+    },
+
+    // Scans forward from startIdx for the first line matchFn recognizes as a
+    // terminator. Aborts as a parse failure — never absorbed silently — if a
+    // stopSet line is hit first, or if elapsed time since baselineTime
+    // exceeds timeLimitS. Lines that match neither are ignored as noise
+    // (e.g. an unrelated mid-imaging "Guide star lost" inside a dither's own
+    // settle window is common in the corpus and must not abort the scan).
+    _scanForwardBounded(lines, startIdx, baselineTime, { matchFn, stopSet, timeLimitS }) {
+        for (let j = startIdx; j < lines.length; j++) {
+            const line = lines[j];
+            const matched = matchFn(line);
+            if (matched) {
+                const t = this._parseTimestamp(line);
+                const elapsedS = baselineTime && t ? (t - baselineTime) / 1000 : null;
+                if (elapsedS !== null && elapsedS > timeLimitS) {
+                    return { found: false, reason: 'timeout_exceeded', line: j, elapsedS };
+                }
+                return { found: true, matched, line: j, elapsedS };
+            }
+            if (stopSet.some(p => line.includes(p))) {
+                return { found: false, reason: 'stopped', line: j };
+            }
+            const t = this._parseTimestamp(line);
+            if (baselineTime && t && (t - baselineTime) / 1000 > timeLimitS) {
+                return { found: false, reason: 'timeout_exceeded', line: j };
+            }
+        }
+        return { found: false, reason: 'eof', line: lines.length };
+    },
+
+    // Stop set shared by all bounded settle scans — if any of these appear
+    // before a terminator, the scan aborts rather than absorbing whatever
+    // it happens to find later.
+    SETTLE_SCAN_STOP_SET: ['Exposure', '[AutoFocus|Begin]', '[Autorun|', 'Log disabled'],
+
     // -------------------------------------------------------------------------
     // Event extraction
     // -------------------------------------------------------------------------
 
     _extractEvents(lines) {
         const events = [];
+        const parseFailures = [];
         this._subTimes = [];
         let i = 0;
 
@@ -133,6 +213,7 @@ const AsiairLogParser = {
                 const afStart = this._parseTimestamp(line);
                 let afEnd = null;
                 let settleEnd = null;
+                let settleOutcome = null;
                 let calLine = -1;
                 let j = i + 1;
 
@@ -144,9 +225,23 @@ const AsiairLogParser = {
                         calLine = j;
                         break;
                     }
-                    if (lines[j].includes('[Guide] Settle Done') && afEnd) {
-                        settleEnd = this._parseTimestamp(lines[j]);
-                        break;
+                    if (afEnd) {
+                        const terminator = this._matchSettleTerminator(lines[j]);
+                        if (terminator) {
+                            const t = this._parseTimestamp(lines[j]);
+                            const elapsedS = t ? (t - afEnd) / 1000 : null;
+                            if (elapsedS !== null && elapsedS > APP_CONFIG.ASIAIR_SETTLE_SCAN_TIMEOUT_S) {
+                                parseFailures.push({
+                                    type: 'af_settle', reason: 'timeout_exceeded',
+                                    start: afStart, startLine: i + 1, atLine: j + 1, elapsedS,
+                                });
+                                // Fall back to afEnd rather than absorb an inflated duration
+                            } else {
+                                settleEnd = t;
+                                settleOutcome = terminator;
+                            }
+                            break;
+                        }
                     }
                     if (j > i + 1 && (
                         lines[j].includes('[AutoFocus|Begin]') ||
@@ -162,7 +257,8 @@ const AsiairLogParser = {
                         type: 'autofocus',
                         start: afStart,
                         end: end,
-                        durationS: (end - afStart) / 1000
+                        durationS: (end - afStart) / 1000,
+                        settleOutcome: settleOutcome, // 'done' | 'timeout' | 'failed' | null (no settle attempted or unresolved)
                     });
                 }
                 i = calLine >= 0 ? calLine : j + 1;
@@ -172,27 +268,31 @@ const AsiairLogParser = {
             // --- Guide Calibration (after meridian flip) ---
             if (line.includes('[Guide] Start Calibrating')) {
                 const calStart = this._parseTimestamp(line);
-                let settleEnd = null;
-                let j = i + 1;
+                const result = this._scanForwardBounded(lines, i + 1, calStart, {
+                    matchFn: (l) => this._matchSettleTerminator(l),
+                    stopSet: this.SETTLE_SCAN_STOP_SET,
+                    timeLimitS: APP_CONFIG.ASIAIR_SETTLE_SCAN_TIMEOUT_S,
+                });
 
-                while (j < lines.length) {
-                    if (lines[j].includes('[Guide] Settle Done')) {
-                        settleEnd = this._parseTimestamp(lines[j]);
-                        break;
+                if (result.found) {
+                    const settleEnd = this._parseTimestamp(lines[result.line]);
+                    if (calStart && settleEnd) {
+                        events.push({
+                            type: 'guide_calibration',
+                            start: calStart,
+                            end: settleEnd,
+                            durationS: (settleEnd - calStart) / 1000,
+                            outcome: result.matched,
+                        });
                     }
-                    if (lines[j].includes('Exposure')) break;
-                    j++;
-                }
-
-                if (calStart && settleEnd) {
-                    events.push({
-                        type: 'guide_calibration',
-                        start: calStart,
-                        end: settleEnd,
-                        durationS: (settleEnd - calStart) / 1000
+                    i = result.line + 1;
+                } else {
+                    parseFailures.push({
+                        type: 'guide_calibration_settle', reason: result.reason,
+                        start: calStart, startLine: i + 1, atLine: result.line + 1,
                     });
+                    i = result.line;
                 }
-                i = j + 1;
                 continue;
             }
 
@@ -237,26 +337,34 @@ const AsiairLogParser = {
             // --- Dither ---
             if (line.includes('[Guide] Dither') && !line.includes('Settle')) {
                 const ditherStart = this._parseTimestamp(line);
-                let settleEnd = null;
-                let j = i + 1;
+                const result = this._scanForwardBounded(lines, i + 1, ditherStart, {
+                    matchFn: (l) => this._matchSettleTerminator(l),
+                    stopSet: this.SETTLE_SCAN_STOP_SET,
+                    timeLimitS: APP_CONFIG.ASIAIR_SETTLE_SCAN_TIMEOUT_S,
+                });
 
-                while (j < lines.length) {
-                    if (lines[j].includes('[Guide] Settle Done')) {
-                        settleEnd = this._parseTimestamp(lines[j]);
-                        break;
+                if (result.found) {
+                    const settleEnd = this._parseTimestamp(lines[result.line]);
+                    if (ditherStart && settleEnd) {
+                        events.push({
+                            type: 'dither',
+                            start: ditherStart,
+                            end: settleEnd,
+                            durationS: (settleEnd - ditherStart) / 1000,
+                            outcome: result.matched,
+                            affectedImg: result.matched !== 'done'
+                                ? this._affectedImgAfterLine(lines, result.line)
+                                : null,
+                        });
                     }
-                    j++;
-                }
-
-                if (ditherStart && settleEnd) {
-                    events.push({
-                        type: 'dither',
-                        start: ditherStart,
-                        end: settleEnd,
-                        durationS: (settleEnd - ditherStart) / 1000
+                    i = result.line + 1;
+                } else {
+                    parseFailures.push({
+                        type: 'dither_settle', reason: result.reason,
+                        start: ditherStart, startLine: i + 1, atLine: result.line + 1,
                     });
+                    i = result.line;
                 }
-                i = j + 1;
                 continue;
             }
 
@@ -275,21 +383,34 @@ const AsiairLogParser = {
                     // Dither — capture as top-level event
                     if (nextLine.includes('[Guide] Dither') && !nextLine.includes('Settle')) {
                         const ditherStart = this._parseTimestamp(nextLine);
-                        let k = j + 1;
-                        while (k < lines.length) {
-                            if (lines[k].includes('[Guide] Settle Done')) {
-                                const ditherEnd = this._parseTimestamp(lines[k]);
+                        const result = this._scanForwardBounded(lines, j + 1, ditherStart, {
+                            matchFn: (l) => this._matchSettleTerminator(l),
+                            stopSet: this.SETTLE_SCAN_STOP_SET,
+                            timeLimitS: APP_CONFIG.ASIAIR_SETTLE_SCAN_TIMEOUT_S,
+                        });
+
+                        if (result.found) {
+                            const ditherEnd = this._parseTimestamp(lines[result.line]);
+                            if (ditherStart && ditherEnd) {
                                 events.push({
                                     type: 'dither',
                                     start: ditherStart,
                                     end: ditherEnd,
-                                    durationS: (ditherEnd - ditherStart) / 1000
+                                    durationS: (ditherEnd - ditherStart) / 1000,
+                                    outcome: result.matched,
+                                    affectedImg: result.matched !== 'done'
+                                        ? this._affectedImgAfterLine(lines, result.line)
+                                        : null,
                                 });
-                                break;
                             }
-                            k++;
+                            j = result.line + 1;
+                        } else {
+                            parseFailures.push({
+                                type: 'dither_settle', reason: result.reason,
+                                start: ditherStart, startLine: j + 1, atLine: result.line + 1,
+                            });
+                            j = result.line;
                         }
-                        j = k + 1;
                         continue;
                     }
 
@@ -335,7 +456,7 @@ const AsiairLogParser = {
             i++;
         }
 
-        return events;
+        return { events, parseFailures };
     },
 
     _extractExposureFromLine(line) {
@@ -343,11 +464,25 @@ const AsiairLogParser = {
         return m ? parseFloat(m[1]) : 300;
     },
 
+    // ELR.p1-3 Change 4: a settle timeout/failed dither means the next
+    // exposure began before the guider actually settled. The affected image
+    // number is read directly from the log line immediately after the
+    // terminator — imaging blocks span multiple dithers internally (a
+    // dither doesn't end the enclosing block), so there's no separate
+    // 'imaging' event to correlate to; the raw line is the only place this
+    // specific image number is recorded.
+    _affectedImgAfterLine(lines, terminatorLineIdx) {
+        const next = lines[terminatorLineIdx + 1];
+        if (!next) return null;
+        const m = next.match(/Exposure \d+\.?\d*s image (\d+)#/);
+        return m ? parseInt(m[1]) : null;
+    },
+
     // -------------------------------------------------------------------------
     // Summary computation
     // -------------------------------------------------------------------------
 
-    _computeSummary(events) {
+    _computeSummary(events, wallClockS) {
         const imaging = events.filter(e => e.type === 'imaging');
         const afs = events.filter(e => e.type === 'autofocus');
         const cals = events.filter(e => e.type === 'guide_calibration');
@@ -364,15 +499,32 @@ const AsiairLogParser = {
         const ditherTotalS = allDithers.reduce((s, d) => s + d.durationS, 0);
 
         const meridianTotalS = pauseTotalS + flipTotalS;
-        const totalTrackedS = imagingTotalS + afTotalS + calTotalS + meridianTotalS + ditherTotalS;
+
+        // Dither is embedded within imaging blocks — an imaging block's
+        // start/end already spans any dithers inside it (see the imaging
+        // block extraction) — not a sibling category. Including ditherTotalS
+        // here double-counted the same seconds twice and inflated the
+        // denominator for every percentage below (ELR.p1-3 Change 2).
+        const totalTrackedS = imagingTotalS + afTotalS + calTotalS + meridianTotalS;
 
         const totalSubs = imaging.reduce((s, e) => s + e.subCount, 0);
 
+        // Clean dithers only — this feeds the learned value that propagates
+        // into the sequence planner, so a timeout/failed dither (which
+        // doesn't represent a normal settle) must not pull the average off
+        // (ELR.p1-3 Change 3). ditherTotalS/ditherAmortizedS above stay
+        // all-outcomes since they describe what actually happened tonight,
+        // not what should be learned from it.
+        const cleanDithers = allDithers.filter(d => d.outcome === 'done');
+        const ditherCleanCount = cleanDithers.length;
         const afAvgS = afs.length > 0 ? afTotalS / afs.length : 0;
         const calAvgS = cals.length > 0 ? calTotalS / cals.length : 0;
-        const ditherAvgS = allDithers.length > 0 ? ditherTotalS / allDithers.length : 0;
+        const ditherAvgS = cleanDithers.length > 0
+            ? cleanDithers.reduce((s, d) => s + d.durationS, 0) / cleanDithers.length
+            : 0;
         const ditherAmortizedS = totalSubs > 0 ? ditherTotalS / totalSubs : 0;
 
+        const unaccountedS = wallClockS != null ? Math.max(0, wallClockS - totalTrackedS) : null;
 
         return {
             imagingTotalS,
@@ -388,14 +540,21 @@ const AsiairLogParser = {
             ditherTotalS,
             ditherAvgS,
             ditherCount: allDithers.length,
+            ditherCleanCount,
             ditherAmortizedS,
+            // Dither's share of imaging time (nested within it), replacing
+            // the old ditherPct which treated dither as a sibling category
+            // of totalTrackedS — that framing no longer applies now that
+            // dither isn't part of totalTrackedS at all.
+            ditherShareOfImagingPct: imagingTotalS > 0 ? (ditherTotalS / imagingTotalS) * 100 : 0,
             totalTrackedS,
             totalSubs,
+            wallClockS,
+            unaccountedS,
             imagingPct: totalTrackedS > 0 ? (imagingTotalS / totalTrackedS) * 100 : 0,
             afPct: totalTrackedS > 0 ? (afTotalS / totalTrackedS) * 100 : 0,
             calPct: totalTrackedS > 0 ? (calTotalS / totalTrackedS) * 100 : 0,
             meridianPct: totalTrackedS > 0 ? (meridianTotalS / totalTrackedS) * 100 : 0,
-            ditherPct: totalTrackedS > 0 ? (ditherTotalS / totalTrackedS) * 100 : 0,
         };
     },
 
@@ -403,7 +562,7 @@ const AsiairLogParser = {
     // Recommendations
     // -------------------------------------------------------------------------
 
-    _computeRecommendations(events, summary, exposure) {
+    _computeRecommendations(events, summary, exposure, parseFailures = []) {
         const exp = exposure || 300;
 
         // Build interruption list — all non-imaging, non-dither events
@@ -416,16 +575,26 @@ const AsiairLogParser = {
             return interruptions.some(iv => iv.start >= t1 && iv.start < t2);
         };
 
-        const isDithered = (t1, t2) => {
-            return events
-                .filter(e => e.type === 'dither')
-                .some(d => d.start >= t1 && d.start < t2);
+        const dithersInWindow = (t1, t2) => {
+            return events.filter(e => e.type === 'dither' && e.start >= t1 && e.start < t2);
+        };
+
+        // A gap containing a parse failure (settle timeout/failed that
+        // couldn't be terminator-matched, or any other scan that had to
+        // abort) is a log gap in the sense Change 3 means — exclude it
+        // from clean-sample consideration rather than risk polluting the
+        // sub-cadence measurement with an unmeasured stretch.
+        const hasParseFailureInWindow = (t1, t2) => {
+            return parseFailures.some(f => f.start && f.start >= t1 && f.start < t2);
         };
 
         const subTimesRaw = this._subTimes || [];
 
-        // Separate gaps into dithered and un-dithered
-        const ditheredGaps = [];   // gap includes a dither — used to compute observed dither duration
+        // Separate gaps into dithered and un-dithered — clean samples only
+        // (ELR.p1-3 Change 3): a dithered gap whose dither didn't settle
+        // cleanly, or any gap containing a parse failure, is excluded
+        // entirely rather than folded into either bucket.
+        const ditheredGaps = [];   // gap includes a cleanly-settled dither
         const cleanGaps = [];      // gap with no dither and no interruption — pure sub gap
 
         for (let i = 1; i < subTimesRaw.length; i++) {
@@ -433,12 +602,17 @@ const AsiairLogParser = {
             const curr = subTimesRaw[i];
 
             if (isInterrupted(prev, curr)) continue; // skip AF, flip, cal boundaries
+            if (hasParseFailureInWindow(prev, curr)) continue; // settle timeout/failed/log gap
 
             const delta = (curr - prev) / 1000; // seconds between sub starts
             const overhead = delta - exp;        // overhead above exposure time
 
-            if (isDithered(prev, curr)) {
-                ditheredGaps.push(overhead);     // overhead = dither duration + sub gap
+            const dithersHere = dithersInWindow(prev, curr);
+            if (dithersHere.length > 0) {
+                if (dithersHere.every(d => d.outcome === 'done')) {
+                    ditheredGaps.push(overhead); // overhead = dither duration + sub gap
+                }
+                // a timeout/failed dither in this window — not a clean sample, excluded
             } else {
                 cleanGaps.push(overhead);        // overhead = sub gap only
             }
@@ -462,33 +636,71 @@ const AsiairLogParser = {
             ? summary.ditherAvgS
             : SettingsManager.getLearnedDitherDurationS();
 
+        const subGapSampleCount = cleanGaps.length + ditheredGaps.length;
+        const minSamples = APP_CONFIG.ASIAIR_MIN_CLEAN_SAMPLES;
+        const derivationDate = new Date().toISOString().slice(0, 10);
+
         return {
             afDurationS: summary.afAvgS,
             calDurationS: summary.calAvgS,
             observedSubGapS: Math.round(observedSubGapS),
             observedDitherDurationS: Math.round(observedDitherDurationS),
+
+            // Sample counts + derivation date travel with the learned
+            // values so updateLearnedValues() and SettingsManager can
+            // record provenance and gate on a minimum sample count instead
+            // of updating from too little/noisy data.
+            ditherSampleCount: summary.ditherCleanCount,
+            subGapSampleCount,
+            derivationDate,
+            ditherMeetsMinSamples: summary.ditherCleanCount >= minSamples,
+            subGapMeetsMinSamples: subGapSampleCount >= minSamples,
         };
     },
 
     /**
-     * Update learned sub gap and dither duration via EMA (issue #145)
+     * Update learned sub gap and dither duration via EMA (issue #145).
+     * Public and explicit (ELR.p1-4) — parse() no longer calls this itself;
+     * callers must invoke it deliberately after a parse succeeds and await
+     * it, so viewing a log is a pure read unless the caller specifically
+     * asks to also refresh planning values. See utilities-view.js's
+     * initAsiairLogAnalyzer for the one existing call site.
+     *
+     * ELR.p1-3 Change 3: skips the update entirely when a night doesn't have
+     * enough clean samples, rather than let noise or a single dirty night
+     * pull the stored value around. Calling this twice on the same parsed
+     * result applies the EMA twice — that's the caller's responsibility to
+     * avoid, not guarded here (see ELR.p1-4 Problem #2).
+     *
+     * @param {object} parsed - Full result from parse()
      */
-    async _updateLearnedValues(recommendations) {
+    async updateLearnedValues(parsed) {
+        const { recommendations } = parsed;
         const EMA_WEIGHT = 0.2; // weight given to new observation
 
-        const storedSubGap = SettingsManager.getLearnedSubGapS();
-        const storedDitherDuration = SettingsManager.getLearnedDitherDurationS();
+        if (recommendations.subGapMeetsMinSamples) {
+            const storedSubGap = SettingsManager.getLearnedSubGapS();
+            const newSubGap = Math.round(
+                (1 - EMA_WEIGHT) * storedSubGap + EMA_WEIGHT * recommendations.observedSubGapS
+            );
+            await SettingsManager.setLearnedSubGapS(newSubGap, {
+                sampleCount: recommendations.subGapSampleCount,
+                derivedDate: recommendations.derivationDate,
+            });
+        }
 
-        const newSubGap = Math.round(
-            (1 - EMA_WEIGHT) * storedSubGap + EMA_WEIGHT * recommendations.observedSubGapS
-        );
-        const newDitherDuration = Math.round(
-            (1 - EMA_WEIGHT) * storedDitherDuration + EMA_WEIGHT * recommendations.observedDitherDurationS
-        );
-
-        await SettingsManager.setLearnedSubGapS(newSubGap);
-        await SettingsManager.setLearnedDitherDurationS(newDitherDuration);
+        if (recommendations.ditherMeetsMinSamples) {
+            const storedDitherDuration = SettingsManager.getLearnedDitherDurationS();
+            const newDitherDuration = Math.round(
+                (1 - EMA_WEIGHT) * storedDitherDuration + EMA_WEIGHT * recommendations.observedDitherDurationS
+            );
+            await SettingsManager.setLearnedDitherDurationS(newDitherDuration, {
+                sampleCount: recommendations.ditherSampleCount,
+                derivedDate: recommendations.derivationDate,
+            });
+        }
     },
+
 
     // -------------------------------------------------------------------------
     // Formatting helpers (used by view)
@@ -508,3 +720,7 @@ const AsiairLogParser = {
     }
 
 };
+
+// ----------------------------------------------------------------------
+// ----------------------------------------------------------------------
+// ----------------------------------------------------------------------

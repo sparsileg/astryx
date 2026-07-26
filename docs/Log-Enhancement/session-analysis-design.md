@@ -1,15 +1,18 @@
 # Session Analysis — Design Document
 
-**Status:** For review. No code until this is agreed.
-**Supersedes:** the analysis paths in `asiair-log-parser.js` and `phd2-log-parser.js` (the extraction code is largely reusable).
-**Inputs:** `log-format-survey.md`, `threshold-calibration.md`, `corpus-index.md`
-**Validation corpus:** 25 ASIAir logs, 19 PHD2 logs, 2025-10-23 → 2026-07-23
+**Status:** For review. No code until this is agreed.  **Supersedes:**
+the analysis paths in `asiair-log-parser.js` and `phd2-log-parser.js`
+(the extraction code is largely reusable).  **Inputs:**
+`log-format-survey.md`, `threshold-calibration.md`, `corpus-index.md`
+**Validation corpus:** 25 ASIAir logs, 19 PHD2 logs, 2025-10-23 →
+2026-07-23
 
 ---
 
 ## 1. Why this is a rewrite rather than a bug-fix pass
 
-Running the current parsers across the corpus produces these failure rates:
+Running the current parsers across the corpus produces these failure
+rates:
 
 | Failure | Frequency |
 |---|---|
@@ -22,31 +25,64 @@ Running the current parsers across the corpus produces these failure rates:
 
 These are not independent bugs. They share three causes:
 
-1. **Unbounded forward scans.** Both dither handlers scan for `Settle Done` with no terminator set and no time limit. A `Settle Timeout` sends the scan minutes downstream, swallowing exposures and autofocus events on the way. One unhandled token produced six visible report errors on 2026-07-23.
-2. **No separation between evidence and narrative.** The view authors claims directly — including a hardcoded "likely a satellite or aircraft pass" emitted for any single-frame error code regardless of what the code was. There is no structure that can prevent an unsupported assertion.
-3. **No validation of derived numbers.** `totalTrackedS` double-counts dither; nothing checks it against wall clock. A corrupted learned value flows into the sequence planner with no provenance.
+1. **Unbounded forward scans.** Both dither handlers scan for `Settle
+   Done` with no terminator set and no time limit. A `Settle Timeout`
+   sends the scan minutes downstream, swallowing exposures and
+   autofocus events on the way. One unhandled token produced six
+   visible report errors on 2026-07-23.
+2. **No separation between evidence and narrative.** The view authors
+   claims directly — including a hardcoded "likely a satellite or
+   aircraft pass" emitted for any single-frame error code regardless
+   of what the code was. There is no structure that can prevent an
+   unsupported assertion.
+3. **No validation of derived numbers.** `totalTrackedS` double-counts
+   dither; nothing checks it against wall clock. A corrupted learned
+   value flows into the sequence planner with no provenance.
 
-The extraction logic is sound and largely reusable. The architecture around it is what needs replacing.
+The extraction logic is sound and largely reusable. The architecture
+around it is what needs replacing.
 
 ---
 
 ## 2. Design principles
 
-**P1 — Never scan forward without a terminator set and a time bound.** Every forward scan declares what ends it and what the maximum plausible span is. Exceeding either is a parse failure, recorded, not silently absorbed.
+**P1 — Never scan forward without a terminator set and a time bound.**
+Every forward scan declares what ends it and what the maximum
+plausible span is. Exceeding either is a parse failure, recorded, not
+silently absorbed.
 
-**P2 — Prefer the log's self-description to a hardcoded lookup.** PHD2 writes the reason for every dropped frame in column 18. A hardcoded table that overrides it is how all five error codes came to be mislabeled. Where a table is unavoidable, mark its output as inferred.
+**P2 — Prefer the log's self-description to a hardcoded lookup.** PHD2
+writes the reason for every dropped frame in column 18. A hardcoded
+table that overrides it is how all five error codes came to be
+mislabeled. Where a table is unavoidable, mark its output as inferred.
 
-**P3 — Every derived number is cross-checked against an independent path.** Two computations of the same quantity that disagree mean at least one is wrong. When an invariant fails, the report says so instead of printing the corrupted value.
+**P3 — Every derived number is cross-checked against an independent
+path.** Two computations of the same quantity that disagree mean at
+least one is wrong. When an invariant fails, the report says so
+instead of printing the corrupted value.
 
-**P4 — Findings carry evidence; the view renders only findings.** No claim reaches the user without a log line, timestamp, or computed metric behind it. This structurally eliminates the "satellite pass" class of bug.
+**P4 — Findings carry evidence; the view renders only findings.** No
+claim reaches the user without a log line, timestamp, or computed
+metric behind it. This structurally eliminates the "satellite pass"
+class of bug.
 
-**P5 — Confidence is a first-class field.** Three tiers: **measured** (read directly from the log), **derived** (computed and invariant-checked), **inferred** (pattern match). Inferred claims name the alternatives they ruled out and the discriminator used.
+**P5 — Confidence is a first-class field.** Three tiers: **measured**
+(read directly from the log), **derived** (computed and
+invariant-checked), **inferred** (pattern match). Inferred claims name
+the alternatives they ruled out and the discriminator used.
 
-**P6 — State what cannot be seen.** The 2025-12-20 validation showed log-based detection finds 17 of 26 rejected frames. A report implying its reject list is complete would have kept 9 bad subs. Limits are reported, not omitted.
+**P6 — State what cannot be seen.** The 2025-12-20 validation showed
+log-based detection finds 17 of 26 rejected frames. A report implying
+its reject list is complete would have kept 9 bad subs. Limits are
+reported, not omitted.
 
-**P7 — Learned values carry provenance and are derived only from clean data.** Date, sample count, and the blocks they came from. A learned value derived from an anomalous session is rejected, not averaged in.
+**P7 — Learned values carry provenance and are derived only from clean
+data.** Date, sample count, and the blocks they came from. A learned
+value derived from an anomalous session is rejected, not averaged in.
 
-**P8 — Thresholds are configuration, not literals.** All bands live in `APP_CONFIG.LOG_ANALYSIS`. Defaults come from `threshold-calibration.md` and are marked as rig-specific.
+**P8 — Thresholds are configuration, not literals.** All bands live in
+`APP_CONFIG.LOG_ANALYSIS`. Defaults come from
+`threshold-calibration.md` and are marked as rig-specific.
 
 ---
 
@@ -63,11 +99,24 @@ phd2-log-parser.js ────┘           │
 
 **Rules:**
 
-- Neither parser knows the other exists. The current `Phd2LogParser.parse(text, asiairParsed)` coupling is removed.
-- Parsers emit structure only — no anomaly detection, no narrative, no side effects.
-- `_updateLearnedValues` moves out of `parse()`. Opening a log currently mutates settings; with a combined report that becomes a correctness problem.
-- The view receives a `FusedSession` and renders it. It contains no thresholds, no classification logic, and no prose that isn't derived from a `Finding`.
-- Fusion degrades gracefully: a missing PHD2 log yields a valid `FusedSession` with `guide: null` on every sub, and detectors that need guide data mark themselves unavailable rather than absent.
+- Neither parser knows the other exists. The current
+  `Phd2LogParser.parse(text, asiairParsed)` coupling is removed.
+- Parsers emit structure only — no anomaly detection, no narrative, no
+  side effects.
+- `_updateLearnedValues` moves out of `parse()`. Opening a log
+  currently mutates settings; with a combined report that becomes a
+  correctness problem.
+- The view receives a `FusedSession` and renders it. It contains no
+  thresholds, no classification logic, and no prose that isn't derived
+  from a `Finding`.
+- Fusion degrades gracefully: a missing PHD2 log yields a valid
+  `FusedSession` with `guide: null` on every sub, and detectors that
+  need guide data mark themselves unavailable rather than absent.
+- Flat-only (and dark/bias) autoruns are excluded from analysis
+  entirely — not run through invariants, detectors, or tiering. A
+  flat-only night produces a minimal `FusedSession` marked `kind:
+  'calibrationOnly'` with just autorun/frame counts; sections 2–8
+  render nothing for it.
 
 ---
 
@@ -109,16 +158,11 @@ Sub {
 
 `RunEvent` is a discriminated union:
 
-```
-AutofocusEvent {
-  startedAt, endedAt, settleEndedAt,
-  trigger: 'interval'|'temperature'|'preRun'|'postFlip'|'manual',
-  temperatureC,
-  outcome: 'success'|'failed'|'cancelled',
-  focuserPosition, achievedStarSize,
-  vCurve:    [{ position, starSize }],
-  fineSweep: [{ position, starSize }]
-}
+``` AutofocusEvent { startedAt, endedAt, settleEndedAt, trigger:
+'interval'|'temperature'|'preRun'|'postFlip'|'manual', temperatureC,
+outcome: 'success'|'failed'|'cancelled', focuserPosition,
+achievedStarSize, vCurve: [{ position, starSize }], fineSweep: [{
+position, starSize }] }
 
 DitherEvent { startedAt, settleStartedAt, endedAt,
               outcome: 'done'|'timeout'|'failed', durationS }
@@ -136,15 +180,16 @@ GuideFailureEvent { at, kind: 'starLost'|'selectFailed'|'trackingFailed' }
 MountEvent { at, kind: 'disconnected'|'gotoHome'|'startTracking'|'stopTracking' }
 
 InterventionEvent { at, kind: 'manualStop'|'cancelAf'|'pausePlan' }
+
+GuideRecoveryEvent { startedAt, settleStartedAt, endedAt,
+                     outcome: 'done'|'timeout'|'failed', durationS,
+                     affectedImg }   // mid-imaging Guide Settle → recovery, not dither-triggered
 ```
 
 ### 4.2 PHD2 side
 
-```
-GuideLog {
-  source: { filename, phdVersion, logVersion, ... , unmatchedLines }
-  sessions: GuideSession[]
-  calibrations: Calibration[]
+``` GuideLog { source: { filename, phdVersion, logVersion, ... ,
+unmatchedLines } sessions: GuideSession[] calibrations: Calibration[]
 }
 
 GuideSession {
@@ -170,9 +215,11 @@ GuideFrame { t, dxPx, dyPx, raRawPx, decRawPx, raGuidePx, decGuidePx,
 DropFrame  { t, starMass, snr, errorCode, reason }   // reason from column 18
 ```
 
-**Equipment is per session, not per log.** This is the fix for the 4 mixed-binning nights.
+**Equipment is per session, not per log.** This is the fix for the 4
+mixed-binning nights.
 
-`Calibration` is new — the current parser discards these blocks entirely:
+`Calibration` is new — the current parser discards these blocks
+entirely:
 
 ```
 Calibration {
@@ -198,7 +245,10 @@ FusedSession {
   findings: Finding[],
   recommendations: Recommendation[],
   coverage: { asiairPresent, phd2Present, unmatchedLineCount,
-              unaccountedSeconds, subsWithoutGuideData }
+              unaccountedSeconds, subsWithoutGuideData },
+  equipment: { phd2Camera, phd2FocalLengthMm, phd2PixelScaleArcsec,
+               matchedProfile: EquipmentProfile | null,
+               matchConfidence: 'exact'|'partial'|'unmatched' }
 }
 
 FusedSub {
@@ -212,7 +262,10 @@ FusedSub {
 }
 ```
 
-**Three tiers, not two.** Validation on 2025-12-20 gave 17 clear rejects against 26 actual, with a marginal band at frames 43–51 (1.35–2.22" against a 1.1" night median) accounting for most of the gap. A binary verdict would have understated the damage.
+**Three tiers, not two.** Validation on 2025-12-20 gave 17 clear
+rejects against 26 actual, with a marginal band at frames 43–51
+(1.35–2.22" against a 1.1" night median) accounting for most of the
+gap. A binary verdict would have understated the damage.
 
 ### 4.4 Finding
 
@@ -231,13 +284,18 @@ Finding {
 }
 ```
 
-`ruledOut` is what lets the report say *"not mechanical — displacement is fixed at 46.7 px with CV 0.03; a mechanical excursion produces scattered displacements"* rather than presenting a guess as a conclusion.
+`ruledOut` is what lets the report say *"not mechanical — displacement
+is fixed at 46.7 px with CV 0.03; a mechanical excursion produces
+scattered displacements"* rather than presenting a guess as a
+conclusion.
 
 ---
 
 ## 5. Invariants
 
-Checked on every parse. Each returns `InvariantResult { id, expected, actual, tolerance, passed, severity, impact }`. **A failed invariant suppresses the affected number in the report and raises a Finding.**
+Checked on every parse. Each returns `InvariantResult { id, expected,
+actual, tolerance, passed, severity, impact }`. **A failed invariant
+suppresses the affected number in the report and raises a Finding.**
 
 | ID | Invariant | Catches (observed) |
 |---|---|---|
@@ -257,25 +315,37 @@ Checked on every parse. Each returns `InvariantResult { id, expected, actual, to
 | I14 | Every settle window has a terminator | PHD2 `Settling failed` handling |
 | I15 | Learned values derived only from blocks with no findings | The 59s reaching the planner |
 
-I13 deserves emphasis: it is the only mechanism that will surface a firmware format change *before* it corrupts a number. Unmatched lines are reported with counts and samples in the data-quality section.
+I13 deserves emphasis: it is the only mechanism that will surface a
+firmware format change *before* it corrupts a number. Unmatched lines
+are reported with counts and samples in the data-quality section.
 
 ---
 
 ## 6. Detectors
 
-Each detector emits zero or more `Finding`s. Validation status is recorded per detector; unvalidated detectors ship as `info` severity until they have evidence.
+Each detector emits zero or more `Finding`s. Validation status is
+recorded per detector; unvalidated detectors ship as `info` severity
+until they have evidence.
 
 ### D1 — Guide-star swap
-**Signature:** ≥5 frames with star mass < 85% of session median AND displacement > 8 px, where the coefficient of variation of those displacements < 0.15.
-**Discriminator:** fixed displacement ⇒ alternating reference star; scattered ⇒ genuine excursion.
-**Validation:** 511 guide sessions, 9 months. **2 flags, both true positives (2026-07-23 sessions 11 and 12). Zero false positives.**
+**Signature:** ≥5 frames with star mass < 85% of session median AND
+displacement > 8 px, where the coefficient of variation of those
+displacements < 0.15.  **Discriminator:** fixed displacement ⇒
+alternating reference star; scattered ⇒ genuine excursion.
+**Validation:** 511 guide sessions, 9 months. **2 flags, both true
+positives (2026-07-23 sessions 11 and 12). Zero false positives.**
 **Rules out:** mechanical drag, calibration error, wind, comms fault.
-**Recommendation emitted:** reduce search region, or reject guide stars near the frame edge.
+**Recommendation emitted:** reduce search region, or reject guide
+stars near the frame edge.
 
 ### D2 — Cloud / transparency loss
-**Primary signature:** guide-failure event density per exposure window (`Guide star lost`, `Select Guide Star failed`, `Settle Timeout`, AF failure). Threshold ≥3 per 300s window, with the acquisition phase before the first successful settle excluded.
-**Corroborating signature:** reversal of the focuser cooling trend — cooling rate turning positive between consecutive AF events.
-**Validation:** three annotated nights.
+**Primary signature:** guide-failure event density per exposure window
+(`Guide star lost`, `Select Guide Star failed`, `Settle Timeout`, AF
+failure). Threshold ≥3 per 300s window, with the acquisition phase
+before the first successful settle excluded.  **Corroborating
+signature:** reversal of the focuser cooling trend — cooling rate
+turning positive between consecutive AF events.  **Validation:** three
+annotated nights.
 
 | Night | Annotation | Detector |
 |---|---|---|
@@ -283,80 +353,150 @@ Each detector emits zero or more `Finding`s. Validation status is recorded per d
 | 2026-05-11 | "clear ~90 min, then clouds, opening ~03:00" | disturbance from frame 13, continuous 21–47, clear from 48 (02:35) |
 | 2025-12-20 | none recalled | two bands, 12–17 and 51–58 — **corroborated by a 4 °C temperature rise 22:43→00:20**, which is backwards for clear-sky cooling |
 
-**Explicitly rejected approach:** guide-star mass as a gradual transparency proxy. Tested and it does not work — within a single lock, mass stays at 91–97% of that lock's peak straight through known cloud, because PHD2 loses and re-selects rather than tracking a fading star. Mass is also incomparable across re-selections (2025-12-20 ranged 1830–4237 across six different stars). **Cloud is binary in the guide log.**
+**Explicitly rejected approach:** guide-star mass as a gradual
+transparency proxy. Tested and it does not work — within a single
+lock, mass stays at 91–97% of that lock's peak straight through known
+cloud, because PHD2 loses and re-selects rather than tracking a fading
+star. Mass is also incomparable across re-selections (2025-12-20
+ranged 1830–4237 across six different stars). **Cloud is binary in the
+guide log.**
 
 ### D3 — Unsettled exposure start
-Any sub whose preceding dither ended in `timeout` or `failed`. Trailing is concentrated at the start of the exposure rather than distributed, so these fail differently and are worth blinking separately.
-**Baseline:** 1.5% of dithers corpus-wide; 8.3% on 2026-07-23.
+Any sub whose preceding dither ended in `timeout` or
+`failed`. Trailing is concentrated at the start of the exposure rather
+than distributed, so these fail differently and are worth blinking
+separately.  **Baseline:** 1.5% of dithers corpus-wide; 8.3% on
+2026-07-23.
 
-### D4 — Aborted or duplicate frame
-Duplicate image number, or an exposure terminated before `exposureS` elapsed.
-**Observed:** image 43 twice on 2026-07-23 (aborted at 2.5 min of 5).
+### D4 — Truncated exposure
+Primary signal: logged duration measurably less than the configured
+`exposureS`. Duplicate image number is corroborating evidence only,
+not the detection criterion — ASIAir happened to reissue the same
+image number on the 2026-07-23 retry, but that's an artifact of how it
+recovered, not guaranteed behavior. Keying on duplicate numbering
+alone would miss any truncation whose retry lands on a new number
+instead of repeating the old one.  **Observed:** image 43 truncated at
+2.5 min of 5 on 2026-07-23, reissued as image 43 again on the
+successful retry.
 
 ### D5 — Manual intervention
-`Stop Autorun Manually`, `Cancel AF Manually`, `Pause Plan Tonight`, and `Log disabled`→`enabled` gaps.
-**Required exclusion:** a run of manual stops within a flat-capture run, each followed by a new run at a different exposure, is flat-exposure tuning and must not be reported as incidents. 2026-06-15 ends with four such stops in three minutes (2.0 → 1.4 → 1.2 → 1.1s). Naive detection reports four failures.
+`Stop Autorun Manually`, `Cancel AF Manually`, `Pause Plan Tonight`,
+and `Log disabled`→`enabled` gaps.  **Required exclusion:** a run of
+manual stops within a flat-capture run, each followed by a new run at
+a different exposure, is flat-exposure tuning and must not be reported
+as incidents. 2026-06-15 ends with four such stops in three minutes
+(2.0 → 1.4 → 1.2 → 1.1s). Naive detection reports four failures.
 
 ### D6 — Mount disconnect
-`"ZWO<N>" is Disconnected`. Report with the subs it overlaps. Do not attribute causation — on 2026-07-23 two disconnects fall inside the anomalous block but the PHD2 stream continues uninterrupted through both.
+`"ZWO<N>" is Disconnected`. Report with the subs it overlaps. Do not
+attribute causation — on 2026-07-23 two disconnects fall inside the
+anomalous block but the PHD2 stream continues uninterrupted through
+both.
 
 ### D7 — Frame cadence irregularity
 Count of PHD2 frame intervals > 1.5× the guide exposure.
-**Baseline:** 0–6 per clean session; 59 and 33 on the two known-bad sessions.
+**Baseline:** 0–6 per clean session; 59 and 33 on the two known-bad
+sessions.
 
 ### D8 — Elevated guiding
-Settled RMS against configurable bands, and against the user's trailing median where history exists.
-**Corpus:** median 1.12", range 0.89–1.39". Current code compares a 2.0" threshold against *all-frames* RMS, so the elevated band never fires on real degradation — metric and threshold were mismatched.
+Settled RMS against configurable bands, and against the user's
+trailing median where history exists.  **Corpus:** median 1.12", range
+0.89–1.39". Current code compares a 2.0" threshold against
+*all-frames* RMS, so the elevated band never fires on real degradation
+— metric and threshold were mismatched.
 
 ### D9 — Axis-ratio inversion
-Dec RMS exceeding RA RMS. Median ratio across the corpus is RA/Dec = 1.38, stable across 19 nights and both pier sides. An inversion is unusual for this rig and worth surfacing.
+Dec RMS exceeding RA RMS. Median ratio across the corpus is RA/Dec =
+1.38, stable across 19 nights and both pier sides. An inversion is
+unusual for this rig and worth surfacing.
 
 ### D10 — Calibration outlier
-Rate deviating from the night's other calibrations; orthogonality error from West/North angles; `STAR LOST during calibration` count.
-**Observed:** rates of 1.347 / 1.407 / 1.266 px/sec across three calibrations on 2026-07-23; 86 star-lost-during-calibration events in one night (2026-05-11).
+Rate deviating from the night's other calibrations; orthogonality
+error from West/North angles; `STAR LOST during calibration` count.
+**Observed:** rates of 1.347 / 1.407 / 1.266 px/sec across three
+calibrations on 2026-07-23; 86 star-lost-during-calibration events in
+one night (2026-05-11).
 
 ### D11 — Autofocus health
 Failure rate, duration outliers, achieved star-size trend.
 **Baseline:** median 109s, p90 113s, 95.6% success across 225 events.
 
 ### D12 — Plate-solve degradation
-Repeated `Too far from center`, `Mount slews failed`, `Plate Solve failed`, and `Star number` trend across the night.
-**Note:** `Star number` (588–1056 observed) is the only genuine transparency measurement in either log, but it is written only a handful of times per night. Coarse sanity check, not a per-sub metric.
+Repeated `Too far from center`, `Mount slews failed`, `Plate Solve
+failed`, and `Star number` trend across the night.  **Note:** `Star
+number` (588–1056 observed) is the only genuine transparency
+measurement in either log, but it is written only a handful of times
+per night. Coarse sanity check, not a per-sub metric.
 
 ### D13 — Focus drift
-Regress focuser position on temperature per night; report coefficient, r², and residuals; flag outliers and coefficient drift across sessions.
-**Observed:** −20.2 steps/°C, r² = 0.975, residuals ±6.4 steps (2026-07-23, one night only).
+Regress focuser position on temperature per night; report coefficient,
+r², and residuals; flag outliers and coefficient drift across
+sessions.  **Observed:** −20.2 steps/°C, r² = 0.975, residuals ±6.4
+steps (2026-07-23, one night only).
 
 ### D14 — Dropped-frame rate
-DROP rows as a fraction of total frames.
-**Baseline:** 1.18% corpus; per-night 0% to 17.7%.
+DROP rows as a fraction of total frames.  **Baseline:** 1.18% corpus;
+per-night 0% to 17.7%.
 
 ### D15 — Guide star near frame edge
-Lock position within a configurable distance of the sensor edge. Both D1 flags locked within 105 px on a 1280×960 sensor; clean sessions that night ranged 112–410 px. Ships as `info` until the corpus-wide distribution is gathered.
+Lock position within a configurable distance of the sensor edge. Both
+D1 flags locked within 105 px on a 1280×960 sensor; clean sessions
+that night ranged 112–410 px. Ships as `info` until the corpus-wide
+distribution is gathered.
+
+### D16 — Mid-imaging guide recovery (candidate, unvalidated)
+Built on `GuideRecoveryEvent` (§4.1) — a `Guide Settle → Guide star
+lost → Settle failed/Done` cycle occurring mid-imaging, outside
+dither/AF/calibration. First observed as ~100+ occurrences on the M64
+log (2026-05-11), previously silently skipped by the parser. Whether
+this becomes its own Finding or feeds an existing one (D2
+cloud-density, D7 cadence) is undecided — ships as `info` until
+validated against more nights.
 
 ---
 
 ## 7. Report structure
 
-Single combined report. ASIAir-derived session detail first, as you suggested.
+Single combined report. ASIAir-derived session detail first, as you
+suggested.
 
-**1. Verdict** — subs captured / clean / marginal / reject, usable integration, settled guide RMS, finding counts by severity. Every figure here is a fusion product.
+**1. Verdict** — subs captured / clean / marginal / reject, usable
+integration, settled guide RMS, finding counts by severity. Every
+figure here is a fusion product.
 
-**2. Session timeline** — the existing ASIAir event table, extended with a guide-quality column per imaging block and anomalies interleaved as their own rows. Manual stops, recovery gaps, aborted frames and disconnects appear inline. This is where a silent 25-minute hole becomes impossible.
+**2. Session timeline** — the existing ASIAir event table, extended
+with a guide-quality column per imaging block and anomalies
+interleaved as their own rows. Manual stops, recovery gaps, aborted
+frames and disconnects appear inline. This is where a silent 25-minute
+hole becomes impossible.
 
-**3. Per-sub frame quality** — the join. Image number, target, start, RMS RA/Dec/total, peak, dropped frames, settled-at-start, block AF star size, temperature, tier, tier reasons. CSV export keyed on image number.
+**3. Per-sub frame quality** — the join. Image number, target, start,
+RMS RA/Dec/total, peak, dropped frames, settled-at-start, block AF
+star size, temperature, tier, tier reasons. CSV export keyed on image
+number.
 
-**4. Findings** — ranked by severity, each with evidence, affected subs, and what was ruled out.
+**4. Findings** — ranked by severity, each with evidence, affected
+subs, and what was ruled out.
 
-**5. Guiding analysis** — settled RMS headline with all-frames secondary; per-axis; pier side and hour-angle breakdown; dither amplitude in guide px, arcsec and main-camera px; calibration summary; periodicity where a long clean session permits it.
+**5. Guiding analysis** — settled RMS headline with all-frames
+secondary; per-axis; pier side and hour-angle breakdown; dither
+amplitude in guide px, arcsec and main-camera px; calibration summary;
+periodicity where a long clean session permits it.
 
-**6. Focus and environment** — temperature trace with cooling-rate annotation, focus/temperature regression, achieved star-size trend, AF cadence adequacy.
+**6. Focus and environment** — temperature trace with cooling-rate
+annotation, focus/temperature regression, achieved star-size trend, AF
+cadence adequacy.
 
-**7. Time accounting** — reconciled against wall clock with the unaccounted remainder shown explicitly. Dither presented as nested within imaging, not as a sibling category.
+**7. Time accounting** — reconciled against wall clock with the
+unaccounted remainder shown explicitly. Dither presented as nested
+within imaging, not as a sibling category.
 
-**8. Recommendations** — four groups: Astryx settings, ASIAir configuration, PHD2 configuration, process and hardware.
+**8. Recommendations** — four groups: Astryx settings, ASIAir
+configuration, PHD2 configuration, process and hardware.
 
-**9. Data quality** — invariant results, unmatched line count with samples, subs lacking guide data, and an explicit statement of what the analysis cannot see.
+**9. Data quality** — invariant results, unmatched line count with
+samples, subs lacking guide data, and an explicit statement of what
+the analysis cannot see.
 
 Section 9 is unusual and is what makes the other eight trustworthy.
 
@@ -364,7 +504,11 @@ Section 9 is unusual and is what makes the other eight trustworthy.
 
 ## 8. Recommendations engine
 
-Each `Recommendation` carries five fields minimum: observed, recommended, evidence, confidence, expected impact. A recommendation with no change required is still worth printing — *"AF Duration 2m → 2m; observed mean 2.09m across 11 events; measured; no change"* tells the user not to touch it.
+Each `Recommendation` carries five fields minimum: observed,
+recommended, evidence, confidence, expected impact. A recommendation
+with no change required is still worth printing — *"AF Duration 2m →
+2m; observed mean 2.09m across 11 events; measured; no change"* tells
+the user not to touch it.
 
 Grouping:
 
@@ -372,13 +516,22 @@ Grouping:
 |---|---|
 | **Astryx settings** | Sub gap, dither duration, AF duration, flip pause and duration, guide calibration |
 | **ASIAir config** | AF interval, flip offset, frames per dither, settle timeout, dither scale |
-| **PHD2 config** | Search region, star mass tolerance, min-move, aggression |
+| **PHD2 config** | Calibration orthogonality, calibration rate consistency, calibration step size, search region, star mass tolerance, min-move, aggression |
 | **Process / hardware** | Guide star selection, cable routing, calibration timing, flat exposure |
 
 Two rules:
 
-- **Astryx settings that mirror ASIAir configuration are copied, not learned.** AF Interval, Flip Offset and Frames per Dither belong to the ASIAir. AF Duration, Flip Duration, Guide Calibration, Sub Gap and Dither are measured performance. Flip Pause is the only hybrid — and should be *derived* from transit time, target coordinates (available in the log), flip offset and sub cycle rather than stored at all.
-- **Learned values are computed from clean blocks only**, carry a date and sample count, and are rejected when the contributing blocks have findings. This alone would have blocked the corrupted 59s from reaching the sequence planner.
+- **Astryx settings that mirror ASIAir configuration are copied, not
+  learned.** AF Interval, Flip Offset and Frames per Dither belong to
+  the ASIAir. AF Duration, Flip Duration, Guide Calibration, Sub Gap
+  and Dither are measured performance. Flip Pause is the only hybrid —
+  and should be *derived* from transit time, target coordinates
+  (available in the log), flip offset and sub cycle rather than stored
+  at all.
+- **Learned values are computed from clean blocks only**, carry a date
+  and sample count, and are rejected when the contributing blocks have
+  findings. This alone would have blocked the corrupted 59s from
+  reaching the sequence planner.
 
 ---
 
@@ -393,6 +546,7 @@ Reported in section 9 of every report, not omitted:
 | Guide-star mass is not a transparency proxy | Flat at 91–97% within a lock through known cloud; incomparable across re-selections. |
 | Novel failure modes | A detector finds what it was written to find. Unknown failures surface only as invariant failures or unaccounted intervals — which is why sections 7 and 9 exist. |
 | Thresholds are rig-specific | All defaults derive from one AM5 / AT115EDT / ASI120MM Mini setup over 9 months. |
+| Equipment linkage is name/value matching, not physical verification | Matching a session's logged camera model and focal length to an Astryx equipment record confirms the log and the database agree on paper — it cannot detect a physically miswired rig, a lens cap, or dew producing normal-looking header values from a camera pointed at nothing. |
 
 ---
 
@@ -400,27 +554,52 @@ Reported in section 9 of every report, not omitted:
 
 Flagged rather than resolved.
 
-**Q1 — Report scope.** One combined report replacing both, or a combined report plus the two existing detail reports retained as drill-downs? Recommendation: combined replaces both, since every substantive finding needed both logs.
+**Q1 — Report scope.** One combined report replacing both, or a
+combined report plus the two existing detail reports retained as
+drill-downs? Recommendation: combined replaces both, since every
+substantive finding needed both logs.
 
-**Q2 — Missing PHD2 log.** Degrade gracefully with `guide: null`, or refuse to produce the combined report? Recommendation: degrade, and state the limitation in section 9.
+**Q2 — Missing PHD2 log.** Degrade gracefully with `guide: null`, or
+refuse to produce the combined report? Recommendation: degrade, and
+state the limitation in section 9.
 
-**Q3 — Multi-target nights.** One report with per-target sections, or one report per target? 9 of 25 nights are multi-target and one has three separate `Plan Tonight` runs at three exposure lengths. Recommendation: one report per night with per-target sections, since time accounting and environment are night-level.
+**Q3 — Multi-target nights.** One report with per-target sections, or
+one report per target? 9 of 25 nights are multi-target and one has
+three separate `Plan Tonight` runs at three exposure
+lengths. Recommendation: one report per night with per-target
+sections, since time accounting and environment are night-level.
 
-**Q4 — Historical baselines.** Should the recommendations engine compare against the user's own trailing median (requiring per-session metric storage in the DB) or ship fixed defaults? Storing metrics is a schema change and a `DB_VERSION` bump. Fixed defaults are simpler but drift out of calibration — your guiding improved from 1.20" to 0.97" over the corpus.
+**Q4 — Historical baselines.** Should the recommendations engine
+compare against the user's own trailing median (requiring per-session
+metric storage in the DB) or ship fixed defaults? Storing metrics is a
+schema change and a `DB_VERSION` bump. Fixed defaults are simpler but
+drift out of calibration — your guiding improved from 1.20" to 0.97"
+over the corpus.
 
-**Q5 — Tier thresholds.** The marginal band on 2025-12-20 (1.35–2.22" against a 1.1" median) is suggestive but was not tuned to match your keeper count, deliberately. Should tiers be absolute, or relative to each night's own median?
+**Q5 — Tier thresholds.** The marginal band on 2025-12-20 (1.35–2.22"
+against a 1.1" median) is suggestive but was not tuned to match your
+keeper count, deliberately. Should tiers be absolute, or relative to
+each night's own median?
 
-**Q6 — CSV export target.** Plain CSV, or a format matching SubframeSelector / Photyx input directly?
+**Q6 — CSV export target.** Plain CSV, or a format matching
+SubframeSelector / Photyx input directly?
 
-**Q7 — LLM narration.** Sections 4 and 8 could be authored by the Claude API from the findings array. Better synthesis, but adds a network dependency and a key to an offline-capable desktop app. Recommendation: build stages 1–6 regardless, since the evidence layer is a prerequisite either way, and decide afterwards.
+**Q7 — LLM narration.** Sections 4 and 8 could be authored by the
+Claude API from the findings array. Better synthesis, but adds a
+network dependency and a key to an offline-capable desktop
+app. Recommendation: build stages 1–6 regardless, since the evidence
+layer is a prerequisite either way, and decide afterwards.
 
-**Q8 — Test fixtures.** Commit a handful of small ASIAir logs (~40 KB) with expected output for regression testing? PHD2 logs at ~1 MB are too heavy for the repo.
+**Q8 — Test fixtures.** Commit a handful of small ASIAir logs (~40 KB)
+with expected output for regression testing? PHD2 logs at ~1 MB are
+too heavy for the repo.
 
 ---
 
 ## 11. Non-goals
 
-- Image analysis. Astryx reads logs; SubframeSelector and Photyx read frames.
+- Image analysis. Astryx reads logs; SubframeSelector and Photyx read
+  frames.
 - Predicting weather.
 - Replacing PHD2's own analysis tools.
 - Multi-night trend analysis in v1 — depends on Q4.

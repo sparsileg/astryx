@@ -86,17 +86,21 @@ const Phd2LogView = {
             </table>
         `;
 
-        // --- Overall Statistics ---
+      // --- Overall Statistics ---
         if (overall) {
+            const excludedNote = overall.excludedCriticalSessionCount > 0
+                ? ` (${overall.excludedCriticalSessionCount} session${overall.excludedCriticalSessionCount > 1 ? 's' : ''} with critical RMS excluded — see Anomalies)`
+                : '';
             html += `
                 <h4 class="session-report-section">Overall Statistics</h4>
+                <p style="color:var(--text-secondary);font-size:0.9em">Headline RMS below is <strong>settled-frame RMS</strong> — frames captured during a dither settle are excluded. All-frames figures are shown for reference${excludedNote}.</p>
                 <table class="session-table">
                     <tbody>
                         <tr><td>Guide Sessions</td><td>${overall.sessionCount} total, ${overall.fullSessionCount} full</td></tr>
                         <tr><td>Total Guide Frames</td><td>${overall.totalFrames.toLocaleString()}</td></tr>
-                        <tr><td>RMS RA</td><td>${Phd2LogParser.fmtArcsec(overall.raRms)}</td></tr>
-                        <tr><td>RMS Dec</td><td>${Phd2LogParser.fmtArcsec(overall.decRms)}</td></tr>
-                        <tr><td>RMS Total</td><td>${Phd2LogParser.fmtArcsec(overall.totRms)}</td></tr>
+                        <tr><td>RMS RA</td><td>${overall.raRms != null ? Phd2LogParser.fmtArcsec(overall.raRms) : '—'} <span style="color:var(--text-secondary)">(all: ${Phd2LogParser.fmtArcsec(overall.raRmsAll)})</span></td></tr>
+                        <tr><td>RMS Dec</td><td>${overall.decRms != null ? Phd2LogParser.fmtArcsec(overall.decRms) : '—'} <span style="color:var(--text-secondary)">(all: ${Phd2LogParser.fmtArcsec(overall.decRmsAll)})</span></td></tr>
+                        <tr><td>RMS Total</td><td>${overall.totRms != null ? Phd2LogParser.fmtArcsec(overall.totRms) : '—'} <span style="color:var(--text-secondary)">(all: ${Phd2LogParser.fmtArcsec(overall.totRmsAll)})</span></td></tr>
                         <tr><td>Avg Guide Star SNR</td><td>${Phd2LogParser.fmtSnr(overall.avgSnr)}</td></tr>
                         <tr><td>Total Dither Events</td><td>${overall.totalDithers}</td></tr>
                     </tbody>
@@ -126,29 +130,37 @@ const Phd2LogView = {
                 <tbody>
         `;
 
-        sessions.forEach((s, idx) => {
+      sessions.forEach((s, idx) => {
             const bg = '';
             if (!s.stats) {
                 html += `<tr ${bg}><td>${s.num}</td><td colspan="10" style="color:var(--text-secondary)">No frames recorded</td></tr>`;
                 return;
             }
-            const { raRms, decRms, totRms, raPeak, decPeak, avgSnr } = s.stats;
+            const { raRms, decRms, totRms, raPeak, decPeak, avgSnr, totRmsAll, raPeakAll, decPeakAll, settledFrameCount, totalFiniteFrameCount } = s.stats;
             const flags = this._sessionFlags(s, anomalies);
             const flagHtml = flags.length > 0
                 ? flags.map(f => `<span class="guide-flag guide-flag-${f.cls}">${f.label}</span>`).join(' ')
                 : '—';
             const incomplete = s.incomplete ? ' ⚠' : '';
+            const frameCount = settledFrameCount < totalFiniteFrameCount
+                ? `${s.frames.length} <span style="color:var(--text-secondary)">(${settledFrameCount} settled)</span>`
+                : `${s.frames.length}`;
+            const totalCell = totRms != null
+                ? `${Phd2LogParser.fmtArcsec(totRms)} <span style="color:var(--text-secondary)">(all: ${Phd2LogParser.fmtArcsec(totRmsAll)})</span>`
+                : `— <span style="color:var(--text-secondary)">(all: ${Phd2LogParser.fmtArcsec(totRmsAll)})</span>`;
+            const raPeakCell = raPeak != null ? Phd2LogParser.fmtArcsec(raPeak) : `— (all: ${Phd2LogParser.fmtArcsec(raPeakAll)})`;
+            const decPeakCell = decPeak != null ? Phd2LogParser.fmtArcsec(decPeak) : `— (all: ${Phd2LogParser.fmtArcsec(decPeakAll)})`;
             html += `
                 <tr ${bg}>
                     <td>${s.num}</td>
                     <td style="white-space:nowrap">${Phd2LogParser._sessionTimeRange(s)}${incomplete}</td>
                     <td>${s.startLine}</td>
-                    <td>${s.frames.length}</td>
-                    <td>${Phd2LogParser.fmtArcsec(raRms)}</td>
-                    <td>${Phd2LogParser.fmtArcsec(decRms)}</td>
-                    <td>${Phd2LogParser.fmtArcsec(totRms)}</td>
-                    <td>${Phd2LogParser.fmtArcsec(raPeak)}</td>
-                    <td>${Phd2LogParser.fmtArcsec(decPeak)}</td>
+                    <td>${frameCount}</td>
+                    <td>${raRms != null ? Phd2LogParser.fmtArcsec(raRms) : '—'}</td>
+                    <td>${decRms != null ? Phd2LogParser.fmtArcsec(decRms) : '—'}</td>
+                    <td>${totalCell}</td>
+                    <td>${raPeakCell}</td>
+                    <td>${decPeakCell}</td>
                     <td>${Phd2LogParser.fmtSnr(avgSnr)}</td>
                     <td>${flagHtml}</td>
                 </tr>
@@ -190,16 +202,18 @@ const Phd2LogView = {
     // Helpers
     // -------------------------------------------------------------------------
 
-    _sessionFlags(session, anomalies) {
+  _sessionFlags(session, anomalies) {
         const flags = [];
         const T = Phd2LogParser.THRESHOLDS;
         const sessionAnomalies = anomalies.filter(a => a.session === session.num);
 
-        if (session.frames.length < T.shortSession && !session.incomplete) {
+        if (session.frames.length < T.SHORT_SESSION && !session.incomplete) {
             flags.push({ label: 'Short', cls: 'info' });
         }
-        if (sessionAnomalies.some(a => a.type === 'high_rms')) {
-            flags.push({ label: 'High RMS', cls: 'critical' });
+        if (sessionAnomalies.some(a => a.type === 'critical_rms')) {
+            flags.push({ label: 'Critical RMS', cls: 'critical' });
+        } else if (sessionAnomalies.some(a => a.type === 'high_rms')) {
+            flags.push({ label: 'High RMS', cls: 'warning' });
         } else if (sessionAnomalies.some(a => a.type === 'elevated_rms')) {
             flags.push({ label: 'Elevated RMS', cls: 'warning' });
         }
@@ -215,6 +229,9 @@ const Phd2LogView = {
         if (sessionAnomalies.some(a => a.type === 'low_snr')) {
             flags.push({ label: 'Low SNR', cls: 'warning' });
         }
+        if (sessionAnomalies.some(a => a.type === 'no_settled_data')) {
+            flags.push({ label: 'No Settled Data', cls: 'info' });
+        }
         if (session.incomplete) {
             flags.push({ label: 'Incomplete', cls: 'info' });
         }
@@ -227,7 +244,7 @@ const Phd2LogView = {
      * @param {object} parsed
      * @returns {string} HTML string
      */
-    _buildNarrativeHtml(parsed) {
+  _buildNarrativeHtml(parsed) {
         const { sessions, overall, anomalies, equipment } = parsed;
         const T = Phd2LogParser.THRESHOLDS;
 
@@ -236,25 +253,42 @@ const Phd2LogView = {
         const lines = [];
 
         // --- Opening summary ---
-        const typicalRms = overall.totRms.toFixed(2);
-        const quality = overall.totRms < 1.5 ? 'excellent' : overall.totRms < 2.5 ? 'good' : overall.totRms < 4.0 ? 'fair' : 'poor';
-        lines.push(`Overall guiding quality was <strong>${quality}</strong> with a session-wide RMS of ${typicalRms}" total (${overall.raRms.toFixed(2)}" RA, ${overall.decRms.toFixed(2)}" Dec) across ${overall.fullSessionCount} full guide sessions.`);
+        // Quality band matches Phd2LogParser.THRESHOLDS exactly (previously
+        // this used its own hardcoded 1.5/2.5/4.0 boundaries, disconnected
+        // from the parser's thresholds and calibrated against all-frames RMS
+        // rather than settled RMS — see ELR.p1-2 Change 3).
+        if (overall.totRms !== null) {
+            const typicalRms = overall.totRms.toFixed(2);
+            const quality = overall.totRms < T.RMS_EXCELLENT ? 'excellent'
+                : overall.totRms < T.RMS_ELEVATED ? 'normal'
+                : overall.totRms < T.RMS_HIGH ? 'elevated'
+                : overall.totRms < T.RMS_CRITICAL ? 'high'
+                : 'critical';
+            const excludedNote = overall.excludedCriticalSessionCount > 0
+                ? ` (${overall.excludedCriticalSessionCount} session${overall.excludedCriticalSessionCount > 1 ? 's' : ''} with critical RMS excluded from this figure — see Anomalies)`
+                : '';
+            lines.push(`Overall guiding quality was <strong>${quality}</strong> with a settled-frame RMS of ${typicalRms}" total (${overall.raRms.toFixed(2)}" RA, ${overall.decRms.toFixed(2)}" Dec) across ${overall.fullSessionCount} full guide sessions${excludedNote}. All-frames RMS (including dither-settle frames) was ${overall.totRmsAll.toFixed(2)}" total, shown for reference.`);
+        } else {
+            lines.push(`No settled-frame data was available across the night (every frame fell inside a dither-settle window); all-frames RMS was ${overall.totRmsAll.toFixed(2)}" total, shown for reference only.`);
+        }
 
         // --- RA vs Dec balance ---
-        const raBias = overall.raRms / overall.decRms;
-        if (raBias > 1.5) {
-            lines.push(`RA error was notably larger than Dec throughout the night, suggesting possible periodic error or aggressiveness settings that could be tuned.`);
-        } else if (raBias < 0.67) {
-            lines.push(`Dec error was notably larger than RA throughout the night, which may indicate backlash or Dec guide settings worth reviewing.`);
-        } else {
-            lines.push(`RA and Dec errors were well balanced.`);
+        if (overall.totRms !== null) {
+            const raBias = overall.raRms / overall.decRms;
+            if (raBias > 1.5) {
+                lines.push(`RA error was notably larger than Dec throughout the night, suggesting possible periodic error or aggressiveness settings that could be tuned.`);
+            } else if (raBias < 0.67) {
+                lines.push(`Dec error was notably larger than RA throughout the night, which may indicate backlash or Dec guide settings worth reviewing.`);
+            } else {
+                lines.push(`RA and Dec errors were well balanced.`);
+            }
         }
 
         // --- Per-session narrative ---
         lines.push(`<br><strong>Session by session:</strong>`);
 
         // Track SNR baseline for jump detection
-        const fullSessions = sessions.filter(s => s.stats && s.frames.length >= T.shortSession);
+        const fullSessions = sessions.filter(s => s.stats && s.frames.length >= T.SHORT_SESSION);
         const baselineSnr = fullSessions.slice(0, 5).reduce((sum, s) => sum + s.stats.avgSnr, 0) /
             Math.min(5, fullSessions.length);
 
@@ -266,18 +300,25 @@ const Phd2LogView = {
                 continue;
             }
 
-            const { raRms, decRms, totRms, raPeak, decPeak, avgSnr } = s.stats;
+            const { raRms, decRms, totRms, raPeak, decPeak, avgSnr, totRmsAll } = s.stats;
             const timeRange = Phd2LogParser._sessionTimeRange(s);
 
             // Short session
-            if (s.frames.length < T.shortSession && !s.incomplete) {
+            if (s.frames.length < T.SHORT_SESSION && !s.incomplete) {
                 lines.push(`Session ${s.num} (${timeRange}, line ${s.startLine}) — brief session of ${s.frames.length} frames, likely an autofocus interruption or guider restart.`);
                 continue;
             }
 
             // Incomplete
             if (s.incomplete) {
-                lines.push(`Session ${s.num} (${timeRange}, line ${s.startLine}) — session was active when the log ended, likely the end of the night. RMS was ${totRms.toFixed(2)}" with avg SNR ${avgSnr.toFixed(1)}.`);
+                const rmsText = totRms !== null ? `${totRms.toFixed(2)}"` : `unavailable (all-frames ${totRmsAll.toFixed(2)}")`;
+                lines.push(`Session ${s.num} (${timeRange}, line ${s.startLine}) — session was active when the log ended, likely the end of the night. Settled RMS was ${rmsText} with avg SNR ${avgSnr.toFixed(1)}.`);
+                continue;
+            }
+
+            // No settled frames at all in an otherwise-complete session
+            if (totRms === null) {
+                lines.push(`Session ${s.num} (${timeRange}, line ${s.startLine}) — every frame fell inside a dither-settle window; no settled RMS available (all-frames ${totRmsAll.toFixed(2)}" total, not representative of guiding error).`);
                 continue;
             }
 
@@ -285,20 +326,22 @@ const Phd2LogView = {
             const parts = [];
 
             // RMS assessment
-            if (totRms >= T.rmsHigh) {
-                parts.push(`<strong style="color:var(--error-color)">Major guiding problem</strong> — RMS spiked to ${totRms.toFixed(2)}" total (${raRms.toFixed(2)}" RA, ${decRms.toFixed(2)}" Dec), approximately ${(totRms / overall.totRms).toFixed(1)}× the night average`);
-            } else if (totRms >= T.rmsElevated) {
+            if (totRms >= T.RMS_CRITICAL) {
+                parts.push(`<strong style="color:var(--error-color)">Major guiding problem</strong> — settled RMS spiked to ${totRms.toFixed(2)}" total (${raRms.toFixed(2)}" RA, ${decRms.toFixed(2)}" Dec)`);
+            } else if (totRms >= T.RMS_HIGH) {
+                parts.push(`High RMS of ${totRms.toFixed(2)}" total (${raRms.toFixed(2)}" RA, ${decRms.toFixed(2)}" Dec)`);
+            } else if (totRms >= T.RMS_ELEVATED) {
                 parts.push(`Elevated RMS of ${totRms.toFixed(2)}" total (${raRms.toFixed(2)}" RA, ${decRms.toFixed(2)}" Dec)`);
             } else {
                 parts.push(`Good guiding, RMS ${totRms.toFixed(2)}" total`);
             }
 
             // Peak spikes
-            if (raPeak >= T.peakSpike || decPeak >= T.peakSpike) {
+            if (raPeak >= T.PEAK_SPIKE || decPeak >= T.PEAK_SPIKE) {
                 const spikeParts = [];
-                if (raPeak >= T.peakSpike) spikeParts.push(`RA peak ${raPeak.toFixed(1)}"`);
-                if (decPeak >= T.peakSpike) spikeParts.push(`Dec peak ${decPeak.toFixed(1)}"`);
-                if (totRms >= T.rmsHigh) {
+                if (raPeak >= T.PEAK_SPIKE) spikeParts.push(`RA peak ${raPeak.toFixed(1)}"`);
+                if (decPeak >= T.PEAK_SPIKE) spikeParts.push(`Dec peak ${decPeak.toFixed(1)}"`);
+                if (totRms >= T.RMS_CRITICAL) {
                     parts.push(`with extreme spikes (${spikeParts.join(', ')}) — consistent with a mount overcorrection or periodic error event the guider struggled to recover from`);
                 } else {
                     parts.push(`with isolated spike (${spikeParts.join(', ')})`);
@@ -312,20 +355,15 @@ const Phd2LogView = {
                 if (m) parts.push(`Subs ${m[1]}–${m[2]} should be carefully inspected`);
             }
 
-            // Error codes
+            // Error codes — description comes straight from the log (see
+            // Phd2LogParser._detectAnomalies), no cause is inferred here
             const errAnomalies = sAnomalies.filter(a => a.type === 'error_code');
             for (const ea of errAnomalies) {
-                const countMatch = ea.message.match(/(\d+) frame/);
-                const count = countMatch ? parseInt(countMatch[1]) : 1;
-                if (count === 1) {
-                    parts.push(`one frame had a star mass change (code 7) — likely a satellite or aircraft pass, no impact`);
-                } else {
-                    parts.push(`${count} frames had error code(s) — ${ea.message}`);
-                }
+                parts.push(ea.message);
             }
 
             // SNR jump
-            if (avgSnr >= baselineSnr * T.snrJumpFactor) {
+            if (avgSnr >= baselineSnr * T.SNR_JUMP_FACTOR) {
                 parts.push(`SNR jumped to ${avgSnr.toFixed(1)} (vs baseline ~${baselineSnr.toFixed(1)}) — PHD2 likely selected a much brighter guide star`);
             }
 
@@ -399,18 +437,24 @@ const Phd2LogView = {
                     {}, {}, {}, {}, {}, {}, {},
                 ];
             }
-            const { raRms, decRms, totRms, raPeak, decPeak, avgSnr } = s.stats;
+          const { raRms, decRms, totRms, raPeak, decPeak, avgSnr, totRmsAll, raPeakAll, decPeakAll, settledFrameCount, totalFiniteFrameCount } = s.stats;
             const flags = this._sessionFlags(s, anomalies).map(f => f.label).join(', ') || '—';
+            const frameText = settledFrameCount < totalFiniteFrameCount
+                ? `${s.frames.length} (${settledFrameCount} settled)`
+                : String(s.frames.length);
+            const totalText = totRms != null
+                ? `${Phd2LogParser.fmtArcsec(totRms)} (all: ${Phd2LogParser.fmtArcsec(totRmsAll)})`
+                : `— (all: ${Phd2LogParser.fmtArcsec(totRmsAll)})`;
             return [
                 { text: String(s.num), fontSize: 8, fillColor: bg },
                 { text: Phd2LogParser._sessionTimeRange(s) + (s.incomplete ? ' ⚠' : ''), fontSize: 8, fillColor: bg },
                 { text: String(s.startLine), fontSize: 8, fillColor: bg },
-                { text: String(s.frames.length), fontSize: 8, fillColor: bg },
-                { text: Phd2LogParser.fmtArcsec(raRms), fontSize: 8, fillColor: bg },
-                { text: Phd2LogParser.fmtArcsec(decRms), fontSize: 8, fillColor: bg },
-                { text: Phd2LogParser.fmtArcsec(totRms), fontSize: 8, fillColor: bg },
-                { text: Phd2LogParser.fmtArcsec(raPeak), fontSize: 8, fillColor: bg },
-                { text: Phd2LogParser.fmtArcsec(decPeak), fontSize: 8, fillColor: bg },
+                { text: frameText, fontSize: 8, fillColor: bg },
+                { text: raRms != null ? Phd2LogParser.fmtArcsec(raRms) : '—', fontSize: 8, fillColor: bg },
+                { text: decRms != null ? Phd2LogParser.fmtArcsec(decRms) : '—', fontSize: 8, fillColor: bg },
+                { text: totalText, fontSize: 8, fillColor: bg },
+                { text: raPeak != null ? Phd2LogParser.fmtArcsec(raPeak) : Phd2LogParser.fmtArcsec(raPeakAll), fontSize: 8, fillColor: bg },
+                { text: decPeak != null ? Phd2LogParser.fmtArcsec(decPeak) : Phd2LogParser.fmtArcsec(decPeakAll), fontSize: 8, fillColor: bg },
                 { text: Phd2LogParser.fmtSnr(avgSnr), fontSize: 8, fillColor: bg },
                 { text: flags, fontSize: 8, fillColor: bg },
             ];
@@ -448,15 +492,19 @@ const Phd2LogView = {
             { table: { widths: [100, 300], body: eqRows }, layout: tableLayout },
         ];
 
-        if (overall) {
+      if (overall) {
+            const headlineNote = overall.excludedCriticalSessionCount > 0
+                ? `Headline RMS is settled-frame RMS (${overall.excludedCriticalSessionCount} critical session${overall.excludedCriticalSessionCount > 1 ? 's' : ''} excluded — see Anomalies).`
+                : 'Headline RMS is settled-frame RMS (dither-settle frames excluded).';
             content.push(
                 { text: 'Overall Statistics', style: 'sectionHeading' },
+                { text: headlineNote, fontSize: 8, italics: true, color: colors.subtitleText, margin: [0, 0, 0, 4] },
                 { table: { widths: [150, 250], body: [
                     [{ text: 'Guide Sessions', fontSize: 9 }, { text: `${overall.sessionCount} total, ${overall.fullSessionCount} full`, fontSize: 9 }],
                     [{ text: 'Total Guide Frames', fontSize: 9 }, { text: overall.totalFrames.toLocaleString(), fontSize: 9 }],
-                    [{ text: 'RMS RA', fontSize: 9 }, { text: Phd2LogParser.fmtArcsec(overall.raRms), fontSize: 9 }],
-                    [{ text: 'RMS Dec', fontSize: 9 }, { text: Phd2LogParser.fmtArcsec(overall.decRms), fontSize: 9 }],
-                    [{ text: 'RMS Total', fontSize: 9 }, { text: Phd2LogParser.fmtArcsec(overall.totRms), fontSize: 9 }],
+                    [{ text: 'RMS RA', fontSize: 9 }, { text: `${overall.raRms != null ? Phd2LogParser.fmtArcsec(overall.raRms) : '—'} (all: ${Phd2LogParser.fmtArcsec(overall.raRmsAll)})`, fontSize: 9 }],
+                    [{ text: 'RMS Dec', fontSize: 9 }, { text: `${overall.decRms != null ? Phd2LogParser.fmtArcsec(overall.decRms) : '—'} (all: ${Phd2LogParser.fmtArcsec(overall.decRmsAll)})`, fontSize: 9 }],
+                    [{ text: 'RMS Total', fontSize: 9 }, { text: `${overall.totRms != null ? Phd2LogParser.fmtArcsec(overall.totRms) : '—'} (all: ${Phd2LogParser.fmtArcsec(overall.totRmsAll)})`, fontSize: 9 }],
                     [{ text: 'Avg Guide Star SNR', fontSize: 9 }, { text: Phd2LogParser.fmtSnr(overall.avgSnr), fontSize: 9 }],
                     [{ text: 'Total Dither Events', fontSize: 9 }, { text: String(overall.totalDithers), fontSize: 9 }],
                 ]}, layout: tableLayout }
@@ -518,3 +566,7 @@ const Phd2LogView = {
     },
 
 };
+
+// ----------------------------------------------------------------------
+// ----------------------------------------------------------------------
+// ----------------------------------------------------------------------
