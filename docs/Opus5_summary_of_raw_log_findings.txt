@@ -1,0 +1,30 @@
+The raw logs changed the diagnosis substantially. Three things worth
+flagging before you read it:
+
+I was wrong about the cable drag. The frame-level PHD2 data shows a
+fixed 47.2 px displacement recurring around every dither, with star
+mass dropping to 73% and recovering on the next frame. That's PHD2
+alternating between two stars — a companion sitting just inside your
+50 px search region, with the primary locked at (1174, 96), 96 px from
+the frame edge. Not mechanical. No cable inspection needed.
+
+Images 41 and 42 were never lost. They were captured at 02:24:58 and
+02:31:02. The 25-minute hole was your manual stop at 02:39:34, plainly
+logged. The apparent gap came from a single unhandled token: your
+dither parser matches only Settle Done, never Settle Timeout, so on a
+timeout it scans forward unbounded to the next successful settle —
+producing one 1,491-second "dither" and swallowing every event in
+between. That one bug produces the inflated dither total, the missing
+frames, the phantom gap, a swallowed autofocus, the 397m double-count,
+and the corrupted 59s learned value that then fed the sequence plan.
+
+Your guiding was good, not poor. Excluding settle frames, the night
+was 0.97" total — RA 0.79", Dec 0.55". The NaN came from PHD2's DROP
+rows, whose empty columns parse to NaN and poison every
+aggregate. Those rows also carry the real error descriptions in column
+18, and all three entries in your hardcoded ERROR_CODES map contradict
+them.
+
+The highest-value addition is in Part 3: joining the two logs on their
+shared clock gives per-sub guiding RMS. It shows the damage is subs
+35–42, not 35–40, and that 52 of 60 subs are clean — 4h 20m usable.
