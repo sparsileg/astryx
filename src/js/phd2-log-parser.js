@@ -46,6 +46,7 @@ const Phd2LogParser = {
 
         const equipment = this._extractEquipment(lines);
         const sessions = this._extractSessions(lines, equipment.pixelScale);
+        const calibrations = this._extractCalibrations(lines); // #232
 
         // Flag when sessions don't share one pixel scale (e.g. a night that
         // mixes Bin1 and Bin2), since the report header shows a single
@@ -61,7 +62,7 @@ const Phd2LogParser = {
         const recommendations = this._buildRecommendations(sessions, anomalies, equipment, overall);
         const date = this._extractDate(lines);
 
-        return { equipment, sessions, overall, anomalies, recommendations, date };
+        return { equipment, sessions, calibrations, overall, anomalies, recommendations, date };
     },
 
     // -------------------------------------------------------------------------
@@ -452,6 +453,154 @@ const Phd2LogParser = {
         }
 
         return sessions;
+    },
+
+    // -------------------------------------------------------------------------
+    // Calibration extraction (#232)
+    // -------------------------------------------------------------------------
+
+    // Single linear pass over the whole file, structurally independent of
+    // _extractSessions above — calibration blocks always fall between a
+    // Guiding session's End and the next session's Begin (confirmed against
+    // the corpus), so the two passes never interact. Each calibration is
+    // terminated by its own "Calibration complete, mount = ..." line, or
+    // defensively closed out as 'incomplete' if a new Calibration/Guiding
+    // Begins appears first, or the file ends, without one (not observed in
+    // the corpus, but a truncated log shouldn't lose data or throw).
+    _extractCalibrations(lines) {
+        const calibrations = [];
+        let current = null;
+
+        const closeOutIncomplete = () => {
+            if (!current) return;
+            current.outcome = 'incomplete';
+            this._computeOrthogonality(current);
+            calibrations.push(current);
+            current = null;
+        };
+
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i].trim();
+
+            if (line.startsWith('Calibration Begins')) {
+                // Unclosed previous calibration — push as incomplete rather
+                // than silently overwriting it.
+                closeOutIncomplete();
+                const m = line.match(/Calibration Begins at (.+)/);
+                current = {
+                    startedAt: m ? m[1].trim() : null,
+                    startLine: i + 1,
+                    completedAt: null, // PHD2 doesn't timestamp the completion line itself
+                    endLine: null,
+                    mount: null,
+                    outcome: null,
+                    steps: [],
+                    west: { angleDeg: null, ratePxPerSec: null, parity: null },
+                    north: { angleDeg: null, ratePxPerSec: null, parity: null },
+                    backlashSteps: [],
+                    orthogonalityErrorDeg: null,
+                    starLostDuringCalibration: 0,
+                };
+                continue;
+            }
+
+            if (!current) continue;
+
+            if (line.startsWith('Guiding Begins')) {
+                // Calibration ended without its own terminator line — close
+                // out defensively, then let _extractSessions handle this
+                // line on its own separate pass.
+                closeOutIncomplete();
+                continue;
+            }
+
+            if (current.mount === null) {
+                // Distinct format from a guiding session's Mount line (no
+                // xAngle/xRate/yAngle/yRate here) — "Mount = ZWO000,
+                // Calibration Step = 1800 ms, Assume orthogonal axes = no".
+                const m = line.match(/^Mount = ([^,]+)/);
+                if (m) current.mount = m[1].trim();
+            }
+
+            const stepMatch = line.match(/^(West|East|North|South|Backlash),(\d+),(-?[\d.]+),(-?[\d.]+),(-?[\d.]+),(-?[\d.]+),(-?[\d.]+)$/);
+            if (stepMatch) {
+                const step = {
+                    direction: stepMatch[1],
+                    step: parseInt(stepMatch[2]),
+                    dx: parseFloat(stepMatch[3]),
+                    dy: parseFloat(stepMatch[4]),
+                    x: parseFloat(stepMatch[5]),
+                    y: parseFloat(stepMatch[6]),
+                    dist: parseFloat(stepMatch[7]),
+                };
+                if (step.direction === 'Backlash') {
+                    current.backlashSteps.push(step);
+                } else {
+                    current.steps.push(step);
+                }
+                continue;
+            }
+
+            const westMatch = line.match(/^West calibration complete\. Angle = (-?[\d.]+) deg, Rate = ([\d.]+) px\/sec, Parity = (\S+)/);
+            if (westMatch) {
+                current.west = {
+                    angleDeg: parseFloat(westMatch[1]),
+                    ratePxPerSec: parseFloat(westMatch[2]),
+                    parity: westMatch[3],
+                };
+                continue;
+            }
+
+            const northMatch = line.match(/^North calibration complete\. Angle = (-?[\d.]+) deg, Rate = ([\d.]+) px\/sec, Parity = (\S+)/);
+            if (northMatch) {
+                current.north = {
+                    angleDeg: parseFloat(northMatch[1]),
+                    ratePxPerSec: parseFloat(northMatch[2]),
+                    parity: northMatch[3],
+                };
+                continue;
+            }
+
+            if (line.includes('STAR LOST during calibration')) {
+                current.starLostDuringCalibration++;
+                continue;
+            }
+
+            const completeMatch = line.match(/^Calibration complete, mount = ([^.]+)\./);
+            if (completeMatch) {
+                current.endLine = i + 1;
+                current.outcome = 'complete';
+                this._computeOrthogonality(current);
+                calibrations.push(current);
+                current = null;
+                continue;
+            }
+        }
+
+        // Unclosed calibration at EOF
+        closeOutIncomplete();
+
+        return calibrations;
+    },
+
+    // |West angle − North angle| − 90°, correctly wrapped. Angle values
+    // range roughly ±180°, so a raw subtraction can land near 270° when the
+    // true minimal angular separation between the two axes is actually
+    // near 90° (e.g. West=145.0°, North=-124.6° gives a raw diff of 269.6°,
+    // not the ~90.4° the axes are actually apart) — caught during
+    // validation against 2026-07-23's three calibrations, where two of
+    // three came out as ~180° errors before this fix, which is physically
+    // implausible for a mount that guides fine. Only computed when both
+    // summaries were actually seen — East and South never get their own
+    // "complete" line in the corpus (log-format-survey.md §3.6), so a
+    // calibration interrupted before reaching West/North leaves this null
+    // rather than computed from a partial/incorrect pair.
+    _computeOrthogonality(cal) {
+        if (cal.west.angleDeg !== null && cal.north.angleDeg !== null) {
+            let diff = Math.abs(cal.west.angleDeg - cal.north.angleDeg) % 360;
+            if (diff > 180) diff = 360 - diff;
+            cal.orthogonalityErrorDeg = diff - 90;
+        }
     },
 
     // Frames with valid, finite RA/Dec guide error values. Mount rows should
