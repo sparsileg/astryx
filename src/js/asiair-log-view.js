@@ -52,7 +52,7 @@ const AsiairLogView = {
      * @returns {string} HTML string
      */
     _buildReportHtml(parsed) {
-        const { target, summary, recommendations, events } = parsed;
+        const { target, summary, recommendations, events, parseFailures } = parsed;
 
         const sessionDate = this._formatSessionDate(events);
 
@@ -141,11 +141,14 @@ const AsiairLogView = {
         }
 
         if (summary.ditherCount > 0) {
+            const cleanNote = summary.ditherCleanCount < summary.ditherCount
+                ? ` <span class="session-report-note-inline">(${summary.ditherCleanCount} settled cleanly)</span>`
+                : '';
             html += `
                     <tr>
-                        <td>Dither (${summary.ditherCount} events)</td>
+                        <td>Dither (${summary.ditherCount} events)${cleanNote}</td>
                         <td>${this.fmtDuration(summary.ditherTotalS)}</td>
-                        <td>${AsiairLogParser.fmtPct(summary.ditherPct)}</td>
+                        <td>${AsiairLogParser.fmtPct(summary.ditherShareOfImagingPct)} of imaging</td>
                     </tr>
             `;
         }
@@ -159,6 +162,16 @@ const AsiairLogView = {
                 </tbody>
             </table>
         `;
+
+        // --- Wall-clock reconciliation ---
+        if (summary.wallClockS != null) {
+            const unaccountedNote = summary.unaccountedS > 0
+                ? `${this.fmtDuration(summary.unaccountedS)} unaccounted (${AsiairLogParser.fmtPct(summary.unaccountedS / summary.wallClockS * 100)} of wall clock)`
+                : 'fully accounted for';
+            html += `
+                <p class="session-report-note-small">Wall clock: ${this.fmtDuration(summary.wallClockS)} &nbsp;•&nbsp; Tracked: ${this.fmtDuration(summary.totalTrackedS)} &nbsp;•&nbsp; ${unaccountedNote}</p>
+            `;
+        }
 
         // --- Recommended Settings table ---
         html += `
@@ -192,21 +205,51 @@ const AsiairLogView = {
 
         const learnedSubGapS = SettingsManager.getLearnedSubGapS();
         const learnedDitherDurationS = SettingsManager.getLearnedDitherDurationS();
+        const subGapMeta = SettingsManager.getLearnedSubGapMeta();
+        const ditherMeta = SettingsManager.getLearnedDitherDurationMeta();
+        const storedNote = (meta) => meta.sampleCount != null
+            ? ` (n=${meta.sampleCount}, ${meta.derivedDate})`
+            : '';
 
         html += `
                     <tr>
                         <td>Sub Gap</td>
-                        <td>Observed: ${recommendations.observedSubGapS}s</td>
-                        <td>Stored: ${learnedSubGapS}s</td>
+                        <td>Observed: ${recommendations.observedSubGapS}s (n=${recommendations.subGapSampleCount})${recommendations.subGapMeetsMinSamples ? '' : ' — below minimum, not applied'}</td>
+                        <td>Stored: ${learnedSubGapS}s${storedNote(subGapMeta)}</td>
                     </tr>
                     <tr>
                         <td>Dither Duration</td>
-                        <td>Observed: ${recommendations.observedDitherDurationS}s</td>
-                        <td>Stored: ${learnedDitherDurationS}s</td>
+                        <td>Observed: ${recommendations.observedDitherDurationS}s (n=${recommendations.ditherSampleCount})${recommendations.ditherMeetsMinSamples ? '' : ' — below minimum, not applied'}</td>
+                        <td>Stored: ${learnedDitherDurationS}s${storedNote(ditherMeta)}</td>
                     </tr>
                 </tbody>
             </table>
         `;
+
+        // --- Anomalies (parse failures, affected subs) ---
+        const dirtyDithers = events.filter(e => e.type === 'dither' && e.outcome && e.outcome !== 'done');
+        const affectedImgs = dirtyDithers.map(d => d.affectedImg).filter(n => n != null);
+        const failures = parseFailures || [];
+
+        if (dirtyDithers.length > 0 || failures.length > 0) {
+            html += `<h4 class="session-report-section">Anomalies</h4><ul class="session-report-notes">`;
+            if (dirtyDithers.length > 0) {
+                const byOutcome = dirtyDithers.reduce((acc, d) => { acc[d.outcome] = (acc[d.outcome]||0)+1; return acc; }, {});
+                const outcomeText = Object.entries(byOutcome).map(([o, n]) => `${n} ${o}`).join(', ');
+                html += `<li>${dirtyDithers.length} dither(s) did not settle cleanly (${outcomeText})`;
+                if (affectedImgs.length > 0) {
+                    html += ` — affected image(s): ${affectedImgs.join(', ')}`;
+                }
+                if (affectedImgs.length < dirtyDithers.length) {
+                    html += ` (${dirtyDithers.length - affectedImgs.length} could not be attributed to a specific image — likely absorbed into a subsequent autofocus cycle)`;
+                }
+                html += `</li>`;
+            }
+            if (failures.length > 0) {
+                html += `<li>${failures.length} settle scan(s) could not find a terminator and were excluded from the numbers above rather than estimated — see line(s) ${failures.map(f => f.startLine).join(', ')}</li>`;
+            }
+            html += `</ul>`;
+        }
 
         // --- Notes ---
         html += `
@@ -214,10 +257,10 @@ const AsiairLogView = {
             <ul class="session-report-notes">
                 <li>AF duration: includes autofocus process + guide re-select + guide settle; excludes guide calibration</li>
                 ${summary.calCount > 0 ? '<li>Guide Calibration: includes calibration process + guide settle</li>' : ''}
-                ${summary.ditherCount > 0 ? `<li>Dither: ${summary.ditherCount} events, avg ${summary.ditherAvgS.toFixed(0)}s each, total ${AsiairLogParser.fmtMinutes(summary.ditherTotalS)}</li>` : ''}
+                ${summary.ditherCount > 0 ? `<li>Dither: ${summary.ditherCount} events (${summary.ditherCleanCount} clean), avg ${summary.ditherAvgS.toFixed(0)}s (clean only), total ${AsiairLogParser.fmtMinutes(summary.ditherTotalS)}</li>` : ''}
                 ${summary.meridianTotalS > 0 ? '<li>Pre-flip pause and Meridian Flip are listed as separate events in the detail table</li>' : ''}
-                <li>Dither total is included in the summary but is embedded within imaging segments in the detail table</li>
-                <li>Sub gap and dither duration are learned values updated automatically each time a log is analyzed</li>
+                <li>Dither is nested within imaging time above, not a separate slice of the total — it's embedded within imaging segments in the detail table</li>
+                <li>Sub gap and dither duration are learned values updated automatically from clean samples each time a log is analyzed; a night with too few clean samples leaves the stored value untouched</li>
             </ul>
         `;
 
@@ -314,7 +357,7 @@ const AsiairLogView = {
         addSummaryRow('Autofocus (incl. guide settle)', this.fmtDuration(summary.afTotalS), AsiairLogParser.fmtPct(summary.afPct));
         if (summary.calCount > 0) addSummaryRow('Guide Calibration (incl. settle)', this.fmtDuration(summary.calTotalS), AsiairLogParser.fmtPct(summary.calPct));
         if (summary.meridianTotalS > 0) addSummaryRow('Meridian Flip (pause + flip)', this.fmtDuration(summary.meridianTotalS), AsiairLogParser.fmtPct(summary.meridianPct));
-        if (summary.ditherCount > 0) addSummaryRow(`Dither (${summary.ditherCount} events)`, this.fmtDuration(summary.ditherTotalS), AsiairLogParser.fmtPct(summary.ditherPct));
+        if (summary.ditherCount > 0) addSummaryRow(`Dither (${summary.ditherCount} events, ${summary.ditherCleanCount} clean)`, this.fmtDuration(summary.ditherTotalS), AsiairLogParser.fmtPct(summary.ditherShareOfImagingPct) + ' of imaging');
         addSummaryRow('Total tracked', '~' + this.fmtDuration(summary.totalTrackedS), '100%', true);
 
         const recRows = [];
@@ -341,27 +384,52 @@ const AsiairLogView = {
         }
         const learnedSubGapS = SettingsManager.getLearnedSubGapS();
         const learnedDitherDurationS = SettingsManager.getLearnedDitherDurationS();
+        const subGapMeta = SettingsManager.getLearnedSubGapMeta();
+        const ditherMeta = SettingsManager.getLearnedDitherDurationMeta();
+        const storedNote = (meta) => meta.sampleCount != null ? ` (n=${meta.sampleCount}, ${meta.derivedDate})` : '';
 
         addRecRow(
             'Sub Gap',
-            `Observed: ${recommendations.observedSubGapS}s`,
-            `Stored: ${learnedSubGapS}s`
+            `Observed: ${recommendations.observedSubGapS}s (n=${recommendations.subGapSampleCount})` + (recommendations.subGapMeetsMinSamples ? '' : ' — below minimum'),
+            `Stored: ${learnedSubGapS}s${storedNote(subGapMeta)}`
         );
         addRecRow(
             'Dither Duration',
-            `Observed: ${recommendations.observedDitherDurationS}s`,
-            `Stored: ${learnedDitherDurationS}s`
+            `Observed: ${recommendations.observedDitherDurationS}s (n=${recommendations.ditherSampleCount})` + (recommendations.ditherMeetsMinSamples ? '' : ' — below minimum'),
+            `Stored: ${learnedDitherDurationS}s${storedNote(ditherMeta)}`
         );
 
+
+        const dirtyDithers = events.filter(e => e.type === 'dither' && e.outcome && e.outcome !== 'done');
+        const affectedImgs = dirtyDithers.map(d => d.affectedImg).filter(n => n != null);
+        const failures = parsed.parseFailures || [];
+
+        const anomalyItems = [];
+        if (dirtyDithers.length > 0) {
+            const byOutcome = dirtyDithers.reduce((acc, d) => { acc[d.outcome] = (acc[d.outcome]||0)+1; return acc; }, {});
+            const outcomeText = Object.entries(byOutcome).map(([o, n]) => `${n} ${o}`).join(', ');
+            let text = `${dirtyDithers.length} dither(s) did not settle cleanly (${outcomeText})`;
+            if (affectedImgs.length > 0) text += ` — affected image(s): ${affectedImgs.join(', ')}`;
+            anomalyItems.push(text);
+        }
+        if (failures.length > 0) {
+            anomalyItems.push(`${failures.length} settle scan(s) could not find a terminator and were excluded from the numbers above — see line(s) ${failures.map(f => f.startLine).join(', ')}`);
+        }
 
         const noteItems = [
             'AF duration: includes autofocus process + guide re-select + guide settle; excludes guide calibration',
         ];
         if (summary.calCount > 0) noteItems.push('Guide Calibration: includes calibration process + guide settle');
-        if (summary.ditherCount > 0) noteItems.push(`Dither: ${summary.ditherCount} events, avg ${summary.ditherAvgS.toFixed(0)}s each, total ${AsiairLogParser.fmtMinutes(summary.ditherTotalS)}`);
+        if (summary.ditherCount > 0) noteItems.push(`Dither: ${summary.ditherCount} events (${summary.ditherCleanCount} clean), avg ${summary.ditherAvgS.toFixed(0)}s (clean only), total ${AsiairLogParser.fmtMinutes(summary.ditherTotalS)}`);
         if (summary.meridianTotalS > 0) noteItems.push('Pre-flip pause and Meridian Flip are listed as separate events in the detail table');
-        noteItems.push('Dither total is included in the summary but is embedded within imaging segments in the detail table');
-        noteItems.push('Sub gap and dither duration are learned values updated automatically each time a log is analyzed');
+        noteItems.push('Dither is nested within imaging time above, not a separate slice of the total');
+        noteItems.push('Sub gap and dither duration are learned values updated automatically from clean samples each time a log is analyzed; a night with too few clean samples leaves the stored value untouched');
+        if (summary.wallClockS != null) {
+            const unaccountedText = summary.unaccountedS > 0
+                ? `${this.fmtDuration(summary.unaccountedS)} unaccounted`
+                : 'fully accounted for';
+            noteItems.push(`Wall clock: ${this.fmtDuration(summary.wallClockS)} • Tracked: ${this.fmtDuration(summary.totalTrackedS)} • ${unaccountedText}`);
+        }
 
         const tableLayout = {
             hLineWidth: () => 0.5,
@@ -394,6 +462,10 @@ const AsiairLogView = {
                 { text: 'Recommended Session Settings', style: 'sectionHeading' },
                 { text: 'Based on analysis of this session log:', style: 'sectionNote' },
                 { table: { headerRows: 1, widths: [180, 160, 80], body: [[{ text: 'Setting', style: 'tableHeader' }, { text: 'Observed', style: 'tableHeader' }, { text: 'Recommended', style: 'tableHeader' }], ...recRows] }, layout: tableLayout },
+                ...(anomalyItems.length > 0 ? [
+                    { text: 'Anomalies', style: 'sectionHeading' },
+                    ...anomalyItems.map(note => ({ text: `• ${note}`, style: 'noteItem' })),
+                ] : []),
                 { text: 'Notes', style: 'sectionHeading' },
                 ...noteItems.map(note => ({ text: `• ${note}`, style: 'noteItem' })),
             ]
@@ -404,3 +476,7 @@ const AsiairLogView = {
     },
 
 };
+
+// ----------------------------------------------------------------------
+// ----------------------------------------------------------------------
+// ----------------------------------------------------------------------

@@ -15,7 +15,7 @@
 const APP_CONFIG = {
     APP_NAME: 'Astryx',
     APP_TITLE: 'Astryx - Astrophotography Planning Tool',
-    APP_VERSION: '1.3.13a',
+    APP_VERSION: '1.3.13b',
     DB_NAME: 'astryx-db',
     DB_VERSION: 8,
     TARGET_DATA_PATH: './data/',
@@ -115,7 +115,36 @@ const APP_CONFIG = {
     // override. Note: moon rise/set tests are snapshot-only (see astro-moon.js
     // test entries) because their inherent ~2-5 min residual vs external sources
     // would fail this tolerance by design, not due to a bug.
-    ALGORITHM_VALIDATION_TOLERANCE_MINUTES: 2
+    ALGORITHM_VALIDATION_TOLERANCE_MINUTES: 2,
+
+    // PHD2 guide log analysis thresholds (ELR.p1-2). RMS bands are calibrated
+    // against the settled-frame RMS of the 19-log corpus (see
+    // threshold-calibration.md §1): excellent < RMS_EXCELLENT, normal
+    // RMS_EXCELLENT–RMS_ELEVATED, elevated RMS_ELEVATED–RMS_HIGH, high
+    // RMS_HIGH–RMS_CRITICAL, critical >= RMS_CRITICAL. Settled RMS is the
+    // headline metric these fire against; see Phd2LogParser._finalizeSession.
+    PHD2_GUIDE_THRESHOLDS: {
+        RMS_EXCELLENT:    0.95,  // arcsec — narrative calls it "excellent" below this
+        RMS_ELEVATED:     1.30,  // arcsec — elevated_rms anomaly fires at/above this
+        RMS_HIGH:         2.0,   // arcsec — high_rms anomaly fires at/above this
+        RMS_CRITICAL:     4.0,   // arcsec — critical_rms anomaly fires at/above this
+        PEAK_SPIKE:       20.0,  // arcsec — isolated peak-error spike
+        SNR_LOW:          15.0,  // SNR units — guide star may be too faint
+        SNR_JUMP_FACTOR:  2.0,   // ratio vs previous-session avg SNR (guide star reselected)
+        SHORT_SESSION:    100,   // frames — likely an autofocus interruption
+    },
+
+    // ASIAir Autorun log analysis (ELR.p1-3). Safety-net bound for the
+    // bounded settle-terminator scan (dither/AF/calibration) — real
+    // terminators land within ~60-90s in the corpus; this is a ceiling
+    // against a genuinely unparseable log, not a tuned value.
+    ASIAIR_SETTLE_SCAN_TIMEOUT_S: 300,
+
+    // Minimum number of clean samples (settled dithers, or un-interrupted
+    // sub-to-sub gaps) required before a learned value is updated from a
+    // given night's log. Below this, the stored value is left untouched
+    // rather than updated from too little/noisy data.
+    ASIAIR_MIN_CLEAN_SAMPLES: 5,
 };
 
 /**

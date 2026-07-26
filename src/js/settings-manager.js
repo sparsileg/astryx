@@ -402,8 +402,19 @@ async setBackupReminderDays(days) {
         return this.settings.learnedSubGapS ?? APP_CONFIG.DEFAULT_SUB_GAP_S;
     },
 
-    async setLearnedSubGapS(value) {
+    // Provenance for the learned sub gap (ELR.p1-3 Change 3) — null until a
+    // log analysis has actually set them.
+    getLearnedSubGapMeta() {
+        return {
+            sampleCount: this.settings.learnedSubGapSampleCount ?? null,
+            derivedDate: this.settings.learnedSubGapDate ?? null,
+        };
+    },
+
+    async setLearnedSubGapS(value, { sampleCount, derivedDate } = {}) {
         this.settings.learnedSubGapS = value;
+        if (sampleCount !== undefined) this.settings.learnedSubGapSampleCount = sampleCount;
+        if (derivedDate !== undefined) this.settings.learnedSubGapDate = derivedDate;
         await this.saveSettings();
     },
 
@@ -411,8 +422,19 @@ async setBackupReminderDays(days) {
         return this.settings.learnedDitherDurationS ?? APP_CONFIG.DEFAULT_DITHER_DURATION_S;
     },
 
-    async setLearnedDitherDurationS(value) {
+    // Provenance for the learned dither duration (ELR.p1-3 Change 3) — null
+    // until a log analysis has actually set them.
+    getLearnedDitherDurationMeta() {
+        return {
+            sampleCount: this.settings.learnedDitherDurationSampleCount ?? null,
+            derivedDate: this.settings.learnedDitherDurationDate ?? null,
+        };
+    },
+
+    async setLearnedDitherDurationS(value, { sampleCount, derivedDate } = {}) {
         this.settings.learnedDitherDurationS = value;
+        if (sampleCount !== undefined) this.settings.learnedDitherDurationSampleCount = sampleCount;
+        if (derivedDate !== undefined) this.settings.learnedDitherDurationDate = derivedDate;
         await this.saveSettings();
     },
 
@@ -426,3 +448,7 @@ async setBackupReminderDays(days) {
     }
 
 };
+
+// ----------------------------------------------------------------------
+// ----------------------------------------------------------------------
+// ----------------------------------------------------------------------

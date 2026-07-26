@@ -257,13 +257,17 @@ const UtilitiesView = {
             const file = e.target.files[0];
             if (!file) return;
             const reader = new FileReader();
-            reader.onload = (ev) => {
+            reader.onload = async (ev) => {
                 const parsed = AsiairLogParser.parse(ev.target.result);
                 AsiairLogView.renderAccordion(parsed);
                 // If PHD2 data already loaded, rerender it with new ASIAir context
                 if (Phd2LogView._parsed) {
                     Phd2LogView.renderAccordion(Phd2LogView._parsed, parsed);
                 }
+                // Deliberate, explicit update — parse() itself performs no
+                // writes (ELR.p1-4). Opening a log via this picker is treated
+                // as a deliberate refresh of planning values, not a pure read.
+                await AsiairLogParser.updateLearnedValues(parsed);
             };
             reader.readAsText(file);
         });
