@@ -1282,6 +1282,35 @@ const AsiairLogParser = {
                         continue;
                     }
 
+                    // #236: same "swallowed event" bug class as the
+                    // guide-recovery/plate-solve fixes above — mount
+                    // events occurring mid-imaging (disconnects included)
+                    // were falling through this loop's own j++ fallthrough
+                    // and never reaching the top-level mount-event checks.
+                    // Discovered via D6 finding zero disconnects on
+                    // 2026-07-23 despite two real ones in the raw log,
+                    // both sitting between two Exposure lines.
+                    if (nextLine.match(/"ZWO\d+" is Disconnected/)) {
+                        events.push({ type: 'mount', at: this._parseTimestamp(nextLine), kind: 'disconnected' });
+                        j++;
+                        continue;
+                    }
+                    if (nextLine.includes('Mount GoTo Home POS')) {
+                        events.push({ type: 'mount', at: this._parseTimestamp(nextLine), kind: 'gotoHome' });
+                        j++;
+                        continue;
+                    }
+                    if (nextLine.includes('Start Tracking')) {
+                        events.push({ type: 'mount', at: this._parseTimestamp(nextLine), kind: 'startTracking' });
+                        j++;
+                        continue;
+                    }
+                    if (nextLine.includes('Stop Tracking')) {
+                        events.push({ type: 'mount', at: this._parseTimestamp(nextLine), kind: 'stopTracking' });
+                        j++;
+                        continue;
+                    }
+
                     if (nextLine.match(/Exposure \d+\.?\d*m?s image \d+#/)) {
                         j++;
                         continue;
