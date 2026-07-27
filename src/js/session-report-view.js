@@ -334,6 +334,7 @@ const SessionReportView = {
                 'D14_DROP_RATE',
                 'D10_STAR_LOST_DURING_CALIBRATION',
                 'D10_ORTHOGONALITY_OUTLIER',
+                'D16_GUIDE_RECOVERY',
             ]);
             for (const f of fs.findings) {
                 if (!f.timeRange || !f.timeRange.from) continue;
@@ -787,15 +788,6 @@ const SessionReportView = {
 
             return html;
         },
-
-        // -------------------------------------------------------------------------
-        // Astryx Recommended Session Settings — carried over from the original
-        // ASIAir report (learned-value calibration: observed vs. stored), plus
-        // a call-out of specific frames worth a closer visual look. Distinct
-        // from the future Phase 6 recommendations engine (diagnostic, Finding-
-        // driven advice) — kept for now, to be reviewed again once Phase 6
-        // exists alongside it.
-        // -------------------------------------------------------------------------
 
         // -------------------------------------------------------------------------
         // Recommendations (design doc §8) — replaces the old "Astryx
