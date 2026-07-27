@@ -444,14 +444,22 @@ D1 flags locked within 105 px on a 1280×960 sensor; clean sessions
 that night ranged 112–410 px. Ships as `info` until the corpus-wide
 distribution is gathered.
 
-### D16 — Mid-imaging guide recovery (candidate, unvalidated)
+### D16 — Mid-imaging guide recovery
 Built on `GuideRecoveryEvent` (§4.1) — a `Guide Settle → Guide star
 lost → Settle failed/Done` cycle occurring mid-imaging, outside
 dither/AF/calibration. First observed as ~100+ occurrences on the M64
-log (2026-05-11), previously silently skipped by the parser. Whether
-this becomes its own Finding or feeds an existing one (D2
-cloud-density, D7 cadence) is undecided — ships as `info` until
-validated against more nights.
+log (2026-05-11), previously silently skipped by the parser.
+
+**Resolved (ELR.p4-3): own Finding, not folded into D2 or D7.** The
+underlying pattern — repeated star-lost-and-reselect cycling — points
+toward a different root cause than either alternative: guide-star
+selection or search-region sizing (the same category D1 already
+recommends against — "reduce search region, or reject guide stars near
+the frame edge"), not transparency (D2) or hardware/comms cadence gaps
+(D7). Folding it into either would blend a distinct, correctly-
+diagnosable signal into one that implies the wrong root cause, and would
+prevent Phase 6's recommendations engine from ever attaching a specific
+fix to it. Ships as `info` until validated against more nights.
 
 ---
 
