@@ -24,8 +24,11 @@ const SessionDetectors = {
         if (fusedSession.kind !== 'science') return [];
 
         const detectors = [
+            this.D1_guideStarSwap,
+            this.D2_cloudTransparency,
             this.D3_unsettledStart,
             this.D4_truncatedExposure,
+            this.D5_manualIntervention,
             this.D6_mountDisconnect,
             this.D7_cadenceIrregularity,
             this.D8_elevatedGuiding,
@@ -310,6 +313,245 @@ const SessionDetectors = {
                     title: `Guide session ${session.num}: lock position ${edgeDistance.toFixed(0)}px from frame edge`,
                     detail: `Corpus distribution (511 sessions): p5 54px, p10 64px, p25 92px, median 155px. Flagged below ${this.EDGE_DISTANCE_FLAG_PX}px.`,
                     evidence: [{ source: 'phd2', value: edgeDistance }],
+                    timeRange: { from: session.startTime, to: session.endTime },
+                }));
+            }
+        }
+        return findings;
+    },
+
+    // -------------------------------------------------------------------------
+    // D2 — Cloud / transparency loss (ELR.p4-2)
+    // -------------------------------------------------------------------------
+
+    // Primary signature: guide-failure event density >= 3 per 300s window,
+    // excluding the acquisition phase before the first successful settle
+    // in each run. Corroborating signature: a focuser cooling-rate
+    // reversal between consecutive AF events overlapping the flagged
+    // window. Explicitly does NOT use guide-star mass as a gradual
+    // transparency signal anywhere — tested and confirmed not to work
+    // (mass stays flat at 91-97% of a lock's peak straight through known
+    // cloud, and is incomparable across re-selections). Cloud is binary in
+    // the guide log, not gradual.
+    D2_cloudTransparency(fusedSession, context) {
+        if (!context || !context.asiairParsed) return [];
+        const findings = [];
+        const windowMs = 300 * 1000;
+        const minCount = 3;
+
+        for (const run of context.asiairParsed.runs.filter(r => r.kind === 'light')) {
+            // Acquisition-phase cutoff: first successfully settled dither
+            // in this run. Failures before it are normal acquisition
+            // noise, not a transparency signal.
+            const firstGoodDither = run.events
+                .filter(e => e.type === 'dither' && e.outcome === 'done')
+                .sort((a, b) => a.start - b.start)[0];
+            const cutoff = firstGoodDither ? firstGoodDither.start : run.startedAt;
+
+            const failures = run.events
+                .filter(e => e.type === 'guide_failure' && e.at && (!cutoff || e.at >= cutoff))
+                .map(e => e.at)
+                .sort((a, b) => a - b);
+
+            const intervals = this._findDensityWindows(failures, windowMs, minCount);
+            if (intervals.length === 0) continue;
+
+            const allSubs = run.blocks.flatMap(b => b.subs);
+            const afEvents = run.events.filter(e => e.type === 'autofocus' && e.temperatureC !== null)
+                .sort((a, b) => a.start - b.start);
+
+            for (const [from, to] of intervals) {
+                const affectedSubs = allSubs.filter(s => {
+                    if (!s.startedAt || !s.exposureS) return false;
+                    const subEnd = new Date(s.startedAt.getTime() + s.exposureS * 1000);
+                    return s.startedAt <= to && subEnd >= from;
+                });
+
+                const corroboration = this._findCoolingReversal(afEvents, from, to);
+
+                findings.push(SessionInvariants.createFinding({
+                    code: 'D2_CLOUD_TRANSPARENCY',
+                    severity: corroboration ? 'warning' : 'info',
+                    confidence: corroboration ? 'derived' : 'inferred',
+                    title: `Guide-failure density spike, images ${affectedSubs.length ? affectedSubs[0].imageNo : '?'}-${affectedSubs.length ? affectedSubs[affectedSubs.length - 1].imageNo : '?'}`,
+                    detail: corroboration
+                        ? `Guide-failure density >= 3 per 5min window, corroborated by a focuser temperature rise (${corroboration}) — backwards for clear-sky cooling.`
+                        : `Guide-failure density >= 3 per 5min window. No corroborating temperature reversal found nearby — consistent with cloud, but not independently confirmed.`,
+                    evidence: [{ source: 'asiair', timestamp: from }, { source: 'asiair', timestamp: to }],
+                    affectedSubs: affectedSubs.map(s => s.imageNo),
+                    timeRange: { from, to },
+                    ruledOut: [{
+                        hypothesis: 'gradual transparency loss via guide-star mass',
+                        discriminator: 'guide-star mass tracked through known cloud in validation',
+                        observed: 'mass stays flat at 91-97% of lock peak through cloud — not used as a signal here',
+                    }],
+                }));
+            }
+        }
+        return findings;
+    },
+
+    // Sliding window over sorted timestamps; merges intervals separated by
+    // less than one window width into a single contiguous band (this is
+    // what produces two separate bands on a night with two distinct
+    // disturbances, e.g. 2025-12-20's 12-17 and 51-58, rather than one
+    // band spanning the whole night).
+    _findDensityWindows(timestamps, windowMs, minCount) {
+        if (timestamps.length < minCount) return [];
+        const flagged = [];
+        let windowStart = 0;
+        for (let i = 0; i < timestamps.length; i++) {
+            while (timestamps[i] - timestamps[windowStart] > windowMs) windowStart++;
+            if (i - windowStart + 1 >= minCount) {
+                flagged.push([timestamps[windowStart], timestamps[i]]);
+            }
+        }
+        if (flagged.length === 0) return [];
+
+        const merged = [flagged[0]];
+        for (let i = 1; i < flagged.length; i++) {
+            const last = merged[merged.length - 1];
+            if (flagged[i][0] - last[1] <= windowMs) {
+                last[1] = flagged[i][1] > last[1] ? flagged[i][1] : last[1];
+            } else {
+                merged.push(flagged[i]);
+            }
+        }
+        return merged;
+    },
+
+    // Looks for two consecutive AF events near the flagged window where
+    // temperatureC rises rather than falls — backwards for typical
+    // overnight clear-sky cooling, and corroborates (doesn't require) the
+    // density signal.
+    _findCoolingReversal(afEvents, from, to) {
+        const bufferMs = 30 * 60 * 1000; // AF cadence is roughly hourly; look a bit either side
+        const nearby = afEvents.filter(e => e.start >= from.getTime() - bufferMs && e.start <= to.getTime() + bufferMs);
+        for (let i = 1; i < nearby.length; i++) {
+            const delta = nearby[i].temperatureC - nearby[i - 1].temperatureC;
+            if (delta > 0) {
+                return `${nearby[i - 1].temperatureC}°C → ${nearby[i].temperatureC}°C`;
+            }
+        }
+        return null;
+    },
+
+    // -------------------------------------------------------------------------
+    // D5 — Manual intervention (ELR.p4-2)
+    // -------------------------------------------------------------------------
+
+    // Manual autorun stops, cancelled AF, paused Plan Tonight groups, and
+    // Log disabled/enabled gaps. Required exclusion: a manual stop on a
+    // flat-kind run immediately followed by another flat-kind run at a
+    // different exposure is exposure tuning, not an incident — verified
+    // against 2026-06-15's raw structure (3 flat runs ending in
+    // manualStop, each followed by another flat run at a different
+    // exposureS, before the sequence finishes normally).
+    D5_manualIntervention(fusedSession, context) {
+        if (!context || !context.asiairParsed) return [];
+        const findings = [];
+        const runs = context.asiairParsed.runs;
+
+        for (let i = 0; i < runs.length; i++) {
+            const run = runs[i];
+            for (const event of run.events.filter(e => e.type === 'intervention')) {
+                if (event.kind === 'manualStop') {
+                    const nextRun = runs[i + 1];
+                    const isFlatTuning = run.kind === 'flat' && nextRun && nextRun.kind === 'flat' &&
+                        nextRun.exposureS !== run.exposureS;
+                    if (isFlatTuning) continue;
+                }
+
+                findings.push(SessionInvariants.createFinding({
+                    code: 'D5_MANUAL_INTERVENTION',
+                    severity: 'info',
+                    confidence: 'measured',
+                    title: `${event.kind === 'manualStop' ? 'Manual autorun stop' : 'Autofocus cancelled manually'} — run ${run.index} (${run.target})`,
+                    detail: `At ${event.at ? event.at.toISOString() : 'unknown time'}.`,
+                    evidence: [{ source: 'asiair', timestamp: event.at }],
+                    timeRange: event.at ? { from: event.at, to: event.at } : null,
+                }));
+            }
+        }
+
+        for (const plan of context.asiairParsed.plans || []) {
+            if (plan.outcome === 'paused') {
+                findings.push(SessionInvariants.createFinding({
+                    code: 'D5_MANUAL_INTERVENTION',
+                    severity: 'info',
+                    confidence: 'measured',
+                    title: 'Plan Tonight paused',
+                    detail: `Paused at ${plan.endedAt ? plan.endedAt.toISOString() : 'unknown time'}.`,
+                    evidence: [{ source: 'asiair', timestamp: plan.endedAt }],
+                    timeRange: { from: plan.startedAt, to: plan.endedAt },
+                }));
+            }
+        }
+
+        for (const gap of context.asiairParsed.gaps || []) {
+            findings.push(SessionInvariants.createFinding({
+                code: 'D5_MANUAL_INTERVENTION',
+                severity: 'info',
+                confidence: 'measured',
+                title: `Log gap (${gap.durationS.toFixed(0)}s)`,
+                detail: `Log disabled ${gap.startedAt.toISOString()} to ${gap.endedAt.toISOString()}.`,
+                evidence: [{ source: 'asiair', value: gap.durationS }],
+                timeRange: { from: gap.startedAt, to: gap.endedAt },
+            }));
+        }
+
+        return findings;
+    },
+
+    // -------------------------------------------------------------------------
+    // D1 — Guide-star swap (ELR.p4-2)
+    // -------------------------------------------------------------------------
+
+    // Signature (design doc §6): >=5 frames with star mass < 85% of session
+    // median AND displacement > 8px, where the coefficient of variation of
+    // those displacements is < 0.15. Already proven across all 511 guide
+    // sessions in the corpus at 0 false positives — this issue reproduces
+    // that formula exactly, not a new derivation.
+    //
+    // Operates on raw PHD2 frame data (context.phd2Parsed) — star mass and
+    // displacement are per-frame fields fusion doesn't carry into FusedSub.
+    // frame.total (raw px displacement) was already computed by the parser
+    // for RMS purposes; starMass needed adding to Mount-row frames (#237 —
+    // it was only captured on DROP rows before this issue).
+    D1_guideStarSwap(fusedSession, context) {
+        if (!context || !context.phd2Parsed) return [];
+        const findings = [];
+        const cvMax = APP_CONFIG.LOG_ANALYSIS.STAR_SWAP_DISPLACEMENT_CV_MAX;
+
+        for (const session of context.phd2Parsed.sessions) {
+            const validFrames = session.frames.filter(f => Number.isFinite(f.starMass) && f.starMass > 0);
+            if (validFrames.length === 0) continue;
+
+            const masses = validFrames.map(f => f.starMass).sort((a, b) => a - b);
+            const mid = Math.floor(masses.length / 2);
+            const median = masses.length % 2 ? masses[mid] : (masses[mid - 1] + masses[mid]) / 2;
+
+            const flagged = validFrames.filter(f => f.starMass < median * 0.85 && f.total > 8);
+            if (flagged.length < 5) continue;
+
+            const displacements = flagged.map(f => f.total);
+            const mean = displacements.reduce((s, v) => s + v, 0) / displacements.length;
+            const variance = displacements.reduce((s, v) => s + (v - mean) ** 2, 0) / displacements.length;
+            const cv = mean > 0 ? Math.sqrt(variance) / mean : Infinity;
+
+            if (cv < cvMax) {
+                findings.push(SessionInvariants.createFinding({
+                    code: 'D1_GUIDE_STAR_SWAP',
+                    severity: 'warning',
+                    confidence: 'derived',
+                    title: `Guide session ${session.num}: likely guide-star swap (${flagged.length} frames)`,
+                    detail: `Mean displacement ${mean.toFixed(1)}px, CV ${cv.toFixed(3)} (threshold < ${cvMax}). A fixed/repeated displacement indicates an alternating reference star; a genuine mechanical excursion produces scattered displacements instead.`,
+                    evidence: flagged.map(f => ({ source: 'phd2', value: f.total })),
+                    ruledOut: [{
+                        hypothesis: 'mechanical excursion (drag, calibration error, wind, comms fault)',
+                        discriminator: 'coefficient of variation of displacement',
+                        observed: `CV ${cv.toFixed(3)} — too consistent for a scattered mechanical cause`,
+                    }],
                     timeRange: { from: session.startTime, to: session.endTime },
                 }));
             }
