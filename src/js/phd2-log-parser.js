@@ -439,6 +439,12 @@ const Phd2LogParser = {
                                 raDirection:   raDirectionRaw === '' ? null : raDirectionRaw,
                                 decDurationMs: decDurationRaw === '' ? null : parseFloat(decDurationRaw),
                                 decDirection:  decDirectionRaw === '' ? null : decDirectionRaw,
+                                // #237: starMass was only captured on DROP
+                                // rows (below) — D1's guide-star-swap check
+                                // needs it on guiding (Mount) rows too, to
+                                // compare each frame's mass against the
+                                // session median.
+                                starMass: parseFloat(parts[15]),
                                 snr:      parseFloat(parts[16]),
                                 error:    errorCode,
                                 settled:  current.settled,
