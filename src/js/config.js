@@ -145,6 +145,96 @@ const APP_CONFIG = {
     // given night's log. Below this, the stored value is left untouched
     // rather than updated from too little/noisy data.
     ASIAIR_MIN_CLEAN_SAMPLES: 5,
+
+    // Session analysis fusion/invariant thresholds (ELR.p3-2). All values
+    // sourced from threshold-calibration.md §11's summary table — rig-
+    // specific to the AM5 / AT115EDT / ASI120MM Mini corpus this was
+    // calibrated against (9 months, 25 ASIAir logs, 19 PHD2 logs), per
+    // design principle P8. Two one-off measured values from that table are
+    // deliberately NOT included here: focus temperature coefficient
+    // (-20.2 steps/°C) and the critical focus zone (±20 steps = +6%) — both
+    // are single-night measurements to trend against, not configurable
+    // bands, and don't belong alongside actual thresholds.
+    //
+    // Note: DEFAULT_SUB_GAP_S (5s, above) and DEFAULT_DITHER_DURATION_S
+    // (25s, above) are pre-existing sequence-planner learned-value seeds,
+    // a different purpose from the analysis thresholds below — they are
+    // NOT reconciled with the corpus-measured sub-cycle-overhead (23s) or
+    // dither-typical (21s) values here. Left untouched; whether those
+    // seeds should be updated to match is a separate question from this
+    // issue's scope.
+    LOG_ANALYSIS: {
+        // Guiding RMS bands (settled, arcsec) — duplicates
+        // PHD2_GUIDE_THRESHOLDS' RMS_EXCELLENT/ELEVATED/HIGH conceptually;
+        // referenced here by name for fusion/invariant code so this file
+        // is a complete, self-contained reference for §11's table, without
+        // relying on the caller also knowing to check PHD2_GUIDE_THRESHOLDS.
+        RMS_EXCELLENT_ARCSEC: 0.95,
+        RMS_ELEVATED_ARCSEC: 1.30,
+        RMS_HIGH_ARCSEC: 2.0,
+
+        // RA/Dec RMS ratio — median 1.38 across the corpus; a Dec-worse-
+        // than-RA night (ratio < 1.0) is itself an anomaly worth flagging.
+        RA_DEC_RATIO_NORMAL_MIN: 1.2,
+        RA_DEC_RATIO_NORMAL_MAX: 1.6,
+
+        // Dither settle duration (seconds) — median 21s (n=815 successful
+        // settles), p90 33s.
+        DITHER_SETTLE_TYPICAL_S: 21,
+        DITHER_SETTLE_SLOW_S: 33,
+
+        // Settle failure rate (fraction of dithers) — corpus baseline 1.5%.
+        SETTLE_FAILURE_NORMAL_FRACTION: 0.02,
+        SETTLE_FAILURE_ANOMALOUS_FRACTION: 0.05,
+
+        // Sub-to-sub cadence overhead (seconds) — one night measured in
+        // detail (2026-07-23): mean 22.8s, median 24s. Used by I1's
+        // per-sub overhead budget.
+        SUB_CYCLE_OVERHEAD_S: 23,
+
+        // Autofocus (seconds / fraction)
+        AF_DURATION_TYPICAL_S: 109,
+        AF_FAILURE_ELEVATED_FRACTION: 0.10,
+
+        // Guide-star failures (combined starLost + selectFailed), per night.
+        GUIDE_STAR_FAILURES_ANOMALOUS_PER_NIGHT: 25,
+
+        // PHD2 dropped-frame rate (fraction of frames) — corpus baseline
+        // 1.18%.
+        PHD2_DROP_RATE_ELEVATED_FRACTION: 0.005,
+        PHD2_DROP_RATE_ANOMALOUS_FRACTION: 0.02,
+
+        // Guide-star swap detector (D1, Phase 4) — coefficient of
+        // variation of displacement; < this indicates a fixed/repeated
+        // displacement (star swap) rather than a scattered mechanical
+        // excursion. 0 false positives across 511 sessions in the corpus.
+        STAR_SWAP_DISPLACEMENT_CV_MAX: 0.15,
+
+        // Frame cadence irregularity (D7, Phase 4) — count of PHD2 frame
+        // intervals exceeding 1.5x the guide exposure, per session.
+        CADENCE_IRREGULARITY_ANOMALOUS_COUNT: 15,
+
+        // I2 (wall-clock reconciliation): fraction of total wall clock the
+        // unaccounted remainder may occupy before the invariant fails.
+        // Not itself in threshold-calibration.md's table — no corpus
+        // baseline exists for "acceptable" unaccounted time since the
+        // phantom-gap bug this invariant guards against is already fixed;
+        // 5% is a reasonable regression-protection ceiling, not a
+        // calibrated corpus value like everything else in this block.
+        WALL_CLOCK_UNACCOUNTED_FRACTION: 0.05,
+
+        // I6 (PHD2 frame count × exposure ≈ session duration): fraction
+        // tolerance on the reconciliation. Same caveat as above — a
+        // reasonable ceiling, not a corpus-calibrated figure.
+        FRAME_DURATION_TOLERANCE_FRACTION: 0.15,
+
+        // Tier classification (design doc §4.3), resolved at ELR.p3-1 in
+        // favor of relative-to-night-median (design doc §10 Q5 leaves this
+        // explicitly open). Multipliers tuned to reproduce the design
+        // doc's own worked example (2026-07-23: images 35-42 all reject).
+        TIER_MARGINAL_MULTIPLIER: 1.2,
+        TIER_REJECT_MULTIPLIER: 2.0,
+    },
 };
 
 /**
