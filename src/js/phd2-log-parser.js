@@ -387,8 +387,18 @@ const Phd2LogParser = {
 
             else if (current && line.startsWith('INFO:')) {
                 if (line.includes('DITHER')) {
-                    current.ditherEvents.push({ line: i + 1, text: line });
-                } else if (line.includes('SETTLING STATE CHANGE')) {
+                        // #239: was raw {line, text} only — §5's dither
+                        // amplitude needs structured px values. Same shape
+                        // as #237's starMass addition.
+                        const ditherMatch = line.match(/INFO: DITHER by (-?[\d.]+), (-?[\d.]+), new lock pos = ([\d.]+), ([\d.]+)/);
+                        current.ditherEvents.push({
+                            line: i + 1,
+                            text: line,
+                            dxPx: ditherMatch ? parseFloat(ditherMatch[1]) : null,
+                            dyPx: ditherMatch ? parseFloat(ditherMatch[2]) : null,
+                            newLock: ditherMatch ? { x: parseFloat(ditherMatch[3]), y: parseFloat(ditherMatch[4]) } : null,
+                        });
+                    } else if (line.includes('SETTLING STATE CHANGE')) {
                     if (line.includes('Settling started')) {
                         current.settled = false;
                         openSettleWindow = { startedAt: i + 1, endedAt: null, outcome: null };
