@@ -11,8 +11,10 @@
       
       
       
-        <link rel="prev" href="combined-session-report.html">
+        <link rel="prev" href="target-database.html">
       
+      
+        <link rel="next" href="changelog.html">
       
       
       <link rel="icon" href="logo-wo-ring.png">
@@ -20,7 +22,7 @@
     
     
       
-        <title>Change Log - Astryx Help</title>
+        <title>Combined Session Analysis Report - Astryx Help</title>
       
     
     
@@ -77,7 +79,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#astryx-change-log" class="md-skip">
+        <a href="#combined-session-analysis-report" class="md-skip">
           Skip to content
         </a>
       
@@ -112,7 +114,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Change Log
+              Combined Session Analysis Report
             
           </span>
         </div>
@@ -289,27 +291,6 @@
       
   
   
-  
-  
-    <li class="md-nav__item">
-      <a href="combined-session-report.html" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Combined Session Analysis Report
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-    
-      
-      
-  
-  
     
   
   
@@ -326,7 +307,7 @@
           
   
   <span class="md-ellipsis">
-    Change Log
+    Combined Session Analysis Report
     
   </span>
   
@@ -334,11 +315,11 @@
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <a href="changelog.html" class="md-nav__link md-nav__link--active">
+      <a href="combined-session-report.html" class="md-nav__link md-nav__link--active">
         
   
   <span class="md-ellipsis">
-    Change Log
+    Combined Session Analysis Report
     
   </span>
   
@@ -361,45 +342,63 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#version-140" class="md-nav__link">
+  <a href="#report-sections" class="md-nav__link">
     <span class="md-ellipsis">
-      Version 1.4.0
+      Report sections
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#version-130" class="md-nav__link">
+  <a href="#meridian-flip-verification" class="md-nav__link">
     <span class="md-ellipsis">
-      Version 1.3.0
+      Meridian Flip Verification
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#version-120" class="md-nav__link">
+  <a href="#tiers" class="md-nav__link">
     <span class="md-ellipsis">
-      Version 1.2.0
+      Tiers
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#version-111" class="md-nav__link">
+  <a href="#confidence-levels" class="md-nav__link">
     <span class="md-ellipsis">
-      Version 1.1.1
+      Confidence levels
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#version-110" class="md-nav__link">
+  <a href="#pdf-export" class="md-nav__link">
     <span class="md-ellipsis">
-      Version 1.1.0
+      PDF export
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-this-analysis-cant-see" class="md-nav__link">
+    <span class="md-ellipsis">
+      What this analysis can't see
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-to-use-this-information" class="md-nav__link">
+    <span class="md-ellipsis">
+      How to use this information
     </span>
   </a>
   
@@ -409,6 +408,27 @@
   
 </nav>
       
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="changelog.html" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Change Log
+    
+  </span>
+  
+
+      </a>
     </li>
   
 
@@ -429,113 +449,141 @@
 
 
 
-<h1 id="astryx-change-log">Astryx Change Log<a class="headerlink" href="#astryx-change-log" title="Permanent link">&para;</a></h1>
-<h2 id="version-140">Version 1.4.0<a class="headerlink" href="#version-140" title="Permanent link">&para;</a></h2>
-<p>July 27, 2026</p>
+<h1 id="combined-session-analysis-report">Combined Session Analysis Report<a class="headerlink" href="#combined-session-analysis-report" title="Permanent link">&para;</a></h1>
+<p>The combined report joins your ASIAir Autorun log and your PHD2 guide log
+into a single view of an imaging night. It replaces reading the two
+separate ASIAir and PHD2 reports side by side, cross-referencing image
+numbers and timestamps yourself to work out what happened.</p>
+<p>Both logs need to be loaded to get the combined report. If only the ASIAir
+log is loaded, or only the PHD2 log, you'll still see the two original
+single-log reports, but not this one.</p>
+<p>A night with only flats, darks, or bias frames (no light frames) gets a
+short calibration-only notice instead of the full report — there's nothing
+to tier or analyze on a night with no actual imaging.</p>
+<h2 id="report-sections">Report sections<a class="headerlink" href="#report-sections" title="Permanent link">&para;</a></h2>
+<p><strong>Verdict.</strong> The headline numbers for the night: subs captured, how many
+fell into each quality tier, usable integration time, settled guide RMS,
+and a count of findings by severity. If Astryx has a logged imaging-log
+session for this date, your telescope and sensor are shown at the top of
+this section too.</p>
+<p><strong>Recommendations.</strong> Astryx's own settings (sub gap, dither duration, AF
+duration, and so on), your ASIAir configuration, your PHD2 configuration,
+and process/hardware suggestions — each with what was observed, what's
+recommended, and how confident that recommendation is. A recommendation
+with nothing to change still shows up here, so you know a setting was
+checked and left alone, not skipped.</p>
+<p><strong>Session Timeline.</strong> A chronological table of what happened overnight —
+imaging blocks, autofocus runs, meridian flips, and anything flagged as a
+finding. By default this hides routine housekeeping (dither, plate solve,
+routine mount tracking start/stop) and anything guide-quality-related other
+than guide calibration itself, so the table reads like your sequence plan
+rather than a guide-camera log. Check "Show all events" to see everything,
+including guide-star losses, reselections, and every individual dither.</p>
+<p><strong>Summary.</strong> Where the night's time actually went — imaging, autofocus,
+guide calibration, meridian flip, dither — reconciled against wall clock,
+with any unaccounted time called out explicitly rather than hidden.</p>
+<p><strong>Per-Sub Frame Quality.</strong> One row per exposure, grouped by target: start
+time, guide RMS (RA, Dec, and total), peak, temperature, and a quality tier
+(clean / marginal / reject / unknown) with the reason when it's not clean.
+Exportable as CSV from the button below the report.</p>
+<p><strong>Guiding Analysis.</strong> Guide equipment, overall guiding statistics, a
+pier-side breakdown, dither amplitude, and — when there's enough log
+signal — informational notes on the effective dither settle timeout and
+effective frames-per-dither actually used that night. These two are
+informational only; they're not recommendations, because they're fixed
+ASIAir settings the log can only report on, not sensibly suggest a change
+to. The full Guide Sessions table and any PHD2 calibration blocks are
+listed underneath.</p>
+<p><strong>Findings.</strong> Every anomaly the analysis turned up, ranked by severity,
+each with the evidence behind it and, where relevant, what alternative
+explanations were ruled out and why.</p>
+<p><strong>Focus and Environment.</strong> Autofocus events for the night, plus any
+detected focus/temperature drift trend or achieved-star-size trend across
+the session.</p>
+<p><strong>Data Quality.</strong> How much to trust everything above: how many invariants
+(internal cross-checks) passed or failed, how many log lines the parser
+couldn't recognize, how many subs have no guide data, a Meridian Flip
+Verification table (see below), and a fixed list of things this kind of
+analysis can never see — satellite trails, image-level quality, and so on.</p>
+<h2 id="meridian-flip-verification">Meridian Flip Verification<a class="headerlink" href="#meridian-flip-verification" title="Permanent link">&para;</a></h2>
+<p>ASIAir's meridian flip has two settings: how long before the target
+crosses the meridian it stops tracking (Astryx calls this Flip Pause), and
+how long after the crossing it re-centers and resumes (Flip Offset). These
+are fixed dial settings in ASIAir, not something the night's conditions
+would ever justify changing — so rather than a recommendation, the report
+computes the true meridian transit time for your target and location and
+compares it against what actually happened in the log, and against what
+Astryx currently has stored for these two settings. The Delta column is
+there specifically to catch the case where ASIAir and Astryx have quietly
+drifted out of sync with each other.</p>
+<p>This table only appears when Astryx has a location to compute the transit
+from — that needs an Astyx imaging-log session logged for the same date.</p>
+<h2 id="tiers">Tiers<a class="headerlink" href="#tiers" title="Permanent link">&para;</a></h2>
+<p>Every sub is placed into one of four tiers:</p>
 <ul>
-<li>Astryx now runs as an installable desktop app (Tauri) for Linux,
-  syncing all your data locally via SQLite instead of the browser,
-  alongside the existing web version. Windows and MacOS versions
-  planned.</li>
-<li>Added a self-test view under Admin Tools that verifies the app's own
-  astronomy calculations against known-correct reference values.</li>
-<li>Improved the accuracy of dusk/dawn, twilight, moon rise/set, and
-  angular separation calculations throughout the app.</li>
-<li>Fixed a Sequence Planner bug where a target briefly dipping behind
-  terrain was wrongly flagged as an altitude violation.</li>
-<li>Sped up sky-survey image loading and fixed occasional stale images
-  after switching telescopes.</li>
-<li>Redesigned all dropdown menus for consistent styling and behavior
-  across web and desktop.</li>
-<li>Replaced drag-and-drop target reordering in the Sequence Planner
-  with up/down buttons for better desktop reliability.</li>
-<li>Added a new combined report that merges your ASIAir and PHD2 logs
-  into a single analysis of an imaging night, with per-frame quality
-  tiering, guiding analysis, findings, setting recommendations, and
-  PDF export.</li>
-<li>Fixed numerous longstanding bugs in the ASIAir and PHD2 log
-  analysis, including guiding statistics that previously showed as
-  unusable on many nights.</li>
+<li><strong>Clean</strong> — nothing flagged. Settled at start, no guide failures, RMS
+  within the night's normal range.</li>
+<li><strong>Marginal</strong> — usable, but something is off: RMS elevated relative to
+  the night's median, started before its dither settled, or a guide
+  failure happened during the exposure.</li>
+<li><strong>Reject</strong> — RMS far enough above the night's median to be considered
+  unusable, or the exposure was truncated.</li>
+<li><strong>Unknown</strong> — no guide data available for this exposure window, so no
+  tier could be assigned either way.</li>
 </ul>
-<h2 id="version-130">Version 1.3.0<a class="headerlink" href="#version-130" title="Permanent link">&para;</a></h2>
-<p>June 17, 2026</p>
+<p>Tiers are relative to each night's own median guide RMS, not a fixed
+number, since guiding performance on a given rig changes over time.</p>
+<h2 id="confidence-levels">Confidence levels<a class="headerlink" href="#confidence-levels" title="Permanent link">&para;</a></h2>
+<p>Every recommendation and finding carries one of four confidence levels:</p>
 <ul>
-<li>To Do List chart views now show an altitude graph inside each target's
-  visibility bar, displaying the target's altitude across the night on a
-  fixed 0–90° scale so curves are comparable across targets. Issue 147.</li>
-<li>Clicking a bar in any To Do List chart view (Rise Time, Type, Best Month)
-  now selects that target and opens its detail view, matching the behavior
-  of list mode links. Issue 147.</li>
-<li>Fixed Viewfinder not updating to the current target when navigating to
-  the view after selecting a new target elsewhere in the app. Issue 148.</li>
-<li>Added Start Tutorial and Resume Tutorial options to the system menu.
-  Resume Tutorial appears automatically when a tutorial is in progress
-  and updates immediately without requiring a page reload. Issue 150.</li>
-<li>Internal: Added DBManager.close() and DBManager.deleteDatabase() methods
-  to properly abstract database lifecycle. Issues 149, 152.</li>
-<li>Internal: Tutorial progress persistence moved to TutorialManager;
-  TutorialEngine no longer calls DBManager directly. Issue 150.</li>
-<li>Internal: Best months batch writes now go through
-  DataManager.bulkUpdateTargets() instead of DBManager directly. Issue 151.</li>
-<li>Internal: Database upgrade handlers reordered to ascending version
-  order. Issue 153.</li>
-<li>Internal: BackupManager split into BackupManagerWeb and
-  BackupManagerTauri stub, selected at runtime, in preparation for
-  the Tauri desktop version. Issue 154.</li>
+<li><strong>Measured</strong> — read directly from the log, no computation involved.</li>
+<li><strong>Derived</strong> — computed from log data and cross-checked against an
+  independent path (for example, the meridian transit calculations).</li>
+<li><strong>Inferred</strong> — a pattern match against corpus behavior, not a direct
+  measurement. Inferred findings state what alternative explanations they
+  ruled out and how.</li>
+<li><strong>Copied</strong> — the value as configured, shown for reference, with no
+  independent verification behind it (usually because the data needed to
+  verify it — like a location — isn't available for that night).</li>
 </ul>
-<h2 id="version-120">Version 1.2.0<a class="headerlink" href="#version-120" title="Permanent link">&para;</a></h2>
-<p>April 18, 2026</p>
+<h2 id="pdf-export">PDF export<a class="headerlink" href="#pdf-export" title="Permanent link">&para;</a></h2>
+<p>The "Download PDF Report" button produces a printable version sized for
+portrait letter paper. It matches the on-screen report almost exactly,
+with two differences: the Session Timeline is condensed to the same
+default view as "Show all events" unchecked (rather than including every
+row), and each target's Per-Sub table starts on its own page, so a
+multi-target night doesn't run everything together.</p>
+<h2 id="what-this-analysis-cant-see">What this analysis can't see<a class="headerlink" href="#what-this-analysis-cant-see" title="Permanent link">&para;</a></h2>
+<p>Log analysis only knows what ASIAir and PHD2 wrote down. A few things are
+worth keeping in mind:</p>
 <ul>
-<li>Fixed session analysis log parser to correctly exclude flat frame sessions
-  from analysis, resolving negative gap values and incorrect subs-per-dither
-  counts. Issue 144.</li>
-<li>Replaced the single "Between Subs" session parameter with a learned algorithm
-  that automatically derives sub gap and dither duration from analyzed session
-  logs using an exponential moving average. The only user-settable parameter is
-  now "Frames per Dither" (0 = no dither). The sequence planner computes
-  between-sub overhead automatically from the learned values. Issue 145.</li>
-<li>Added chart and list toggle to all three To Do List views (Type, Best Month,
-  Rise Time). The chart shows observable targets as a Gantt-style visibility
-  timeline with group label rows as separators. All views now show an imaging
-  status indicator (empty, half-filled, or filled circle) indicating whether
-  a target has no sessions, an active project, or a completed project in the
-  Imaging Log. Trailing commas removed from Type and Best Month list views.
-  Best Month "Not Observable" group renamed to "No Best Month Data". Issue
-  143.</li>
+<li>Satellite and aircraft trails are invisible — the guide camera looks at
+  a different patch of sky than the main camera.</li>
+<li>Image-level quality (gradients, focus at the sensor, transparency within
+  a single sub) isn't visible to a log parser at all. A clean tier means
+  nothing looked wrong in the guide/timing data — it doesn't mean the
+  frame is a keeper.</li>
+<li>Guide-star mass is not a usable measure of transparency. It stays flat
+  within a single guide-star lock even through real cloud, since PHD2
+  loses and reselects a star rather than watching it fade.</li>
+<li>A finding only fires for a pattern that's been specifically coded for.
+  A genuinely new kind of failure will only show up as an invariant
+  failure or unaccounted time in Data Quality, not as a named finding.</li>
+<li>All of the thresholds behind the tiers and findings are calibrated
+  against your own rig's logged history — they're not universal defaults,
+  and they'll drift as your equipment or technique changes.</li>
 </ul>
-<h2 id="version-111">Version 1.1.1<a class="headerlink" href="#version-111" title="Permanent link">&para;</a></h2>
-<p>March 25, 2026</p>
-<ul>
-<li>Added a feedback email address (feedback@astryx.tools) to the About
-  view. #137.</li>
-<li>In Sequence Planner, removed the 'Cal' label that was associated with a
-  flip and just let the Cal event after the flip be the one that is
-  displayed. #138</li>
-<li>Fixed a few CSS/styling bugs with the To Do chart and Filter Targets
-  buttons. #139</li>
-<li>Added a new flat theme with warm medium brown, cream text, and amber gold
-  accent colors. #140</li>
-<li>Backup indicator at bottom of sidebar didn't collapse properly with the
-  sidebar. #141</li>
-</ul>
-<h2 id="version-110">Version 1.1.0<a class="headerlink" href="#version-110" title="Permanent link">&para;</a></h2>
-<p>March 23, 2026</p>
-<ul>
-<li>Link tutorials. Starting with <strong>Getting Started</strong>, each tutorial,
-  after completion, will point to the next suggested tutorial. Issue 127.</li>
-<li>Add Change Log. After release 1.0.0, any installed changes will be included in
-  a Change Log, accessible from the system menu. Issues 86, 128.</li>
-<li>Fix charts not being redrawn properly when sidebar is collapsed and
-  opened. Issue 129.</li>
-<li>Fixed improperly scaled values in wind bar on Daily Visibility
-  chart. Improved styling for better UX. Issue 130.</li>
-<li>Add tooltips to weather bars on Daily Visibility view. Issue 131.</li>
-<li>Fix CSS rendering problem on Sequence Planner chart background when
-  switching themes. Issue 132.</li>
-<li>Balance sequence planner chart margins. Issue 133.</li>
-<li>Added additional optimization to Sequence Planner and fixed some bugs. Issues 134, 135.</li>
-</ul>
-<hr />
+<h2 id="how-to-use-this-information">How to use this information<a class="headerlink" href="#how-to-use-this-information" title="Permanent link">&para;</a></h2>
+<p>Start with the Verdict and Recommendations at the top — that's the fastest
+read on whether the night was clean and whether anything in your setup
+needs attention. If the Verdict flags a dither-count mismatch or an
+unreliable RMS figure, check Data Quality before trusting the numbers
+above it.</p>
+<p>For a night that didn't go well, the Session Timeline with "Show all
+events" checked and the Findings section together will usually tell you
+what happened and when — check the Per-Sub table for the specific frames
+worth a closer visual look, since log analysis can flag likely problem
+frames but can't confirm them by looking at the actual image.</p>
 
 
 
@@ -573,7 +621,7 @@
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="combined-session-report.html" class="md-footer__link md-footer__link--prev" aria-label="Previous: Combined Session Analysis Report">
+          <a href="target-database.html" class="md-footer__link md-footer__link--prev" aria-label="Previous: Target Database">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -583,11 +631,27 @@
                 Previous
               </span>
               <div class="md-ellipsis">
-                Combined Session Analysis Report
+                Target Database
               </div>
             </div>
           </a>
         
+        
+          
+          <a href="changelog.html" class="md-footer__link md-footer__link--next" aria-label="Next: Change Log">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Change Log
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
         
       </nav>
     
