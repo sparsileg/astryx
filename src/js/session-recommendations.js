@@ -509,7 +509,7 @@ const SessionRecommendations = {
                 observed: `${parts.join(', ')} finding(s) this session`,
                 recommended: 'Prefer a brighter, more isolated guide star further from the sensor edge on future nights with this target/field.',
                 changeNeeded: true,
-                evidence: d1.map(f => f.title).concat(d15.map(f => f.title)).join('; '),
+                evidence: 'See Session Timeline (enable "Show all events" on screen) for the individual guide-star-swap/near-edge-lock findings and their positions.',
                 confidence: 'inferred',
                 expectedImpact: 'Fewer guide-star-swap and edge-lock incidents on similar fields.',
             }));

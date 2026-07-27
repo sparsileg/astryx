@@ -42,17 +42,13 @@ const SessionReportView = {
     render(fusedSession, context) {
         this._fusedSession = fusedSession;
         this._context = context || {};
-
         const container = document.getElementById('session-analysis-accordions');
         if (!container) return;
-
         const existing = document.getElementById('accordion-combined');
         if (existing) existing.remove();
-
         const accordion = document.createElement('div');
         accordion.id = 'accordion-combined';
         accordion.className = 'analysis-accordion';
-
         if (fusedSession.kind === 'calibrationOnly') {
             accordion.innerHTML = `
                 <div class="analysis-accordion-header" onclick="this.parentElement.classList.toggle('open')">
@@ -68,10 +64,8 @@ const SessionReportView = {
             container.appendChild(accordion);
             return;
         }
-
         const title = `Combined Report — ${fusedSession.targets.map(t => HtmlUtils.escapeHtml(t)).join(', ')} — ${this._formatNight(fusedSession)}`;
         const reportHtml = this._buildReportHtml(fusedSession, this._context);
-
         accordion.innerHTML = `
             <div class="analysis-accordion-header" onclick="this.parentElement.classList.toggle('open')">
                 <span class="analysis-accordion-arrow">▶</span>
@@ -81,15 +75,17 @@ const SessionReportView = {
                 ${reportHtml}
                 <div style="margin-top: 1rem;">
                     <button class="btn btn-primary btn-sm" id="combined-csv-btn">Download Per-Sub CSV</button>
+                    <button class="btn btn-primary btn-sm" id="combined-pdf-btn">Download PDF Report</button>
                 </div>
             </div>
         `;
         container.appendChild(accordion);
-
         document.getElementById('combined-csv-btn').addEventListener('click', () => {
             this._downloadCsv(fusedSession);
         });
-
+        document.getElementById('combined-pdf-btn').addEventListener('click', () => {
+            SessionReportPdf.download(fusedSession, this._context);
+        });
         const toggle = document.getElementById('combined-verbose-toggle');
         if (toggle) {
             toggle.addEventListener('change', (e) => {
@@ -327,18 +323,18 @@ const SessionReportView = {
                 entries.push({ at: gap.startedAt, end: gap.endedAt, label: `Log Gap`, target: null, guideQuality: null, verbose: false });
             }
 
-            // D5/D6 findings describe the exact same raw event already rendered
-            // above via InterventionEvent/log_gap/MountEvent handling — adding
-            // them here too would show the same thing twice. Every other
-            // finding code either has no timeRange or describes a window/
-            // aggregate (cloud density, guide-star swap, cadence) that isn't
-            // otherwise represented, so it's genuinely new information. D15
-            // (guide star near frame edge) is real information but low-signal
-            // enough on most nights to sit behind the same verbose toggle as
-            // dither/plate-solve/routine mount events, rather than cluttering
-            // the default view.
             const REDUNDANT_WITH_TIMELINE = new Set(['D5_MANUAL_INTERVENTION', 'D6_MOUNT_DISCONNECT']);
-            const VERBOSE_FINDINGS = new Set(['D15_LOCK_POSITION_EDGE']);
+            const VERBOSE_FINDINGS = new Set([
+                'D15_LOCK_POSITION_EDGE',
+                'D7_CADENCE_IRREGULARITY',
+                'D2_CLOUD_TRANSPARENCY',
+                'D1_GUIDE_STAR_SWAP',
+                'D8_ELEVATED_GUIDING',
+                'D9_AXIS_RATIO_INVERSION',
+                'D14_DROP_RATE',
+                'D10_STAR_LOST_DURING_CALIBRATION',
+                'D10_ORTHOGONALITY_OUTLIER',
+            ]);
             for (const f of fs.findings) {
                 if (!f.timeRange || !f.timeRange.from) continue;
                 if (REDUNDANT_WITH_TIMELINE.has(f.code)) continue;
@@ -372,6 +368,7 @@ const SessionReportView = {
         // events — a real disconnect stays visible regardless of the toggle.
         _isVerboseEvent(event) {
             if (event.type === 'dither' || event.type === 'plate_solve') return true;
+            if (event.type === 'guide_recovery' || event.type === 'guide_failure') return true;
             if (event.type === 'mount' && (event.kind === 'startTracking' || event.kind === 'stopTracking')) return true;
             return false;
         },
