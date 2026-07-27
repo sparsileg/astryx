@@ -53,7 +53,7 @@ const SessionFusion = {
         const equipment = this._buildEquipment(phd2Parsed);
         const metrics = this._computeMetrics(subs, phd2Parsed);
 
-        return {
+        const fusedSession = {
             night: asiairParsed.date || null,
             kind: 'science',
             targets,
@@ -61,12 +61,70 @@ const SessionFusion = {
             subs,
             timeline: this._buildTimeline(lightRuns, asiairParsed.gaps || []),
             metrics,
-            invariants: [],       // ELR.p3-2
-            findings: [],         // ELR.p3-2 (invariant failures) + Phase 4 (detectors)
+            invariants: [],
+            findings: [],
             recommendations: [],  // Phase 6
             coverage,
             equipment,
         };
+
+        // ELR.p3-2 item 3.5: run invariants, then suppress the specific
+        // fields each failure backs — not the whole session — rather than
+        // printing a number that's already known to be untrustworthy.
+        if (typeof SessionInvariants !== 'undefined') {
+            const { invariants, findings } = SessionInvariants.checkAll(fusedSession, asiairParsed, phd2Parsed);
+            fusedSession.invariants = invariants;
+            fusedSession.findings = findings;
+            this._applySuppression(fusedSession, invariants);
+        }
+
+        return fusedSession;
+    },
+
+    // Only the invariants whose failure backs a specific, nameable
+    // FusedSession field are suppressed here. Several of the 15 (I1, I7,
+    // I8, I11, I12, I14) are structural regression checks on the parsers
+    // themselves — when they fail it means a parser bug reappeared, not
+    // that one fusion-level number needs hiding, so they raise a Finding
+    // (via checkAll above) without nulling anything.
+    _applySuppression(fusedSession, invariants) {
+        const byId = Object.fromEntries(invariants.map(inv => [inv.id, inv]));
+
+        // I2: wall-clock reconciliation doesn't hold — the unaccounted
+        // figure itself is what's suspect, so null it rather than show a
+        // number known not to add up.
+        if (byId.I2 && !byId.I2.passed) {
+            fusedSession.coverage.unaccountedSeconds = null;
+        }
+
+        // I3: ASIAir/PHD2 dither counts disagree — the fused dither-linked
+        // fields (settledAtStart, guideFailureCount) were computed against
+        // ASIAir's own event list, which this invariant says may not be
+        // trustworthy on this night.
+        if (byId.I3 && !byId.I3.passed) {
+            fusedSession.metrics.ditherCountMismatch = true;
+        }
+
+        // I6: PHD2 frame count doesn't reconcile with session duration —
+        // the night's guideRmsSettled/guideRmsDuringExposures figures rest
+        // on those same frames, so flag rather than silently trust them.
+        if (byId.I6 && !byId.I6.passed) {
+            fusedSession.metrics.guideRmsUnreliable = true;
+        }
+
+        // I9: a session's equipment (pixel scale/binning) never resolved —
+        // any sub whose guide join drew frames from that session has an
+        // RMS computed against a fallback/wrong scale. No direct
+        // session-num reference on FusedSub by design (it's a join
+        // result, not a session pointer), so suppression here is
+        // necessarily coarse: flagged on the session as a whole rather
+        // than per-sub, since pinpointing which specific subs drew from
+        // the unresolved session would require re-running part of the
+        // join. Flagged as a known limitation, not solved silently.
+        if (byId.I9 && !byId.I9.passed) {
+            const unresolvedSessionNums = [...new Set((byId.I9.actual.match(/\d+/g) || []).map(Number))];
+            fusedSession.coverage.equipmentUnresolvedSessions = unresolvedSessionNums;
+        }
     },
 
     _buildCalibrationOnlySession(asiairParsed) {
@@ -276,8 +334,18 @@ const SessionFusion = {
     // band in the first place. Multipliers below are tuned to reproduce
     // that specific validated band, not picked arbitrarily — see delivery
     // notes for the actual reproduction check.
-    MARGINAL_MULTIPLIER: 1.2,
-    REJECT_MULTIPLIER: 2.0,
+    // ELR.p3-2: re-pointed at APP_CONFIG.LOG_ANALYSIS. Falls back to the
+    // original p3-1 local defaults if the config block isn't present
+    // (e.g. this file loaded standalone without config.js), rather than
+    // throwing on a missing APP_CONFIG.
+    get MARGINAL_MULTIPLIER() {
+        return (typeof APP_CONFIG !== 'undefined' && APP_CONFIG.LOG_ANALYSIS)
+            ? APP_CONFIG.LOG_ANALYSIS.TIER_MARGINAL_MULTIPLIER : 1.2;
+    },
+    get REJECT_MULTIPLIER() {
+        return (typeof APP_CONFIG !== 'undefined' && APP_CONFIG.LOG_ANALYSIS)
+            ? APP_CONFIG.LOG_ANALYSIS.TIER_REJECT_MULTIPLIER : 2.0;
+    },
 
     _applyTiering(subs) {
         const settledRms = subs
@@ -407,7 +475,12 @@ const SessionFusion = {
             unmatchedLineCount:
                 ((asiairParsed.source && asiairParsed.source.unmatchedLines.length) || 0) +
                 ((phd2Parsed && phd2Parsed.source && phd2Parsed.source.unmatchedLines.length) || 0),
-            unaccountedSeconds: (asiairParsed.wallClock && asiairParsed.wallClock.unaccountedS) ?? null,
+            // #235: fixes a latent #234 bug — unaccountedS/wallClockS live
+            // on parsed.summary (from _computeSummary), not parsed.wallClock
+            // (which only has raw start/end/wallClockS). Optional chaining
+            // silently returned null the whole time in #234's delivery;
+            // never thrown, never specifically checked.
+            unaccountedSeconds: (asiairParsed.summary && asiairParsed.summary.unaccountedS) ?? null,
             subsWithoutGuideData: subs.filter(s => !s.guide || s.guide.frameCount === 0).length,
         };
     },
