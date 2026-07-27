@@ -301,10 +301,33 @@ const UtilitiesView = {
      * existing accordion; retiring those is a separate, later, sign-off-
      * gated issue (ELR.p5-3). PHD2 alone can't fuse (fuseNight requires
      * the ASIAir side), so this only fires once both pickers have run.
+     *
+     * Now async: also resolves which telescope/sensor/location were
+     * actually in use, by matching this log's night against Astryx's own
+     * imaging-log sessions (neither log records optics/site directly —
+     * design doc §4.3/§9). Assumes one rig/location per night (Stan's
+     * call). Missing match just leaves context.telescope/sensor/location
+     * null — consumers treat that as "unavailable," not an error.
      */
-    _tryRenderCombinedReport() {
+    async _tryRenderCombinedReport() {
         if (!AsiairLogView._parsed || !Phd2LogView._parsed) return;
         const context = { asiairParsed: AsiairLogView._parsed, phd2Parsed: Phd2LogView._parsed };
+
+        const night = context.asiairParsed.date;
+        if (night) {
+            const allSessions = await ImagingLogManager.getAllSessions();
+            const matched = allSessions.find(s => s.date === night);
+            if (matched) {
+                context.matchedImagingLogSession = matched;
+                context.telescopeName = matched.telescope || null;
+                context.telescope = matched.telescope ? DataManager.getTelescope(matched.telescope) : null;
+                context.sensorName = matched.sensor || null;
+                context.sensor = matched.sensor ? DataManager.getSensor(matched.sensor) : null;
+                context.locationName = matched.location || null;
+                context.location = matched.location ? DataManager.getLocation(matched.location) : null;
+            }
+        }
+
         const fused = SessionFusion.fuseNight(context.asiairParsed, context.phd2Parsed);
         SessionDetectors.runAll(fused, context);
         SessionReportView.render(fused, context);
