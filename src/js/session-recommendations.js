@@ -7,13 +7,13 @@
  * needed" recommendations, which are still produced, not omitted.
  *
  * Two groups' example items are deliberately NOT implemented here, per
- * direct instruction: cable routing and flat exposure. A few other items
- * (AF Interval, Frames per Dither) are skipped for a different reason —
- * neither the ASIAir log nor the PHD2 log records the *configured* value
- * anywhere, only trigger/outcome per event, so there's nothing to copy
- * without fabricating it. Flip Pause is a partial implementation — see
- * that section's own comment for why the full geometric derivation
- * wasn't attempted blind.
+ * direct instruction: cable routing and flat exposure. AF Interval and
+ * Frames per Dither have no *configured* value in either log, only
+ * trigger/outcome per event — buildDitherSettleTimeoutInfo and
+ * buildFramesPerDitherInfo below infer effective (not configured) values
+ * for the same underlying settings, shown as information rather than a
+ * recommendation. Flip Pause and Flip Offset are handled outside this
+ * file's Recommendation model entirely — see buildMeridianVerification.
  */
 
 const SessionRecommendations = {
@@ -524,7 +524,7 @@ const SessionRecommendations = {
                 observed: `${d10.length} calibration finding(s) this session`,
                 recommended: 'Calibrate nearer the target\'s declination and away from twilight/low-altitude conditions.',
                 changeNeeded: true,
-                evidence: d10.map(f => f.title).join('; '),
+                evidence: 'See Session Timeline (enable "Show all events" on screen) for the individual calibration findings.',
                 confidence: 'inferred',
                 expectedImpact: 'More reliable calibration rates and orthogonality on future nights.',
             }));

@@ -50,7 +50,6 @@ const SessionFusion = {
 
         const span = this._computeSpan(subs);
         const coverage = this._computeCoverage(asiairParsed, phd2Parsed, subs);
-        const equipment = this._buildEquipment(phd2Parsed);
         const metrics = this._computeMetrics(subs, phd2Parsed);
 
         const fusedSession = {
@@ -65,7 +64,6 @@ const SessionFusion = {
             findings: [],
             recommendations: [],  // Phase 6
             coverage,
-            equipment,
         };
 
         // ELR.p3-2 item 3.5: run invariants, then suppress the specific
@@ -111,20 +109,6 @@ const SessionFusion = {
         if (byId.I6 && !byId.I6.passed) {
             fusedSession.metrics.guideRmsUnreliable = true;
         }
-
-        // I9: a session's equipment (pixel scale/binning) never resolved —
-        // any sub whose guide join drew frames from that session has an
-        // RMS computed against a fallback/wrong scale. No direct
-        // session-num reference on FusedSub by design (it's a join
-        // result, not a session pointer), so suppression here is
-        // necessarily coarse: flagged on the session as a whole rather
-        // than per-sub, since pinpointing which specific subs drew from
-        // the unresolved session would require re-running part of the
-        // join. Flagged as a known limitation, not solved silently.
-        if (byId.I9 && !byId.I9.passed) {
-            const unresolvedSessionNums = [...new Set((byId.I9.actual.match(/\d+/g) || []).map(Number))];
-            fusedSession.coverage.equipmentUnresolvedSessions = unresolvedSessionNums;
-        }
     },
 
     _buildCalibrationOnlySession(asiairParsed) {
@@ -146,7 +130,6 @@ const SessionFusion = {
                 unaccountedSeconds: null,
                 subsWithoutGuideData: null,
             },
-            equipment: null,
         };
     },
 
@@ -485,23 +468,6 @@ const SessionFusion = {
         };
     },
 
-    // Equipment linkage against Astryx's own telescope/sensor records
-    // (design doc §4.3/§9) is deliberately not implemented here — it needs
-    // DataManager, an app-integration dependency beyond log parsing, and
-    // there's no §9 view yet to show the result. Ships structurally with
-    // matchConfidence always 'unmatched' so the shape is stable when real
-    // matching lands later. Flagged explicitly, not a silent stub.
-    _buildEquipment(phd2Parsed) {
-        if (!phd2Parsed || phd2Parsed.sessions.length === 0) return null;
-        const eq = phd2Parsed.equipment || {};
-        return {
-            phd2Camera: eq.cameraModel || null,
-            phd2FocalLengthMm: eq.focalLengthMm || null,
-            phd2PixelScaleArcsec: eq.pixelScale || null,
-            matchedProfile: null,
-            matchConfidence: 'unmatched',
-        };
-    },
 
     // Lightweight chronological event list — the full "interleaved
     // anomalies" rendering described in design doc §7 is Phase 5's report
