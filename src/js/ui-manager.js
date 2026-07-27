@@ -132,12 +132,6 @@ const UIManager = {
                         this.toggleTutorialsSubmenu();
                         return;
                     }
-                    // Handle help submenu toggle
-                    if (action === 'help') {
-                        e.stopPropagation();
-                        this.toggleHelpSubmenu();
-                        return;
-                    }
                     // Handle tutorial launches
                     if (action.startsWith('tutorial-')) {
                         const tutorialId = action.replace('tutorial-', '');
@@ -177,18 +171,6 @@ const UIManager = {
     toggleTutorialsSubmenu() {
         const parent = document.querySelector('[data-action="tutorials"]');
         const submenu = document.getElementById('tutorials-submenu');
-        if (parent && submenu) {
-            parent.classList.toggle('expanded');
-            submenu.classList.toggle('expanded');
-        }
-    },
-
-    /**
-     * Toggle Help submenu
-     */
-    toggleHelpSubmenu() {
-        const parent = document.querySelector('[data-action="help"]');
-        const submenu = document.getElementById('help-submenu');
         if (parent && submenu) {
             parent.classList.toggle('expanded');
             submenu.classList.toggle('expanded');
@@ -316,17 +298,8 @@ const UIManager = {
         case 'tutorials':
             // Submenu is populated dynamically — no action needed here
             break;
-        case 'help-target-database':
-            this.openHelpPage('target-database.html');
-            break;
-        case 'help-best-months':
-            this.openHelpPage('best-months.html');
-            break;
-        case 'help-yearly-observability':
-            this.openHelpPage('yearly-observability.html');
-            break;
-        case 'help-sequence-planner':
-            this.openHelpPage('sequence-planner.html');
+        case 'help':
+            this.openHelpPage('index.html');
             break;
         case 'changelog':
             this.openHelpPage('changelog.html');
