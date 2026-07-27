@@ -268,6 +268,7 @@ const UtilitiesView = {
                 // writes (ELR.p1-4). Opening a log via this picker is treated
                 // as a deliberate refresh of planning values, not a pure read.
                 await AsiairLogParser.updateLearnedValues(parsed);
+                this._tryRenderCombinedReport();
             };
             reader.readAsText(file);
         });
@@ -287,12 +288,29 @@ const UtilitiesView = {
             reader.onload = (ev) => {
                 const parsed = Phd2LogParser.parse(ev.target.result);
                 Phd2LogView.renderAccordion(parsed, AsiairLogView._parsed || null);
+                this._tryRenderCombinedReport();
             };
             reader.readAsText(file);
         });
     },
 
     /**
+     * Renders the combined ASIAir+PHD2 report (ELR.p5-1) alongside the two
+     * existing single-purpose reports, once both logs are loaded. Added
+     * for side-by-side comparison — deliberately does not replace either
+     * existing accordion; retiring those is a separate, later, sign-off-
+     * gated issue (ELR.p5-3). PHD2 alone can't fuse (fuseNight requires
+     * the ASIAir side), so this only fires once both pickers have run.
+     */
+    _tryRenderCombinedReport() {
+        if (!AsiairLogView._parsed || !Phd2LogView._parsed) return;
+        const context = { asiairParsed: AsiairLogView._parsed, phd2Parsed: Phd2LogView._parsed };
+        const fused = SessionFusion.fuseNight(context.asiairParsed, context.phd2Parsed);
+        SessionDetectors.runAll(fused, context);
+        SessionReportView.render(fused, context);
+    },
+
+/**
      * Cleanup when view is destroyed
      */
     destroy() {
@@ -303,3 +321,7 @@ const UtilitiesView = {
     }
 
 };
+
+// ----------------------------------------------------------------------
+// ----------------------------------------------------------------------
+// ----------------------------------------------------------------------
