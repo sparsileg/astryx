@@ -43,7 +43,126 @@ const AsiairLogParser = {
         const gaps = this._extractLogGaps(allLines);
         const plans = this._extractPlanRuns(allLines, runs);
 
-        return { target, date, exposure, totalSubs, events, parseFailures, wallClock, summary, recommendations, runs, gaps, plans };
+        // #233 item 2 / design doc I13: the only mechanism that surfaces a
+        // future firmware/log-format change before it silently corrupts a
+        // number. Uses the raw, untrimmed line split (not allLines above,
+        // which already filters blanks and loses the file's real line
+        // numbers) so lineNo matches what a person would see in an editor.
+        const rawLines = text.split('\n');
+        const source = {
+            lineCount: rawLines.length,
+            unmatchedLines: this._findUnmatchedLines(rawLines),
+        };
+
+        return { target, date, exposure, totalSubs, events, parseFailures, wallClock, summary, recommendations, runs, gaps, plans, source };
+    },
+
+    // -------------------------------------------------------------------------
+    // Unmatched-line collection (#233 item 2)
+    // -------------------------------------------------------------------------
+
+    // Every line pattern catalogued in log-format-survey.md §2 for ASIAir
+    // Autorun logs. Deliberately sourced from that survey document (design
+    // principle P2 — prefer the log's self-description) rather than
+    // reverse-engineered from this file's own extraction branches. Not
+    // anchored to line start with `^` — lines carry a variable-width
+    // leading timestamp ("2026/07/24 02:39:34 ...") that some marker lines
+    // omit, matching how the rest of this file already tests lines via
+    // .includes()/.match() without anchoring.
+    _KNOWN_ASIAIR_LINE_PATTERNS: [
+        // 2.1 Structural / lifecycle
+        /Log enabled at \d/,
+        /Log disabled at \d/,
+        /Log closed at \d/,
+        /\[Autorun\|Begin\] .+ Start/,
+        /\[Autorun\|End\] Finish Autorun/,
+        /\[Autorun\|End\] Pause Autorun/,
+        /Stop Autorun Manually/,
+        /Plan Tonight Start/,
+        /Plan Tonight Finish/,
+        /Pause Plan Tonight/,
+        /Shutdown ASIAIR/,
+        /First delay \d+s Start/,
+        // 2.2 Target and framing
+        /Target RA:/,
+        /Mount slews to target position:/,
+        /Solve succeeded:/,
+        /Plate Solve/,
+        /\[AutoCenter\|Begin\] Auto-Center \d+#/,
+        /\[AutoCenter\|End\] The target is centered/,
+        /\[AutoCenter\|End\] Too far from center/,
+        /\[AutoCenter\|End\] Mount slews failed/,
+        /\[AutoCenter\|End\] Plate Solve failed/,
+        /Exposure \d+\.?\d*m?s$/, // plate-solve frame — no "image N#" suffix
+        // 2.3 Imaging
+        /Shooting \d+ light frames/,
+        /Shooting \d+ flat frames/,
+        /Shooting \d+ dark frames/,
+        /Shooting \d+ bias frames/,
+        /Exposure \d+\.?\d*m?s image \d+#/,
+        /Download failed/,
+        // 2.4 Autofocus
+        /\[AutoFocus\|Begin\] Run AF/,
+        /\[AutoFocus\|End\] Auto focus succeeded/,
+        /\[AutoFocus\|End\] Auto focus failed/,
+        /Auto focus succeeded, the focused position is/,
+        /Auto focus failed, EAF returns to the position/,
+        /Cancel AF Manually/,
+        /Find Focus Star/,
+        /Find Focus Star: detect and calculate star size/,
+        /Find Focus Star: finding appropriate stars/,
+        /Find Focus Star: not found Focus Star/,
+        /Calculate V-Curve/,
+        /Calculate V-Curve\s*:\s*detect and calculate star size/,
+        /Calculate V-Curve\s*:\s*detect star failed/,
+        /Find Focus Point/,
+        /Calculate Focus Point: detect and calculate star size/,
+        /Find Focus Point: Upper limit of data point/,
+        // 2.5 Guiding
+        /\[Guide\] Settle Done/,
+        /\[Guide\] Dither Settle/,
+        /\[Guide\] Dither(?! Settle)/,
+        /\[Guide\] ReSelect Guide star/,
+        /\[Guide\] Start Guiding/,
+        /\[Guide\] Stop Guiding/,
+        /\[Guide\] Guide Settle/,
+        /\[Guide\] Select Guide Star failed/,
+        /\[Guide\] Guide star lost/,
+        /\[Guide\] Settle Timeout/,
+        /\[Guide\] Settle failed/,
+        /\[Guide\] Start Calibrating/,
+        /\[Guide\] Calibrate Success/,
+        /\[Guide\] Stop Looping and Guiding/,
+        /\[Guide\] Stop Looping(?! and Guiding)/,
+        /\[Guide\] Start Tracking failed/,
+        // 2.6 Mount and meridian
+        /Start Tracking/,
+        /Stop Tracking/,
+        /Wait for Mount Settle/,
+        /Mount GoTo Home POS/,
+        /\[Meridian Flip\|Begin\] Wait/,
+        /Meridian Flip \d+# Start/,
+        /\[Meridian Flip\|End\] Meridian Flip succeeded/,
+        /"ZWO\d+" is Disconnected/,
+    ],
+
+    // Single pass over the raw (untrimmed) line array — classification
+    // only, read-only relative to every extraction pass elsewhere in this
+    // file. Blank lines are structural separators, not content, and are
+    // skipped rather than flagged. A nonzero result isn't necessarily a
+    // defect in this corpus's logs; per the standing delivery note, a
+    // clean 0 corpus-wide isn't expected until all of Phase 2 has landed —
+    // this is the mechanism that will catch a *future* firmware change,
+    // not a claim that today's coverage is already complete.
+    _findUnmatchedLines(lines) {
+        const unmatched = [];
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (line === '') continue;
+            const matched = this._KNOWN_ASIAIR_LINE_PATTERNS.some(p => p.test(line));
+            if (!matched) unmatched.push({ lineNo: i + 1, text: line });
+        }
+        return unmatched;
     },
 
     /**

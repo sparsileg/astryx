@@ -62,7 +62,16 @@ const Phd2LogParser = {
         const recommendations = this._buildRecommendations(sessions, anomalies, equipment, overall);
         const date = this._extractDate(lines);
 
-        return { equipment, sessions, calibrations, overall, anomalies, recommendations, date };
+        // #233 item 2 / design doc I13: the only mechanism that surfaces a
+        // future firmware/log-format change before it silently corrupts a
+        // number. A nonzero count here isn't necessarily a bug in this
+        // issue — Phase 2 doesn't claim full corpus coverage yet.
+        const source = {
+            lineCount: lines.length,
+            unmatchedLines: this._findUnmatchedLines(lines),
+        };
+
+        return { equipment, sessions, calibrations, overall, anomalies, recommendations, date, source };
     },
 
     // -------------------------------------------------------------------------
@@ -405,11 +414,31 @@ const Phd2LogParser = {
                         if (rowType === 'Mount') {
                             const errorCode = parts.length > 17 && /^\d+$/.test(parts[17].trim())
                                 ? parseInt(parts[17].trim()) : 0;
+                            // #233: dx/dy, raGuide/decGuide, and pulse
+                            // duration/direction — every column was already
+                            // being read for column-count validation, just
+                            // not carried into the frame object. Duration/
+                            // direction are blank on any frame with zero
+                            // correction that axis (e.g. "0,,0,," — no pulse
+                            // sent), so both fall back to null rather than
+                            // NaN/empty string.
+                            const raDurationRaw = parts[9].trim();
+                            const raDirectionRaw = parts[10].trim().replace(/^"|"$/g, '');
+                            const decDurationRaw = parts[11].trim();
+                            const decDirectionRaw = parts[12].trim().replace(/^"|"$/g, '');
                             const frame = {
                                 n:        parseInt(parts[0]),
                                 t:        parseFloat(parts[1]),
+                                dx:       parseFloat(parts[3]),
+                                dy:       parseFloat(parts[4]),
                                 raRaw:    parseFloat(parts[5]),
                                 decRaw:   parseFloat(parts[6]),
+                                raGuide:  parseFloat(parts[7]),
+                                decGuide: parseFloat(parts[8]),
+                                raDurationMs:  raDurationRaw === '' ? null : parseFloat(raDurationRaw),
+                                raDirection:   raDirectionRaw === '' ? null : raDirectionRaw,
+                                decDurationMs: decDurationRaw === '' ? null : parseFloat(decDurationRaw),
+                                decDirection:  decDirectionRaw === '' ? null : decDirectionRaw,
                                 snr:      parseFloat(parts[16]),
                                 error:    errorCode,
                                 settled:  current.settled,
@@ -583,7 +612,63 @@ const Phd2LogParser = {
         return calibrations;
     },
 
-    // |West angle − North angle| − 90°, correctly wrapped. Angle values
+    // -------------------------------------------------------------------------
+    // Unmatched-line collection (#233 item 2)
+    // -------------------------------------------------------------------------
+
+    // Every line pattern catalogued in log-format-survey.md §3 for PHD2
+    // guide logs. Deliberately sourced from that survey document (design
+    // principle P2 — prefer the log's self-description) rather than
+    // reverse-engineered from this file's own extraction branches, since
+    // the survey is the authoritative, independently-compiled catalogue.
+    _KNOWN_PHD2_LINE_PATTERNS: [
+        /^PHD2 version, Log version [\d.]+\. Log enabled at /,
+        /^Log closed at /,
+        /^Guiding Begins at /,
+        /^Guiding Ends at /,
+        /^Calibration Begins at /,
+        /^Calibration complete, mount = /,
+        /^Equipment Profile =/,
+        /^Camera = /,
+        /^Exposure = /,
+        /^Pixel scale = /,
+        /^Search region = /,
+        /^Star mass tolerance = /,
+        /^Dither = /,
+        /^Mount = /,
+        /^X guide algorithm = /,
+        /^Y guide algorithm = /,
+        /^Backlash comp = /,
+        /^Calibration step = /,
+        /^RA Guide Speed = /,
+        /^Dec = /,
+        /^Lock position = /,
+        /^Frame,Time,mount/,
+        /^Direction,Step,dx,dy,x,y,Dist/,
+        /^INFO: /,
+        /^West calibration complete\. /,
+        /^North calibration complete\. /,
+        /^(West|East|North|South|Backlash),\d+,/,
+        /^\d+,/, // Mount/DROP frame data rows
+    ],
+
+    // Single pass, independent of and read-only relative to the extraction
+    // passes above — classification only, no state mutation. Blank lines
+    // are structural separators, not content, and are skipped rather than
+    // flagged. A nonzero result here isn't necessarily a defect in this
+    // corpus's logs; it's the mechanism that will catch a *future* one.
+    _findUnmatchedLines(lines) {
+        const unmatched = [];
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (line === '') continue;
+            const matched = this._KNOWN_PHD2_LINE_PATTERNS.some(p => p.test(line));
+            if (!matched) unmatched.push({ lineNo: i + 1, text: line });
+        }
+        return unmatched;
+    },
+
+    // |West angle − North angle| − 90°, correctly wrapped.
     // range roughly ±180°, so a raw subtraction can land near 270° when the
     // true minimal angular separation between the two axes is actually
     // near 90° (e.g. West=145.0°, North=-124.6° gives a raw diff of 269.6°,
