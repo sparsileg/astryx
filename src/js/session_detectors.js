@@ -33,8 +33,13 @@ const SessionDetectors = {
             this.D7_cadenceIrregularity,
             this.D8_elevatedGuiding,
             this.D9_axisRatioInversion,
+            this.D10_calibrationOutlier,
+            this.D11_afHealth,
+            this.D12_plateSolveDegradation,
+            this.D13_focusDrift,
             this.D14_dropRate,
             this.D15_lockPositionEdge,
+            this.D16_guideRecovery,
         ];
 
         const findings = detectors.flatMap(fn => fn.call(this, fusedSession, context));
@@ -556,6 +561,277 @@ const SessionDetectors = {
                 }));
             }
         }
+        return findings;
+    },
+
+    // -------------------------------------------------------------------------
+    // D11 — Autofocus health (ELR.p4-3)
+    // -------------------------------------------------------------------------
+
+    // Failure rate, duration outliers, and a within-night star-size trend.
+    // Corpus baseline: 95.6% success, median 109s (n=225, threshold-
+    // calibration.md §5).
+    D11_afHealth(fusedSession, context) {
+        if (!context || !context.asiairParsed) return [];
+        const afEvents = context.asiairParsed.runs.filter(r => r.kind === 'light')
+            .flatMap(r => r.events).filter(e => e.type === 'autofocus');
+        if (afEvents.length === 0) return [];
+        const findings = [];
+
+        const failed = afEvents.filter(e => e.outcome === 'failed');
+        const failureRate = failed.length / afEvents.length;
+        const failureElevated = APP_CONFIG.LOG_ANALYSIS.AF_FAILURE_ELEVATED_FRACTION;
+        if (failureRate > failureElevated) {
+            findings.push(SessionInvariants.createFinding({
+                code: 'D11_AF_FAILURE_RATE',
+                severity: 'warning',
+                confidence: 'measured',
+                title: `AF failure rate ${(failureRate * 100).toFixed(0)}% (${failed.length}/${afEvents.length}) — above the corpus baseline`,
+                detail: `Corpus baseline: 95.6% success across 225 events. A rate this high on one night is usually the focuser struggling to find a usable star (too faint, dew, or field crowding) rather than random chance — worth a look at what conditions coincided with these attempts.`,
+                evidence: failed.map(e => ({ source: 'asiair', timestamp: e.start })),
+            }));
+        }
+
+        const typical = APP_CONFIG.LOG_ANALYSIS.AF_DURATION_TYPICAL_S;
+        const outliers = afEvents.filter(e => e.outcome === 'success' && e.durationS && e.durationS > typical * 1.5);
+        if (outliers.length > 0) {
+            findings.push(SessionInvariants.createFinding({
+                code: 'D11_AF_DURATION_OUTLIER',
+                severity: 'info',
+                confidence: 'measured',
+                title: `${outliers.length} AF cycle(s) took over 1.5x the typical ${typical}s`,
+                detail: `Corpus median is ${typical}s. Slower cycles usually trace back to the AF star itself (faint, or a rough V-curve) rather than the focuser mechanism.`,
+                evidence: outliers.map(e => ({ source: 'asiair', value: e.durationS })),
+            }));
+        }
+
+        const successful = afEvents.filter(e => e.outcome === 'success' && e.achievedStarSize !== null)
+            .sort((a, b) => a.start - b.start);
+        if (successful.length >= 3) {
+            const sizes = successful.map(e => e.achievedStarSize);
+            const third = Math.max(1, Math.floor(sizes.length / 3));
+            const firstAvg = sizes.slice(0, third).reduce((s, v) => s + v, 0) / third;
+            const lastAvg = sizes.slice(-third).reduce((s, v) => s + v, 0) / third;
+            if (lastAvg > firstAvg * 1.3) {
+                findings.push(SessionInvariants.createFinding({
+                    code: 'D11_STAR_SIZE_TREND',
+                    severity: 'info',
+                    confidence: 'inferred',
+                    title: `Achieved AF star size grew from ${firstAvg.toFixed(1)} to ${lastAvg.toFixed(1)} across the night`,
+                    detail: `A worsening trend across successive AF cycles, despite each one refocusing, usually points at temperature-compensation lagging the real slope (see D13 for tonight's figure) or dew forming — worth checking together.`,
+                    evidence: successful.map(e => ({ source: 'asiair', value: e.achievedStarSize })),
+                }));
+            }
+        }
+
+        return findings;
+    },
+
+    // -------------------------------------------------------------------------
+    // D13 — Focus drift regression (ELR.p4-3)
+    // -------------------------------------------------------------------------
+
+    // Per-night linear regression of focuser position on temperature —
+    // reported per night, not baked in as a fixed corpus constant, since a
+    // coefficient *change* across nights would itself indicate a
+    // mechanical shift in the focuser train worth checking physically.
+    // Corpus reference (one night, thin evidence): -20.2 steps/°C,
+    // r²=0.975 (2026-07-23).
+    D13_focusDrift(fusedSession, context) {
+        if (!context || !context.asiairParsed) return [];
+        const afEvents = context.asiairParsed.runs.filter(r => r.kind === 'light')
+            .flatMap(r => r.events)
+            .filter(e => e.type === 'autofocus' && e.outcome === 'success' && e.temperatureC !== null && e.focuserPosition !== null);
+
+        const minPoints = 5;
+        if (afEvents.length < minPoints) {
+            return [SessionInvariants.createFinding({
+                code: 'D13_FOCUS_DRIFT_INSUFFICIENT_DATA',
+                severity: 'info',
+                confidence: 'measured',
+                title: `Only ${afEvents.length} usable AF event(s) tonight — not enough to regress a focus/temperature trend`,
+                detail: `Need at least ${minPoints} successful AF cycles with temperature readings for a meaningful fit. No coefficient reported rather than one derived from too little data.`,
+                evidence: [],
+            })];
+        }
+
+        const temps = afEvents.map(e => e.temperatureC);
+        const positions = afEvents.map(e => e.focuserPosition);
+        const n = temps.length;
+        const meanT = temps.reduce((s, v) => s + v, 0) / n;
+        const meanP = positions.reduce((s, v) => s + v, 0) / n;
+        let num = 0, den = 0;
+        for (let i = 0; i < n; i++) {
+            num += (temps[i] - meanT) * (positions[i] - meanP);
+            den += (temps[i] - meanT) ** 2;
+        }
+        if (den === 0) return [];
+        const coefficient = num / den;
+        const intercept = meanP - coefficient * meanT;
+
+        let ssTot = 0, ssRes = 0;
+        const residuals = [];
+        for (let i = 0; i < n; i++) {
+            const predicted = coefficient * temps[i] + intercept;
+            const residual = positions[i] - predicted;
+            residuals.push(residual);
+            ssRes += residual ** 2;
+            ssTot += (positions[i] - meanP) ** 2;
+        }
+        const r2 = ssTot !== 0 ? 1 - ssRes / ssTot : null;
+        const maxResidual = Math.max(...residuals.map(Math.abs));
+        const meanAbsResidual = residuals.reduce((s, v) => s + Math.abs(v), 0) / n;
+
+        return [SessionInvariants.createFinding({
+            code: 'D13_FOCUS_DRIFT',
+            severity: 'info',
+            confidence: (r2 !== null && r2 > 0.8) ? 'derived' : 'inferred',
+            title: `Focus/temperature coefficient tonight: ${coefficient.toFixed(1)} steps/°C (r²=${r2 !== null ? r2.toFixed(3) : 'n/a'}, n=${n})`,
+            detail: `Corpus reference (2026-07-23, one night): -20.2 steps/°C, r²=0.975, max residual ±6.4 steps. Tonight's fit: mean |residual| ${meanAbsResidual.toFixed(1)} steps, max ${maxResidual.toFixed(1)} steps — how far any single AF cycle sat from what the line predicts, a rough read on how tightly focus is actually tracking temperature versus other noise (seeing, star selection) that night. Comparing the coefficient itself night to night over time (not something a single night's detector can do on its own) is what would actually reveal a mechanical shift in the focuser train — a change worth a physical look, not a software adjustment.`,
+            evidence: afEvents.map((e, i) => ({ source: 'asiair', value: e.focuserPosition, residual: residuals[i] })),
+        })];
+    },
+
+    // -------------------------------------------------------------------------
+    // D10 — Calibration outlier (ELR.p4-3, unvalidated — ships info-only)
+    // -------------------------------------------------------------------------
+
+    // Reports each night's calibrations relative to each other — rate
+    // spread and orthogonality error — as descriptive context rather than
+    // a fixed pass/fail threshold. Same-night rate deviation varies
+    // enormously across the corpus (0.4% to 63%) and a lot of that spread
+    // is legitimate: a multi-target Plan Tonight night recalibrating at
+    // very different declinations is expected to show bigger swings than
+    // repeated calibrations on the same target. Distinguishing "expected
+    // because the target changed" from "suspicious for the same target"
+    // isn't attempted here — flagged as unvalidated per the design doc,
+    // reported at info so the person can apply their own knowledge of
+    // what happened that night.
+    D10_calibrationOutlier(fusedSession, context) {
+        if (!context || !context.phd2Parsed || context.phd2Parsed.calibrations.length === 0) return [];
+        const cals = context.phd2Parsed.calibrations.filter(c => c.west.ratePxPerSec !== null);
+        const findings = [];
+
+        if (cals.length > 1) {
+            const rates = cals.map(c => c.west.ratePxPerSec);
+            const sorted = [...rates].sort((a, b) => a - b);
+            const median = sorted[Math.floor(sorted.length / 2)];
+            const maxDev = Math.max(...rates.map(r => Math.abs(r - median) / median));
+
+            findings.push(SessionInvariants.createFinding({
+                code: 'D10_CALIBRATION_RATE_SPREAD',
+                severity: 'info',
+                confidence: 'measured',
+                title: `${cals.length} calibrations tonight, rate ${sorted[0].toFixed(3)}-${sorted[sorted.length - 1].toFixed(3)} px/sec (${(maxDev * 100).toFixed(0)}% max spread from median)`,
+                detail: `Context, not a verdict: a wide spread across calibrations aimed at different targets/declinations is often just the mount's real rate at each pointing. A wide spread between calibrations on the *same* target is the more worth checking case — cable snag, clutch slip, or balance shift — but this detector doesn't yet distinguish the two.`,
+                evidence: cals.map(c => ({ source: 'phd2', timestamp: c.startedAt, value: c.west.ratePxPerSec })),
+            }));
+        }
+
+        for (const cal of context.phd2Parsed.calibrations) {
+            if (cal.starLostDuringCalibration > 0) {
+                findings.push(SessionInvariants.createFinding({
+                    code: 'D10_STAR_LOST_DURING_CALIBRATION',
+                    severity: 'info',
+                    confidence: 'measured',
+                    title: `Calibration starting ${cal.startedAt}: ${cal.starLostDuringCalibration} star-lost event(s) during the calibration itself`,
+                    detail: `Rare in this corpus (one prior occurrence, 86 events on 2026-05-11). Usually means the calibration star was too faint or low, or conditions were already poor before imaging even began that night.`,
+                    evidence: [{ source: 'phd2', value: cal.starLostDuringCalibration }],
+                }));
+            }
+            if (cal.orthogonalityErrorDeg !== null && Math.abs(cal.orthogonalityErrorDeg) > 3.5) {
+                findings.push(SessionInvariants.createFinding({
+                    code: 'D10_ORTHOGONALITY_OUTLIER',
+                    severity: 'info',
+                    confidence: 'measured',
+                    title: `Calibration starting ${cal.startedAt}: orthogonality error ${cal.orthogonalityErrorDeg.toFixed(2)}°`,
+                    detail: `Corpus range across 44 calibrations: -3.40° to 2.40°. A value clearly outside that range is worth a second look at polar alignment or cone error if it persists across nights.`,
+                    evidence: [{ source: 'phd2', value: cal.orthogonalityErrorDeg }],
+                }));
+            }
+        }
+
+        return findings;
+    },
+
+    // -------------------------------------------------------------------------
+    // D12 — Plate-solve degradation (ELR.p4-3, unvalidated — ships info-only)
+    // -------------------------------------------------------------------------
+
+    // Repeated non-centered/failed solve outcomes, plus a starNumber trend
+    // across the night — the design doc's own note that starNumber is the
+    // only genuine transparency measurement in either log, but written
+    // only a handful of times per night, so this is a coarse sanity check,
+    // not a per-sub metric.
+    D12_plateSolveDegradation(fusedSession, context) {
+        if (!context || !context.asiairParsed) return [];
+        const findings = [];
+        const solves = context.asiairParsed.runs.filter(r => r.kind === 'light')
+            .flatMap(r => r.events).filter(e => e.type === 'plate_solve')
+            .sort((a, b) => a.at - b.at);
+        if (solves.length === 0) return [];
+
+        const degraded = solves.filter(e => e.outcome === 'tooFar' || e.outcome === 'mountSlewFailed' || e.outcome === 'solveFailed');
+        if (degraded.length >= 3) {
+            findings.push(SessionInvariants.createFinding({
+                code: 'D12_PLATE_SOLVE_DEGRADED',
+                severity: 'info',
+                confidence: 'measured',
+                title: `${degraded.length} of ${solves.length} plate-solve attempts tonight were not a clean center (${degraded.map(e => e.outcome).join(', ')})`,
+                detail: `Repeated pointing/solve trouble in one night is worth a look at the pointing model, or the target's field density if it's a sparse-star area — not necessarily an equipment fault on its own.`,
+                evidence: degraded.map(e => ({ source: 'asiair', timestamp: e.at, value: e.outcome })),
+            }));
+        }
+
+        const withStarNumber = solves.filter(e => e.starNumber !== null);
+        if (withStarNumber.length >= 3) {
+            const first = withStarNumber[0].starNumber;
+            const last = withStarNumber[withStarNumber.length - 1].starNumber;
+            if (last < first * 0.6) {
+                findings.push(SessionInvariants.createFinding({
+                    code: 'D12_STAR_NUMBER_DECLINE',
+                    severity: 'info',
+                    confidence: 'inferred',
+                    title: `Plate-solve star count fell from ${first} to ${last} across the night`,
+                    detail: `Star number is the only real transparency signal in either log, but it's only written a handful of times a night — a coarse read, not a per-sub metric. If this doesn't coincide with a D2 cloud finding, focus drift is worth checking instead, since a soft solve frame also detects fewer stars.`,
+                    evidence: withStarNumber.map(e => ({ source: 'asiair', timestamp: e.at, value: e.starNumber })),
+                }));
+            }
+        }
+
+        return findings;
+    },
+
+    // -------------------------------------------------------------------------
+    // D16 — Mid-imaging guide recovery (ELR.p4-3, candidate)
+    // -------------------------------------------------------------------------
+
+    // Own Finding, not folded into D2 or D7 — see design doc's D16 entry
+    // for the reasoning (recurring star-lost-and-reselect cycling points
+    // at guide-star selection/search-region sizing, a different root
+    // cause than transparency or hardware cadence gaps).
+    D16_guideRecovery(fusedSession, context) {
+        if (!context || !context.asiairParsed) return [];
+        const findings = [];
+
+        for (const run of context.asiairParsed.runs.filter(r => r.kind === 'light')) {
+            const recoveries = run.events.filter(e => e.type === 'guide_recovery');
+            if (recoveries.length === 0) continue;
+
+            const totalS = recoveries.reduce((s, e) => s + (e.durationS || 0), 0);
+            const affectedImg = [...new Set(recoveries.map(e => e.affectedImg).filter(Boolean))];
+
+            findings.push(SessionInvariants.createFinding({
+                code: 'D16_GUIDE_RECOVERY',
+                severity: 'info', // candidate/unvalidated per design doc — info regardless of frequency
+                confidence: 'inferred',
+                title: `${recoveries.length} mid-imaging guide-recovery cycle(s), run ${run.index} (${run.target}), ${(totalS / 60).toFixed(1)} min total`,
+                detail: `A recurring lost-star/reselect/resume pattern during imaging, distinct from dither/AF/calibration settling. Frequent recovery cycling is usually about the guide star itself (faint, or near the search-region edge) rather than the mount or transparency — worth a look at search region and star-mass-tolerance settings if this recurs on future nights, independent of weather.`,
+                evidence: recoveries.map(e => ({ source: 'asiair', timestamp: e.startedAt, value: e.outcome })),
+                affectedSubs: affectedImg,
+            }));
+        }
+
         return findings;
     },
 
