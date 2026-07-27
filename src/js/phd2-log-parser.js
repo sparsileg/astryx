@@ -86,7 +86,13 @@ const Phd2LogParser = {
             exposureMs: null,
             mount: null,
             raAlgorithm: null,
+            raAggression: null,
+            raMinMove: null,
             decAlgorithm: null,
+            decAggression: null,
+            decMinMove: null,
+            searchRegionPx: null,
+            starMassTolerancePct: null,
         };
 
         for (const line of lines) {
@@ -110,16 +116,44 @@ const Phd2LogParser = {
                 const m = line.match(/^Mount = ([^,]+)/);
                 if (m) eq.mount = m[1].trim();
             }
+            if (eq.searchRegionPx === null) {
+                const m = line.match(/Search region = (\d+)/);
+                if (m) eq.searchRegionPx = parseInt(m[1]);
+            }
+            if (eq.starMassTolerancePct === null) {
+                const m = line.match(/Star mass tolerance = ([\d.]+)%/);
+                if (m) eq.starMassTolerancePct = parseFloat(m[1]);
+            }
             if (eq.raAlgorithm === null) {
                 // #231 item 2: was matching "RA Guide algorithm =", but the
                 // actual log format is "X guide algorithm =" — always null
                 // before this fix (log-format-survey.md §3.2).
                 const m = line.match(/^X guide algorithm = ([^,]+)/);
-                if (m) eq.raAlgorithm = m[1].trim();
+                if (m) {
+                    eq.raAlgorithm = m[1].trim();
+                    // #246: PHD2 logs RA (Hysteresis) Aggression as a raw
+                    // decimal fraction ("0.450") but Dec (Resist Switch) as
+                    // an explicit percent ("55%") — ASIAir's own UI shows
+                    // both as percent (confirmed by Stan), so ×100 here
+                    // makes the two directly comparable.
+                    const agg = line.match(/Aggression = ([\d.]+)/);
+                    if (agg) eq.raAggression = parseFloat(agg[1]) * 100;
+                    const minMove = line.match(/Minimum move = ([\d.]+)/);
+                    if (minMove) eq.raMinMove = parseFloat(minMove[1]);
+                }
             }
             if (eq.decAlgorithm === null) {
                 const m = line.match(/^Y guide algorithm = ([^,]+)/);
-                if (m) eq.decAlgorithm = m[1].trim();
+                if (m) {
+                    eq.decAlgorithm = m[1].trim();
+                    // Dec's Aggression is a whole-number percent ("55%"),
+                    // unlike RA's decimal fraction — same distinction
+                    // _extractSessionHeader already relies on.
+                    const agg = line.match(/Aggression = (\d+)%/);
+                    if (agg) eq.decAggression = parseInt(agg[1]);
+                    const minMove = line.match(/Minimum move = ([\d.]+)/);
+                    if (minMove) eq.decMinMove = parseFloat(minMove[1]);
+                }
             }
             // Stop once we have all equipment info (before first Guiding Begins)
             if (line.startsWith('Guiding Begins') && eq.pixelScale !== null) break;
@@ -127,6 +161,7 @@ const Phd2LogParser = {
 
         return eq;
     },
+
 
     // -------------------------------------------------------------------------
     // Session extraction
@@ -274,28 +309,28 @@ const Phd2LogParser = {
             // naming bug from #231 item 2, at the per-session level this
             // time — the top-level _extractEquipment fix above covers the
             // whole-log summary field) ---
-            if (eq.raAlgorithm === null && line.startsWith('X guide algorithm = ')) {
-                const m = line.match(/^X guide algorithm = ([^,]+)/);
-                if (m) eq.raAlgorithm = m[1].trim();
-                const hyst = line.match(/Hysteresis = ([\d.]+)/);
-                if (hyst) eq.raHysteresis = parseFloat(hyst[1]);
-                const agg = line.match(/Aggression = ([\d.]+)/);
-                if (agg) eq.raAggression = parseFloat(agg[1]);
-                const minMove = line.match(/Minimum move = ([\d.]+)/);
-                if (minMove) eq.raMinMove = parseFloat(minMove[1]);
-            }
-            if (eq.decAlgorithm === null && line.startsWith('Y guide algorithm = ')) {
-                const m = line.match(/^Y guide algorithm = ([^,]+)/);
-                if (m) eq.decAlgorithm = m[1].trim();
-                const minMove = line.match(/Minimum move = ([\d.]+)/);
-                if (minMove) eq.decMinMove = parseFloat(minMove[1]);
-                // Dec's Aggression is a whole-number percent ("55%"), unlike
-                // RA's decimal fraction ("0.450") — stored as given, units
-                // differ between the two axes because PHD2 itself reports
-                // Hysteresis and Resist Switch aggression differently.
-                const agg = line.match(/Aggression = (\d+)%/);
-                if (agg) eq.decAggression = parseInt(agg[1]);
-            }
+        if (eq.raAlgorithm === null && line.startsWith('X guide algorithm = ')) {
+            const m = line.match(/^X guide algorithm = ([^,]+)/);
+            if (m) eq.raAlgorithm = m[1].trim();
+            const hyst = line.match(/Hysteresis = ([\d.]+)/);
+            if (hyst) eq.raHysteresis = parseFloat(hyst[1]);
+            // #246: ×100 — see top-level _extractEquipment comment for
+            // why (raw fraction in the log, percent in ASIAir's UI).
+            const agg = line.match(/Aggression = ([\d.]+)/);
+            if (agg) eq.raAggression = parseFloat(agg[1]) * 100;
+            const minMove = line.match(/Minimum move = ([\d.]+)/);
+            if (minMove) eq.raMinMove = parseFloat(minMove[1]);
+        }
+        if (eq.decAlgorithm === null && line.startsWith('Y guide algorithm = ')) {
+            const m = line.match(/^Y guide algorithm = ([^,]+)/);
+            if (m) eq.decAlgorithm = m[1].trim();
+            const minMove = line.match(/Minimum move = ([\d.]+)/);
+            if (minMove) eq.decMinMove = parseFloat(minMove[1]);
+            // Dec's Aggression is already a whole-number percent
+            // ("55%") in the log — no conversion needed, unlike RA.
+            const agg = line.match(/Aggression = (\d+)%/);
+            if (agg) eq.decAggression = parseInt(agg[1]);
+        }
 
             // --- Backlash comp ---
             if (eq.backlashComp === null && line.startsWith('Backlash comp = ')) {

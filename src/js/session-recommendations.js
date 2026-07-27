@@ -60,7 +60,6 @@ const SessionRecommendations = {
         recs.push(this._afDurationRec(asiairParsed));
         recs.push(this._calDurationRec(asiairParsed));
         recs.push(this._flipDurationRec(asiairParsed));
-        recs.push(this._flipPauseRec(asiairParsed));
 
         return recs.filter(Boolean);
     },
@@ -229,36 +228,172 @@ const SessionRecommendations = {
         });
     },
 
-    // Flip Pause — the one Astryx setting the design doc calls a hybrid:
-    // "derived, not stored at all — computed from transit time, target
-    // coordinates, flip offset and sub cycle." That's a real astronomical
-    // calculation (local sidereal time at flip, target RA/Dec, hour angle
-    // at meridian crossing) that Astryx's own astro-core.js/astro-target.js
-    // almost certainly already do correctly — reimplementing sidereal-time
-    // math blind, overnight, with no way to cross-check the result against
-    // those existing utilities or get it reviewed, risks landing a subtly
-    // wrong number that actively misleads sequence planning. That's worse
-    // than not having it. What ships here instead: the configured wait
-    // copied straight from the log (same value ASIAir Config's Flip Offset
-    // shows), confidence 'copied' rather than 'derived', with the gap to
-    // the real 6.4 spelled out explicitly rather than silently glossed
-    // over. Finishing this needs either the existing transit-time utility
-    // functions to build on, or a chance to verify the derivation directly
-    // — flagged for follow-up, not fabricated.
-    _flipPauseRec(asiairParsed) {
-        const flips = asiairParsed.runs.filter(r => r.kind === 'light')
-            .flatMap(r => r.events).filter(e => e.type === 'meridian_flip' && e.configuredWaitS != null);
-        if (flips.length === 0) return null;
-        const wait = flips[0].configuredWaitS;
-        return this._makeRec({
-            group: 'astryx', setting: 'Flip Pause',
-            observed: `${Math.floor(wait / 60)}m${wait % 60}s configured`,
-            recommended: 'not derived this pass — see evidence',
-            changeNeeded: false,
-            evidence: 'Design doc §8 calls for this to be DERIVED from transit time, target RA/Dec, flip offset, and sub cycle — a real sidereal-time calculation. Not attempted here: doing it blind, without Astryx\'s existing transit-time utilities to build on or a chance to verify the result, risks a subtly wrong number. What\'s shown is the configured value copied from the log, not an independent derivation. Needs a follow-up pass with access to astro-core.js/astro-target.js or direct verification.',
-            confidence: 'copied',
-            expectedImpact: 'unknown until the real derivation exists',
-        });
+    // #244: derived properly. configuredWaitS (the log's "Wait Xmin Ys to
+    // Meridian Flip") spans Begin-line-to-GOTO, i.e. Flip Pause + Flip
+    // Offset COMBINED (confirmed against Stan's own ASIAir timeline
+    // writeup — pauseStartedAt is the Stop-Tracking moment T−X,
+    // flipStartedAt is the GOTO moment T+Y). Real transit time T, computed
+    // via astro-core/astro-target against the night's matched imaging-log
+    // location (utilities-view.js), lets X and Y fall out independently:
+    //   X (Flip Pause)  = T − pauseStartedAt
+    //   Y (Flip Offset) = flipStartedAt − T
+    // Falls back to the old copied-and-labeled-as-combined behavior when
+    // no location is available for the night (context.location null).
+    _meridianFlipsWithRuns(asiairParsed) {
+        const results = [];
+        for (const run of asiairParsed.runs.filter(r => r.kind === 'light')) {
+            for (const event of run.events) {
+                if (event.type === 'meridian_flip' && event.configuredWaitS != null) {
+                    results.push({ event, run });
+                }
+            }
+        }
+        return results;
+    },
+
+    // Returns { transitMs, xS, yS } or null if the transit can't be
+    // computed (missing location/coords/timestamps, or astro-core/
+    // astro-target not loaded). Search window is ±6h around the
+    // stop-tracking event — RA doesn't move enough in a night to need
+    // wider, and this keeps findTargetTransit's scan cheap.
+    _deriveMeridianTiming(event, run, location) {
+        if (!location || location.longitude == null) return null;
+        if (!run.coords || run.coords.raHours == null) return null;
+        if (!event.pauseStartedAt || !event.flipStartedAt) return null;
+        if (typeof findTargetTransit !== 'function' || typeof dateToJD !== 'function' || typeof jdToDate !== 'function') return null;
+
+        const centerJD = dateToJD(event.pauseStartedAt);
+        const windowDays = 6 / 24;
+        const transitJD = findTargetTransit(centerJD - windowDays, centerJD + windowDays,
+            run.coords.raHours, run.coords.decDeg, location.longitude);
+        if (transitJD == null) return null;
+
+        const transitMs = jdToDate(transitJD).getTime();
+        return {
+            transitMs,
+            xS: (transitMs - event.pauseStartedAt.getTime()) / 1000,
+            yS: (event.flipStartedAt.getTime() - transitMs) / 1000,
+        };
+    },
+
+    _fmtMinSec(s) {
+        const sign = s < 0 ? '-' : '';
+        const abs = Math.round(Math.abs(s));
+        return `${sign}${Math.floor(abs / 60)}m${abs % 60}s`;
+    },
+
+    // #245: Flip Pause/Offset are fixed ASIAir dial settings, not
+    // conditions that vary night to night — there's nothing to
+    // "recommend" (Stan: these can't really be derived/changed based on
+    // logs, only verified). Moved out of Recommendations into a plain
+    // verification table for Data Quality — see buildMeridianVerification
+    // below. Kept as a public method (not prefixed _) since
+    // session-report-view.js calls it directly, bypassing build()'s
+    // four-group Recommendation shape entirely.
+    //
+    // Verified 2025-11-17 raw log: pauseStartedAt lands the same second as
+    // the "Stop Tracking" line, immediately after the prior exposure ends
+    // — confirms it's the true Stop-Tracking moment (T−X), not an earlier
+    // exposure-fit decision point, and that flipStartedAt − pauseStartedAt
+    // reproduces configuredWaitS exactly (353s both ways).
+    buildMeridianVerification(context) {
+        if (!context || !context.asiairParsed) return [];
+        const flips = this._meridianFlipsWithRuns(context.asiairParsed);
+        if (flips.length === 0) return [];
+        const { event, run } = flips[0];
+        const derived = this._deriveMeridianTiming(event, run, context.location);
+        if (!derived) return [];
+
+        const rows = [];
+        const pauseSettingS = (SettingsManager.getSetting('seqPlanMeridianFlipPause', 4)) * 60;
+        const offsetSettingS = (SettingsManager.getSetting('seqPlanMeridianFlipOffset', 0)) * 60;
+
+        if (Number.isFinite(derived.xS)) {
+            rows.push({
+                setting: 'Flip Pause',
+                observed: this._fmtMinSec(derived.xS),
+                astryxSetting: this._fmtMinSec(pauseSettingS),
+                delta: this._fmtMinSec(derived.xS - pauseSettingS),
+            });
+        }
+        if (Number.isFinite(derived.yS)) {
+            rows.push({
+                setting: 'Flip Offset',
+                observed: this._fmtMinSec(derived.yS),
+                astryxSetting: this._fmtMinSec(offsetSettingS),
+                delta: this._fmtMinSec(derived.yS - offsetSettingS),
+            });
+        }
+        return rows;
+    },
+
+    // #246: informational only, not a Recommendation — Stan's explicit
+    // call ("not ready to use as a recommendation, but good information to
+    // know"). Every observed `Settle Timeout` in the corpus landed at
+    // exactly the same duration per night (threshold-calibration.md §2:
+    // 63s = 60s configured timeout + ~3s reporting overhead), so this
+    // just surfaces that consistency check for the night in hand — it
+    // doesn't compare against anything stored in Astryx, since there's no
+    // Astryx setting for ASIAir's own dither-settle-timeout dial.
+    buildDitherSettleTimeoutInfo(context) {
+        if (!context || !context.asiairParsed) return null;
+        const timeouts = [];
+        for (const run of context.asiairParsed.runs.filter(r => r.kind === 'light')) {
+            for (const event of run.events) {
+                if (event.type === 'dither' && event.outcome === 'timeout' && event.durationS != null) {
+                    timeouts.push(Math.round(event.durationS));
+                }
+            }
+        }
+        if (timeouts.length === 0) return null;
+        const unique = [...new Set(timeouts)].sort((a, b) => a - b);
+        return {
+            count: timeouts.length,
+            consistent: unique.length === 1,
+            text: unique.length === 1
+                ? `~${unique[0]}s, consistent across ${timeouts.length} timeout event${timeouts.length > 1 ? 's' : ''} this night`
+                : `varies (${unique.join('s, ')}s) across ${timeouts.length} timeout events this night`,
+        };
+    },
+
+    // #246: informational only, same reasoning as the settle-timeout note
+    // above. ASIAir never logs the *configured* frames-per-dither value
+    // directly (only per-dither trigger events), but the *effective*
+    // spacing is countable: subs whose startedAt falls between one dither
+    // and the next. Dithers don't split ImagingBlocks (asiair-log-parser.js
+    // _extractImagingBlocks continues collecting subs straight through a
+    // dither), so this counts against raw sub timestamps per run, not
+    // block boundaries. The very first interval (subs before the run's
+    // first dither) is included, which can understate/overstate cadence
+    // slightly if the run starts mid-sequence — acceptable for an
+    // informational figure, not precise enough to recommend a change from.
+    buildFramesPerDitherInfo(context) {
+        if (!context || !context.asiairParsed) return null;
+        const counts = [];
+        for (const run of context.asiairParsed.runs.filter(r => r.kind === 'light')) {
+            const subs = run.blocks.flatMap(b => b.subs).filter(s => !s.aborted).sort((a, b) => a.startedAt - b.startedAt);
+            const dithers = run.events.filter(e => e.type === 'dither' && e.startedAt).sort((a, b) => a.startedAt - b.startedAt);
+            if (subs.length === 0 || dithers.length === 0) continue;
+
+            let cursor = 0;
+            for (const dither of dithers) {
+                let n = 0;
+                while (cursor < subs.length && subs[cursor].startedAt < dither.startedAt) {
+                    n++;
+                    cursor++;
+                }
+                if (n > 0) counts.push(n);
+            }
+        }
+        if (counts.length === 0) return null;
+        const unique = [...new Set(counts)].sort((a, b) => a - b);
+        return {
+            count: counts.length,
+            consistent: unique.length === 1,
+            text: unique.length === 1
+                ? `${unique[0]} sub(s) between dithers, consistent across ${counts.length} interval${counts.length > 1 ? 's' : ''} this night`
+                : `varies (${unique.join(', ')} subs) across ${counts.length} intervals this night`,
+        };
     },
 
     _subTierByImageNo(fs, imageNo) {
@@ -272,28 +407,12 @@ const SessionRecommendations = {
     // alongside everything else rather than needing a separate lookup).
     // -------------------------------------------------------------------------
 
-    // AF Interval and Frames per Dither are NOT implemented — neither log
-    // records the configured interval/count anywhere, only per-event
-    // trigger type and outcome. Copying a value that was never actually
-    // observed would be fabrication, not a copy. Same category of gap as
-    // cable routing and flat exposure (Process/Hardware), just for a
-    // different underlying reason (no signal at all, vs. deliberately
-    // skipped).
+    // #245: Flip Offset moved to Data Quality (buildMeridianVerification)
+    // — see that method's comment. Nothing else populates this group yet
+    // (AF Interval/Frames per Dither have no log signal at all — see file
+    // header), so it returns empty for now.
     _buildAsiairConfig(fs, context) {
-        if (!context || !context.asiairParsed) return [];
-        const flips = context.asiairParsed.runs.filter(r => r.kind === 'light')
-            .flatMap(r => r.events).filter(e => e.type === 'meridian_flip' && e.configuredWaitS != null);
-        if (flips.length === 0) return [];
-        const wait = flips[0].configuredWaitS;
-        return [this._makeRec({
-            group: 'asiair', setting: 'Flip Offset',
-            observed: `${Math.floor(wait / 60)}m${wait % 60}s`,
-            recommended: `${Math.floor(wait / 60)}m${wait % 60}s (as configured)`,
-            changeNeeded: false,
-            evidence: 'Read directly from the log\'s "Wait Xmin Ys to Meridian Flip" line — this is ASIAir\'s own configuration, not a learned value.',
-            confidence: 'copied',
-            expectedImpact: 'none — informational',
-        })];
+        return [];
     },
 
     // -------------------------------------------------------------------------
@@ -301,25 +420,12 @@ const SessionRecommendations = {
     // Finding gives a concrete reason to suggest one)
     // -------------------------------------------------------------------------
 
-    // Reads from the FIRST SESSION's own equipment object, not
-    // phd2Parsed.equipment (top-level) — found during validation that
-    // searchRegionPx/starMassTolerancePct/aggression/minMove are only
-    // ever captured by _extractSessionHeader (per-session), never by
-    // _extractEquipment (the whole-log scan that builds the top-level
-    // object) — its own eq literal never declares these fields at all.
-    // Confirmed the raw data is genuinely in the log ("Search region = 50
-    // px, Star mass tolerance = 50.0%") and genuinely reaches each
-    // session's own equipment, just not the top-level summary. Working
-    // around it here by reading the first session with a populated value,
-    // rather than editing phd2-log-parser.js — an already-shipped,
-    // already-validated file — overnight with no chance for the diff to
-    // be reviewed. Worth a small follow-up fix later (same shape as
-    // #237's starMass addition) to promote these onto the top-level
-    // object directly, since other future code will reasonably expect
-    // them there too.
+    // #244: reads phd2Parsed.equipment directly now that _extractEquipment
+    // captures searchRegionPx/starMassTolerancePct/aggression/minMove at
+    // the top level — the sessions[0] workaround is no longer needed.
     _buildPhd2Config(fs, context) {
-        if (!context || !context.phd2Parsed || !context.phd2Parsed.sessions) return [];
-        const eq = context.phd2Parsed.sessions.map(s => s.equipment).find(e => e && e.searchRegionPx != null) || {};
+        if (!context || !context.phd2Parsed) return [];
+        const eq = context.phd2Parsed.equipment || {};
         const recs = [];
 
         if (eq.searchRegionPx != null) {
@@ -369,7 +475,7 @@ const SessionRecommendations = {
         if (eq.raAggression != null || eq.decAggression != null) {
             recs.push(this._makeRec({
                 group: 'phd2', setting: 'RA / Dec Aggression',
-                observed: `RA ${eq.raAggression ?? '—'} / Dec ${eq.decAggression ?? '—'}`,
+                observed: `RA ${eq.raAggression != null ? eq.raAggression + '%' : '—'} / Dec ${eq.decAggression != null ? eq.decAggression + '%' : '—'}`,
                 recommended: 'as configured',
                 changeNeeded: false,
                 evidence: 'Read directly from the PHD2 log header.',
