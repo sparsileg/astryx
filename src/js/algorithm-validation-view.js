@@ -423,6 +423,135 @@ const ASTRO_TESTS = [
         expected: 100,
         tolerance: 1,
         source: 'timeanddate.com / starwalk.space, Full Moon 2026-07-29 14:36 UTC (illumination should be ≈100%)'
+    },
+
+    // --- session-analysis parsers (Issue #244 Part A) ---
+    {
+        name: 'ASIAir _extractEvents: Settle Timeout does not swallow following exposures',
+        actual: () => {
+            const lines = [
+                '2026/07/23 02:00:00 Exposure 300.0s image 1#',
+                '2026/07/23 02:05:00 [Guide] Dither',
+                '2026/07/23 02:05:01 [Guide] Settle Timeout',
+                '2026/07/23 02:05:02 Exposure 300.0s image 2#',
+                '2026/07/23 02:10:02 Exposure 300.0s image 3#',
+                '2026/07/23 02:15:02 [Autorun|End] Finish Autorun',
+            ];
+            const { events } = AsiairLogParser._extractEvents(lines);
+            const imaging = events.find(e => e.type === 'imaging');
+            return imaging ? imaging.subCount : -1;
+        },
+        expected: 3,
+        tolerance: 0,
+        source: 'synthetic fixture; regression guard for the unhandled Settle Timeout token'
+    },
+    {
+        name: 'PHD2: DROP row does not poison settled RMS with NaN',
+        actual: () => {
+            const text = [
+                'PHD2 version, Log version 2.5. Log enabled at 2026-07-23 02:00:00',
+                'Guiding Begins at 2026-07-23 02:00:00',
+                'Pixel scale = 6.29 arc-sec/px, Binning = 1',
+                'Focal length = 123 mm',
+                'Exposure = 2000 ms',
+                'Camera = ZWO ASI120MM Mini, gain = 100, full size = 1280 x 960, pixel size = 3.8 um',
+                'Mount = ZWO000, xAngle = 0.0, xRate = 1.30, yAngle = 90.0, yRate = 1.30, parity = +/?',
+                'Frame,Time,mount,dx,dy,RARawDistance,DECRawDistance,RAGuideDistance,DECGuideDistance,RADuration,RADirection,DECDuration,DECDirection,XStep,YStep,StarMass,SNR,ErrorCode',
+                ['1','2.00','"Mount"','0.05','0.03','0.10','0.00','0.00','0.00','50','W','40','S','','','3000','40.0','0'].join(','),
+                ['2','4.00','"Mount"','0.04','0.02','0.10','0.00','0.00','0.00','45','W','35','S','','','3050','41.0','0'].join(','),
+                ['3','6.00','"DROP"','','','','','','','','','','','','','50','4.0','6','"Star lost - mass changed"'].join(','),
+                ['4','8.00','"Mount"','0.06','0.04','0.10','0.00','0.00','0.00','52','W','42','S','','','2990','39.5','0'].join(','),
+                'Guiding Ends at 2026-07-23 02:01:00',
+            ].join('\n');
+            return Phd2LogParser.parse(text).sessions[0].stats.totRms;
+        },
+        expected: 0.629,
+        tolerance: 0.001,
+        source: 'synthetic fixture; regression guard for NaN propagation from DROP frame rows'
+    },
+    {
+        name: 'PHD2: DROP reason taken from log column 18, not legacy code map',
+        actual: () => {
+            const text = [
+                'PHD2 version, Log version 2.5. Log enabled at 2026-07-23 02:00:00',
+                'Guiding Begins at 2026-07-23 02:00:00',
+                'Pixel scale = 6.29 arc-sec/px, Binning = 1',
+                'Focal length = 123 mm',
+                'Exposure = 2000 ms',
+                'Camera = ZWO ASI120MM Mini, gain = 100, full size = 1280 x 960, pixel size = 3.8 um',
+                'Mount = ZWO000, xAngle = 0.0, xRate = 1.30, yAngle = 90.0, yRate = 1.30, parity = +/?',
+                'Frame,Time,mount,dx,dy,RARawDistance,DECRawDistance,RAGuideDistance,DECGuideDistance,RADuration,RADirection,DECDuration,DECDirection,XStep,YStep,StarMass,SNR,ErrorCode',
+                ['1','2.00','"Mount"','0.05','0.03','0.10','0.00','0.00','0.00','50','W','40','S','','','3000','40.0','0'].join(','),
+                ['2','4.00','"Mount"','0.04','0.02','0.10','0.00','0.00','0.00','45','W','35','S','','','3050','41.0','0'].join(','),
+                ['3','6.00','"DROP"','','','','','','','','','','','','','50','4.0','6','"Star lost - mass changed"'].join(','),
+                ['4','8.00','"Mount"','0.06','0.04','0.10','0.00','0.00','0.00','52','W','42','S','','','2990','39.5','0'].join(','),
+                'Guiding Ends at 2026-07-23 02:01:00',
+            ].join('\n');
+            return Phd2LogParser.parse(text).sessions[0].drops[0].reason === 'Star lost - mass changed';
+        },
+        expected: true,
+        tolerance: 0,
+        source: 'synthetic fixture; regression guard for the mislabeled ERROR_CODES map'
+    },
+    {
+        name: 'PHD2: per-session pixel scale applied on mixed-binning log',
+        actual: () => {
+            const text = [
+                'PHD2 version, Log version 2.5. Log enabled at 2026-07-23 02:00:00',
+                'Guiding Begins at 2026-07-23 02:00:00',
+                'Pixel scale = 6.29 arc-sec/px, Binning = 1',
+                'Focal length = 123 mm',
+                'Exposure = 2000 ms',
+                'Camera = ZWO ASI120MM Mini, gain = 100, full size = 1280 x 960, pixel size = 3.8 um',
+                'Mount = ZWO000, xAngle = 0.0, xRate = 1.30, yAngle = 90.0, yRate = 1.30, parity = +/?',
+                'Frame,Time,mount,dx,dy,RARawDistance,DECRawDistance,RAGuideDistance,DECGuideDistance,RADuration,RADirection,DECDuration,DECDirection,XStep,YStep,StarMass,SNR,ErrorCode',
+                ['1','2.00','"Mount"','0.05','0.03','0.10','0.00','0.00','0.00','50','W','40','S','','','3000','40.0','0'].join(','),
+                'Guiding Ends at 2026-07-23 02:01:00',
+                'Guiding Begins at 2026-07-23 02:10:00',
+                'Pixel scale = 12.58 arc-sec/px, Binning = 2',
+                'Focal length = 123 mm',
+                'Exposure = 2000 ms',
+                'Camera = ZWO ASI120MM Mini, gain = 100, full size = 640 x 480, pixel size = 3.8 um',
+                'Mount = ZWO000, xAngle = 0.0, xRate = 1.30, yAngle = 90.0, yRate = 1.30, parity = +/?',
+                'Frame,Time,mount,dx,dy,RARawDistance,DECRawDistance,RAGuideDistance,DECGuideDistance,RADuration,RADirection,DECDuration,DECDirection,XStep,YStep,StarMass,SNR,ErrorCode',
+                ['1','2.00','"Mount"','0.05','0.03','0.10','0.00','0.00','0.00','50','W','40','S','','','3000','40.0','0'].join(','),
+                'Guiding Ends at 2026-07-23 02:11:00',
+            ].join('\n');
+            return Phd2LogParser.parse(text).sessions[1].stats.totRms;
+        },
+        expected: 1.258,
+        tolerance: 0.001,
+        source: 'synthetic fixture; regression guard for one global pixel scale applied across mixed-binning sessions'
+    },
+    {
+        name: 'PHD2: equipment.variesAcrossSessions flagged on mixed-binning log',
+        actual: () => {
+            const text = [
+                'PHD2 version, Log version 2.5. Log enabled at 2026-07-23 02:00:00',
+                'Guiding Begins at 2026-07-23 02:00:00',
+                'Pixel scale = 6.29 arc-sec/px, Binning = 1',
+                'Focal length = 123 mm',
+                'Exposure = 2000 ms',
+                'Camera = ZWO ASI120MM Mini, gain = 100, full size = 1280 x 960, pixel size = 3.8 um',
+                'Mount = ZWO000, xAngle = 0.0, xRate = 1.30, yAngle = 90.0, yRate = 1.30, parity = +/?',
+                'Frame,Time,mount,dx,dy,RARawDistance,DECRawDistance,RAGuideDistance,DECGuideDistance,RADuration,RADirection,DECDuration,DECDirection,XStep,YStep,StarMass,SNR,ErrorCode',
+                ['1','2.00','"Mount"','0.05','0.03','0.10','0.00','0.00','0.00','50','W','40','S','','','3000','40.0','0'].join(','),
+                'Guiding Ends at 2026-07-23 02:01:00',
+                'Guiding Begins at 2026-07-23 02:10:00',
+                'Pixel scale = 12.58 arc-sec/px, Binning = 2',
+                'Focal length = 123 mm',
+                'Exposure = 2000 ms',
+                'Camera = ZWO ASI120MM Mini, gain = 100, full size = 640 x 480, pixel size = 3.8 um',
+                'Mount = ZWO000, xAngle = 0.0, xRate = 1.30, yAngle = 90.0, yRate = 1.30, parity = +/?',
+                'Frame,Time,mount,dx,dy,RARawDistance,DECRawDistance,RAGuideDistance,DECGuideDistance,RADuration,RADirection,DECDuration,DECDirection,XStep,YStep,StarMass,SNR,ErrorCode',
+                ['1','2.00','"Mount"','0.05','0.03','0.10','0.00','0.00','0.00','50','W','40','S','','','3000','40.0','0'].join(','),
+                'Guiding Ends at 2026-07-23 02:11:00',
+            ].join('\n');
+            return Phd2LogParser.parse(text).equipment.variesAcrossSessions;
+        },
+        expected: true,
+        tolerance: 0,
+        source: 'synthetic fixture; regression guard for one global pixel scale applied across mixed-binning sessions'
     }
 ];
 
