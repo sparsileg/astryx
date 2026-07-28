@@ -137,18 +137,20 @@ const SessionInvariants = {
     // it. Originally motivated by the phantom 25-minute gap, already fixed
     // — this is regression protection for that fix, not new detection.
     _checkI2(fusedSession, asiairParsed) {
-        // #235: same fix as session-fusion.js's coverage.unaccountedSeconds
-        // — unaccountedS/wallClockS live on parsed.summary, not
-        // parsed.wallClock.
         if (!asiairParsed.summary || asiairParsed.summary.wallClockS === 0) return null;
-        const { wallClockS, unaccountedS } = asiairParsed.summary;
-        const pct = Math.abs(unaccountedS) / wallClockS;
+        const { wallClockS } = asiairParsed.summary;
+        const unaccountedS = fusedSession.coverage.unaccountedSeconds;
+        if (unaccountedS == null) return null;
+        const pct = unaccountedS / wallClockS;
         const toleranceFraction = (APP_CONFIG.LOG_ANALYSIS && APP_CONFIG.LOG_ANALYSIS.WALL_CLOCK_UNACCOUNTED_FRACTION) || 0.05;
+        const acqNote = fusedSession.coverage.acquisitionSeconds > 0
+            ? `, ${fusedSession.coverage.acquisitionSeconds.toFixed(0)}s target-acquisition time excluded`
+            : '';
 
         return this._result({
             id: 'I2',
             expected: `unaccounted ≤ ${(toleranceFraction * 100).toFixed(0)}% of wall clock`,
-            actual: `${unaccountedS.toFixed(0)}s unaccounted of ${wallClockS.toFixed(0)}s (${(pct * 100).toFixed(1)}%)`,
+            actual: `${unaccountedS.toFixed(0)}s unaccounted of ${wallClockS.toFixed(0)}s (${(pct * 100).toFixed(1)}%)${acqNote}`,
             tolerance: toleranceFraction,
             passed: pct <= toleranceFraction,
             severity: 'critical',

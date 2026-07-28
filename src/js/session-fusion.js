@@ -451,28 +451,34 @@ const SessionFusion = {
         };
     },
 
+    _computeAcquisitionS(asiairParsed) {
+        const lightRuns = asiairParsed.runs.filter(r => r.kind === 'light' && r.startedAt && r.endedAt);
+        let acquisitionS = 0;
+        for (let i = 1; i < lightRuns.length; i++) {
+            const gap = (lightRuns[i].startedAt.getTime() - lightRuns[i - 1].endedAt.getTime()) / 1000;
+            if (gap > 0) acquisitionS += gap;
+        }
+        return acquisitionS;
+    },
+
     _computeCoverage(asiairParsed, phd2Parsed, subs) {
+        const acquisitionS = this._computeAcquisitionS(asiairParsed);
+        const legacyUnaccountedS = (asiairParsed.summary && asiairParsed.summary.unaccountedS) ?? null;
+        const unaccountedSeconds = legacyUnaccountedS != null ? Math.max(0, legacyUnaccountedS - acquisitionS) : null;
+
         return {
             asiairPresent: true,
             phd2Present: !!phd2Parsed,
             unmatchedLineCount:
                 ((asiairParsed.source && asiairParsed.source.unmatchedLines.length) || 0) +
                 ((phd2Parsed && phd2Parsed.source && phd2Parsed.source.unmatchedLines.length) || 0),
-            // #235: fixes a latent #234 bug — unaccountedS/wallClockS live
-            // on parsed.summary (from _computeSummary), not parsed.wallClock
-            // (which only has raw start/end/wallClockS). Optional chaining
-            // silently returned null the whole time in #234's delivery;
-            // never thrown, never specifically checked.
-            unaccountedSeconds: (asiairParsed.summary && asiairParsed.summary.unaccountedS) ?? null,
+            unaccountedSeconds,
+            acquisitionSeconds: acquisitionS,
             subsWithoutGuideData: subs.filter(s => !s.guide || s.guide.frameCount === 0).length,
         };
     },
 
 
-    // Lightweight chronological event list — the full "interleaved
-    // anomalies" rendering described in design doc §7 is Phase 5's report
-    // view; this just exposes something walkable for it to consume rather
-    // than re-deriving event ordering itself.
     _buildTimeline(lightRuns, gaps) {
         const entries = [];
         for (const run of lightRuns) {
