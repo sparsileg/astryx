@@ -381,6 +381,12 @@ const Phd2LogParser = {
             if (line.startsWith('Guiding Begins')) {
                 const m = line.match(/Guiding Begins at (.+)/);
                 if (m) {
+                    if (current) {
+                        current.endLine = i + 1;
+                        current.incomplete = true;
+                        current.incompleteReason = 'supersededByNextSession';
+                        sessions.push(this._finalizeSession(current, fallbackPixelScale));
+                    }
                     sessionNum++;
                     const header = this._extractSessionHeader(lines, i + 1);
                     current = {
@@ -399,6 +405,7 @@ const Phd2LogParser = {
                         settled: true,
                         settleWindows: [],
                         incomplete: false,
+                        incompleteReason: null,
                     };
                     openSettleWindow = null;
                 }
@@ -529,6 +536,7 @@ const Phd2LogParser = {
             current.endTime = null;
             current.endLine = lines.length;
             current.incomplete = true;
+            current.incompleteReason = 'eof';
             sessions.push(this._finalizeSession(current, fallbackPixelScale));
         }
 
@@ -820,8 +828,9 @@ const Phd2LogParser = {
         }));
     },
 
-    _computeOverall(sessions, equipment) {
-        const fullSessions = sessions.filter(s => s.stats && !s.incomplete &&
+      _computeOverall(sessions, equipment) {
+        const fullSessions = sessions.filter(s => s.stats &&
+            (!s.incomplete || s.incompleteReason === 'eof') &&
             s.frames.length >= this.THRESHOLDS.SHORT_SESSION);
 
         if (fullSessions.length === 0) return null;
