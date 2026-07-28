@@ -1,0 +1,265 @@
+{
+  "_instructions": {
+    "note": "Keys starting with _ are skipped by the harness, not real nights.",
+    "corpus_dir": "Point --corpus-dir at the flat folder these filenames live in (e.g. ~/Documents/TestLogs) -- all paths below are bare filenames, no subfolders.",
+    "expected_values_source": "subs / settled_guide_rms / drops are copied directly from corpus-index.md's Imaging sessions table. rms_tolerance defaults to 0.02\" if not given.",
+    "invariants_caveat": "expected_failed_invariants is empty for every night below -- run the harness once, review which invariant failures show up, and populate these once you've decided which are known/acceptable (e.g. 2026-06-05's mixed exposure lengths) vs. real regressions.",
+    "meridian_verification_caveat": "buildMeridianVerification now runs (astro-core.js/astro-target.js are loaded), but still needs a context.location -- not wired into this manifest/harness yet, so it'll return [] for every night regardless. Flagged separately, not fixed here."
+  },
+  "2025-10-23_calibration": {
+    "asiair_file": "Autorun_Log_2025-10-23_194936.txt",
+    "phd2_file": null,
+    "expected": {}
+  },
+  "2025-11-18_calibration": {
+    "asiair_file": "Autorun_Log_2025-11-18_081759.txt",
+    "phd2_file": null,
+    "expected": {}
+  },
+  "2026-02-04_calibration": {
+    "asiair_file": "Autorun_Log_2026-02-04_144918.txt",
+    "phd2_file": null,
+    "expected": {}
+  },
+  "2026-03-10_calibration": {
+    "asiair_file": "Autorun_Log_2026-03-10_063916.txt",
+    "phd2_file": null,
+    "expected": {}
+  },
+  "2026-06-20_calibration": {
+    "asiair_file": "Autorun_Log_2026-06-20_213945.txt",
+    "phd2_file": null,
+    "expected": {}
+  },
+  "2025-10-23": {
+    "_targets": "IC405, NGC281, NGC7023",
+    "asiair_file": "Autorun_Log_2025-10-23_202616.txt",
+    "phd2_file": "PHD2_GuideLog_2025-10-23_201657.txt",
+    "expected": {
+      "subs": 104,
+      "settled_guide_rms": 1.2,
+      "drops": 10,
+      "expected_failed_invariants": []
+    }
+  },
+  "2025-11-17": {
+    "_targets": "IC405, NGC281",
+    "asiair_file": "Autorun_Log_2025-11-17_200649.txt",
+    "phd2_file": "PHD2_GuideLog_2025-11-17_182627.txt",
+    "expected": {
+      "subs": 110,
+      "settled_guide_rms": 1.18,
+      "drops": 14,
+      "expected_failed_invariants": []
+    }
+  },
+  "2025-11-23": {
+    "_targets": "DQ Piscium, IC405, NGC281",
+    "asiair_file": "Autorun_Log_2025-11-23_202152.txt",
+    "phd2_file": "PHD2_GuideLog_2025-11-23_201042.txt",
+    "expected": {
+      "subs": 164,
+      "settled_guide_rms": 1.13,
+      "drops": 2,
+      "expected_failed_invariants": []
+    }
+  },
+  "2025-12-16": {
+    "_targets": "M1",
+    "asiair_file": "Autorun_Log_2025-12-16_184011.txt",
+    "phd2_file": "PHD2_GuideLog_2025-12-16_181921.txt",
+    "expected": {
+      "subs": 94,
+      "settled_guide_rms": 1.27,
+      "drops": 86,
+      "expected_failed_invariants": []
+    }
+  },
+  "2025-12-20": {
+    "_targets": "M1",
+    "asiair_file": "Autorun_Log_2025-12-20_222453.txt",
+    "phd2_file": "PHD2_GuideLog_2025-12-20_205953.txt",
+    "expected": {
+      "subs": 104,
+      "settled_guide_rms": 1.32,
+      "drops": 352,
+      "expected_failed_invariants": [
+        "I3"
+      ]
+    }
+  },
+  "2025-12-21": {
+    "_targets": "M1, NGC1333",
+    "asiair_file": "Autorun_Log_2025-12-21_194000.txt",
+    "phd2_file": "PHD2_GuideLog_2025-12-21_183328.txt",
+    "expected": {
+      "subs": 140,
+      "settled_guide_rms": 1.23,
+      "drops": 22,
+      "expected_failed_invariants": []
+    }
+  },
+  "2026-02-03": {
+    "_targets": "C49, NGC1333",
+    "asiair_file": "Autorun_Log_2026-02-03_201817.txt",
+    "phd2_file": "PHD2_GuideLog_2026-02-03_200708.txt",
+    "expected": {
+      "subs": 53,
+      "settled_guide_rms": 1.02,
+      "drops": 13,
+      "expected_failed_invariants": []
+    }
+  },
+  "2026-02-04": {
+    "_targets": "C49",
+    "asiair_file": "Autorun_Log_2026-02-04_192008.txt",
+    "phd2_file": "PHD2_GuideLog_2026-02-04_191427.txt",
+    "expected": {
+      "subs": 60,
+      "settled_guide_rms": 1.39,
+      "drops": 0,
+      "expected_failed_invariants": []
+    }
+  },
+  "2026-02-05": {
+    "_targets": "C49",
+    "asiair_file": "Autorun_Log_2026-02-05_193628.txt",
+    "phd2_file": "PHD2_GuideLog_2026-02-05_193127.txt",
+    "expected": {
+      "subs": 60,
+      "settled_guide_rms": 1.03,
+      "drops": 0,
+      "expected_failed_invariants": []
+    }
+  },
+  "2026-02-06": {
+    "_targets": "C49",
+    "asiair_file": "Autorun_Log_2026-02-06_204044.txt",
+    "phd2_file": "PHD2_GuideLog_2026-02-06_203448.txt",
+    "expected": {
+      "subs": 27,
+      "settled_guide_rms": 0.97,
+      "drops": 74,
+      "expected_failed_invariants": []
+    }
+  },
+  "2026-03-09": {
+    "_targets": "NGC4244",
+    "asiair_file": "Autorun_Log_2026-03-09_212536.txt",
+    "phd2_file": "PHD2_GuideLog_2026-03-09_210109.txt",
+    "expected": {
+      "subs": 91,
+      "settled_guide_rms": 1.16,
+      "drops": 0,
+      "expected_failed_invariants": []
+    }
+  },
+  "2026-03-19": {
+    "_targets": "NGC4244",
+    "asiair_file": "Autorun_Log_2026-03-19_214710.txt",
+    "phd2_file": "PHD2_GuideLog_2026-03-19_213844.txt",
+    "expected": {
+      "subs": 145,
+      "settled_guide_rms": 1.12,
+      "drops": 0,
+      "expected_failed_invariants": []
+    }
+  },
+  "2026-04-17": {
+    "_targets": "NGC4565",
+    "asiair_file": "Autorun_Log_2026-04-17_214743.txt",
+    "phd2_file": "PHD2_GuideLog_2026-04-17_212731.txt",
+    "expected": {
+      "subs": 125,
+      "settled_guide_rms": 0.89,
+      "drops": 24,
+      "expected_failed_invariants": [
+        "I3"
+      ]
+    }
+  },
+  "2026-04-21_test": {
+    "_targets": "test (1s, 1 frame, no PHD2 log)",
+    "asiair_file": "Autorun_Log_2026-04-21_171718.txt",
+    "phd2_file": null,
+    "expected": {
+      "subs": 1
+    }
+  },
+  "2026-05-09": {
+    "_targets": "M64",
+    "asiair_file": "Autorun_Log_2026-05-09_215742.txt",
+    "phd2_file": "PHD2_GuideLog_2026-05-09_212412.txt",
+    "expected": {
+      "subs": 118,
+      "settled_guide_rms": 0.94,
+      "drops": 0,
+      "expected_failed_invariants": []
+    }
+  },
+  "2026-05-11": {
+    "_targets": "M64 -- worst night in the corpus, 1334 drops / 17.7% rate",
+    "asiair_file": "Autorun_Log_2026-05-11_215929.txt",
+    "phd2_file": "PHD2_GuideLog_2026-05-11_215521.txt",
+    "expected": {
+      "subs": 57,
+      "settled_guide_rms": 1.08,
+      "drops": 1354,
+      "expected_failed_invariants": [
+        "I3",
+        "I6"
+      ],
+      "rms_tolerance": 0.06
+    }
+  },
+  "2026-06-05": {
+    "_targets": "M92, M12, M10, M64 -- multi-target, mixed 12/60/300s exposures",
+    "asiair_file": "Autorun_Log_2026-06-05_220158.txt",
+    "phd2_file": "PHD2_GuideLog_2026-06-05_222904.txt",
+    "expected": {
+      "subs": 245,
+      "settled_guide_rms": 1.17,
+      "drops": 262,
+      "expected_failed_invariants": [
+        "I3"
+      ]
+    }
+  },
+  "2026-06-15": {
+    "_targets": "Sh2-101 (+FOV framing run)",
+    "asiair_file": "Autorun_Log_2026-06-15_225005.txt",
+    "phd2_file": "PHD2_GuideLog_2026-06-15_221226.txt",
+    "expected": {
+      "subs": 137,
+      "settled_guide_rms": 1.0,
+      "drops": 293,
+      "expected_failed_invariants": [
+        "I3"
+      ]
+    }
+  },
+  "2026-07-13": {
+    "_targets": "Sh2-101",
+    "asiair_file": "Autorun_Log_2026-07-13_223746.txt",
+    "phd2_file": "PHD2_GuideLog_2026-07-13_222241.txt",
+    "expected": {
+      "subs": 115,
+      "settled_guide_rms": 0.94,
+      "drops": 0,
+      "expected_failed_invariants": []
+    }
+  },
+  "2026-07-23": {
+    "_targets": "Sh2-101 -- the most heavily validated night throughout this whole project",
+    "asiair_file": "Autorun_Log_2026-07-23_220534.txt",
+    "phd2_file": "PHD2_GuideLog_2026-07-23_214017.txt",
+    "expected": {
+      "subs": 121,
+      "settled_guide_rms": 0.97,
+      "drops": 33,
+      "expected_failed_invariants": [
+        "I1"
+      ]
+    }
+  }
+}
