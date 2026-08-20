@@ -3,6 +3,8 @@
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- CSP kept in sync with src-tauri/tauri.conf.json app.security.csp — Issue #181 -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://api.open-meteo.com https://alasky.u-strasbg.fr; img-src 'self' data: blob:; font-src 'self' data:">
     <title id="app-title"></title>
     <link rel="stylesheet" href="css/backup-restore.css">
     <link rel="stylesheet" href="css/base.css">
@@ -1786,10 +1788,10 @@
             <!-- Error message will be inserted here -->
           </p>
           <div>
-            <button onclick="location.reload()" style="padding: 0.75rem 1.5rem; background: var(--primary-color); color: var(--primary-text); border: none; border-radius: 6px; cursor: pointer; margin: 0.5rem; font-weight: 500;">
+            <button data-action="reload" style="padding: 0.75rem 1.5rem; background: var(--primary-color); color: var(--primary-text); border: none; border-radius: 6px; cursor: pointer; margin: 0.5rem; font-weight: 500;">
               Reload Application
             </button>
-            <button onclick="localStorage.clear(); indexedDB.deleteDatabase('astryx-db'); location.reload()" style="padding: 0.75rem 1.5rem; background: var(--error-color); color: white; border: none; border-radius: 6px; cursor: pointer; margin: 0.5rem; font-weight: 500;">
+            <button data-action="clear-and-reload" style="padding: 0.75rem 1.5rem; background: var(--error-color); color: white; border: none; border-radius: 6px; cursor: pointer; margin: 0.5rem; font-weight: 500;">
               Clear Data & Reload
             </button>
           </div>
@@ -2297,7 +2299,7 @@
             Backups are compressed ZIP files you can restore at any time from the Backup &amp; Restore function in the system menu.
           </p>
           <div style="text-align: center; margin-top: 1.5rem;">
-            <button class="btn-primary" onclick="UIManager.closeModal(); UIManager.openNewBackupModal();">
+            <button class="btn-primary" data-action="goto-backup">
               Go to Backup &amp; Restore
             </button>
           </div>

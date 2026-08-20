@@ -607,7 +607,7 @@ const UIManager = {
 
                     locationItem.innerHTML = `
                         <div>
-                            <strong>${name}</strong><br>
+                            <strong>${HtmlUtils.escapeHtml(name)}</strong><br>
                             <small style="color: var(--text-secondary);">
                                 ${loc.latitude.toFixed(4)}°, ${loc.longitude.toFixed(4)}° |
                                 Elev: ${loc.elevation}m |
@@ -616,8 +616,8 @@ const UIManager = {
                             </small>
                         </div>
                         <div style="display: flex; gap: 0.5rem;">
-                            <button class="btn-sm btn-secondary" data-location="${name}" data-action="edit">Edit</button>
-                            <button class="btn-sm btn-danger" data-location="${name}" data-action="delete">Delete</button>
+                            <button class="btn-sm btn-secondary" data-location="${HtmlUtils.escapeHtml(name)}" data-action="edit">Edit</button>
+                            <button class="btn-sm btn-danger" data-location="${HtmlUtils.escapeHtml(name)}" data-action="delete">Delete</button>
                         </div>
                     `;
 
@@ -1172,7 +1172,7 @@ const UIManager = {
             Object.entries(result.locationResults).forEach(([locationName, locResult]) => {
                 summaryHTML += `
                     <div style="margin-bottom: 1rem; padding: 0.75rem; background: var(--input-bg); border-radius: 6px;">
-                        <strong>${locationName}</strong><br>
+                        <strong>${HtmlUtils.escapeHtml(locationName)}</strong><br>
                         <span style="font-size: 0.9rem;">
                             Total: ${locResult.totalTargets} |
                             Visible: ${locResult.visibleCount} |
@@ -1790,14 +1790,14 @@ const UIManager = {
     populateObjectDetail(target) {
         const detailObject = document.getElementById('detail-object');
         if (target.object) {
-            detailObject.innerHTML = `<a href="https://en.wikipedia.org/w/index.php?search=${encodeURIComponent(target.object).replace(/%20/g, '+')}&go=Go" target="_blank" class="wiki-link">${target.object}</a>`;
+            detailObject.innerHTML = `<a href="https://en.wikipedia.org/w/index.php?search=${encodeURIComponent(target.object).replace(/%20/g, '+')}&go=Go" target="_blank" class="wiki-link">${HtmlUtils.escapeHtml(target.object)}</a>`;
         } else {
             detailObject.textContent = '—';
         }
         const detailType = document.getElementById('detail-type');
         if (target.type) {
             const typeDisplay = OBJECT_TYPES[target.type] || target.type;
-            detailType.innerHTML = `<a href="https://en.wikipedia.org/w/index.php?search=${encodeURIComponent(typeDisplay).replace(/%20/g, '+')}&go=Go" target="_blank" class="wiki-link">${typeDisplay}</a>`;
+            detailType.innerHTML = `<a href="https://en.wikipedia.org/w/index.php?search=${encodeURIComponent(typeDisplay).replace(/%20/g, '+')}&go=Go" target="_blank" class="wiki-link">${HtmlUtils.escapeHtml(typeDisplay)}</a>`;
         } else {
             detailType.textContent = '—';
         }
@@ -1806,7 +1806,7 @@ const UIManager = {
         if (target.common) {
             const names = target.common.split(',').map(n => n.trim());
             detailCommon.innerHTML = names.map(name =>
-                `<a href="https://en.wikipedia.org/w/index.php?search=${encodeURIComponent(name).replace(/%20/g, '+')}&go=Go" target="_blank" class="wiki-link">${name}</a>`
+                `<a href="https://en.wikipedia.org/w/index.php?search=${encodeURIComponent(name).replace(/%20/g, '+')}&go=Go" target="_blank" class="wiki-link">${HtmlUtils.escapeHtml(name)}</a>`
             ).join(', ');
         } else {
             detailCommon.textContent = '—';
@@ -1849,7 +1849,7 @@ const UIManager = {
         // build Observability title from location
         const obTitle = document.getElementById('target-detail-ob-title');
         const obsLocation = SettingsManager.getSelectedLocation();
-        obTitle.innerHTML = `Observability from ${obsLocation}`;
+        obTitle.innerHTML = `Observability from ${HtmlUtils.escapeHtml(obsLocation)}`;
 
         // Build criteria display
         const criteriaHTML = `
@@ -2112,18 +2112,22 @@ const UIManager = {
                 <div class="info-card" style="padding: 1rem; margin-bottom: 0.75rem;">
                     <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;">
                         <div style="flex: 1;">
-                            <strong style="color: var(--primary-color); font-size: 1.05rem;">${name}</strong>
+                            <strong style="color: var(--primary-color); font-size: 1.05rem;">${HtmlUtils.escapeHtml(name)}</strong>
                             <div style="margin-top: 0.5rem; font-size: 0.9rem; color: var(--text-secondary);">
                                 Focal Length: ${tel.focalLength} mm<br>
                                 Aperture: ${tel.aperture} mm<br>
                                 Multiplier: ${tel.multiplier}x
                             </div>
                         </div>
-                        <button class="btn-sm btn-danger" onclick="UIManager.deleteTelescope('${name}')">Delete</button>
+                        <button class="btn-sm btn-danger" data-action="delete-telescope" data-name="${HtmlUtils.escapeHtml(name)}">Delete</button>
                     </div>
                 </div>
             `;
         }).join('');
+
+        listDiv.querySelectorAll('[data-action="delete-telescope"]').forEach(btn => {
+            btn.addEventListener('click', () => this.deleteTelescope(btn.dataset.name));
+        });
 
         const mc = document.querySelector('.modal-content');
         if (mc) mc.scrollTop = 0;
@@ -2210,17 +2214,20 @@ const UIManager = {
                 <div class="info-card" style="padding: 1rem; margin-bottom: 0.75rem;">
                     <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;">
                         <div style="flex: 1;">
-                            <strong style="color: var(--primary-color); font-size: 1.05rem;">${name}</strong>
+                            <strong style="color: var(--primary-color); font-size: 1.05rem;">${HtmlUtils.escapeHtml(name)}</strong>
                             <div style="margin-top: 0.5rem; font-size: 0.9rem; color: var(--text-secondary);">
                                 Resolution: ${sensor.resolutionX} × ${sensor.resolutionY} pixels<br>
                                 Pixel Size: ${sensor.pixelSizeX} × ${sensor.pixelSizeY} µm
                             </div>
                         </div>
-                        <button class="btn-sm btn-danger" onclick="UIManager.deleteSensor('${name}')">Delete</button>
+                        <button class="btn-sm btn-danger" data-action="delete-sensor" data-name="${HtmlUtils.escapeHtml(name)}">Delete</button>
                     </div>
                 </div>
             `;
         }).join('');
+        listDiv.querySelectorAll('[data-action="delete-sensor"]').forEach(btn => {
+            btn.addEventListener('click', () => this.deleteSensor(btn.dataset.name));
+        });
         const mc = document.querySelector('.modal-content');
         if (mc) mc.scrollTop = 0;
     },
@@ -2309,12 +2316,15 @@ const UIManager = {
             return `
                 <div class="info-card" style="padding: 1rem; margin-bottom: 0.75rem;">
                     <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
-                        <strong style="color: var(--primary-color); font-size: 1.05rem;">${name}</strong>
-                        <button class="btn-sm btn-danger" onclick="UIManager.deleteFilter('${name}')">Delete</button>
+                        <strong style="color: var(--primary-color); font-size: 1.05rem;">${HtmlUtils.escapeHtml(name)}</strong>
+                        <button class="btn-sm btn-danger" data-action="delete-filter" data-name="${HtmlUtils.escapeHtml(name)}">Delete</button>
                     </div>
                 </div>
             `;
         }).join('');
+        listDiv.querySelectorAll('[data-action="delete-filter"]').forEach(btn => {
+            btn.addEventListener('click', () => this.deleteFilter(btn.dataset.name));
+        });
         const mc = document.querySelector('.modal-content');
         if (mc) mc.scrollTop = 0;
     },

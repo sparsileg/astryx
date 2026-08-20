@@ -383,20 +383,56 @@ const App = {
 
             document.body.innerHTML = '';
             document.body.appendChild(content);
+
+            document.querySelectorAll('[data-action]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const action = btn.dataset.action;
+                    if (action === 'reload') {
+                        location.reload();
+                    } else if (action === 'clear-and-reload') {
+                        localStorage.clear();
+                        indexedDB.deleteDatabase('astryx-db');
+                        location.reload();
+                    }
+                });
+            });
         } else {
-            document.body.innerHTML = `
-                <div style="display: flex; align-items: center; justify-content: center; height: 100vh; flex-direction: column; text-align: center; padding: 2rem;">
-                    <h1 style="color: #ef4444; margin-bottom: 1rem;">Initialization Error</h1>
-                    <p>${APP_CONFIG.APP_NAME} failed to initialize properly.</p>
-                    <p style="color: #666; font-family: monospace; margin: 1rem 0;">${error.message || 'Unknown error'}</p>
-                    <button onclick="location.reload()" style="padding: 0.75rem 1.5rem; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer; margin: 0.5rem;">
-                        Reload Application
-                    </button>
-                    <button onclick="localStorage.clear(); DBManager.deleteDatabase(); location.reload()" style="padding: 0.75rem 1.5rem; background: #ef4444; color: white; border: none; border-radius: 6px; cursor: pointer; margin: 0.5rem;">
-                        Clear Data & Reload
-                    </button>
-                </div>
-            `;
+            document.body.innerHTML = '';
+
+            const wrapper = document.createElement('div');
+            wrapper.style.cssText = 'display: flex; align-items: center; justify-content: center; height: 100vh; flex-direction: column; text-align: center; padding: 2rem;';
+
+            const heading = document.createElement('h1');
+            heading.style.cssText = 'color: #ef4444; margin-bottom: 1rem;';
+            heading.textContent = 'Initialization Error';
+            wrapper.appendChild(heading);
+
+            const message = document.createElement('p');
+            message.textContent = `${APP_CONFIG.APP_NAME} failed to initialize properly.`;
+            wrapper.appendChild(message);
+
+            const detail = document.createElement('p');
+            detail.style.cssText = 'color: #666; font-family: monospace; margin: 1rem 0;';
+            detail.textContent = error.message || 'Unknown error';
+            wrapper.appendChild(detail);
+
+            const reloadBtn = document.createElement('button');
+            reloadBtn.style.cssText = 'padding: 0.75rem 1.5rem; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer; margin: 0.5rem;';
+            reloadBtn.textContent = 'Reload Application';
+            reloadBtn.addEventListener('click', () => location.reload());
+            wrapper.appendChild(reloadBtn);
+
+            const clearBtn = document.createElement('button');
+            clearBtn.style.cssText = 'padding: 0.75rem 1.5rem; background: #ef4444; color: white; border: none; border-radius: 6px; cursor: pointer; margin: 0.5rem;';
+            clearBtn.textContent = 'Clear Data & Reload';
+            clearBtn.addEventListener('click', () => {
+                localStorage.clear();
+                DBManager.deleteDatabase();
+                location.reload();
+            });
+            wrapper.appendChild(clearBtn);
+
+            document.body.appendChild(wrapper);
         }
     }
 };

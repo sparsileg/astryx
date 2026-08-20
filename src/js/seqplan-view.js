@@ -225,7 +225,10 @@ const SeqPlanView = {
         }
 
         if (!this._pinnedTargetsHandler) {
-            this._pinnedTargetsHandler = () => this.loadPinnedTargets();
+            this._pinnedTargetsHandler = async () => {
+                await this.loadPinnedTargets();
+                this.debouncedGenerate();
+            };
             this._locationsHandler = () => this.populateLocationDropdown();
             document.addEventListener('pinned-targets-updated', this._pinnedTargetsHandler);
             document.addEventListener('locations-updated', this._locationsHandler);
@@ -729,8 +732,14 @@ const SeqPlanView = {
         if (modalBody) {
             modalBody.innerHTML = html + `
                 <div style="margin-top: 1rem;">
-                    <button class="btn btn-primary btn-sm" onclick="SeqPlanView.downloadPDF(SeqPlanView._modalTargetId, SeqPlanView._modalEvents, SeqPlanView.currentSession)">Download PDF</button>
+                    <button class="btn btn-primary btn-sm" data-action="download-pdf">Download PDF</button>
                 </div>`;
+            const pdfBtn = modalBody.querySelector('[data-action="download-pdf"]');
+            if (pdfBtn) {
+                pdfBtn.addEventListener('click', () => {
+                    this.downloadPDF(this._modalTargetId, this._modalEvents, this.currentSession);
+                });
+            }
         }
     },
 
@@ -754,7 +763,7 @@ const SeqPlanView = {
         <div class="card-body">
             <p style="display: flex; gap: 2rem; flex-wrap: wrap;">
                 <span><strong>Date:</strong> ${this.currentSession.date}</span>
-                <span><strong>Location:</strong> ${this._getDropdownValue('seq-plan-location-menu')}</span>
+                <span><strong>Location:</strong> ${HtmlUtils.escapeHtml(this._getDropdownValue('seq-plan-location-menu'))}</span>
                 <span><strong>Session:</strong> ${startTime.toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false})} - ${endTime.toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false})} (${duration.toFixed(1)}h)</span>
             </p>
             <h4 style="margin-top: 1.5rem;">Target Sequence:</h4>
@@ -768,7 +777,7 @@ const SeqPlanView = {
             // Main imaging entry (full window)
             html += `
             <p style="margin-bottom: 0.5rem;">
-                <strong>${index + 1}. <a href="#" class="block-link" onclick="SeqPlanView.showTargetDetailModal('${target.targetId}'); return false;">${target.name}</a></strong>
+                <strong>${index + 1}. <a href="#" class="block-link" data-action="show-target-detail" data-target-id="${target.targetId}">${target.name}</a></strong>
                 Start: ${targetStartTime.toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false})}
                 End: ${targetEndTime.toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false})} (${target.imagingMinutes.toFixed(0)}m)
                 ${target.exposureCount} × ${target.exposureTime}s${flipWarning}
@@ -848,6 +857,16 @@ const SeqPlanView = {
     `;
 
         resultsDiv.innerHTML = html;
+
+        if (!resultsDiv._listenerAttached) {
+            resultsDiv._listenerAttached = true;
+            resultsDiv.addEventListener('click', (e) => {
+                const link = e.target.closest('[data-action="show-target-detail"]');
+                if (!link) return;
+                e.preventDefault();
+                this.showTargetDetailModal(link.dataset.targetId);
+            });
+        }
     },
 
     // ============================================================================

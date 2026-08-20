@@ -51,7 +51,7 @@ const SessionReportView = {
         accordion.className = 'analysis-accordion';
         if (fusedSession.kind === 'calibrationOnly') {
             accordion.innerHTML = `
-                <div class="analysis-accordion-header" onclick="this.parentElement.classList.toggle('open')">
+                <div class="analysis-accordion-header">
                     <span class="analysis-accordion-arrow">▶</span>
                     <span class="analysis-accordion-title">Combined Report — Calibration Only</span>
                 </div>
@@ -62,12 +62,15 @@ const SessionReportView = {
                 </div>
             `;
             container.appendChild(accordion);
+            accordion.querySelector('.analysis-accordion-header').addEventListener('click', () => {
+                accordion.classList.toggle('open');
+            });
             return;
         }
         const title = `Combined Report — ${fusedSession.targets.map(t => HtmlUtils.escapeHtml(t)).join(', ')} — ${this._formatNight(fusedSession)}`;
         const reportHtml = this._buildReportHtml(fusedSession, this._context);
         accordion.innerHTML = `
-            <div class="analysis-accordion-header" onclick="this.parentElement.classList.toggle('open')">
+            <div class="analysis-accordion-header">
                 <span class="analysis-accordion-arrow">▶</span>
                 <span class="analysis-accordion-title">${title}</span>
             </div>
@@ -80,6 +83,9 @@ const SessionReportView = {
             </div>
         `;
         container.appendChild(accordion);
+        accordion.querySelector('.analysis-accordion-header').addEventListener('click', () => {
+            accordion.classList.toggle('open');
+        });
         document.getElementById('combined-csv-btn').addEventListener('click', () => {
             this._downloadCsv(fusedSession);
         });
