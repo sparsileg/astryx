@@ -111,6 +111,67 @@ function findTargetSet(startJD, endJD, raHours, decDeg, latitude, longitude, min
 }
 
 /**
+ * Detect a below-minimum-altitude trough occurring between two
+ * above-minimum-altitude segments within the window — the case
+ * findTargetRise/findTargetSet cannot represent, since each tracks only
+ * a single rise (first) and single set (last, discarded if still
+ * visible at endJD). Only returns a result when the target is visible
+ * at both startJD and endJD with an invisible dip somewhere between —
+ * every other visibility pattern is already correctly represented by
+ * findTargetRise/findTargetSet. See Issue #251.
+ * @param {number} startJD - Search window start (Julian Date)
+ * @param {number} endJD - Search window end (Julian Date)
+ * @param {number} raHours - Target right ascension (hours)
+ * @param {number} decDeg - Target declination (degrees)
+ * @param {number} latitude - Observer latitude (degrees)
+ * @param {number} longitude - Observer longitude (degrees)
+ * @param {number} minAltitude - Minimum altitude threshold (degrees)
+ * @param {Array} horizonArray - Optional horizon profile
+ * @returns {{dipStartJD:number, dipEndJD:number}|null}
+ */
+function findVisibilityDip(startJD, endJD, raHours, decDeg, latitude, longitude, minAltitude, horizonArray = null) {
+    const stepSize = APP_CONFIG.TARGET_SEARCH_STEP_SIZE;
+
+    const startAltitude = getAltitude(startJD, raHours, decDeg, latitude, longitude);
+    const startAzimuth = getAzimuth(startJD, raHours, decDeg, latitude, longitude);
+    const visibleAtStart = isAboveHorizon(startAltitude, startAzimuth, minAltitude, horizonArray);
+
+    const endAltitude = getAltitude(endJD, raHours, decDeg, latitude, longitude);
+    const endAzimuth = getAzimuth(endJD, raHours, decDeg, latitude, longitude);
+    const visibleAtEnd = isAboveHorizon(endAltitude, endAzimuth, minAltitude, horizonArray);
+
+    if (!visibleAtStart || !visibleAtEnd) {
+        return null;
+    }
+
+    let jd = startJD;
+    let prevVisible = visibleAtStart;
+    let dipStartJD = null;
+    let dipEndJD = null;
+
+    while (jd <= endJD) {
+        const altitude = getAltitude(jd, raHours, decDeg, latitude, longitude);
+        const azimuth = getAzimuth(jd, raHours, decDeg, latitude, longitude);
+        const isVisible = isAboveHorizon(altitude, azimuth, minAltitude, horizonArray);
+
+        if (prevVisible && !isVisible && dipStartJD === null) {
+            dipStartJD = jd;
+        } else if (!prevVisible && isVisible && dipStartJD !== null && dipEndJD === null) {
+            dipEndJD = jd;
+        }
+
+        prevVisible = isVisible;
+        jd += stepSize;
+    }
+
+    if (dipStartJD !== null && dipEndJD !== null) {
+        return { dipStartJD, dipEndJD };
+    }
+
+    return null;
+}
+
+/**
  * Calculate noon-to-noon JD window for a given date
  * @param {string} dateStr - Date string in YYYY-MM-DD format
  * @param {number} timezone - Timezone offset in standard time (hours)
@@ -148,3 +209,7 @@ function findTargetTransit(startJD, endJD, raHours, dec, longitude) {
     const transitJD = startJD + (dh / 24) * SIDEREAL_DAY_RATIO;
     return transitJD <= endJD ? transitJD : null;
 }
+
+// ----------------------------------------------------------------------
+// ----------------------------------------------------------------------
+// ----------------------------------------------------------------------
