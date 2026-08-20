@@ -65,13 +65,7 @@ Here's a list of features.
     or other imaging catalog online sites that will link directly from the
     project logs.
 
-
-That's a lot of words. I'm testing and refining. I haven't actually tested
-the accuracy (timing) of the sequence planner yet because no clear
-nights. Just looking for a few folks who might find such a tool helpful to
-them and who are interested in taking a look and providing feedback on
-anything related to the app. Consider this an Alpha version. Definitely no
-guarantees about anything, but I've done considerable testing and the
+Definitely no guarantees about anything, but I've done considerable testing and the
 astronomical calculations are within a few minutes of Stellarium and
 timeanddate.com. The app uses browser storage - the future "real" app will
 eventually use local disk storage. Delivery to you will be code files with
@@ -79,5 +73,4 @@ a target backup file that you'll import into the app. After that everything
 runs in browser storage and will last until you clear the browser cache or
 the browser self-clears after inactivity - then just reimport the targeting
 backup. If you're actually using the tool to preserve imaging logs, you can
-generate backups and import as needed. I promise that the "final" version
-will have a way to import backup files from the current version.
+generate backups and import as needed.
