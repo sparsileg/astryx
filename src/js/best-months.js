@@ -24,21 +24,6 @@ const BestMonths = {
         }
         const twilightCache = this.buildTwilightCache(location);
 
-        // Generate timestamp at start of calculation (YYYYMMDD-HHMMSSZ format)
-        const now = new Date();
-        const timestamp = now.getUTCFullYear().toString() +
-              (now.getUTCMonth() + 1).toString().padStart(2, '0') +
-              now.getUTCDate().toString().padStart(2, '0') + '-' +
-              now.getUTCHours().toString().padStart(2, '0') +
-              now.getUTCMinutes().toString().padStart(2, '0') +
-              now.getUTCSeconds().toString().padStart(2, '0') + 'Z';
-
-        // Store calculation parameters in settings
-        await SettingsManager.setLastBestMonthsAltitude(minAltitude);
-        await SettingsManager.setLastBestMonthsDarkHours(minDarkHours);
-        await SettingsManager.setLastBestMonthsCalculated(timestamp);
-        await SettingsManager.setLastBestMonthsLocation(locationName);
-
         const targets = DataManager.getTargets();
         const totalTargets = targets.length;
         let processedCount = 0;
@@ -113,6 +98,21 @@ const BestMonths = {
 
         // Reload targets to pick up changes
         await DataManager.loadTargets();
+
+        // Store calculation parameters and completion timestamp only now —
+        // a cancelled or interrupted run must not claim to be done.
+        const now = new Date();
+        const timestamp = now.getUTCFullYear().toString() +
+              (now.getUTCMonth() + 1).toString().padStart(2, '0') +
+              now.getUTCDate().toString().padStart(2, '0') + '-' +
+              now.getUTCHours().toString().padStart(2, '0') +
+              now.getUTCMinutes().toString().padStart(2, '0') +
+              now.getUTCSeconds().toString().padStart(2, '0') + 'Z';
+
+        await SettingsManager.setLastBestMonthsAltitude(minAltitude);
+        await SettingsManager.setLastBestMonthsDarkHours(minDarkHours);
+        await SettingsManager.setLastBestMonthsCalculated(timestamp);
+        await SettingsManager.setLastBestMonthsLocation(locationName);
 
         return {
             cancelled: false,
@@ -539,18 +539,9 @@ const BestMonths = {
      */
     calculateTransitHour(date, target, location, twilightCache, dayOffset) {
         // Start searching from noon on the given date
-        const noon = new Date(
-            date.getFullYear(),
-            date.getMonth(),
-            date.getDate(),
-            12, 0, 0
-        );
-
-        // Convert to UTC
-        const isDST = SettingsManager.isDSTActive(noon, location.timezone);
+        const isDST = SettingsManager.isDSTActive(date, location.timezone);
         const offsetHours = isDST ? location.timezone + 1 : location.timezone;
-        const utcNoon = new Date(noon.getTime() - offsetHours * 3600000);
-        const noonJD = dateToJD(utcNoon);
+        const noonJD = TimeUtils.localWallClockToJD(date.getFullYear(), date.getMonth(), date.getDate(), 12, location.timezone, isDST);
 
         // Transit occurs when LST = target RA
         // Search from noon-12h to noon+12h to find transit

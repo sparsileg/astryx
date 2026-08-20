@@ -119,16 +119,12 @@ function findTargetSet(startJD, endJD, raHours, decDeg, latitude, longitude, min
  */
 function getNoonToNoonWindow(dateStr, timezone, isDST) {
     const dateParts = dateStr.split('-');
-    const noonDate = new Date(
+    const noonJD = TimeUtils.localWallClockToJD(
         parseInt(dateParts[0]),
         parseInt(dateParts[1]) - 1,
         parseInt(dateParts[2]),
-        12, 0, 0
+        12, timezone, isDST
     );
-
-    // Convert directly to JD without timezone adjustment
-    // (matching how daily-visibility-view.js does it)
-    const noonJD = dateToJD(noonDate);
     const noonNextDayJD = noonJD + 1;
 
     return { startJD: noonJD, endJD: noonNextDayJD };
@@ -143,21 +139,12 @@ function getNoonToNoonWindow(dateStr, timezone, isDST) {
  * @returns {number|null} JD when target transits, or null if not found
  */
 function findTargetTransit(startJD, endJD, raHours, dec, longitude) {
-    const stepSize = APP_CONFIG.TARGET_SEARCH_STEP_SIZE;
-    let jd = startJD;
-    while (jd <= endJD) {
-        const lst = getLST(jd, longitude);
-        // Calculate hour angle
-        let hourAngle = lst - raHours;
-        // Normalize to [-12, 12]
-        while (hourAngle > 12) hourAngle -= 24;
-        while (hourAngle < -12) hourAngle += 24;
-        // Transit occurs when hour angle is near 0
-        if (Math.abs(hourAngle) < 0.01) { // Within ~36 seconds
-            return jd;
-        }
-        jd += stepSize;
-    }
-
-    return null;
+    // Transit: LST == RA. LST advances 24 sidereal hours per sidereal day,
+    // i.e. 1 solar day advances LST by 24/0.9972695663 hours. Compute the
+    // first transit at/after startJD directly — no scanning.
+    const SIDEREAL_DAY_RATIO = 0.9972695663; // solar days per sidereal day
+    let dh = (raHours - getLST(startJD, longitude)) % 24;
+    if (dh < 0) dh += 24;
+    const transitJD = startJD + (dh / 24) * SIDEREAL_DAY_RATIO;
+    return transitJD <= endJD ? transitJD : null;
 }

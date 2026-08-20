@@ -686,16 +686,14 @@ const DailyVisibilityView = {
         // Calculate timeline bounds - ALWAYS noon to noon in LOCAL time
         // We need to create a JD that represents "local noon" for calculations
         const dateParts = data.date.split('-');
-        const localNoonDate = new Date(
-            parseInt(dateParts[0]),
-            parseInt(dateParts[1]) - 1,
-            parseInt(dateParts[2]),
-            12, 0, 0
-        );
+        const noonYear = parseInt(dateParts[0]);
+        const noonMonth = parseInt(dateParts[1]) - 1;
+        const noonDay = parseInt(dateParts[2]);
+        const noonRefDate = new Date(noonYear, noonMonth, noonDay, 12, 0, 0);
+        const noonIsDST = SettingsManager.isDSTActive(noonRefDate, data.timezone);
 
-        // Convert to JD treating it as UTC (no timezone adjustment)
-        // This gives us the "local noon" as a JD value
-        const noonStartJD = TimeUtils.dateToJD(localNoonDate);
+        // Convert to JD honoring the observing location's timezone, not the browser's
+        const noonStartJD = TimeUtils.localWallClockToJD(noonYear, noonMonth, noonDay, 12, data.timezone, noonIsDST);
 
         const timelineStartJD = noonStartJD;
         const timelineEndJD = noonStartJD + 1; // Next day's noon

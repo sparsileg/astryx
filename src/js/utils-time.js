@@ -75,6 +75,26 @@ const TimeUtils = {
     },
 
     /**
+     * JD of a local wall-clock instant at a given location, independent of
+     * the browser/OS timezone. Every astro calculation that needs "noon on
+     * date X" or "midnight on date X" at a specific observing location
+     * should go through this rather than constructing a Date from calendar
+     * components and reading it back — that pattern silently picks up
+     * whatever timezone the machine happens to be set to.
+     * @param {number} year
+     * @param {number} month - 0-based, matching Date (0 = January)
+     * @param {number} day
+     * @param {number} hour - local wall-clock hour
+     * @param {number} timezone - location standard offset in hours (e.g. -5 for EST)
+     * @param {boolean} isDST - whether DST is in effect on that date
+     * @returns {number} Julian Date
+     */
+    localWallClockToJD(year, month, day, hour, timezone, isDST) {
+        const offsetHours = isDST ? timezone + 1 : timezone;
+        return this.dateToJD(new Date(Date.UTC(year, month, day, hour, 0, 0) - offsetHours * 3600000));
+    },
+
+    /**
      * Format local time with date
      */
     formatLocalTimeWithDate(utcTime, timezone) {
