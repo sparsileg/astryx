@@ -112,6 +112,7 @@ const ImagingLogManager = {
 
         const id = await DBManager.put(APP_CONFIG.STORES.IMAGING_SESSIONS, session);
         session.id = id;
+        await this._touchProject(session.projectId);
         return session;
     },
 
@@ -128,6 +129,7 @@ const ImagingLogManager = {
         Object.assign(session, sessionData);
 
         await DBManager.put(APP_CONFIG.STORES.IMAGING_SESSIONS, session);
+        await this._touchProject(session.projectId);
         return session;
     },
 
@@ -135,7 +137,23 @@ const ImagingLogManager = {
      * Delete a session
      */
     async deleteSession(id) {
+        const session = await this.getSession(id);
         await DBManager.delete(APP_CONFIG.STORES.IMAGING_SESSIONS, id);
+        if (session) {
+            await this._touchProject(session.projectId);
+        }
+    },
+
+    /**
+     * Bump a project's modified timestamp — called on session create,
+     * update, and delete so "Last Modified" sort reflects session-level
+     * activity, not just direct project edits.
+     */
+    async _touchProject(projectId) {
+        const project = await this.getProject(projectId);
+        if (!project) return;
+        project.modified = new Date().toISOString();
+        await DBManager.put(APP_CONFIG.STORES.IMAGING_PROJECTS, project);
     },
 
     /**
