@@ -386,6 +386,15 @@ const SettingsManager = {
         await this.saveSettings();
     },
 
+    getBackupFolder() {
+        return this.settings.backupFolder || '';
+    },
+
+    async setBackupFolder(path) {
+        this.settings.backupFolder = path;
+        await this.saveSettings();
+    },
+
     getBackupReminderDays() {
         return this.settings.backupReminderDays !== undefined
             ? this.settings.backupReminderDays

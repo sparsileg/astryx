@@ -1281,6 +1281,40 @@ const UIManager = {
         const autoBackupCheckbox = document.getElementById('auto-backup-enabled');
         if (autoBackupCheckbox) autoBackupCheckbox.checked = SettingsManager.getAutoBackupEnabled();
 
+        // Backup folder — Tauri only; web has no filesystem access and
+        // always saves to the browser's downloads folder.
+        const backupFolderInput = document.getElementById('backup-folder-input');
+        const backupFolderBrowseBtn = document.getElementById('backup-folder-browse');
+        const backupFolderClearBtn = document.getElementById('backup-folder-clear');
+        const isTauriBuild = typeof window.__TAURI__ !== 'undefined';
+        if (backupFolderInput) {
+            if (isTauriBuild) {
+                backupFolderInput.value = SettingsManager.getBackupFolder();
+                if (backupFolderBrowseBtn) backupFolderBrowseBtn.style.display = '';
+                if (backupFolderClearBtn) backupFolderClearBtn.style.display = '';
+
+                if (backupFolderBrowseBtn) {
+                    backupFolderBrowseBtn.addEventListener('click', async () => {
+                        try {
+                            const selected = await window.__TAURI__.dialog.open({ directory: true });
+                            if (selected) backupFolderInput.value = selected;
+                        } catch (error) {
+                            console.error('Backup folder browse failed:', error);
+                        }
+                    });
+                }
+                if (backupFolderClearBtn) {
+                    backupFolderClearBtn.addEventListener('click', () => {
+                        backupFolderInput.value = '';
+                    });
+                }
+            } else {
+                backupFolderInput.value = 'Your downloads folder';
+                if (backupFolderBrowseBtn) backupFolderBrowseBtn.style.display = 'none';
+                if (backupFolderClearBtn) backupFolderClearBtn.style.display = 'none';
+            }
+        }
+
         // Backup delay
         const backupDelayMenu = document.getElementById('backup-delay-menu');
         const backupDelayLabel = document.getElementById('backup-delay-label');
@@ -1360,6 +1394,13 @@ const UIManager = {
 
         const autoBackup = modalBody.querySelector('#auto-backup-enabled')?.checked ?? true;
         await SettingsManager.setAutoBackupEnabled(autoBackup);
+
+        // Backup folder is only meaningful on Tauri — on web the field
+        // shows a fixed placeholder string, not a real path.
+        if (typeof window.__TAURI__ !== 'undefined') {
+            const backupFolder = modalBody.querySelector('#backup-folder-input')?.value.trim() ?? '';
+            await SettingsManager.setBackupFolder(backupFolder);
+        }
 
         const backupDelay = modalBody.querySelector('#backup-delay-menu')?.querySelector('.astryx-dropdown-item.selected')?.dataset.value;
         if (backupDelay) {
