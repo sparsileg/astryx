@@ -111,8 +111,8 @@ const YearlyObservabilityCalculations = {
      */
     calculateTransitHour(date, ra, dec, latitude, longitude, timezone) {
         // Calculate local sidereal time at midnight
-        const midnightLocal = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0);
-        const jd = TimeUtils.dateToJD(midnightLocal);
+        const isDST = SettingsManager.isDSTActive(date, timezone);
+        const jd = TimeUtils.localWallClockToJD(date.getFullYear(), date.getMonth(), date.getDate(), 0, timezone, isDST);
         const lst0 = getLST(jd, longitude);
 
         // Target transits when LST = RA
@@ -261,13 +261,13 @@ const YearlyObservabilityCalculations = {
                     const baseScore = (transitScore * transitWeight) + (darkHoursScore * darkHoursWeight);
 
                     // 4. Moon factor
-                    const localNoon = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12, 0, 0);
-                    const noonJD = TimeUtils.dateToJD(localNoon);
+                    const dayIsDST = SettingsManager.isDSTActive(date, inputs.timezone);
+                    const noonJD = TimeUtils.localWallClockToJD(date.getFullYear(), date.getMonth(), date.getDate(), 12, inputs.timezone, dayIsDST);
                     const moonPhase = getMoonPhase(noonJD);
                     const moonIllum = moonPhase.illumination / 100; // Convert to 0-1
 
                     // Calculate moon-target separation at midnight
-                    const midnightJD = TimeUtils.dateToJD(new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0));
+                    const midnightJD = TimeUtils.localWallClockToJD(date.getFullYear(), date.getMonth(), date.getDate(), 0, inputs.timezone, dayIsDST);
                     const moonPos = getMoonPosition(midnightJD);
 
                     // Angular separation between target and moon (in degrees)
@@ -286,8 +286,8 @@ const YearlyObservabilityCalculations = {
 
             } else {
                 // No astronomical darkness - use midnight altitude
-                const midnightLocal = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0);
-                const jd = TimeUtils.dateToJD(midnightLocal);
+                const fallbackIsDST = SettingsManager.isDSTActive(date, inputs.timezone);
+                const jd = TimeUtils.localWallClockToJD(date.getFullYear(), date.getMonth(), date.getDate(), 0, inputs.timezone, fallbackIsDST);
                 targetAltitude = getAltitude(jd, inputs.ra, inputs.dec, inputs.latitude, inputs.longitude);
                 observabilityScore = 0;
             }

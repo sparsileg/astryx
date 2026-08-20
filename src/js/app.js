@@ -24,7 +24,7 @@ const App = {
             await ToDoManager.init();
 
             // Check for target database updates
-            await this.checkForTargetUpdates();
+            const targetsReloadPending = await this.checkForTargetUpdates();
 
             // Initialize UI
             UIManager.init();
@@ -82,9 +82,12 @@ const App = {
             UIManager.updateTutorialMenuItems(inProgressTutorial);
 
             // Auto-calculate Best Months for selected location if needed
-            const selectedLocation = SettingsManager.getSelectedLocation();
-            if (selectedLocation && !UIManager.locationHasBestMonths(selectedLocation)) {
-                await UIManager.autoCalculateBestMonths(selectedLocation);
+            // (skip if a target-DB reload is pending — it would kill the calc mid-run)
+            if (!targetsReloadPending) {
+                const selectedLocation = SettingsManager.getSelectedLocation();
+                if (selectedLocation && !UIManager.locationHasBestMonths(selectedLocation)) {
+                    await UIManager.autoCalculateBestMonths(selectedLocation);
+                }
             }
 
             console.log(APP_CONFIG.APP_NAME + ' initialized successfully');
@@ -114,6 +117,7 @@ const App = {
             TargetFilter.initialize();
             setTimeout(() => location.reload(), 500);
         }
+        return loaded; // true = reload scheduled; caller should skip further init work
     },
 
     async updateVersionDisplay() {

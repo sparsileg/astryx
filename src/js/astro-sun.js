@@ -68,43 +68,6 @@ function solarBrightnessUltraSmooth(altitudeDeg) {
 }
 
 /**
- * Enhanced solar brightness with atmospheric and seasonal effects
- * @param {number} altitudeDeg - Sun altitude in degrees
- * @param {Object} options - Configuration options
- * @returns {number} Sky brightness in magnitudes per square arcsecond
- */
-function solarBrightnessAdvanced(altitudeDeg, options = {}) {
-    const {
-        atmosphericExtinction = 0.2,
-        scatteringFactor = 1.0,
-        humidity = 0.5,
-        aerosolOpticalDepth = 0.1,
-        season = 'spring'
-    } = options;
-
-    let brightness = solarBrightnessUltraSmooth(altitudeDeg);
-
-    // Seasonal adjustments
-    const seasonalFactors = {
-        'winter': -0.3,
-        'spring': 0.0,
-        'summer': 0.2,
-        'autumn': -0.1
-    };
-    brightness += seasonalFactors[season] || 0;
-
-    // Humidity effects
-    if (altitudeDeg > -6) {
-        brightness += humidity * 0.5;
-    }
-
-    // Aerosol/pollution effects
-    brightness += aerosolOpticalDepth * 2.0;
-
-    return brightness;
-}
-
-/**
  * Calculate combined sky brightness from sun and moon
  * @param {number} moonAltitude - Moon altitude in degrees
  * @param {number} targetAltitude - Target altitude in degrees
@@ -128,7 +91,7 @@ function calculateSkyLight(moonAltitude, targetAltitude, separation, moonIllumin
         lunarBrightness = lunarBrightness + (separation / 180) * 2 * moonFactor;
     }
 
-    const sunBrightness = solarBrightnessAdvanced(sunAltitude);
+    const sunBrightness = solarBrightnessUltraSmooth(sunAltitude);
     const skyBrightness = combineMagnitudes(sunBrightness, lunarBrightness);
 
     const excellentThreshold = 20.5;
