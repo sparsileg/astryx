@@ -4,7 +4,7 @@
     "identifier": "tools.astryx.astryx",
     "build": {
         "devUrl": "http://localhost:1420",
-        "frontendDist": "../src",
+        "frontendDist": "../src"
     },
     "app": {
         "windows": [

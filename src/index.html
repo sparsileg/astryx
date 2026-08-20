@@ -693,6 +693,13 @@
               </div>
             </div>
           </div>
+          <!-- Row: Backup Folder (Tauri only; web shows fixed read-only text) -->
+          <div class="form-group form-inline" id="backup-folder-row">
+            <label for="backup-folder-input">Backup Folder</label>
+            <input type="text" id="backup-folder-input" readonly style="width: 14rem;">
+            <button type="button" class="btn btn-sm btn-secondary" id="backup-folder-browse">Browse</button>
+            <button type="button" class="btn btn-sm btn-secondary" id="backup-folder-clear">Clear</button>
+          </div>
           <!-- Row 5: Backup reminder interval -->
           <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem;">
             <label style="margin-bottom: 0; display: inline;">Backup reminder every</label>
