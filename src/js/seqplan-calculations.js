@@ -388,7 +388,8 @@ const SeqPlanCalculations = {
             const [hours, minutes] = customStartTime.split(':').map(Number);
             // Custom time is local — convert to UTC using location timezone
             const timezone = location ? location.timezone : 0;
-            const isDST = location ? SettingsManager.isDSTActive(new Date(), timezone) : false;
+            const duskDateForDST = jdToDate(duskJD);
+            const isDST = location ? SettingsManager.isDSTActive(duskDateForDST, timezone) : false;
             const utcOffset = timezone + (isDST ? 1 : 0);
             const localMinutes = hours * 60 + minutes;
             const utcMinutes = localMinutes - utcOffset * 60;
