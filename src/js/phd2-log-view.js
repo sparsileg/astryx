@@ -39,7 +39,7 @@ const Phd2LogView = {
         accordion.id = 'accordion-phd2';
         accordion.className = 'analysis-accordion';
         accordion.innerHTML = `
-            <div class="analysis-accordion-header" onclick="this.parentElement.classList.toggle('open')">
+            <div class="analysis-accordion-header">
                 <span class="analysis-accordion-arrow">▶</span>
                 <span class="analysis-accordion-title">${HtmlUtils.escapeHtml(title)}</span>
             </div>
@@ -51,6 +51,10 @@ const Phd2LogView = {
             </div>
         `;
         container.appendChild(accordion);
+
+        accordion.querySelector('.analysis-accordion-header').addEventListener('click', () => {
+            accordion.classList.toggle('open');
+        });
 
         document.getElementById('phd2-pdf-btn').addEventListener('click', () => {
             this.downloadPDF(this._parsed);
@@ -359,7 +363,7 @@ const Phd2LogView = {
             // Phd2LogParser._detectAnomalies), no cause is inferred here
             const errAnomalies = sAnomalies.filter(a => a.type === 'error_code');
             for (const ea of errAnomalies) {
-                parts.push(ea.message);
+                parts.push(HtmlUtils.escapeHtml(ea.message));
             }
 
             // SNR jump

@@ -129,7 +129,12 @@ const BackupReminder = {
      * Show the storage warning modal when the indicator is clicked
      */
     showStorageWarningModal() {
-        UIManager.openModal('backup-reminder-modal-template', 'About Your Data Storage', null);
+        UIManager.openModal('backup-reminder-modal-template', 'About Your Data Storage', (action) => {
+            if (action === 'goto-backup') {
+                UIManager.closeModal();
+                UIManager.openNewBackupModal();
+            }
+        });
     }
 
 };

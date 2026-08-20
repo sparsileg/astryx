@@ -47,7 +47,7 @@ const UtilitiesView = {
 
             html += `
                 <div class="weather-location-card">
-                    <strong>${name}</strong>
+                    <strong>${HtmlUtils.escapeHtml(name)}</strong>
                     <span class="location-separator">•</span>
                     <a class="block-link" href="${astrosphericUrl}" target="_blank" class="weather-link">Astrospheric</a>
                     <span class="location-separator">•</span>
@@ -84,7 +84,7 @@ const UtilitiesView = {
 
             html += `
                 <div class="weather-location-card">
-                    <a class="block-link" href="${lightPollutionUrl}" target="_blank" class="weather-link"><strong>${name}</strong></a>
+                    <a class="block-link" href="${lightPollutionUrl}" target="_blank" class="weather-link"><strong>${HtmlUtils.escapeHtml(name)}</strong></a>
                 </div>
             `;
         });

@@ -127,6 +127,40 @@ const ImagingLogView = {
         const container = document.getElementById('imaging-log-projects-list');
         if (!container) return;
 
+        if (!container._listenerAttached) {
+            container._listenerAttached = true;
+            container.addEventListener('click', (e) => {
+                const actionEl = e.target.closest('[data-action]');
+                if (!actionEl) return;
+                const action = actionEl.dataset.action;
+                if (action === 'noop') return;
+
+                const projectId = actionEl.dataset.projectId ? parseInt(actionEl.dataset.projectId) : null;
+                const sessionId = actionEl.dataset.sessionId ? parseInt(actionEl.dataset.sessionId) : null;
+
+                switch (action) {
+                case 'toggle-project-sessions':
+                    this.toggleProjectSessions(projectId);
+                    break;
+                case 'delete-project':
+                    this.handleDeleteProject(projectId);
+                    break;
+                case 'edit-project':
+                    this.handleEditProject(projectId);
+                    break;
+                case 'add-session':
+                    this.showSessionModal(null, projectId);
+                    break;
+                case 'show-session':
+                    this.showSessionModal(sessionId, projectId);
+                    break;
+                case 'delete-session':
+                    this.deleteSession(sessionId);
+                    break;
+                }
+            });
+        }
+
         const expandedProjects = this.expandedProjectIds;
         const projects = await ImagingLogManager.getAllProjects();
 
@@ -211,30 +245,30 @@ const ImagingLogView = {
 
         return `
             <div class="project-card" data-project-id="${project.id}">
-                <div class="project-card-header" onclick="ImagingLogView.toggleProjectSessions(${project.id})">
+                <div class="project-card-header" data-action="toggle-project-sessions" data-project-id="${project.id}">
                     <div style="flex: 1;">
                         <div class="project-card-title">
                     ${HtmlUtils.escapeHtml(project.name)}
                     ${project.publishedLink
                         ? `<a href="${HtmlUtils.escapeHtml(project.publishedLink)}" target="_blank" rel="noopener noreferrer"
-                              title="View published image" class="project-published-link" onclick="event.stopPropagation()"> </a>`
+                              title="View published image" class="project-published-link" data-action="noop"> </a>`
                         : `<span title="Edit project to add published image link" class="project-published-link-inactive"> </span>`
                     }
                 </div>
                     </div>
                     <div class="project-card-actions">
                         <button class="project-action-btn btn-danger btn-small"
-                                onclick="event.stopPropagation(); ImagingLogView.handleDeleteProject(${project.id})">
+                                data-action="delete-project" data-project-id="${project.id}">
                             Delete Project
                         </button>
                         <button class="project-action-btn btn-secondary btn-small"
-                                onclick="event.stopPropagation(); ImagingLogView.handleEditProject(${project.id})">
+                                data-action="edit-project" data-project-id="${project.id}">
                             Edit Project
                         </button>
                     </div>
                 </div>
 
-                <div class="project-card-meta" onclick="ImagingLogView.toggleProjectSessions(${project.id})">
+                <div class="project-card-meta" data-action="toggle-project-sessions" data-project-id="${project.id}">
                     <span>Targets: ${project.targetDesignations.length}</span>
                     <span>Sessions: ${sessions.length}</span>
                     ${integrationHTML ? `<span class="imaging-session-integration">${integrationHTML}</span>` : '<span>Integration: -</span>'}
@@ -243,13 +277,13 @@ const ImagingLogView = {
                 </div>
 
                 <!-- Sessions Toggle Row -->
-                <div class="project-sessions-toggle" onclick="ImagingLogView.toggleProjectSessions(${project.id})">
+                <div class="project-sessions-toggle" data-action="toggle-project-sessions" data-project-id="${project.id}">
                     <span class="sessions-chevron" id="chevron-${project.id}"> </span>
                     <span class="sessions-label">Imaging Sessions</span>
                     <button class="btn-primary btn-sm add-session-btn"
                             id="add-session-btn-${project.id}"
                             style="display: none; margin-left: auto;"
-                            onclick="event.stopPropagation(); ImagingLogView.showSessionModal(null, ${project.id})">
+                            data-action="add-session" data-project-id="${project.id}">
                         + Add Session
                     </button>
                 </div>
@@ -275,15 +309,15 @@ const ImagingLogView = {
                       : (session.numExposures || 0);
                 const integrationSeconds = session.subLength * exposureCount;
                 return `
-                                        <tr onclick="ImagingLogView.showSessionModal(${session.id}, ${project.id})">
+                                        <tr data-action="show-session" data-session-id="${session.id}" data-project-id="${project.id}">
                                             <td>${this.formatSessionDate(session.date)}</td>
                                             <td>${HtmlUtils.escapeHtml(session.filter)}</td>
                                             <td>${exposureCount} × ${session.subLength}s</td>
                                             <td>${this.formatIntegrationTime(integrationSeconds)}</td>
                                             <td>${HtmlUtils.escapeHtml(session.location)}</td>
-                                            <td onclick="event.stopPropagation()">
+                                            <td>
                                                 <button class="btn-danger btn-sm"
-                                                        onclick="ImagingLogView.deleteSession(${session.id})">
+                                                        data-action="delete-session" data-session-id="${session.id}">
                                                     Delete
                                                 </button>
                                             </td>
@@ -430,7 +464,7 @@ const ImagingLogView = {
 
             html += `
                 <div class="target-search-result"
-                     onclick="ImagingLogView.addTargetToProject('${HtmlUtils.escapeHtml(target.object)}')">
+                     data-action="add-target-to-project" data-target-id="${HtmlUtils.escapeHtml(target.object)}">
                     ${HtmlUtils.escapeHtml(displayName)}
                 </div>
             `;
@@ -438,6 +472,15 @@ const ImagingLogView = {
 
         resultsContainer.innerHTML = html;
         resultsContainer.style.display = 'block';
+
+        if (!resultsContainer._listenerAttached) {
+            resultsContainer._listenerAttached = true;
+            resultsContainer.addEventListener('click', (e) => {
+                const item = e.target.closest('[data-action="add-target-to-project"]');
+                if (!item) return;
+                this.addTargetToProject(item.dataset.targetId);
+            });
+        }
     },
 
     /**
@@ -501,7 +544,7 @@ const ImagingLogView = {
                 <div class="selected-target-item">
                     <span>${HtmlUtils.escapeHtml(displayName)}${alsoText}</span>
                     <button class="btn-danger btn-sm"
-                            onclick="ImagingLogView.removeTargetFromProject('${HtmlUtils.escapeHtml(designation)}')">
+                            data-action="remove-target-from-project" data-target-id="${HtmlUtils.escapeHtml(designation)}">
                         Remove
                     </button>
                 </div>
@@ -509,6 +552,15 @@ const ImagingLogView = {
         });
 
         container.innerHTML = html;
+
+        if (!container._listenerAttached) {
+            container._listenerAttached = true;
+            container.addEventListener('click', (e) => {
+                const btn = e.target.closest('[data-action="remove-target-from-project"]');
+                if (!btn) return;
+                this.removeTargetFromProject(btn.dataset.targetId);
+            });
+        }
     },
 
     /**
@@ -1245,7 +1297,7 @@ const ImagingLogView = {
             <div class="modal-content">
                 <div class="modal-header">
                     <h2>${programId ? 'Edit Program' : 'New Program'}</h2>
-                    <button class="modal-close" onclick="ImagingLogView.closeProgramModal()">&times;</button>
+                    <button class="modal-close" data-action="close-program-modal">&times;</button>
                 </div>
                 <div class="modal-body">
                     <div class="form-group">
@@ -1295,13 +1347,22 @@ const ImagingLogView = {
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button class="btn-secondary" onclick="ImagingLogView.closeProgramModal()">Cancel</button>
+                    <button class="btn-secondary" data-action="close-program-modal">Cancel</button>
                     <button class="btn-primary" id="save-program-btn">Save Program</button>
                 </div>
             </div>
         `;
 
         modal.style.display = 'flex';
+
+        if (!modal._listenerAttached) {
+            modal._listenerAttached = true;
+            modal.addEventListener('click', (e) => {
+                const actionEl = e.target.closest('[data-action="close-program-modal"]');
+                if (!actionEl) return;
+                this.closeProgramModal();
+            });
+        }
 
         setTimeout(async () => {
             await this.initializeProgramModal(programId);
@@ -1699,13 +1760,22 @@ const ImagingLogView = {
                             `<div>${HtmlUtils.escapeHtml(f.input)}</div>`
                         ).join('')}
                     </div>
-                    <button class="btn-secondary btn-sm" onclick="ImagingLogView.exportMissingTargetsCSV()">
+                    <button class="btn-secondary btn-sm" data-action="export-missing-targets-csv">
                         Copy Missing Targets as CSV
                     </button>
                 </details>
             `;
 
             this.failedImportTargets = results.failed;
+
+            if (!failedDiv._listenerAttached) {
+                failedDiv._listenerAttached = true;
+                failedDiv.addEventListener('click', (e) => {
+                    const btn = e.target.closest('[data-action="export-missing-targets-csv"]');
+                    if (!btn) return;
+                    this.exportMissingTargetsCSV();
+                });
+            }
         }
     },
 
@@ -1869,7 +1939,7 @@ const ImagingLogView = {
                     }
 
                     const projectLinks = targetProjects.map(proj =>
-                        `<span onclick="ImagingLogView.navigateToProject('${proj.id}')"
+                        `<span data-action="navigate-to-project" data-project-id="${proj.id}"
                                style="cursor: pointer; color: var(--primary-color); text-decoration: underline;">
                             ${HtmlUtils.escapeHtml(proj.name)}
                         </span>`
@@ -1877,7 +1947,7 @@ const ImagingLogView = {
 
                     completedHTML += `
                         <div style="padding: 0.25rem;">
-                            <strong>${target}:</strong> ${projectLinks || '<span style="color: var(--text-secondary);">No project found</span>'}
+                            <strong>${HtmlUtils.escapeHtml(target)}:</strong> ${projectLinks || '<span style="color: var(--text-secondary);">No project found</span>'}
                         </div>
                     `;
                 });
@@ -1908,7 +1978,7 @@ const ImagingLogView = {
                                 Targets yet to be imaged (${missingTargets.length})
                             </summary>
                             <div style="margin-top: 0.5rem; max-height: 150px; overflow-y: auto; padding: 0.5rem; background: var(--hover-bg); border-radius: 4px; font-size: 0.9rem;">
-                                ${sortedMissing.join(', ')}
+                                ${sortedMissing.map(t => HtmlUtils.escapeHtml(t)).join(', ')}
                             </div>
                         </details>
                     `;
@@ -1941,6 +2011,15 @@ const ImagingLogView = {
         }
 
         container.innerHTML = html;
+
+        if (!container._listenerAttached) {
+            container._listenerAttached = true;
+            container.addEventListener('click', (e) => {
+                const el = e.target.closest('[data-action="navigate-to-project"]');
+                if (!el) return;
+                this.navigateToProject(parseInt(el.dataset.projectId));
+            });
+        }
     },
 
     async renderProjectStatusReport() {

@@ -28,7 +28,7 @@ const AsiairLogView = {
         accordion.id = 'accordion-asiair';
         accordion.className = 'analysis-accordion';
         accordion.innerHTML = `
-            <div class="analysis-accordion-header" onclick="this.parentElement.classList.toggle('open')">
+            <div class="analysis-accordion-header">
                 <span class="analysis-accordion-arrow">▶</span>
                 <span class="analysis-accordion-title">${title}</span>
             </div>
@@ -40,6 +40,10 @@ const AsiairLogView = {
             </div>
         `;
         container.appendChild(accordion);
+
+        accordion.querySelector('.analysis-accordion-header').addEventListener('click', () => {
+            accordion.classList.toggle('open');
+        });
 
         document.getElementById('asiair-pdf-btn').addEventListener('click', () => {
             this.downloadPDF(this._parsed);
