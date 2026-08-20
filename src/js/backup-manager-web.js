@@ -850,15 +850,26 @@ const BackupManagerWeb = {
         }
 
         // Clear the store
-        await DBManager.clear(mapping.storeName);
-
-        // Restore data
-        if (mapping.isArray) {
-            // Restore array of items (bulk operation for speed)
-            await DBManager.putBulk(mapping.storeName, data);
-        } else {
-            // Restore single item (settings)
+        if (storeKey === 'settings') {
+            // The SETTINGS store also holds the separate target-version record.
+            // Clearing it for a settings-only restore must not lose that value.
+            const targetVersionRecord = await DBManager.get(APP_CONFIG.STORES.SETTINGS, 'target-version');
+            await DBManager.clear(mapping.storeName);
             await DBManager.put(mapping.storeName, data);
+            if (targetVersionRecord) {
+                await DBManager.put(mapping.storeName, targetVersionRecord);
+            }
+        } else {
+            await DBManager.clear(mapping.storeName);
+
+            // Restore data
+            if (mapping.isArray) {
+                // Restore array of items (bulk operation for speed)
+                await DBManager.putBulk(mapping.storeName, data);
+            } else {
+                // Restore single item (settings)
+                await DBManager.put(mapping.storeName, data);
+            }
         }
 
         // If restoring targets, also restore the target version number
