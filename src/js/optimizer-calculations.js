@@ -78,6 +78,17 @@ const OptimizerCalculations = {
                 location.longitude
             );
 
+            // Below-min-alt dip between two visible segments (Issue #251) —
+            // riseJD/setJD above only represent a single window and silently
+            // drop the earlier segment in this case. Flag-only: display note,
+            // do not fold into windowHours or scoring (see #251 discussion).
+            const visibilityDip = findVisibilityDip(
+                sessionStartJD, sessionEndJD,
+                candidate.ra, candidate.dec,
+                location.latitude, location.longitude,
+                minAltitude, null
+            );
+
             // Find true peak altitude by scanning the visible window
             let peakAltitude = -90;
             let peakJD = transitJD || sessionMidJD;
@@ -166,6 +177,7 @@ const OptimizerCalculations = {
                 peakAltitude,
                 peakJD,
                 transitJD,
+                visibilityDip,
                 moonSeparation,
                 scores: {
                     window:    Math.round(windowScore),

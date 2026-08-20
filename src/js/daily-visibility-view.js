@@ -597,6 +597,22 @@ const DailyVisibilityView = {
             riseSetHTML += `Set: After dawn`;
         }
 
+        // Below-min-alt dip between two visible segments (Issue #251) —
+        // findTargetRise/findTargetSet only represent a single window and
+        // silently drop the earlier segment in this case. Detected
+        // separately here without altering their return values.
+        if (!isNaN(targetRA) && !isNaN(targetDEC)) {
+            const location = data.useHorizon ? DataManager.getLocation(data.locationName) : null;
+            const horizonArray = (data.useHorizon && location && location.horizon) ? location.horizon : null;
+            const dip = findVisibilityDip(data.duskJD, data.dawnJD, targetRA, targetDEC,
+                latitude, longitude, data.minAltitude, horizonArray);
+            if (dip) {
+                const dipStartStr = TimeUtils.formatLocalTimeWithDate(TimeUtils.jdToDate(dip.dipStartJD), data.timezone);
+                const dipEndStr = TimeUtils.formatLocalTimeWithDate(TimeUtils.jdToDate(dip.dipEndJD), data.timezone);
+                riseSetHTML += `<br>Dips below min altitude ${dipStartStr}–${dipEndStr}`;
+            }
+        }
+
         document.getElementById('target-rise-set').innerHTML = riseSetHTML;
 
         // Display blocked time

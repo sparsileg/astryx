@@ -262,6 +262,11 @@ const OptimizerView = {
             const typeDisplay = OBJECT_TYPES?.[target.type] || target.type || 'Unknown';
             const sizeDisplay = target.sizeMax ? `${target.sizeMax}'` : '—';
             const commonDisplay = target.common ? target.common.split(',')[0].trim() : '';
+            const dipHTML = target.visibilityDip ? (() => {
+                const dipStart = jdToDate(target.visibilityDip.dipStartJD).toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false});
+                const dipEnd   = jdToDate(target.visibilityDip.dipEndJD).toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false});
+                return `<div class="optimizer-candidate-line1"><span class="opt-meta">Dips below min altitude ${dipStart}–${dipEnd}</span></div>`;
+            })() : '';
 
             html += `
                 <div class="optimizer-candidate-card" id="optimizer-card-${index}" data-index="${index}">
@@ -287,6 +292,7 @@ const OptimizerView = {
                             <span class="opt-sep">·</span><span class="opt-meta">Peak: ${target.peakAltitude.toFixed(1)}° at ${peakTime}</span>
                             <span class="opt-sep">·</span><span class="opt-meta">Moon: ${target.moonSeparation.toFixed(0)}°</span>
                         </div>
+                        ${dipHTML}
                         <div class="optimizer-score-area">
                             <div class="optimizer-score-left">
                                 <div class="optimizer-score-values">
