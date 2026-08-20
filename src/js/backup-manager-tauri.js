@@ -131,12 +131,18 @@ const BackupManagerTauri = {
             const dtg = TimeUtils.nowDTG();
             const defaultFilename = `${APP_CONFIG.APP_NAME}-v${APP_CONFIG.APP_VERSION}-d${APP_CONFIG.DB_VERSION}-userdata-${dtg}.zip`;
 
-            const savePath = await window.__TAURI__.dialog.save({
-                defaultPath: defaultFilename,
-                filters: [{ name: 'Astryx Backup', extensions: ['zip'] }]
-            });
+            const backupFolder = SettingsManager.getBackupFolder();
+            let savePath;
+            if (backupFolder) {
+                savePath = `${backupFolder}/${defaultFilename}`;
+            } else {
+                savePath = await window.__TAURI__.dialog.save({
+                    defaultPath: defaultFilename,
+                    filters: [{ name: 'Astryx Backup', extensions: ['zip'] }]
+                });
 
-            if (!savePath) return; // User cancelled
+                if (!savePath) return; // User cancelled
+            }
 
             const jsonString = JSON.stringify(backupData, null, 2);
             const zip = new JSZip();
