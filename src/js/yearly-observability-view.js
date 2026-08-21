@@ -17,7 +17,7 @@ const YearlyObservabilityView = {
 
         // Render from cache if available (pre-calculated before navigation) — no blink
         if (typeof YearlyObservabilityCalculations !== 'undefined') {
-            const cached = window.lastYearlyObservabilityGraphData;
+            const cached = YearlyObservabilityCalculations.lastGraphData;
             if (cached) {
                 YearlyObservabilityCalculations.displayYearlyObservabilityGraph(
                     cached.altitudeData, cached.inputs
@@ -46,7 +46,7 @@ const YearlyObservabilityView = {
             this._resizeObserver = new ResizeObserver(() => {
                 clearTimeout(resizeTimer);
                 resizeTimer = setTimeout(() => {
-                    const cached = window.lastYearlyObservabilityGraphData;
+                    const cached = YearlyObservabilityCalculations.lastGraphData;
                     if (cached) {
                         YearlyObservabilityCalculations.renderYearlyObservabilityGraph(
                             cached.altitudeData, cached.inputs

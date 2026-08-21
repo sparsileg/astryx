@@ -9,6 +9,7 @@
 const YearlyObservabilityCalculations = {
 
     currentTarget: null,
+    lastGraphData: null,
 
     /**
      * Get inputs for yearly calculation
@@ -502,7 +503,7 @@ const YearlyObservabilityCalculations = {
         }
 
         // Store data for theme change re-rendering
-        window.lastYearlyObservabilityGraphData = {
+        this.lastGraphData = {
             altitudeData: altitudeData,
             inputs: inputs
         };

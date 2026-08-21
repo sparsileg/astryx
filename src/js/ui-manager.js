@@ -53,10 +53,10 @@ const UIManager = {
                 themeLink.addEventListener('load', () => {
                     // Re-render yearly observability if it's currently displayed
                     const yearlyObservabilityContainer = document.getElementById('yearly-observability-container');
-                    if (yearlyObservabilityContainer && yearlyObservabilityContainer.style.display !== 'none' && window.lastYearlyObservabilityGraphData) {
+                    if (yearlyObservabilityContainer && yearlyObservabilityContainer.style.display !== 'none' && YearlyObservabilityCalculations.lastGraphData) {
                         YearlyObservabilityCalculations.renderYearlyObservabilityGraph(
-                            window.lastYearlyObservabilityGraphData.altitudeData,
-                            window.lastYearlyObservabilityGraphData.inputs
+                            YearlyObservabilityCalculations.lastGraphData.altitudeData,
+                            YearlyObservabilityCalculations.lastGraphData.inputs
                         );
                     }
                     // Re-render sequence planner timeline if it's currently displayed
@@ -1616,8 +1616,8 @@ const UIManager = {
                     this.closeModal();
                 }
 
-                // Refresh visibility view if it's current
-                if (window.currentView === 'visibility') {
+                // Refresh target selection view if it's current
+                if (App.currentView === TargetSelectionView) {
                     document.dispatchEvent(new CustomEvent('targets-updated'));
                 }
 
@@ -2054,7 +2054,7 @@ const UIManager = {
             return;
         }
 
-        window.skyglowData = skyglowData;
+        DailyVisibilityView.currentData = skyglowData;
         window.location.hash = '#daily-visibility';
     },
 
@@ -2081,7 +2081,7 @@ const UIManager = {
             const inputs = YearlyObservabilityCalculations.getYearlyInputs();
             if (inputs.targetName && inputs.ra !== null) {
                 const altitudeData = YearlyObservabilityCalculations.calculateYearlyAltitudeData(inputs);
-                window.lastYearlyObservabilityGraphData = { altitudeData, inputs };
+                YearlyObservabilityCalculations.lastGraphData = { altitudeData, inputs };
             }
         }
 
