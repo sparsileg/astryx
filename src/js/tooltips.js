@@ -55,6 +55,7 @@ const TOOLTIPS = {
     sb_tgtOpt:      'Generate a set of individual\ntargets and target combinations\nbest suited for viewing\non a specified day',
     sb_seqPlanner:  'Generate an optimal\nimaging sequence for the\npinned targets for a\nspecified day',
     sb_imgLog:      'Track and report on imaging\nprojects, sessions, and\ntarget lists',
+    sb_logAnalysis: 'Analyze ASIAir Autorun and\nPHD2 guide logs and produce\ndetailed session reports',
     sb_utils:       'Clouds, light pollution, and\ndust motes',
     set_DST:        'Set Daylight Savings Time mode,\nusually leave it on Automatic',
     set_autoBU:     'Automatically back up to the default\nlocation after a change in:\nsettings, locations, telescopes,\nsensors, filters, pinnedTargets,\ntoDoTargets, imagingProjects,\nimagingSessions, imagingPrograms',
