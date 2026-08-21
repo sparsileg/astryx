@@ -1,6 +1,23 @@
 /**
  * optimizer-calculations.js
  * Core algorithms for Target Optimizer
+ *
+ * Two-stage pipeline:
+ *   1. scoreCandidates() scores each target independently for the night —
+ *      window duration, peak altitude, transit centering, and moon
+ *      separation combine into one composite score (0-100).
+ *   2. generateCombinations() ranks single/pair/triplet groupings so
+ *      Stan can pick a full night's targets at once. Since Astryx images
+ *      one target at a time (Sequence Planner schedules back-to-back, no
+ *      simultaneous imaging), a combo's real planning value depends on
+ *      how much of each member's window is exclusive to it versus shared
+ *      with the others — two targets with fully overlapping windows can't
+ *      both get their full window's worth of imaging time in one night.
+ *      _computeUsableHours() (Issue #216) allocates each combo member a
+ *      "usable hours" figure — its exclusive time in full, plus an equal
+ *      share of any time slice it shares with other members — and combo
+ *      scores are weighted by that instead of raw windowHours. Solo scores
+ *      are unaffected, since there's nothing to split against.
  */
 
 // Scoring weights - adjust here to tune optimizer behavior
@@ -211,6 +228,49 @@ const OptimizerCalculations = {
     },
 
     /**
+     * Allocate "usable hours" across a combo's members (Issue #216).
+     * Sweeps the sorted window breakpoints of all members and, for each
+     * resulting sub-interval, splits that interval's duration equally
+     * among whichever members' windows cover it. A member's total usable
+     * hours is its exclusive time in full plus an equal share of any
+     * time shared with others — this generalizes the pairwise 50/50
+     * overlap split to triplets, where two-of-three and three-of-three
+     * overlap segments are handled correctly rather than assumed equal.
+     * @param {Array} targets - combo members (each with windowStartJD/windowEndJD)
+     * @returns {Array} usable hours, same order/length as targets
+     */
+    _computeUsableHours(targets) {
+        const points = new Set();
+        targets.forEach(t => {
+            points.add(t.windowStartJD);
+            points.add(t.windowEndJD);
+        });
+        const sorted = Array.from(points).sort((x, y) => x - y);
+
+        const usable = targets.map(() => 0);
+
+        for (let i = 0; i < sorted.length - 1; i++) {
+            const segStart = sorted[i];
+            const segEnd = sorted[i + 1];
+            const segHours = (segEnd - segStart) * 24;
+            if (segHours <= 0) continue;
+
+            const activeIndices = [];
+            targets.forEach((t, idx) => {
+                if (t.windowStartJD <= segStart && t.windowEndJD >= segEnd) {
+                    activeIndices.push(idx);
+                }
+            });
+            if (activeIndices.length === 0) continue;
+
+            const share = segHours / activeIndices.length;
+            activeIndices.forEach(idx => { usable[idx] += share; });
+        }
+
+        return usable;
+    },
+
+    /**
      * Generate best target combinations for a night
      * @param {Array} scoredCandidates - Already scored candidates from scoreCandidates()
      * @returns {Array} Top 10 combinations sorted by quality-weighted score descending
@@ -220,7 +280,8 @@ const OptimizerCalculations = {
 
         const combos = [];
 
-        // Size 1: each target as a solo combination
+        // Size 1: each target as a solo combination — full windowHours,
+        // nothing to split against.
         for (let i = 0; i < scoredCandidates.length; i++) {
             const a = scoredCandidates[i];
             combos.push({
@@ -234,10 +295,11 @@ const OptimizerCalculations = {
             for (let j = i + 1; j < scoredCandidates.length; j++) {
                 const a = scoredCandidates[i];
                 const b = scoredCandidates[j];
+                const [usableA, usableB] = this._computeUsableHours([a, b]);
                 combos.push({
                     targets: [a, b],
-                    comboScore: ((a.scores.composite * a.windowHours) +
-                                 (b.scores.composite * b.windowHours)) / 2
+                    comboScore: ((a.scores.composite * usableA) +
+                                 (b.scores.composite * usableB)) / 2
                 });
             }
         }
@@ -249,11 +311,12 @@ const OptimizerCalculations = {
                     const a = scoredCandidates[i];
                     const b = scoredCandidates[j];
                     const c = scoredCandidates[k];
+                    const [usableA, usableB, usableC] = this._computeUsableHours([a, b, c]);
                     combos.push({
                         targets: [a, b, c],
-                        comboScore: ((a.scores.composite * a.windowHours) +
-                                     (b.scores.composite * b.windowHours) +
-                                     (c.scores.composite * c.windowHours)) / 3
+                        comboScore: ((a.scores.composite * usableA) +
+                                     (b.scores.composite * usableB) +
+                                     (c.scores.composite * usableC)) / 3
                     });
                 }
             }
