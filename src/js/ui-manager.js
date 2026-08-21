@@ -683,6 +683,10 @@ const UIManager = {
      * Delete a location
      */
     async deleteLocation(locationName) {
+        if (await ImagingLogManager.isEquipmentInUse('location', locationName)) {
+            this.showToast(`Location "${locationName}" is used by one or more imaging sessions and can't be deleted.`, 'error');
+            return;
+        }
         if (!confirm(`Are you sure you want to delete location "${locationName}"?`)) {
             return;
         }
@@ -2180,6 +2184,10 @@ const UIManager = {
      * Delete telescope
      */
     async deleteTelescope(name) {
+        if (await ImagingLogManager.isEquipmentInUse('telescope', name)) {
+            this.showToast(`Telescope "${name}" is used by one or more imaging sessions and can't be deleted.`, 'error');
+            return;
+        }
         if (!confirm(`Delete telescope "${name}"?`)) {
             return;
         }
@@ -2282,6 +2290,10 @@ const UIManager = {
      * Delete sensor
      */
     async deleteSensor(name) {
+        if (await ImagingLogManager.isEquipmentInUse('sensor', name)) {
+            this.showToast(`Sensor "${name}" is used by one or more imaging sessions and can't be deleted.`, 'error');
+            return;
+        }
         if (!confirm(`Delete sensor "${name}"?`)) {
             return;
         }
@@ -2366,6 +2378,10 @@ const UIManager = {
      * Delete filter
      */
     async deleteFilter(name) {
+        if (await ImagingLogManager.isEquipmentInUse('filter', name)) {
+            this.showToast(`Filter "${name}" is used by one or more imaging sessions and can't be deleted.`, 'error');
+            return;
+        }
         if (!confirm(`Delete filter "${name}"?`)) {
             return;
         }
