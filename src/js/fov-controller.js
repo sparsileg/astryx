@@ -313,8 +313,7 @@ const FOVView = {
                 option.classList.add('active');
                 this.largerMode = option.dataset.mode === 'larger';
                 if (this.largerMode) {
-                    // Clear any previous offset center when entering Wider mode — Issue #96
-                    this._offsetCenter = null;
+                    // Offset center (if any) is preserved on re-entry — Issue #223
                     // Save current checkbox states before switching to wider
                     this.actualModeState = {
                         showTarget: document.getElementById('fov-show-target')?.checked,
@@ -901,7 +900,24 @@ const FOVView = {
             if (myGeneration !== this.dssRenderGeneration) return;
 
             FOVCanvas.largeImage = img;
-            FOVCanvas.initDragBox(fovData.fovWidthArcmin, fovData.fovHeightArcmin);
+
+            // Restore drag box to previously-set custom center, if any — Issue #223
+            let centerOffsetPx = null;
+            if (this._offsetCenter && this.currentTarget) {
+                const canvas = FOVCanvas.canvas;
+                const targetRA = this.currentTarget.ra * 15;
+                const targetDec = this.currentTarget.dec;
+                const arcSecPerPixelX = (fovData.fovWidthArcmin * 60 * 3) / canvas.width;
+                const arcSecPerPixelY = (fovData.fovHeightArcmin * 60 * 3) / canvas.height;
+                const offsetX = (this._offsetCenter.raDeg - targetRA) * Math.cos(targetDec * Math.PI / 180) * 3600;
+                const offsetY = (this._offsetCenter.decDeg - targetDec) * 3600;
+                centerOffsetPx = {
+                    x: canvas.width / 2 - offsetX / arcSecPerPixelX,
+                    y: canvas.height / 2 - offsetY / arcSecPerPixelY
+                };
+            }
+
+            FOVCanvas.initDragBox(fovData.fovWidthArcmin, fovData.fovHeightArcmin, centerOffsetPx);
             FOVCanvas.setupDragListeners(() => {
                 this.redrawLargeMode(fovData);
             });

@@ -352,18 +352,25 @@ const FOVCanvas = {
     },
 
     /**
-     * Initialize drag box centered on canvas
+     * Initialize drag box, centered on canvas by default or at a given
+     * pixel center when restoring a previously-set custom center.
+     * @param {number} fovWidthArcmin
+     * @param {number} fovHeightArcmin
+     * @param {{x:number,y:number}|null} centerOffsetPx - box center in canvas pixels
      */
-    initDragBox(fovWidthArcmin, fovHeightArcmin) {
+    initDragBox(fovWidthArcmin, fovHeightArcmin, centerOffsetPx = null) {
         const largeArcmin = fovWidthArcmin * 3;
         const boxW = Math.round(this.canvas.width / 3);
         const boxH = Math.round(this.canvas.height / 3);
+        const cx = centerOffsetPx ? centerOffsetPx.x : this.canvas.width / 2;
+        const cy = centerOffsetPx ? centerOffsetPx.y : this.canvas.height / 2;
         this.dragBox = {
-            x: Math.round((this.canvas.width - boxW) / 2),
-            y: Math.round((this.canvas.height - boxH) / 2),
+            x: Math.round(cx - boxW / 2),
+            y: Math.round(cy - boxH / 2),
             width: boxW,
             height: boxH
         };
+        this.clampDragBox();
     },
 
     /**
