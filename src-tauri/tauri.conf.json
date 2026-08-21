@@ -33,6 +33,15 @@
             "icons/128x128@2x.png",
             "icons/icon.icns",
             "icons/icon.ico"
-        ]
+        ],
+        "category": "Utility",
+        "shortDescription": "Astrophotography planning and imaging session analysis",
+        "longDescription": "Astryx helps astrophotographers plan imaging sessions and analyze their results. Search and filter a database of 14,000+ deep-sky objects, plan sessions around visibility and moon conditions, sequence targets for the night, and analyze ASIAir and PHD2 imaging and guiding logs to see what actually happened at the telescope.",
+        "homepage": "https://astryx.tools",
+        "linux": {
+            "deb": {
+                "section": "science"
+            }
+        }
     }
 }
