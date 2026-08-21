@@ -614,7 +614,7 @@ const OptimizerView = {
             return;
         }
 
-        window.skyglowData = skyglowData;
+        DailyVisibilityView.currentData = skyglowData;
         window.location.hash = '#daily-visibility';
     },
 

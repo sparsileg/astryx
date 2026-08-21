@@ -9,6 +9,7 @@ const DailyVisibilityView = {
     TIMELINE_HEIGHT: 300,
     _resizeObserver: null,
     _lastWindValues: null,
+    _openMeteoCache: null,
 
     /**
      * Render the skyglow view
@@ -50,9 +51,8 @@ const DailyVisibilityView = {
             this._resizeObserver.observe(timelineContainer);
         }
 
-        // Check if we have data passed from visibility view
-        if (window.skyglowData) {
-            this.currentData = window.skyglowData;
+        // Check if we have data passed in before navigation (optimizer, ui-manager)
+        if (this.currentData) {
             this.performAnalysis(this.currentData);
         } else {
             // Reassemble data (e.g. after page refresh)
@@ -106,7 +106,7 @@ const DailyVisibilityView = {
 
         // Check cache — keyed by lat/lon, valid for 1 hour
         const cacheKey = `${latitude}_${longitude}`;
-        const cache = window._openMeteoCache;
+        const cache = this._openMeteoCache;
         const now = Date.now();
         const ONE_HOUR = 60 * 60 * 1000;
 
@@ -121,7 +121,7 @@ const DailyVisibilityView = {
                 const response = await fetch(url);
                 if (!response.ok) return null;
                 json = await response.json();
-                window._openMeteoCache = { key: cacheKey, data: json, fetchedAt: now };
+                this._openMeteoCache = { key: cacheKey, data: json, fetchedAt: now };
             } catch (e) {
                 console.warn('Weather fetch failed:', e);
                 return null;
@@ -372,18 +372,18 @@ const DailyVisibilityView = {
         const dateInput = document.getElementById('dv-date');
         if (dateInput) {
             let defaultDate = new Date();
-            if (!window.skyglowData?.date && defaultDate.getHours() < APP_CONFIG.DV_LOOKBACK_CUTOFF_HOUR) {
+            if (!this.currentData?.date && defaultDate.getHours() < APP_CONFIG.DV_LOOKBACK_CUTOFF_HOUR) {
                 defaultDate.setDate(defaultDate.getDate() - 1);
             }
-            const dateStr = window.skyglowData?.date || TimeUtils.formatDateForInput(defaultDate);
+            const dateStr = this.currentData?.date || TimeUtils.formatDateForInput(defaultDate);
             dateInput.value = dateStr;
         }
-        const altValue = window.skyglowData?.minAltitude ?? SettingsManager.getGlobalMinAltitude();
+        const altValue = this.currentData?.minAltitude ?? SettingsManager.getGlobalMinAltitude();
         const dvMinAltLabel = document.getElementById('dv-min-alt-label');
         if (dvMinAltLabel) dvMinAltLabel.textContent = `${altValue}°`;
         const useHorizon = document.getElementById('dv-use-horizon');
         if (useHorizon) {
-            useHorizon.checked = window.skyglowData?.useHorizon ?? true;
+            useHorizon.checked = this.currentData?.useHorizon ?? true;
         }
     },
 
@@ -424,7 +424,6 @@ const DailyVisibilityView = {
             return;
         }
 
-        window.skyglowData = skyglowData;
         this.currentData = skyglowData;
         this.performAnalysis(skyglowData);
     },
