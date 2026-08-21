@@ -325,6 +325,16 @@ const App = {
             ImagingLogView.init();
             break;
 
+            /* log analysis */
+        case 'log-analysis':
+            document.getElementById('app').innerHTML = '';
+            const logAnalysisTemplate = document.getElementById('log-analysis-view-template');
+            const logAnalysisContent = logAnalysisTemplate.content.cloneNode(true);
+            document.getElementById('app').appendChild(logAnalysisContent);
+            this.currentView = LogAnalysisView;
+            LogAnalysisView.init();
+            break;
+
             /* utilities */
         case 'utilities':
             document.getElementById('app').innerHTML = '';

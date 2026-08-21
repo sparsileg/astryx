@@ -114,6 +114,9 @@
             <li class="nav-item tooltip-host" id="sidebar-imaging-log"
                 data-view="imaging-log"
                 data-tooltip-key="sb_imgLog">Imaging Log</li>
+            <li class="nav-item tooltip-host" id="sidebar-log-analysis"
+                data-view="log-analysis"
+                data-tooltip-key="sb_logAnalysis">Log Analysis</li>
             <li class="nav-item tooltip-host" id="sidebar-utilities"
                 data-view="utilities"
                 data-tooltip-key="sb_utils">Utilities</li>
@@ -2215,26 +2218,6 @@
             </div>
           </div>
 
-          <div class="card"  id="utilities-log-analysis">
-            <div class="card-header">
-              <h3>Session Log Analysis<span class="tooltip-icon tooltip-host" data-tooltip-key="util_sessLogs">?</span></h3>
-              ASIAir session and PHD2 guide logs
-            </div>
-            <div class="card-body">
-              <div class="form-row">
-                <div class="form-group">
-                  <label for="session-log-file">Session Log</label>
-                  <input type="file" id="session-log-file" accept=".txt">
-                </div>
-                <div class="form-group">
-                  <label for="phd2-log-file">PHD2 Guide Log</label>
-                  <input type="file" id="phd2-log-file" accept=".txt">
-                </div>
-              </div>
-              <div id="session-analysis-accordions"></div>
-            </div>
-          </div>
-
           <div class="card" id="utilities-dust-mote">
             <div class="card-header">
               <h3>Dust Mote Distance Estimator <span class="tooltip-icon tooltip-host" data-tooltip-key="util_dustMote">?</span></h3>
@@ -2304,6 +2287,35 @@
         </div>
       </template>
       <!-- END OF Utilities Template -->
+
+      <!-- Log Analysis View Template -->
+      <template id="log-analysis-view-template">
+        <div class="view-container">
+          <h2 class="view-title">Log Analysis</h2>
+
+          <div class="card" id="log-analysis-card">
+            <div class="card-header">
+              <h3>Session Log Analysis<span class="tooltip-icon tooltip-host" data-tooltip-key="util_sessLogs">?</span></h3>
+              ASIAir session and PHD2 guide logs
+            </div>
+            <div class="card-body">
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="session-log-file">Session Log</label>
+                  <input type="file" id="session-log-file" accept=".txt">
+                </div>
+                <div class="form-group">
+                  <label for="phd2-log-file">PHD2 Guide Log</label>
+                  <input type="file" id="phd2-log-file" accept=".txt">
+                </div>
+              </div>
+              <div id="session-analysis-accordions"></div>
+            </div>
+          </div>
+
+        </div>
+      </template>
+      <!-- END OF Log Analysis View Template -->
 
       <!-- Backup Reminder Modal Template -->
       <template id="backup-reminder-modal-template">
@@ -2780,6 +2792,7 @@
       <script src="js/session-report-pdf.js"></script>
       <script src="js/session-report-view.js"></script>
       <script src="js/utilities-view.js"></script>
+      <script src="js/log-analysis-view.js"></script>
       <script src="js/optimizer-calculations.js"></script>
       <script src="js/optimizer-view.js"></script>
       <script src="js/algorithm-validation-view.js"></script>
