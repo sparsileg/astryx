@@ -124,7 +124,7 @@ const SessionRecommendations = {
             note = 'clean blocks, dither-every-sub — isolated by subtracting mean dither duration';
         } else {
             return this._makeRec({
-                group: 'astryx', setting: 'Sub Gap',
+                group: 'behavior', setting: 'Sub Gap',
                 observed: 'no clean-block samples this session', recommended: 'no change', changeNeeded: false,
                 evidence: 'Every consecutive sub pair this session involved at least one non-clean sub.',
                 confidence: 'measured', expectedImpact: 'none',
@@ -133,9 +133,9 @@ const SessionRecommendations = {
 
         const changeNeeded = stored != null && Math.abs(mean - stored) > 1;
         return this._makeRec({
-            group: 'astryx', setting: 'Sub Gap',
+            group: 'behavior', setting: 'Sub Gap',
             observed: `${mean.toFixed(1)}s (n=${n}, ${note})`,
-            recommended: stored != null ? `${stored}s stored` : `${mean.toFixed(1)}s`,
+            recommended: stored != null ? `${stored}s` : `${mean.toFixed(1)}s`,
             changeNeeded,
             evidence: `Mean sub-to-sub gap from clean blocks only, ${n} sample(s) (${note}).`,
             confidence: 'measured',
@@ -159,7 +159,7 @@ const SessionRecommendations = {
         }
         if (samples.length === 0) {
             return this._makeRec({
-                group: 'astryx', setting: 'Dither Duration',
+                group: 'behavior', setting: 'Dither Duration',
                 observed: 'no clean-block samples this session', recommended: 'no change', changeNeeded: false,
                 evidence: 'No dither this session both settled cleanly and was immediately followed by a clean sub.',
                 confidence: 'measured', expectedImpact: 'none',
@@ -169,9 +169,9 @@ const SessionRecommendations = {
         const stored = (typeof SettingsManager !== 'undefined') ? SettingsManager.getLearnedDitherDurationS() : null;
         const changeNeeded = stored != null && Math.abs(mean - stored) > 3;
         return this._makeRec({
-            group: 'astryx', setting: 'Dither Duration',
+            group: 'behavior', setting: 'Dither Duration',
             observed: `${mean.toFixed(1)}s (n=${samples.length}, clean blocks only)`,
-            recommended: stored != null ? `${stored}s stored` : `${mean.toFixed(1)}s`,
+            recommended: stored != null ? `${stored}s` : `${mean.toFixed(1)}s`,
             changeNeeded,
             evidence: `Mean settle duration of dithers that both completed 'done' and were followed by a clean sub, ${samples.length} sample(s).`,
             confidence: 'measured',
@@ -185,7 +185,7 @@ const SessionRecommendations = {
         if (afEvents.length === 0) return null;
         const mean = afEvents.reduce((s, e) => s + e.durationS, 0) / afEvents.length;
         return this._makeRec({
-            group: 'astryx', setting: 'AF Duration',
+            group: 'sequencePlanning', setting: 'AF Duration',
             observed: `${(mean / 60).toFixed(2)}m avg (n=${afEvents.length})`,
             recommended: `${Math.ceil(mean / 60)}m`,
             changeNeeded: false,
@@ -201,7 +201,7 @@ const SessionRecommendations = {
         if (calEvents.length === 0) return null;
         const mean = calEvents.reduce((s, e) => s + e.durationS, 0) / calEvents.length;
         return this._makeRec({
-            group: 'astryx', setting: 'Guide Calibration Duration',
+            group: 'sequencePlanning', setting: 'Guide Calibration Duration',
             observed: `${(mean / 60).toFixed(2)}m avg (n=${calEvents.length})`,
             recommended: `${Math.ceil(mean / 60)}m`,
             changeNeeded: false,
@@ -218,7 +218,7 @@ const SessionRecommendations = {
         const durations = flips.map(f => (f.flipEndedAt.getTime() - f.flipStartedAt.getTime()) / 1000);
         const mean = durations.reduce((s, v) => s + v, 0) / durations.length;
         return this._makeRec({
-            group: 'astryx', setting: 'Flip Duration',
+            group: 'sequencePlanning', setting: 'Flip Duration',
             observed: `${(mean / 60).toFixed(2)}m avg (n=${flips.length})`,
             recommended: `${Math.ceil(mean / 60)}m`,
             changeNeeded: false,
@@ -490,7 +490,9 @@ const SessionRecommendations = {
     // -------------------------------------------------------------------------
     // Group 4 — Process / hardware (inferred from Findings; cable routing
     // and flat exposure deliberately not implemented per direct
-    // instruction)
+    // instruction). Merged into the Guiding Configuration section at
+    // render time (Issue #255) — tagged group: 'phd2' below, not a
+    // separate group, so it renders in the same table.
     // -------------------------------------------------------------------------
 
     _buildProcessHardware(fs, context) {
@@ -505,7 +507,7 @@ const SessionRecommendations = {
             if (d1.length > 0) parts.push(`${d1.length} guide-star-swap`);
             if (d15.length > 0) parts.push(`${d15.length} near-edge-lock`);
             recs.push(this._makeRec({
-                group: 'process', setting: 'Guide Star Selection',
+                group: 'phd2', setting: 'Guide Star Selection',
                 observed: `${parts.join(', ')} finding(s) this session`,
                 recommended: 'Prefer a brighter, more isolated guide star further from the sensor edge on future nights with this target/field.',
                 changeNeeded: true,
@@ -520,7 +522,7 @@ const SessionRecommendations = {
         const d10 = fs.findings.filter(f => f.code === 'D10_STAR_LOST_DURING_CALIBRATION' || f.code === 'D10_ORTHOGONALITY_OUTLIER');
         if (d10.length > 0) {
             recs.push(this._makeRec({
-                group: 'process', setting: 'Calibration Timing',
+                group: 'phd2', setting: 'Calibration Timing',
                 observed: `${d10.length} calibration finding(s) this session`,
                 recommended: 'Calibrate nearer the target\'s declination and away from twilight/low-altitude conditions.',
                 changeNeeded: true,
