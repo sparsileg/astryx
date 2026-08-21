@@ -55,7 +55,7 @@ Here's a list of features.
     processing details at the project level and record nightly issues or
     items of note at the session level.
 
-- Programs - keep track (automagically based on project data) of how many 
+- Programs - keep track (automagically based on project data) of how many
     targets you've imaged in either a catalog or user-defined list. Reports
     for imaging programs statistics. Ultimately I want to integrate it more
     closely with the Astro League observing programs - I've already started
@@ -74,3 +74,12 @@ runs in browser storage and will last until you clear the browser cache or
 the browser self-clears after inactivity - then just reimport the targeting
 backup. If you're actually using the tool to preserve imaging logs, you can
 generate backups and import as needed.
+
+
+## Versioning
+
+src-tauri/Cargo.toml and src/js/config.js
+
+identifier is PERMANENT once shipped — it keys OS app identity and
+app-data directories. Never change tools.astryx.astryx after release;
+a new identifier orphans existing users' data

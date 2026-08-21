@@ -1,10 +1,10 @@
 [package]
 name = "astryx"
 version = "1.5.0"
-description = "A Tauri App"
+description = "Astrophotography planning and imaging session analysis"
 authors = ["sparsile"]
-license = ""
-repository = ""
+license = "MIT"
+repository = "https://github.com/sparsileg/astryx"
 edition = "2021"
 rust-version = "1.77.2"
 
