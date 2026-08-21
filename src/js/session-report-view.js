@@ -314,6 +314,28 @@ const SessionReportView = {
                     }
 
                     for (const entry of run.events) {
+                        // Meridian flip is two distinct log phases (pre-flip
+                        // pause, then the physical flip) — split into two
+                        // timeline rows instead of one pauseStartedAt->
+                        // flipEndedAt bar (Issue #255).
+                        if (entry.type === 'meridian_flip') {
+                            if (entry.pauseStartedAt && entry.flipStartedAt) {
+                                entries.push({
+                                    at: entry.pauseStartedAt, end: entry.flipStartedAt,
+                                    label: 'Meridian Flip — Pause', target: run.target,
+                                    guideQuality: null, verbose: this._isVerboseEvent(entry),
+                                });
+                            }
+                            if (entry.flipStartedAt && entry.flipEndedAt) {
+                                entries.push({
+                                    at: entry.flipStartedAt, end: entry.flipEndedAt,
+                                    label: 'Meridian Flip', target: run.target,
+                                    guideQuality: null, verbose: this._isVerboseEvent(entry),
+                                });
+                            }
+                            continue;
+                        }
+
                         const label = this._eventTypeLabel(entry.type, entry);
                         if (!label) continue;
                         const at = entry.start || entry.at || entry.startedAt || entry.pauseStartedAt;
@@ -454,8 +476,27 @@ const SessionReportView = {
             if (summary.calCount > 0) {
                 html += `<tr><td>Guide Calibration (incl. settle)</td><td>${AsiairLogParser.fmtMinutes(summary.calTotalS)}</td><td>${AsiairLogParser.fmtPct(summary.calPct)}</td></tr>`;
             }
-            if (summary.meridianTotalS > 0) {
-                html += `<tr><td>Meridian Flip (pause + flip)</td><td>${AsiairLogParser.fmtMinutes(summary.meridianTotalS)}</td><td>${AsiairLogParser.fmtPct(summary.meridianPct)}</td></tr>`;
+            if (summary.meridianTotalS > 0 && context.asiairParsed.runs) {
+                // Independently computed from run events rather than a
+                // single combined summary.meridianTotalS field, so the
+                // Time Accounting split matches the Timeline split
+                // (Issue #255) without requiring a parser change.
+                let pauseTotalS = 0, flipTotalS = 0;
+                for (const run of context.asiairParsed.runs.filter(r => r.kind === 'light')) {
+                    for (const entry of run.events) {
+                        if (entry.type !== 'meridian_flip') continue;
+                        if (entry.pauseStartedAt && entry.flipStartedAt) {
+                            pauseTotalS += (entry.flipStartedAt.getTime() - entry.pauseStartedAt.getTime()) / 1000;
+                        }
+                        if (entry.flipStartedAt && entry.flipEndedAt) {
+                            flipTotalS += (entry.flipEndedAt.getTime() - entry.flipStartedAt.getTime()) / 1000;
+                        }
+                    }
+                }
+                const pausePct = summary.totalTrackedS > 0 ? (pauseTotalS / summary.totalTrackedS) * 100 : 0;
+                const flipPct = summary.totalTrackedS > 0 ? (flipTotalS / summary.totalTrackedS) * 100 : 0;
+                html += `<tr><td>Meridian Flip — Pause</td><td>${AsiairLogParser.fmtMinutes(pauseTotalS)}</td><td>${AsiairLogParser.fmtPct(pausePct)}</td></tr>`;
+                html += `<tr><td>Meridian Flip</td><td>${AsiairLogParser.fmtMinutes(flipTotalS)}</td><td>${AsiairLogParser.fmtPct(flipPct)}</td></tr>`;
             }
             if (summary.ditherCount > 0) {
                 const cleanNote = summary.ditherCleanCount < summary.ditherCount
@@ -574,6 +615,10 @@ const SessionReportView = {
             const items = [];
 
             for (const f of fs.findings) {
+                // D15 findings are consolidated into a single note in the
+                // Guide Sessions section instead of one bullet per session
+                // (Issue #255) — see _buildD15ConsolidatedNote.
+                if (f.code === 'D15_LOCK_POSITION_EDGE') continue;
                 items.push({
                     severity: f.severity,
                     title: f.title,
@@ -586,6 +631,11 @@ const SessionReportView = {
 
             const phd2Anomalies = (context && context.phd2Parsed && context.phd2Parsed.anomalies) || [];
             for (const a of phd2Anomalies) {
+                // short_session is now an inline annotation on its Guide
+                // Sessions table row; incomplete is never informative (always
+                // just means the imaging session ended) — neither belongs as
+                // a standalone Finding (Issue #255).
+                if (a.type === 'short_session' || a.type === 'incomplete') continue;
                 items.push({
                     severity: a.severity,
                     title: `Guide session ${a.session}: ${a.message}`,
@@ -681,14 +731,27 @@ const SessionReportView = {
                 html += `<p class="session-report-note-small">Pier side: East ${avg(byPier.East)} (n=${byPier.East.length}) &nbsp;•&nbsp; West ${avg(byPier.West)} (n=${byPier.West.length})</p>`;
             }
 
-            // Dither amplitude (added in this report)
+            // Dither amplitude (added in this report) — now also converted
+            // to imaging-sensor pixels when a matched telescope/sensor is
+            // available (Issue #255 follow-up).
             const allDithers = phd2.sessions.flatMap(s => s.ditherEvents).filter(d => d.dxPx !== null);
             if (allDithers.length > 0) {
                 const pixelScale = (phd2.equipment && phd2.equipment.pixelScale) || 1;
                 const mags = allDithers.map(d => Math.sqrt(d.dxPx ** 2 + d.dyPx ** 2));
                 const meanPx = mags.reduce((a, b) => a + b, 0) / mags.length;
                 const maxPx = Math.max(...mags);
-                html += `<p class="session-report-note-small">Dither amplitude: mean ${meanPx.toFixed(2)}px (${(meanPx * pixelScale).toFixed(1)}"), max ${maxPx.toFixed(2)}px (${(maxPx * pixelScale).toFixed(1)}"), n=${allDithers.length}</p>`;
+                const meanArcsec = meanPx * pixelScale;
+                const maxArcsec = maxPx * pixelScale;
+
+                let imagingNote = '';
+                const imagingScale = this._imagingPixelScale(context);
+                if (imagingScale) {
+                    imagingNote = ` — imaging sensor: mean ${(meanArcsec / imagingScale).toFixed(2)}px, max ${(maxArcsec / imagingScale).toFixed(2)}px`;
+                }
+
+                html += `<p class="session-report-note-small">Dither amplitude: mean ${meanPx.toFixed(2)}px (${meanArcsec.toFixed(1)}"), max ${maxPx.toFixed(2)}px (${maxArcsec.toFixed(1)}"), n=${allDithers.length} — guide camera pixels${imagingNote}</p>`;
+
+                html += this._buildDitherBiasNote(phd2);
             }
 
             // #246: informational only (not a recommendation, per Stan) —
@@ -729,8 +792,15 @@ const SessionReportView = {
                     <td>${totalCell}</td>
                     <td>${Phd2LogParser.fmtSnr(avgSnr)}</td>
                 </tr>`;
+                    // Short session (likely pre-imaging acquisition/calibration)
+                    // — inline annotation, not a separate Finding (Issue #255).
+                    if (s.frames.length < Phd2LogParser.THRESHOLDS.SHORT_SESSION && !s.incomplete) {
+                        html += `<tr><td></td><td colspan="6" style="color:var(--text-secondary)">Short session (${s.frames.length} frames) — likely an autofocus interruption or guider restart; excluded from SNR/darkness trend below.</td></tr>`;
+                    }
                 }
                 html += `</tbody></table>`;
+                html += this._buildD15ConsolidatedNote(fs);
+                html += this._buildSnrDarknessNote(context, phd2);
             }
 
             // Calibration summary
@@ -747,9 +817,253 @@ const SessionReportView = {
                 </tr>`;
                 }
                 html += `</tbody></table>`;
+                html += this._buildCalibrationAnalysisNote(context, phd2);
             }
 
             return html;
+        },
+
+        // Guide-camera arcsec -> imaging-sensor pixels needs the imaging
+        // plate scale, derived the same way FOVCalculations does
+        // (pixelSize/1000/effectiveFocalLength * 206265). Uses the
+        // telescope/sensor matched via the imaging-log session for this
+        // night (context.telescope/context.sensor, set in
+        // log-analysis-view.js's night-matching) — returns null on
+        // unmatched nights rather than guessing equipment. Assumes no
+        // reducer/barlow (multiplier 1) since that isn't tracked per
+        // imaging-log session.
+        _imagingPixelScale(context) {
+            if (!context || !context.telescope || !context.sensor) return null;
+            const t = context.telescope, s = context.sensor;
+            if (t.focalLength == null || s.pixelSizeX == null || s.pixelSizeY == null) return null;
+            const multiplier = t.multiplier || 1;
+            const effectiveFocalLength = t.focalLength * multiplier;
+            const avgPixelSizeUm = (s.pixelSizeX + s.pixelSizeY) / 2;
+            return (avgPixelSizeUm / 1000 / effectiveFocalLength) * 206265; // arcsec/px
+        },
+
+        // Per-session dither directional bias (Issue #255 follow-up): sums
+        // each session's individual signed dx/dy dither vectors (guide px)
+        // to get net displacement — the same number as "how far the
+        // dithers took the lock position from where it started" — then
+        // projects that net vector onto the RA/Dec axis directions using
+        // the session's own xAngle/yAngle (from the PHD2 header's Mount
+        // line). This is a dot-product projection, not a full matrix
+        // inverse — it assumes the two axes are exactly orthogonal, so its
+        // error is bounded by whatever this session's orthogonality error
+        // actually is (already reported in Calibrations, typically small).
+        //
+        // "Biased" vs. "well-mixed" is a first-pass heuristic (comparing
+        // net displacement against the random-walk expectation
+        // meanMag * sqrt(n)), not corpus-validated.
+        _buildDitherBiasNote(phd2) {
+            const rows = [];
+            for (const s of phd2.sessions) {
+                const dithers = (s.ditherEvents || []).filter(d => d.dxPx !== null);
+                if (dithers.length < 3) continue;
+                const rates = s.rates || {};
+                if (rates.xAngle == null || rates.yAngle == null) continue;
+
+                let sumDx = 0, sumDy = 0;
+                const mags = [];
+                for (const d of dithers) {
+                    sumDx += d.dxPx;
+                    sumDy += d.dyPx;
+                    mags.push(Math.sqrt(d.dxPx ** 2 + d.dyPx ** 2));
+                }
+                const meanMag = mags.reduce((a, b) => a + b, 0) / mags.length;
+                const netMag = Math.sqrt(sumDx ** 2 + sumDy ** 2);
+                const randomWalkExpectation = meanMag * Math.sqrt(dithers.length);
+
+                const xRad = rates.xAngle * Math.PI / 180;
+                const yRad = rates.yAngle * Math.PI / 180;
+                const netRaPx = sumDx * Math.cos(xRad) + sumDy * Math.sin(xRad);
+                const netDecPx = sumDx * Math.cos(yRad) + sumDy * Math.sin(yRad);
+
+                const BIAS_THRESHOLD_FRACTION = 0.5;
+                if (randomWalkExpectation > 0 && netMag > BIAS_THRESHOLD_FRACTION * randomWalkExpectation) {
+                    const axis = Math.abs(netRaPx) >= Math.abs(netDecPx) ? 'RA' : 'Dec';
+                    const axisPx = axis === 'RA' ? netRaPx : netDecPx;
+                    const sign = axisPx >= 0 ? '+' : '-';
+                    rows.push(`session ${s.num}: biased ${sign}${axis} (net ${netMag.toFixed(1)}px over ${dithers.length} dithers)`);
+                } else {
+                    rows.push(`session ${s.num}: well-mixed (net ${netMag.toFixed(1)}px over ${dithers.length} dithers)`);
+                }
+            }
+            if (rows.length === 0) return '';
+            return `<p class="session-report-note-small">Dither direction (RA/Dec via this session's calibration axis angles — approximate, assumes exact axis orthogonality): ${rows.join('; ')}.</p>`;
+        },
+
+        // -------------------------------------------------------------------------
+        // Guide Sessions narrative additions (Issue #255) — consolidates the
+        // D15 lock-position-edge Findings into one note here instead of one
+        // bullet per affected session, and adds SNR-vs-darkness analysis.
+        // -------------------------------------------------------------------------
+
+        // D15 findings carry the session number and distance embedded in
+        // f.title text (no structured fields exposed to this view) — parsed
+        // defensively; falls back to a plain count if the format doesn't
+        // match on any item rather than showing a wrong range.
+        _buildD15ConsolidatedNote(fs) {
+            if (!fs || !fs.findings) return '';
+            const d15 = fs.findings.filter(f => f.code === 'D15_LOCK_POSITION_EDGE');
+            if (d15.length === 0) return '';
+
+            const distances = [];
+            for (const f of d15) {
+                const m = /lock position (\d+)px/.exec(f.title || '');
+                if (m) distances.push(parseInt(m[1], 10));
+            }
+
+            let rangeText = '';
+            if (distances.length === d15.length && distances.length > 0) {
+                const min = Math.min(...distances), max = Math.max(...distances);
+                rangeText = min === max ? ` (${min}px)` : ` (${min}–${max}px)`;
+            }
+
+            return `<p class="session-report-note-small session-report-tier-warning">${d15.length} guide session(s) locked near the frame edge${rangeText} this night, below the corpus's typical range — a cluster like this across most of a night's sessions is worth checking against PHD2's search region / star selection settings, since edge-hugging locks are the same signature associated with guide-star-swap risk elsewhere in the corpus.</p>`;
+        },
+
+        // SNR vs. darkness: SNR should track how dark the sky is, rising
+        // toward astronomical dusk, holding through the core dark hours,
+        // falling toward dawn. Reuses solarBrightnessUltraSmooth (already
+        // used for sky-quality scoring elsewhere) to model the sun-driven
+        // brightness component from each session's sun altitude at its
+        // midpoint. Deep-night sessions (sun well below the astronomical
+        // threshold) have no twilight excuse for a low-brightness-model
+        // reading, so a session that's notably below the deep-night SNR
+        // median despite that is the interesting anomaly — likely transient
+        // cloud, haze, or dew — while sessions near dusk/dawn legitimately
+        // reading lower are normal darkness-driven variation, not flagged.
+        //
+        // First-pass thresholds (DEEP_NIGHT_SUN_ALT, THRESHOLD_FRACTION),
+        // not yet corpus-validated the way threshold-calibration.md's other
+        // figures are — revisit once more nights have been analyzed.
+        _buildSnrDarknessNote(context, phd2) {
+            if (!context || !context.location || !context.asiairParsed || !context.asiairParsed.date) return '';
+            if (typeof getSunPosition === 'undefined' || typeof getAltitude === 'undefined' || typeof dateToJD === 'undefined') return '';
+            const location = context.location;
+            const dateParts = context.asiairParsed.date.split('-');
+            if (dateParts.length !== 3) return '';
+
+            const localNoon = new Date(parseInt(dateParts[0], 10), parseInt(dateParts[1], 10) - 1, parseInt(dateParts[2], 10), 12, 0, 0);
+            const isDST = (typeof SettingsManager !== 'undefined') ? SettingsManager.isDSTActive(localNoon, location.timezone) : false;
+            const duskJD = (typeof findAstronomicalDusk !== 'undefined') ? findAstronomicalDusk(localNoon, location.latitude, location.longitude, location.timezone, isDST) : null;
+            const dawnJD = (typeof findNextAstronomicalDawn !== 'undefined') ? findNextAstronomicalDawn(localNoon, location.latitude, location.longitude, location.timezone, isDST) : null;
+            if (duskJD == null || dawnJD == null) return '';
+
+            const eligible = phd2.sessions.filter(s =>
+                s.stats && s.stats.avgSnr != null &&
+                s.frames.length >= Phd2LogParser.THRESHOLDS.SHORT_SESSION
+            );
+            if (eligible.length < 3) return '';
+
+            const points = [];
+            for (const s of eligible) {
+                const start = Phd2LogParser._parsePhd2Time(s.startTime);
+                if (!start) continue;
+                const end = s.endTime ? Phd2LogParser._parsePhd2Time(s.endTime) : null;
+                const midMs = end ? (start.getTime() + end.getTime()) / 2 : start.getTime();
+                const midJD = dateToJD(new Date(midMs));
+                const sunPos = getSunPosition(midJD);
+                const sunAlt = getAltitude(midJD, sunPos.ra, sunPos.dec, location.latitude, location.longitude);
+                points.push({ session: s, sunAlt, snr: s.stats.avgSnr });
+            }
+            if (points.length < 3) return '';
+
+            const DEEP_NIGHT_SUN_ALT = -25; // comfortably below the -18° astronomical threshold
+            const deepNight = points.filter(p => p.sunAlt <= DEEP_NIGHT_SUN_ALT);
+            if (deepNight.length < 2) return '';
+
+            const snrValues = deepNight.map(p => p.snr).sort((a, b) => a - b);
+            const mid = Math.floor(snrValues.length / 2);
+            const medianSnr = snrValues.length % 2 ? snrValues[mid] : (snrValues[mid - 1] + snrValues[mid]) / 2;
+
+            const THRESHOLD_FRACTION = 0.75;
+            const anomalous = deepNight.filter(p => p.snr < medianSnr * THRESHOLD_FRACTION);
+
+            const twilightNote = points.length > deepNight.length
+                  ? ' SNR dips near the start/end of the session (closer to dusk/dawn) are expected from residual twilight brightness and are not flagged.'
+                  : '';
+
+            if (anomalous.length === 0) {
+                return `<p class="session-report-note-small">SNR tracked darkness normally across the night (deep-night median ${medianSnr.toFixed(1)}, no sessions deviating).${twilightNote}</p>`;
+            }
+
+            const list = anomalous.map(p => `session ${p.session.num} (SNR ${p.snr.toFixed(1)} vs deep-night median ${medianSnr.toFixed(1)})`).join(', ');
+            return `<p class="session-report-note-small session-report-tier-warning">SNR dropped well below the deep-night median independent of dusk/dawn proximity — possible transient cloud, haze, or dew: ${list}.${twilightNote}</p>`;
+        },
+
+        // Calibration narrative: orthogonality magnitude/change, West/North
+        // rate consistency (checked against an approximate declination for
+        // each calibration — calibration blocks don't record target/dec
+        // directly, so this is inferred from the nearest guide session in
+        // time, not measured), and plain-language Star Lost context.
+        //
+        // First-pass thresholds (ORTHO_ELEVATED_DEG, ORTHO_CHANGE_DEG,
+        // RATE_SWING_PCT, DEC_EXPLAINS_DEG), not yet corpus-validated.
+        _buildCalibrationAnalysisNote(context, phd2) {
+            const cals = phd2.calibrations;
+            if (!cals || cals.length === 0) return '';
+            const notes = [];
+
+            const decFor = (cal) => {
+                const calTime = Phd2LogParser._parsePhd2Time(cal.startedAt);
+                if (!calTime) return null;
+                let best = null, bestDiff = Infinity;
+                for (const s of phd2.sessions) {
+                    if (!s.geometry || s.geometry.decDeg == null) continue;
+                    const sTime = Phd2LogParser._parsePhd2Time(s.startTime);
+                    if (!sTime) continue;
+                    const diff = Math.abs(sTime.getTime() - calTime.getTime());
+                    if (diff < bestDiff) { bestDiff = diff; best = s.geometry.decDeg; }
+                }
+                return best;
+            };
+
+            const ORTHO_ELEVATED_DEG = 1.0;
+            const ORTHO_CHANGE_DEG = 0.5;
+            const orthoElevated = cals.filter(c => c.orthogonalityErrorDeg != null && Math.abs(c.orthogonalityErrorDeg) > ORTHO_ELEVATED_DEG);
+            if (orthoElevated.length > 0) {
+                notes.push(`Orthogonality error exceeded ${ORTHO_ELEVATED_DEG}° on ${orthoElevated.length} calibration(s) this session — check for cone error, polar misalignment, or looseness in the guide/OAG train.`);
+            }
+            for (let i = 1; i < cals.length; i++) {
+                const a = cals[i - 1].orthogonalityErrorDeg, b = cals[i].orthogonalityErrorDeg;
+                if (a == null || b == null) continue;
+                if (Math.abs(a - b) > ORTHO_CHANGE_DEG) {
+                    notes.push(`Orthogonality shifted ${Math.abs(a - b).toFixed(2)}° between calibrations ${i} and ${i + 1} — worth a look if this recurs on future nights.`);
+                }
+            }
+
+            const RATE_SWING_PCT = 15;
+            const DEC_EXPLAINS_DEG = 15;
+            for (let i = 1; i < cals.length; i++) {
+                const prev = cals[i - 1], cur = cals[i];
+                if (prev.west.ratePxPerSec == null || cur.west.ratePxPerSec == null) continue;
+                const westSwing = Math.abs(cur.west.ratePxPerSec - prev.west.ratePxPerSec) / prev.west.ratePxPerSec * 100;
+                const northSwing = (prev.north.ratePxPerSec != null && cur.north.ratePxPerSec != null)
+                      ? Math.abs(cur.north.ratePxPerSec - prev.north.ratePxPerSec) / prev.north.ratePxPerSec * 100
+                      : 0;
+                const maxSwing = Math.max(westSwing, northSwing);
+                if (maxSwing < RATE_SWING_PCT) continue;
+
+                const decPrev = decFor(prev), decCur = decFor(cur);
+                const decDiff = (decPrev != null && decCur != null) ? Math.abs(decCur - decPrev) : null;
+                if (decDiff != null && decDiff >= DEC_EXPLAINS_DEG) {
+                    notes.push(`Calibration rate shifted ${maxSwing.toFixed(0)}% between calibrations ${i} and ${i + 1} — explained by a ${decDiff.toFixed(0)}° declination difference between calibrated targets (rate scales with cos(dec)).`);
+                } else {
+                    notes.push(`Calibration rate shifted ${maxSwing.toFixed(0)}% between calibrations ${i} and ${i + 1} with no comparable declination difference (${decDiff != null ? decDiff.toFixed(0) + '°' : 'unknown'}) — possible backlash or slippage worth checking.`);
+                }
+            }
+
+            for (const c of cals) {
+                if (c.starLostDuringCalibration > 0) {
+                    notes.push(`${c.starLostDuringCalibration} star-lost event(s) during the calibration starting ${HtmlUtils.escapeHtml(String(c.startedAt))} — the guide star was lost and reacquired mid-calibration, which can produce a less reliable rate/orthogonality measurement.`);
+                }
+            }
+
+            if (notes.length === 0) return '';
+            return `<ul class="session-report-notes">${notes.map(n => `<li>${n}</li>`).join('')}</ul>`;
         },
 
         // -------------------------------------------------------------------------
@@ -837,17 +1151,19 @@ const SessionReportView = {
             }
 
             const groups = [
-                { key: 'astryx', title: 'Astryx Settings' },
-                { key: 'asiair', title: 'ASIAir Configuration' },
-                { key: 'phd2', title: 'PHD2 Configuration' },
-                { key: 'process', title: 'Process / Hardware' },
+                { key: 'behavior', title: 'Behavior', columns: ['Measurement', 'Observed', 'Moving Average', 'Confidence'],
+                  note: 'These values accumulate across every analyzed session as a moving average, weighted toward recent nights but never fully reset by any single one — a single unusual session nudges the average, it doesn\'t replace it.' },
+                { key: 'sequencePlanning', title: 'Sequence Planning', columns: ['Setting', 'Observed', 'Recommended', 'Confidence'] },
+                { key: 'asiair', title: 'ASIAir Configuration', columns: ['Setting', 'Observed', 'Recommended', 'Confidence'] },
+                { key: 'phd2', title: 'Guiding Configuration', columns: ['Setting', 'Observed', 'Recommended', 'Confidence'] },
             ];
 
             for (const g of groups) {
                 const groupRecs = recs.filter(r => r.group === g.key);
                 if (groupRecs.length === 0) continue;
                 html += `<h5 style="margin-top:0.75rem">${g.title}</h5>`;
-                html += `<table class="session-table"><thead><tr><th>Setting</th><th>Observed</th><th>Recommended</th><th>Confidence</th></tr></thead><tbody>`;
+                if (g.note) html += `<p class="session-report-note-small" style="color:var(--text-secondary)">${HtmlUtils.escapeHtml(g.note)}</p>`;
+                html += `<table class="session-table"><thead><tr><th>${g.columns[0]}</th><th>${g.columns[1]}</th><th>${g.columns[2]}</th><th>${g.columns[3]}</th></tr></thead><tbody>`;
                 for (const r of groupRecs) {
                     const rowAttr = r.changeNeeded ? ` class="session-report-tier-warning"` : '';
                     html += `<tr${rowAttr}>
