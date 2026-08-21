@@ -117,6 +117,8 @@ const ImagingLogView = {
             await this.renderProgramsList();
         } else if (tabName === 'reports') {
             await this.renderReports();
+        } else if (tabName === 'activity') {
+            await ImagingLogActivityView.render();
         }
     },
 

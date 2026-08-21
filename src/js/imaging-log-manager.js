@@ -329,6 +329,65 @@ const ImagingLogManager = {
     },
 
     /**
+     * Get all years that have at least one imaging session, most recent
+     * first. Used to populate the Activity tab's year selector.
+     */
+    async getActivityYears() {
+        const sessions = await this.getAllSessions();
+        const years = new Set();
+        sessions.forEach(session => {
+            if (!session.date) return;
+            years.add(session.date.slice(0, 4));
+        });
+        return Array.from(years).sort((a, b) => b.localeCompare(a));
+    },
+
+    /**
+     * Aggregate imaging activity by date for a given year (Issue #142).
+     * Returns a Map keyed by 'YYYY-MM-DD' -> {
+     *   totalSeconds,
+     *   projects: [{ name, subs, subLength, seconds }]
+     * }
+     * Kept separate from rendering so future PDF/CSV export can reuse it
+     * directly.
+     */
+    async getActivityByYear(year) {
+        const allSessions = await this.getAllSessions();
+        const allProjects = await this.getAllProjects();
+        const projectsById = new Map(allProjects.map(p => [p.id, p]));
+
+        const byDate = new Map();
+
+        allSessions.forEach(session => {
+            if (!session.date || !session.date.startsWith(year)) return;
+
+            const project = projectsById.get(session.projectId);
+            const projectName = project ? project.name : 'Unknown Project';
+
+            // Use usedExposures if available, otherwise fall back to numExposures (original)
+            const exposureCount = session.usedExposures !== undefined && session.usedExposures !== '' && session.usedExposures !== 0
+                  ? session.usedExposures
+                  : (session.numExposures || 0);
+            const subLength = session.subLength || 0;
+            const seconds = subLength * exposureCount;
+
+            if (!byDate.has(session.date)) {
+                byDate.set(session.date, { totalSeconds: 0, projects: [] });
+            }
+            const day = byDate.get(session.date);
+            day.totalSeconds += seconds;
+            day.projects.push({
+                name: projectName,
+                subs: exposureCount,
+                subLength: subLength,
+                seconds: seconds
+            });
+        });
+
+        return byDate;
+    },
+
+    /**
      * Get program progress (how many targets imaged)
      */
     async getProgramProgress(programId, completedOnly = false) {

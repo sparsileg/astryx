@@ -1079,3 +1079,102 @@ select.altitude-override-active,
     100% { transform: rotate(-2deg) translateX(-2px); }
 }
 */
+
+/* Imaging Log Activity Heatmap (Issue #142) */
+/* Single amber scale across all themes, lightness/saturation ramp only
+   (no hue shift) so it reads correctly for colorblind users. Level 0
+   reuses --border-color so it already adapts per theme. */
+:root {
+    --activity-level-1: #6C4C13;
+    --activity-level-2: #B87C14;
+    --activity-level-3: #F4A825;
+    --activity-level-4: #FFBE4D;
+}
+
+.activity-month-row {
+    display: grid;
+    margin-bottom: 0.25rem;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.activity-grid {
+    display: grid;
+    gap: 3px;
+    margin-bottom: 0.75rem;
+}
+
+/* Grid items stretch to fill their track by default — aspect-ratio then
+   derives height from that stretched width, so squares grow with the
+   grid's column width instead of the gaps stretching (Issue #142). */
+.activity-cell {
+    aspect-ratio: 1 / 1;
+    border-radius: 2px;
+    background: var(--border-color);
+}
+
+.activity-cell-empty {
+    background: transparent;
+}
+
+.activity-level-1 { background: var(--activity-level-1); }
+.activity-level-2 { background: var(--activity-level-2); }
+.activity-level-3 { background: var(--activity-level-3); }
+.activity-level-4 { background: var(--activity-level-4); }
+
+.activity-legend {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+/* Fixed-size swatches — not part of the responsive day grid, so width:100%
+   from a flex/grid stretch context would misbehave (that's what happened
+   before: legend cells fought for space in the flex row and blew up). */
+.activity-legend .activity-cell {
+    width: 12px;
+    height: 12px;
+    margin: 0 1px;
+}
+
+/* Activity heatmap year slider (Issue #142 follow-up) */
+#imaging-log-activity-year-control {
+    width: 450px; /* half the heatmap's own 900px cap — .imaging-log-toolbar
+                     is display:flex with no flex:1, so a bare max-width
+                     never had anything to expand against */
+    max-width: 100%;
+    margin-bottom: 0.5rem;
+}
+
+.activity-year-indicator-row {
+    position: relative;
+    height: 1.4rem;
+}
+
+.activity-year-floating-label {
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform: translateX(-50%);
+    font-weight: 600;
+    color: var(--text-color);
+    white-space: nowrap;
+}
+
+.activity-year-slider-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.activity-year-slider-row input[type="range"] {
+    flex: 1;
+}
+
+.activity-year-bound-label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
