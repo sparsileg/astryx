@@ -1661,6 +1661,7 @@
             <button class="imaging-log-tab-btn active" data-tab="projects">Projects</button>
             <button class="imaging-log-tab-btn" data-tab="programs">Programs</button>
             <button class="imaging-log-tab-btn" data-tab="reports">Reports</button>
+            <button class="imaging-log-tab-btn" data-tab="activity">Activity</button>
           </div>
 
           <!-- Projects Tab -->
@@ -1773,6 +1774,27 @@
             </div>
 
           </div>
+
+          <!-- Activity Tab -->
+          <div id="imaging-log-activity-tab" class="imaging-log-tab-content">
+            <div class="imaging-log-toolbar">
+              <div id="imaging-log-activity-year-control">
+                <div class="activity-year-indicator-row">
+                  <span id="imaging-log-activity-year-label" class="activity-year-floating-label">—</span>
+                </div>
+                <div class="activity-year-slider-row">
+                  <span id="imaging-log-activity-year-min-label" class="activity-year-bound-label"></span>
+                  <input type="range" id="imaging-log-activity-year-slider" step="1">
+                  <span id="imaging-log-activity-year-max-label" class="activity-year-bound-label"></span>
+                </div>
+              </div>
+            </div>
+
+            <div id="imaging-log-activity-heatmap">
+              <!-- Activity heatmap rendered here -->
+            </div>
+          </div>
+
         </div>
       </template>
       <!-- END OF Imaging Log View Template -->
@@ -2750,6 +2772,7 @@
       <script src="js/seqplan-timeline.js"></script>
       <script src="js/seqplan-view.js"></script>
       <script src="js/imaging-log-view.js"></script>
+      <script src="js/imaging-log-activity-view.js"></script>
       <script src="js/session-invariants.js"></script>
       <script src="js/session-fusion.js"></script>
       <script src="js/session-detectors.js"></script>
