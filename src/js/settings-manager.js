@@ -192,6 +192,7 @@ const SettingsManager = {
     async setSelectedLocation(locationName) {
         this.settings.selectedLocation = locationName;
         await this.saveSettings();
+        document.dispatchEvent(new CustomEvent('selected-location-changed', { detail: { locationName } }));
     },
 
     /**

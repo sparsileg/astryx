@@ -58,6 +58,11 @@ const DailyVisibilityView = {
             // Reassemble data (e.g. after page refresh)
             setTimeout(() => this.recalculate(), 0);
         }
+
+        if (!this._locationChangedHandler) {
+            this._locationChangedHandler = () => this.recalculate();
+            document.addEventListener('selected-location-changed', this._locationChangedHandler);
+        }
     },
 
     /**
@@ -69,6 +74,10 @@ const DailyVisibilityView = {
         if (this._resizeObserver) {
             this._resizeObserver.disconnect();
             this._resizeObserver = null;
+        }
+        if (this._locationChangedHandler) {
+            document.removeEventListener('selected-location-changed', this._locationChangedHandler);
+            this._locationChangedHandler = null;
         }
     },
 
