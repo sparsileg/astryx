@@ -56,6 +56,11 @@ const YearlyObservabilityView = {
             });
             this._resizeObserver.observe(graphContainer);
         }
+
+        if (!this._locationChangedHandler) {
+            this._locationChangedHandler = () => YearlyObservabilityCalculations.calculateYearly();
+            document.addEventListener('selected-location-changed', this._locationChangedHandler);
+        }
     },
 
     /**
@@ -65,6 +70,10 @@ const YearlyObservabilityView = {
         if (this._resizeObserver) {
             this._resizeObserver.disconnect();
             this._resizeObserver = null;
+        }
+        if (this._locationChangedHandler) {
+            document.removeEventListener('selected-location-changed', this._locationChangedHandler);
+            this._locationChangedHandler = null;
         }
     }
 };

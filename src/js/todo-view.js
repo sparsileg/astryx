@@ -40,6 +40,10 @@ const ToDoView = {
             this._todoUpdatedHandler = () => this.renderToDoList();
             document.addEventListener('todo-list-updated', this._todoUpdatedHandler);
         }
+        if (!this._locationChangedHandler) {
+            this._locationChangedHandler = () => this.renderToDoList();
+            document.addEventListener('selected-location-changed', this._locationChangedHandler);
+        }
     },
 
     /**
@@ -1262,6 +1266,10 @@ const ToDoView = {
         if (this._todoUpdatedHandler) {
             document.removeEventListener('todo-list-updated', this._todoUpdatedHandler);
             this._todoUpdatedHandler = null;
+        }
+        if (this._locationChangedHandler) {
+            document.removeEventListener('selected-location-changed', this._locationChangedHandler);
+            this._locationChangedHandler = null;
         }
     },
 

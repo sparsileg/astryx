@@ -233,6 +233,13 @@ const SeqPlanView = {
             document.addEventListener('pinned-targets-updated', this._pinnedTargetsHandler);
             document.addEventListener('locations-updated', this._locationsHandler);
         }
+        if (!this._globalLocationChangedHandler) {
+            this._globalLocationChangedHandler = () => {
+                this.populateLocationDropdown();
+                this.debouncedGenerate();
+            };
+            document.addEventListener('selected-location-changed', this._globalLocationChangedHandler);
+        }
     },
 
     /**
@@ -1497,6 +1504,10 @@ const SeqPlanView = {
         if (this._locationsHandler) {
             document.removeEventListener('locations-updated', this._locationsHandler);
             this._locationsHandler = null;
+        }
+        if (this._globalLocationChangedHandler) {
+            document.removeEventListener('selected-location-changed', this._globalLocationChangedHandler);
+            this._globalLocationChangedHandler = null;
         }
         if (this._resizeObserver) {
             this._resizeObserver.disconnect();
