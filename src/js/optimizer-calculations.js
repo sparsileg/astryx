@@ -44,6 +44,19 @@ const OptimizerCalculations = {
         // Get moon illumination at session midpoint (phase doesn't change significantly across one night)
         const moonIllum = getMoonPhase(sessionMidJD).illumination / 100;
 
+        // Precompute moon position/altitude on a session-anchored 15-min grid —
+        // moon data is candidate-independent (perf: O(samples) instead of
+        // O(candidates x samples), Issue #215). Per-candidate loops below filter
+        // this table to their own [windowStartJD, windowEndJD] range rather than
+        // regenerating a per-candidate sample grid.
+        const sampleInterval = 15 / 1440; // 15 minutes in JD
+        const moonTable = new Map();
+        for (let jd = sessionStartJD; jd <= sessionEndJD; jd += sampleInterval) {
+            const pos = getMoonPosition(jd);
+            const alt = getAltitude(jd, pos.ra, pos.dec, location.latitude, location.longitude);
+            moonTable.set(jd, { pos, alt });
+        }
+
         const scored = [];
         const eliminated = [];
 
@@ -121,7 +134,6 @@ const OptimizerCalculations = {
 
             // Time-weighted moon score across target's visible window
             // Moon-down periods contribute 1.0, moon-up periods contribute illumination × separation factor
-            const sampleInterval = 15 / 1440; // 15 minutes in JD
             let moonScoreSamples = 0;
             let moonScoreSum = 0;
             // Calculate actual moon separation at window midpoint for display purposes
@@ -132,18 +144,15 @@ const OptimizerCalculations = {
                 moonPosAtMid.ra, moonPosAtMid.dec
             );
 
-            let sampleJD = windowStartJD;
-            while (sampleJD <= windowEndJD) {
-                const moonPos = getMoonPosition(sampleJD);
-                const moonAlt = getAltitude(sampleJD, moonPos.ra, moonPos.dec,
-                    location.latitude, location.longitude);
+            for (const [jd, m] of moonTable) {
+                if (jd < windowStartJD || jd > windowEndJD) continue;
 
                 const sep = getAngularSeparation(
                     candidate.ra, candidate.dec,
-                    moonPos.ra, moonPos.dec
+                    m.pos.ra, m.pos.dec
                 );
 
-                if (moonAlt <= 0) {
+                if (m.alt <= 0) {
                     // Moon below horizon - full score for this sample
                     moonScoreSum += 1.0;
                 } else {
@@ -155,7 +164,6 @@ const OptimizerCalculations = {
                 }
 
                 moonScoreSamples++;
-                sampleJD += sampleInterval;
             }
 
             const moonScore = (moonScoreSamples > 0 ? moonScoreSum / moonScoreSamples : 1.0) * 100;
