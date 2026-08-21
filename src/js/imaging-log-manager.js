@@ -301,6 +301,23 @@ const ImagingLogManager = {
     },
 
     // ============================================================================
+    // Deletion guards (Issue #3)
+    // ============================================================================
+
+    /**
+     * Check whether any session references a given location, telescope,
+     * sensor, or filter by name — used to block deletion of equipment/
+     * locations still in use rather than silently orphaning sessions.
+     * @param {'location'|'telescope'|'sensor'|'filter'} field
+     * @param {string} name
+     * @returns {Promise<boolean>}
+     */
+    async isEquipmentInUse(field, name) {
+        const sessions = await this.getAllSessions();
+        return sessions.some(s => s[field] === name);
+    },
+
+    // ============================================================================
     // Calculations
     // ============================================================================
 
