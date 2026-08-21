@@ -1,6 +1,15 @@
 /**
  * astro-sun.js
  * Sun position and sky brightness calculations
+ *
+ * Accuracy:
+ * - getSunPosition uses the low-precision solar position formula from
+ *   the Astronomical Almanac (~0.01 deg) — twilight times are good to a
+ *   few seconds.
+ * - solarBrightnessUltraSmooth and calculateSkyLight are heuristic
+ *   quality models, not photometric predictions. The output is a
+ *   ranking aid for comparing sessions/times against each other, not a
+ *   measured or calibrated mag/arcsec^2 sky brightness value.
  */
 
 /**

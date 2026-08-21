@@ -1,6 +1,16 @@
 /**
  * astro-moon.js
  * Moon position, phase, and rise/set calculations
+ *
+ * Accuracy:
+ * - getMoonPosition uses a truncated lunar series (13 longitude + 8
+ *   latitude periodic terms, a subset of Meeus ch.47) — position good
+ *   to ~0.3 deg worst case, so moonrise/moonset can be off by ~1-2 min
+ *   beyond any threshold-related discrepancy.
+ * - getMoonPhase illumination is good to ~1%. Phase-name boundaries
+ *   (New/Crescent/Quarter/Gibbous/Full) are approximations derived from
+ *   illumination percentage, not from true phase angle — expect the
+ *   named boundary to land within about a day of the exact quarter.
  */
 
 /**

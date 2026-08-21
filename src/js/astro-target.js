@@ -1,6 +1,14 @@
 /**
  * astro-target.js
  * Target visibility calculations (rise, set, visibility windows)
+ *
+ * Accuracy:
+ * - Rise/set/visibility search functions are quantized to
+ *   APP_CONFIG.TARGET_SEARCH_STEP_SIZE (1 min) — reported times can be
+ *   off by up to one step from the true crossing.
+ * - findTargetRise/findTargetSet track a single rise and a single set;
+ *   a below-threshold dip between two visible segments is handled
+ *   separately by findVisibilityDip (see Issue #251).
  */
 
 /**

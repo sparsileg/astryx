@@ -2,6 +2,20 @@
  * astro-core.js
  * Core astronomical calculation functions
  * Pure mathematical functions with no DOM dependencies
+ *
+ * Accuracy:
+ * - GMST (getGMST) uses the linear J2000 formula, no quadratic term.
+ *   Error stays under 0.1s over +/-50 years from J2000 — negligible for
+ *   this app's timescales.
+ * - getAltitude/getAzimuth apply no atmospheric refraction. Intentional:
+ *   imaging happens well above the horizon where refraction is negligible;
+ *   rise/set threshold constants (in astro-sun.js/astro-moon.js) account
+ *   for refraction separately, at the horizon where it matters.
+ * - No proper motion or precession is applied to catalog coordinates —
+ *   J2000 RA/Dec are used as-is. At 2026 that's a general precession of
+ *   ~50.3"/yr x 26 yr =~ 0.36 deg, up to ~0.4 deg depending on sky
+ *   position. Whether to add precession correction is a separate future
+ *   decision (Issue #210 discussion), not addressed here.
  */
 
 // ============================================================================
