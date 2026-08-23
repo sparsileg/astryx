@@ -1,5 +1,4 @@
 target-lists/scrubber.log
-src/data/
 *.tgz
 *.7z
 *.zip
