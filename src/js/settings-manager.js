@@ -36,6 +36,14 @@ const SettingsManager = {
             if (savedSettings) {
                 this.settings = { ...this.settings, ...savedSettings.data };
             }
+
+            // Normalize a stale capitalized theme value (legacy data predating
+            // the lowercase filename convention) so it doesn't keep 404ing.
+            if (this.settings.theme && this.settings.theme !== this.settings.theme.toLowerCase()) {
+                this.settings.theme = this.settings.theme.toLowerCase();
+                await this.saveSettings();
+            }
+
             console.log('SettingsManager initialized successfully');
             return true;
         } catch (error) {
@@ -123,7 +131,8 @@ const SettingsManager = {
     applyTheme(theme) {
         const themeLink = document.getElementById('theme-css');
         if (themeLink) {
-            themeLink.href = `css/themes/${theme}.css`;
+            const themeFile = (theme || APP_CONFIG.DEFAULT_THEME).toLowerCase();
+            themeLink.href = `css/themes/${themeFile}.css`;
         }
 
         // Update theme dropdown label if it exists
