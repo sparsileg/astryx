@@ -330,10 +330,10 @@ const ImagingLogManager = {
 
         sessions.forEach(session => {
             const filter = session.filter;
-            // Use usedExposures if available, otherwise fall back to numExposures (original)
-            const exposureCount = session.usedExposures !== undefined && session.usedExposures !== '' && session.usedExposures !== 0
+            // Use usedExposures only; zero/empty means zero used subs
+            const exposureCount = session.usedExposures !== undefined && session.usedExposures !== ''
                   ? session.usedExposures
-                  : (session.numExposures || 0);
+                  : 0;
             const seconds = session.subLength * exposureCount;
 
             if (!timeByFilter[filter]) {
