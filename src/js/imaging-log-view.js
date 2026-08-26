@@ -306,9 +306,9 @@ const ImagingLogView = {
             </thead>
             <tbody>
             ${sessions.map(session => {
-                const exposureCount = session.usedExposures !== undefined && session.usedExposures !== '' && session.usedExposures !== 0
+                const exposureCount = session.usedExposures !== undefined && session.usedExposures !== ''
                       ? session.usedExposures
-                      : (session.numExposures || 0);
+                      : 0;
                 const integrationSeconds = session.subLength * exposureCount;
                 return `
                                         <tr data-action="show-session" data-session-id="${session.id}" data-project-id="${project.id}">
