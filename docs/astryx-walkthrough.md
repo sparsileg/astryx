@@ -49,9 +49,7 @@ reduced.
 
 **Caption:**
 
-> Or work the other way round: filter by type, size, magnitude, and
-> constellation until fourteen thousand objects become the dozen that suit your
-> focal length, your sky, and this month.
+> Or work the other way round: filter by type, size, and magnitude until fourteen thousand objects become the dozen that suit your focal length, your sky, and this month.
 
 ---
 
