@@ -82,17 +82,16 @@ const BestMonths = {
                 progressCallback(processedCount, totalTargets, target.object);
             }
 
-            // Write in batches of 100 to avoid blocking
+            // Yield to event loop periodically so UI can repaint — no DB write here,
+            // only the final bulk write persists results
             if (processedCount % 100 === 0) {
-                await DataManager.bulkUpdateTargets(targets.slice(processedCount - 100, processedCount));
+                await new Promise(resolve => setTimeout(resolve, 0));
             }
         }
 
-        // Write any remaining targets (less than 100)
-        const remainder = processedCount % 100;
-        if (remainder > 0) {
-            await DataManager.bulkUpdateTargets(targets.slice(processedCount - remainder, processedCount));
-        }
+        // Write all targets in one bulk operation now that calculation is complete —
+        // avoids partial data persisting if the run is interrupted mid-loop
+        await DataManager.bulkUpdateTargets(targets);
 
         this.isCalculating = false;
 
