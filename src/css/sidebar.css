@@ -215,3 +215,63 @@
     height: 128px;
     z-index: 10;
 }
+
+/* Pinned Targets sidebar strip */
+.sidebar-pinned-section {
+    margin-top: 1rem;
+}
+
+.sidebar-pinned-separator {
+    border-top: 1px solid var(--border-color);
+    margin-bottom: 0.75rem;
+}
+
+.sidebar-pinned-title {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    margin: 0 0 0.5rem;
+}
+
+.sidebar-pinned-empty {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    text-align: center;
+    padding: 0.5rem 0;
+}
+
+.sidebar-pinned-chip {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.4rem 0.6rem;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    margin-bottom: 0.4rem;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.sidebar-pinned-chip:hover {
+    background: var(--card-hover);
+}
+
+.sidebar-pinned-chip-name {
+    color: var(--text-color);
+    font-size: 0.85rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sidebar-pinned-chip-remove {
+    background: none;
+    border: none;
+    color: var(--error-color);
+    cursor: pointer;
+    padding: 0;
+    font-size: 1rem;
+    line-height: 1;
+    flex-shrink: 0;
+}

@@ -121,6 +121,12 @@
                 data-view="utilities"
                 data-tooltip-key="sb_utils">Utilities</li>
           </ul>
+
+          <div class="sidebar-pinned-section">
+            <div class="sidebar-pinned-separator"></div>
+            <h4 class="sidebar-pinned-title">📌 Pinned Targets</h4>
+            <div id="sidebar-pinned-targets"></div>
+          </div>
         </div>
 
         <div id="backup-reminder-indicator">Last backup: —</div>
@@ -233,105 +239,41 @@
         <div class="visibility-view view-bg-icon view-bg-icon-target-selection">
           <div class="ts-view-header">
             <h2 id="target-selection-source" class="view-title">Target Selection</h2>
-            <div id="target-source-radio" style="display: flex; gap: 1rem; align-items: center; font-size: 0.9rem;">
-              <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                <input type="radio" name="target-filter-scope" value="all" checked>
-                <span>All Targets</span>
-              </label>
-              <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                <input type="radio" name="target-filter-scope" value="todo">
-                <span>To Do List</span>
-              </label>
-            </div>
           </div>
 
           <!-- Location and Parameters (Left Column) -->
           <div class="ts-two-col-grid">
 
-            <!-- Target Selection Section -->
-            <div id="target-search-panel" class="card card-no-margin">
+            <!-- Target Search & Filter Section -->
+            <div id="target-search-filter-panel" class="card card-no-margin">
               <div class="card-header">
-                <h3>🎯 Target Search</h3>
+                <h3>🎯 Target Search &amp; Filter</h3>
               </div>
               <div class="card-body">
+                <div id="target-source-radio" style="display: flex; gap: 1rem; align-items: center; font-size: 0.9rem; margin-bottom: 0.75rem;">
+                  <span>Data to search:</span>
+                  <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                    <input type="radio" name="target-filter-scope" value="all" checked>
+                    <span>All Targets</span>
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                    <input type="radio" name="target-filter-scope" value="todo">
+                    <span>To Do List</span>
+                  </label>
+                </div>
+
                 <div class="form-group">
                   <label for="target-name" class="tooltip-host"
                          data-tooltip-key="ts_tgtName">Target Name (type to search targets):</label>
-                  <div style="display: flex; gap: 10px; align-items: flex-start;">
-                    <input type="text" id="target-name" class="full-width" placeholder="Search targets...">
-                    <button id="pin-target-btn" class="btn-secondary tooltip-host" style="white-space: nowrap;"
-                            data-tooltip-key="ts_PIN">📌 Pin</button>
-                  </div>
-                  <div id="target-search-results-count"></div>
-                  <div id="target-search-results"></div>
+                  <input type="text" id="target-name" class="full-width" placeholder="Search targets...">
                 </div>
 
-                <!-- Target Info Display -->
-                <div id="target-info-display" style="display: none;">
-                  <div class="form-group">
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 10px;">
-                      <div>
-                        <label class="info-label-small">Type:</label>
-                        <div id="target-type" class="info-value-display">—</div>
-                      </div>
-                      <div>
-                        <label class="info-label-small">Constellation:</label>
-                        <div id="target-constellation" class="info-value-display">—</div>
-                      </div>
-                    </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 10px;">
-                      <div>
-                        <label class="info-label-small">Common Name:</label>
-                        <div id="target-common-name" class="info-value-display">—</div>
-                      </div>
-                      <div>
-                        <label class="info-label-small">Other Info:</label>
-                        <div id="target-other-info" class="info-value-display">—</div>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="info-box-wrapper">
-                    <label class="info-label-small">Add to the To Do List in the Detail view</label>
-                    <button class="btn-primary" id="show-detail-btn" style="width: 100%;">Detail</button>
-                  </div>
+                <!-- Results Section -->
+                <div id="results-container">
+                  <!-- Results will be populated here -->
                 </div>
-              </div>
 
-              <!-- Results Section -->
-              <div id="results-container">
-                <!-- Results will be populated here -->
-              </div>
-            </div>
-
-            <!-- Hidden controls used by modals - do not remove -->
-            <div style="display: none;">
-              <input type="range" id="min-altitude" min="0" max="90" value="35" step="1">
-              <span id="altitude-display">35°</span>
-              <button id="mode-daily-btn"></button>
-              <button id="mode-yearly-btn"></button>
-              <div id="daily-options">
-                <input type="date" id="start-date">
-                <select id="search-window">
-                  <option value="1w-daily" selected>1 week (daily)</option>
-                  <option value="2w-daily">2 weeks (daily)</option>
-                  <option value="4w-daily">4 weeks (daily)</option>
-                  <option value="3m-weekly">3 months (weekly)</option>
-                  <option value="12m-weekly">12 months (weekly)</option>
-                </select>
-                <select id="max-results">
-                  <option value="1" selected>1</option>
-                  <option value="5">5</option>
-                  <option value="all">All</option>
-                </select>
-              </div>
-            </div>
-
-            <!-- Target Filter Section -->
-            <div id="target-filter-panel" class="card card-no-margin">
-              <div class="card-header">
-                <h3 id="filter-targets-label">🔍 Filter Targets</h3>
-              </div>
-              <div class="card-body">
+                <div class="target-search-filter-divider"></div>
 
                 <!-- Catalog Filter -->
                 <div class="form-group form-inline" style="margin-bottom: 0.75rem;">
@@ -421,22 +363,55 @@
                 </div>
 
               </div>
-            </div> <!-- end of target filter -->
+            </div> <!-- end of target search & filter -->
 
-            <!-- Pinned Targets -->
-            <div class="card card-no-margin">
-              <div class="card-header">
-                <h3>📌 Pinned Targets</h3>
-              </div>
-              <div class="card-body">
-                <div id="pinned-targets-display"></div>
+            <!-- Hidden controls used by modals - do not remove -->
+            <div style="display: none;">
+              <input type="range" id="min-altitude" min="0" max="90" value="35" step="1">
+              <span id="altitude-display">35°</span>
+              <button id="mode-daily-btn"></button>
+              <button id="mode-yearly-btn"></button>
+              <div id="daily-options">
+                <input type="date" id="start-date">
+                <select id="search-window">
+                  <option value="1w-daily" selected>1 week (daily)</option>
+                  <option value="2w-daily">2 weeks (daily)</option>
+                  <option value="4w-daily">4 weeks (daily)</option>
+                  <option value="3m-weekly">3 months (weekly)</option>
+                  <option value="12m-weekly">12 months (weekly)</option>
+                </select>
+                <select id="max-results">
+                  <option value="1" selected>1</option>
+                  <option value="5">5</option>
+                  <option value="all">All</option>
+                </select>
               </div>
             </div>
 
             <!-- Filter Results Card -->
             <div class="card card-no-margin" id="filter-results-card">
+
+              <!-- Floating Target Detail Panel -->
+              <div id="target-detail-panel" class="target-detail-panel">
+                <button id="target-detail-close-btn" class="target-detail-close" aria-label="Close">✕</button>
+                <div class="target-detail-header">
+                  <div class="target-detail-name-group">
+                    <h3 id="target-detail-name">—</h3>
+                    <span id="target-detail-imaging-badge" class="target-detail-imaging-badge"></span>
+                  </div>
+                  <div class="target-detail-actions">
+                    <button id="target-detail-pin-btn" class="btn-secondary btn-sm tooltip-host"
+                            data-tooltip-key="ts_PIN">📌 Pin</button>
+                    <button id="target-detail-todo-btn" class="btn-secondary btn-sm">☐ Add to To Do</button>
+                  </div>
+                </div>
+                <div class="target-detail-body" id="target-detail-body">
+                  <!-- target-detail-template content cloned in here by JS -->
+                </div>
+              </div>
+
               <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
-                <h3 id="filter-results-label">📋 Filter Results</h3>
+                <h3 id="filter-results-label">📋 Results</h3>
                 <div id="filter-results-options" style="display: flex; flex-direction: column; gap: 0.35rem; align-items: flex-end;">
                   <button id="create-imaging-program-btn" class="btn-secondary btn-sm tooltip-host" data-tooltip-key="ts_createIP">
                     <div>Create Imaging Program</div>
@@ -902,20 +877,6 @@
                 <span class="detail-label">Catalog:</span>
                 <span class="detail-value" id="detail-catalogue"></span>
               </div>
-            </div>
-          </div>
-
-          <div class="detail-section">
-            <h4>Coordinates</h4>
-            <div class="detail-group">
-              <div class="detail-item">
-                <span class="detail-label">Right Ascension:</span>
-                <span class="detail-value" id="detail-ra"></span>
-              </div>
-              <div class="detail-item">
-                <span class="detail-label">Declination:</span>
-                <span class="detail-value" id="detail-dec"></span>
-              </div>
               <div class="detail-item">
                 <span class="detail-label">Constellation:</span>
                 <span class="detail-value" id="detail-const"></span>
@@ -941,6 +902,20 @@
               <div class="detail-item">
                 <span class="detail-label">Surface Brightness:</span>
                 <span class="detail-value" id="detail-subr"></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="detail-section">
+            <h4>Coordinates</h4>
+            <div class="detail-group">
+              <div class="detail-item">
+                <span class="detail-label">Right Ascension:</span>
+                <span class="detail-value" id="detail-ra"></span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Declination:</span>
+                <span class="detail-value" id="detail-dec"></span>
               </div>
             </div>
           </div>
