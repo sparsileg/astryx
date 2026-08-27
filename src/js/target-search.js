@@ -5,11 +5,11 @@
 
 const VisibilityTargets = {
     searchTimeout: null,
+    pendingSelectTarget: null,
+    pendingSelectLimited: false,
+    searchActive: false,
     currentTarget: null, // Track the selected target
-    allResults: [],
-    displayedCount: 0,
-    isLoading: false,
-    scrollHandler: null,
+    _suppressNextOutsideClick: false,
 
     /**
      * Initialize target functionality
@@ -32,10 +32,41 @@ const VisibilityTargets = {
             });
         }
 
-        const pinBtn = document.getElementById('pin-target-btn');
+        const closeBtn = document.getElementById('target-detail-close-btn');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => this.hideDetailPanel());
+        }
+
+        const pinBtn = document.getElementById('target-detail-pin-btn');
         if (pinBtn) {
             pinBtn.addEventListener('click', () => this.pinCurrent());
         }
+
+        const todoBtn = document.getElementById('target-detail-todo-btn');
+        if (todoBtn) {
+            todoBtn.addEventListener('click', () => this.toggleToDo());
+        }
+
+        this._outsideClickHandler = (e) => {
+            if (this._suppressNextOutsideClick) {
+                this._suppressNextOutsideClick = false;
+                return;
+            }
+            const panel = document.getElementById('target-detail-panel');
+            if (!panel || !panel.classList.contains('active')) return;
+            if (panel.contains(e.target)) return;
+            this.hideDetailPanel();
+        };
+        document.addEventListener('click', this._outsideClickHandler);
+
+        this._escapeHandler = (e) => {
+            if (e.key !== 'Escape') return;
+            const panel = document.getElementById('target-detail-panel');
+            if (panel && panel.classList.contains('active')) {
+                this.hideDetailPanel();
+            }
+        };
+        document.addEventListener('keydown', this._escapeHandler);
     },
 
     /**
@@ -62,11 +93,16 @@ const VisibilityTargets = {
 
         if (query.length < 2) {
             localStorage.setItem('lastSearchQuery', '');
-            this.hideResults();
-            this.clearFields();
-            const countDiv = document.getElementById('target-search-results-count');
-            if (countDiv) countDiv.textContent = '';
+            this.restoreDefaultResults();
+            this.searchActive = false;
             return;
+        }
+
+        if (!this.searchActive) {
+            this.searchActive = true;
+            if (typeof TargetFilter !== 'undefined') {
+                TargetFilter.resetFiltersUISilent();
+            }
         }
 
         localStorage.setItem('lastSearchQuery', query);
@@ -111,124 +147,39 @@ const VisibilityTargets = {
             // Both match same way, maintain order
             return 0;
         });
-        this.allResults = results;
-        this.displayedCount = 0;
-        this.displayResults();
+        if (typeof TargetFilter !== 'undefined') {
+            TargetFilter.displayFilterResults(results);
+        }
     },
 
 
     /**
-     * Display search results — initial render, then lazy load on scroll
+     * Restore the right-hand results card to its default filtered view
+     * (used when the search box is cleared back below the minimum length).
+     * Preserves the search input's text — applyFiltersToSearch() clears it
+     * as a side effect, which is correct for direct filter interactions but
+     * wrong here (this fires on every single first keystroke, since 1 char
+     * is below the 2-char search minimum).
      */
-    displayResults() {
-        const resultsDiv = document.getElementById('target-search-results');
-        const countDiv = document.getElementById('target-search-results-count');
-        if (!resultsDiv) return;
+    restoreDefaultResults() {
+        if (typeof TargetFilter !== 'undefined') {
+            const searchInput = document.getElementById('target-name');
+            const savedValue = searchInput ? searchInput.value : null;
 
-        resultsDiv.innerHTML = '';
-        if (countDiv) countDiv.textContent = '';
-        if (countDiv) resultsDiv.before(countDiv);
+            TargetFilter.applyFiltersToSearch();
 
-        if (this.allResults.length === 0) {
-            resultsDiv.innerHTML = '<div style="padding: 0.75rem; color: var(--text-secondary);">No targets found</div>';
-            resultsDiv.style.display = 'block';
-            return;
-        }
-
-        resultsDiv.style.display = 'block';
-        this.loadMoreResults();
-        this.attachScrollListener();
-    },
-
-    /**
-     * Load and display next batch of results
-     */
-    loadMoreResults() {
-        if (this.isLoading) return;
-        if (this.displayedCount >= this.allResults.length) return;
-
-        this.isLoading = true;
-        const resultsDiv = document.getElementById('target-search-results');
-        const countDiv = document.getElementById('target-search-results-count');
-        if (!resultsDiv) { this.isLoading = false; return; }
-
-        const SEARCH_INITIAL_BATCH = 10;
-        const SEARCH_LAZY_BATCH = 10;
-        const batchSize = this.displayedCount === 0 ? SEARCH_INITIAL_BATCH : SEARCH_LAZY_BATCH;
-        const start = this.displayedCount;
-        const end = Math.min(start + batchSize, this.allResults.length);
-        const batch = this.allResults.slice(start, end);
-
-        batch.forEach(target => {
-            const resultDiv = document.createElement('div');
-            resultDiv.className = 'target-result';
-
-            const typeDisplay = target.type ? (OBJECT_TYPES[target.type] || target.type) : 'Unknown type';
-            const constellation = target.constellation ? (CONSTELLATIONS[target.constellation] || target.constellation) : '';
-
-            const commonName = target.common ? target.common.split(',')[0].trim() : '';
-            resultDiv.innerHTML = `
-                <div class="target-result-row">
-                    <div class="target-name">${target.object}</div>
-                    <div class="target-result-secondary">${typeDisplay}</div>
-                </div>
-                <div class="target-result-row">
-                    <div class="target-result-secondary">${commonName}</div>
-                    <div class="target-result-secondary">${constellation}</div>
-                </div>
-            `;
-
-            resultDiv.addEventListener('click', () => this.select(target));
-            resultsDiv.appendChild(resultDiv);
-        });
-
-        this.displayedCount = end;
-
-        if (countDiv) {
-            countDiv.textContent = `Showing ${this.displayedCount} of ${this.allResults.length} results`;
-        }
-
-        this.isLoading = false;
-    },
-
-    /**
-     * Attach scroll listener for lazy loading
-     */
-    attachScrollListener() {
-        const resultsDiv = document.getElementById('target-search-results');
-        if (!resultsDiv) return;
-
-        if (this.scrollHandler) {
-            resultsDiv.removeEventListener('scroll', this.scrollHandler);
-        }
-
-        this.scrollHandler = () => {
-            const scrollPosition = resultsDiv.scrollTop + resultsDiv.clientHeight;
-            const scrollHeight = resultsDiv.scrollHeight;
-            if (scrollPosition >= scrollHeight - 20) {
-                this.loadMoreResults();
+            if (searchInput && savedValue !== null) {
+                searchInput.value = savedValue;
             }
-        };
-
-        resultsDiv.addEventListener('scroll', this.scrollHandler);
-    },
-
-    /**
-     * Hide search results
-     */
-    hideResults() {
-        const resultsDiv = document.getElementById('target-search-results');
-        if (resultsDiv) {
-            resultsDiv.style.display = 'none';
         }
-        const countDiv = document.getElementById('target-search-results-count');
-        if (countDiv) countDiv.textContent = '';
     },
 
     /**
      * Select a target
      */
     select(target) {
+        this._suppressNextOutsideClick = true;
+
         // Store the current target
         this.currentTarget = target;
 
@@ -246,85 +197,128 @@ const VisibilityTargets = {
             targetNameInput.value = target.object;
         }
 
-        // Show the target info display section
-        const infoDisplay = document.getElementById('target-info-display');
-        if (infoDisplay) {
-            infoDisplay.style.display = 'block';
-        }
-
-        // Populate fields only if they exist
-        const targetType = document.getElementById('target-type');
-        const targetConstellation = document.getElementById('target-constellation');
-        const targetCommonNameEl = document.getElementById('target-common-name');
-        const targetOtherInfo = document.getElementById('target-other-info');
-
-        if (targetType) {
-            targetType.textContent = target.type ? (OBJECT_TYPES[target.type] || target.type) : '—';
-        }
-        if (targetConstellation) {
-            targetConstellation.textContent = target.constellation ? (CONSTELLATIONS[target.constellation] || target.constellation) : '—';
-        }
-        if (targetCommonNameEl) {
-            if (target.common) {
-                const names = target.common.split(',').map(n => n.trim());
-                targetCommonNameEl.innerHTML = names.map(name =>
-                    `<a href="https://en.wikipedia.org/w/index.php?search=${encodeURIComponent(name).replace(/%20/g, '+')}&go=Go" target="_blank" class="wiki-link">${name}</a>`
-                ).join(', ');
-            } else {
-                targetCommonNameEl.textContent = '—';
-            }
-        }
-        if (targetOtherInfo) {
-            targetOtherInfo.textContent = target.other || '—';
-        }
-
-        // Setup detail button only if it exists
-        const detailBtn = document.getElementById('show-detail-btn');
-        if (detailBtn) {
-            // Remove old listeners by cloning
-            const newDetailBtn = detailBtn.cloneNode(true);
-            detailBtn.parentNode.replaceChild(newDetailBtn, detailBtn);
-
-            // Add new click handler
-            newDetailBtn.addEventListener('click', () => {
-                UIManager.openObjectDetailModal(target);
-            });
-        }
-
-        // Reset results state to just the selected target
-        this.allResults = [target];
-        this.displayedCount = 1;
-
-        // Replace search results with single selected target
-        const searchResults = document.getElementById('target-search-results');
-        if (searchResults) {
-            const typeDisplay = target.type ? (OBJECT_TYPES[target.type] || target.type) : 'Unknown type';
-            const constellation = target.constellation ? (CONSTELLATIONS[target.constellation] || target.constellation) : '';
-            const commonName = target.common ? target.common.split(',')[0].trim() : '';
-            searchResults.innerHTML = `
-                <div class="target-result selected">
-                    <div class="target-result-row">
-                        <div class="target-name">${target.object}</div>
-                        <div class="target-result-secondary">${typeDisplay}</div>
-                    </div>
-                    <div class="target-result-row">
-                        <div class="target-result-secondary">${commonName}</div>
-                        <div class="target-result-secondary">${constellation}</div>
-                    </div>
-                </div>`;
-            searchResults.style.display = 'block';
-        }
+        this.showDetailPanel(target);
 
         // Save last selected target (save full target object)
         localStorage.setItem('lastSelectedTarget', JSON.stringify(target));
         localStorage.setItem('lastSearchQuery', target.object);
 
-        // Update count to reflect single selection
-        const countDiv = document.getElementById('target-search-results-count');
-        if (countDiv) countDiv.textContent = 'Showing 1 of 1 unique results';
-
         // Update sidebar current target display
         UIManager.updateSidebarCurrentTarget(target.object);
+    },
+
+    /**
+     * Show the floating detail panel for a target, full-cover over the Results card.
+     * Reuses the same template and population logic as UIManager's object detail
+     * modal, so the panel shows the full detail content, not a summary.
+     */
+    showDetailPanel(target) {
+        const panel = document.getElementById('target-detail-panel');
+        const body = document.getElementById('target-detail-body');
+        if (!panel || !body) return;
+
+        const nameEl = document.getElementById('target-detail-name');
+        if (nameEl) nameEl.textContent = target.object;
+
+        const imagingBadgeEl = document.getElementById('target-detail-imaging-badge');
+        if (imagingBadgeEl) {
+            const designators = (typeof TargetFilter !== 'undefined')
+                  ? TargetFilter.getTargetDesignators(target)
+                  : [target.object];
+
+            let status = 'none';
+            if (typeof ToDoView !== 'undefined') {
+                for (const d of designators) {
+                    const s = ToDoView.getImagingStatus(d);
+                    if (s === 'complete') {
+                        status = 'complete';
+                        break;
+                    }
+                    if (s === 'active') {
+                        status = 'active';
+                    }
+                }
+            }
+
+            const icon = (typeof ToDoView !== 'undefined' && ToDoView.IMAGING_STATUS_ICONS[status])
+                  ? ToDoView.IMAGING_STATUS_ICONS[status]
+                  : '';
+            imagingBadgeEl.innerHTML = icon;
+            imagingBadgeEl.title = `Imaging: ${status}`;
+        }
+
+        const template = document.getElementById('target-detail-template');
+        if (template) {
+            body.innerHTML = '';
+            body.appendChild(template.content.cloneNode(true));
+        }
+
+        if (typeof UIManager !== 'undefined' && UIManager.populateObjectDetail) {
+            const freshTarget = (typeof DataManager !== 'undefined')
+                  ? (DataManager.getTargets().find(t => t.object === target.object) || target)
+                  : target;
+            UIManager.populateObjectDetail(freshTarget);
+        }
+
+        this.updateDetailToDoButton();
+
+        panel.classList.add('active');
+
+        // Grow the results card to fit the panel's full content instead of
+        // internal-scrolling. scrollHeight reflects the true content height
+        // even while the panel is still visually constrained to the card's
+        // current size via inset:0.
+        const card = document.getElementById('filter-results-card');
+        if (card) {
+            requestAnimationFrame(() => {
+                card.style.minHeight = panel.scrollHeight + 'px';
+            });
+        }
+    },
+
+    /**
+     * Hide the floating detail panel (shrink back to results)
+     */
+    hideDetailPanel() {
+        const panel = document.getElementById('target-detail-panel');
+        if (panel) panel.classList.remove('active');
+
+        const card = document.getElementById('filter-results-card');
+        if (card) card.style.minHeight = '';
+    },
+
+    /**
+     * Reflect current To Do state on the detail panel's To Do button
+     */
+    updateDetailToDoButton() {
+        const todoBtn = document.getElementById('target-detail-todo-btn');
+        if (!todoBtn || !this.currentTarget) return;
+        const inToDo = ToDoManager.isInToDoList(this.currentTarget.object);
+        todoBtn.textContent = inToDo ? '☑ Remove from To Do' : '☐ Add to To Do';
+    },
+
+    /**
+     * Toggle the currently selected target's To Do list membership
+     */
+    async toggleToDo() {
+        if (!this.currentTarget) return;
+        const targetId = this.currentTarget.object;
+
+        if (ToDoManager.isInToDoList(targetId)) {
+            await ToDoManager.removeFromToDoList(targetId);
+            UIManager.showToast(`Removed "${targetId}" from To Do list`, 'success');
+        } else {
+            await ToDoManager.addToToDoList(targetId);
+            UIManager.showToast(`Added "${targetId}" to To Do list`, 'success');
+        }
+
+        UIManager.markDataChanged();
+        this.updateDetailToDoButton();
+
+        // Refresh badges on whatever's currently shown in the results list
+        if (typeof TargetFilter !== 'undefined') {
+            TargetFilter.displayFilterResults(TargetFilter.allResults);
+        }
     },
 
     /**
@@ -337,14 +331,6 @@ const VisibilityTargets = {
                 const target = JSON.parse(lastTarget);
                 this.currentTarget = target;
 
-                // Restore UI manually without clearing results panel
-                const targetNameInput = document.getElementById('target-name');
-                const infoDisplay = document.getElementById('target-info-display');
-                const targetType = document.getElementById('target-type');
-                const targetConstellation = document.getElementById('target-constellation');
-                const targetCommonNameEl = document.getElementById('target-common-name');
-                const targetOtherInfo = document.getElementById('target-other-info');
-
                 // Only set if DailyVisibilityCalculations exists
                 if (typeof DailyVisibilityCalculations !== 'undefined') {
                     DailyVisibilityCalculations.currentTarget = target;
@@ -353,34 +339,17 @@ const VisibilityTargets = {
                     YearlyObservabilityCalculations.currentTarget = target;
                 }
 
-                if (targetNameInput) targetNameInput.value = target.object;
-                if (infoDisplay) infoDisplay.style.display = 'block';
-                if (targetType) targetType.textContent = target.type ? (OBJECT_TYPES[target.type] || target.type) : '—';
-                if (targetConstellation) targetConstellation.textContent = target.constellation ? (CONSTELLATIONS[target.constellation] || target.constellation) : '—';
-                if (targetCommonNameEl) {
-                    if (target.common) {
-                        const names = target.common.split(',').map(n => n.trim());
-                        targetCommonNameEl.innerHTML = names.map(name =>
-                            `<a href="https://en.wikipedia.org/w/index.php?search=${encodeURIComponent(name).replace(/%20/g, '+')}&go=Go" target="_blank" class="wiki-link">${name}</a>`
-                        ).join(', ');
-                    } else {
-                        targetCommonNameEl.textContent = '—';
-                    }
-                }
-                if (targetOtherInfo) targetOtherInfo.textContent = target.other || '—';
-
                 UIManager.updateSidebarCurrentTarget(target.object);
 
-                // Restore search results panel
+                // Restore search box and re-run the last search if there was one;
+                // the detail panel itself stays closed until the person picks a result
+                const targetNameInput = document.getElementById('target-name');
                 const lastQuery = localStorage.getItem('lastSearchQuery');
                 if (lastQuery && targetNameInput) {
                     targetNameInput.value = lastQuery;
-                    if (infoDisplay) infoDisplay.style.display = 'none';
                     this.search(lastQuery);
                 } else if (targetNameInput) {
                     targetNameInput.value = '';
-                    const infoDisplay = document.getElementById('target-info-display');
-                    if (infoDisplay) infoDisplay.style.display = 'none';
                 }
 
             } catch (e) {
@@ -391,13 +360,7 @@ const VisibilityTargets = {
 
     clearFields() {
         this.currentTarget = null;
-
-        const infoDisplay = document.getElementById('target-info-display');
-        if (infoDisplay) {
-            infoDisplay.style.display = 'none';
-        }
-
-        document.getElementById('target-search-results').innerHTML = '';
+        this.hideDetailPanel();
     },
 
     /**
@@ -444,27 +407,41 @@ const VisibilityTargets = {
         // Try to get full details from database first
         const fullTarget = DataManager.getTarget(target.name);
 
+        let targetToSelect;
+        let limited = false;
+
         if (fullTarget) {
-            // Use the full target data with all fields
-            this.select(fullTarget);
+            targetToSelect = fullTarget;
         } else {
             // Fallback: search for it
             const searchResults = DataManager.searchTargets(target.name);
             const found = searchResults.find(t => t.object === target.name);
 
             if (found) {
-                this.select(found);
+                targetToSelect = found;
             } else {
                 // Last resort: use the limited pinned data
-                document.getElementById('target-name').value = target.name;
-                this.currentTarget = {
+                targetToSelect = {
                     object: target.name,
                     ra: target.ra,
                     dec: target.dec,
                     common: target.common || ''
                 };
+                limited = true;
+            }
+        }
+
+        const currentView = window.location.hash.slice(1).split('?')[0];
+        if (currentView === 'target-select') {
+            this.select(targetToSelect);
+            if (limited) {
                 UIManager.showToast('Limited target data available', 'warning');
             }
+        } else {
+            // Navigate to Target Selection view; select() runs after render
+            this.pendingSelectTarget = targetToSelect;
+            this.pendingSelectLimited = limited;
+            window.location.hash = '#target-select';
         }
     },
 
@@ -472,61 +449,42 @@ const VisibilityTargets = {
      * Update pinned targets display
      */
     updatePinnedDisplay() {
-        const displayDiv = document.getElementById('pinned-targets-display');
+        const displayDiv = document.getElementById('sidebar-pinned-targets');
         if (!displayDiv) return;
 
         // Get fresh pinned targets data
         const pinned = DataManager.getPinnedTargets();
 
         if (pinned.length === 0) {
-            displayDiv.innerHTML = '<p style="color: var(--text-secondary); text-align: center; padding: 1rem;">No pinned targets yet</p>';
+            displayDiv.innerHTML = '<p class="sidebar-pinned-empty">No pinned targets yet</p>';
             return;
         }
 
         displayDiv.innerHTML = '';
         pinned.forEach(target => {
-            const badge = document.createElement('div');
-            badge.style.cssText = `
-                display: inline-flex;
-                align-items: center;
-                gap: 0.5rem;
-                padding: 0.5rem 0.75rem;
-                background: var(--card-bg);
-                border: 1px solid var(--border-color);
-                border-radius: 6px;
-                margin: 0.25rem;
-                cursor: pointer;
-                transition: background 0.2s;
-            `;
+            const chip = document.createElement('div');
+            chip.className = 'sidebar-pinned-chip';
 
             // Build label with common name if available
             const label = target.common
                   ? `${target.name} (${target.common})`
                   : target.name;
 
-            badge.innerHTML = `
-                <span style="color: var(--text-color);">${label}</span>
-                <button style="background: none; border: none; color: var(--error-color); cursor: pointer; padding: 0; font-size: 1rem; line-height: 1;">×</button>
+            chip.innerHTML = `
+                <span class="sidebar-pinned-chip-name">${label}</span>
+                <button class="sidebar-pinned-chip-remove">×</button>
             `;
 
-            badge.addEventListener('mouseenter', () => {
-                badge.style.background = 'var(--card-hover)';
-            });
-
-            badge.addEventListener('mouseleave', () => {
-                badge.style.background = 'var(--card-bg)';
-            });
-
-            const nameSpan = badge.querySelector('span');
+            const nameSpan = chip.querySelector('.sidebar-pinned-chip-name');
             nameSpan.addEventListener('click', () => this.usePinned(target));
 
-            const removeBtn = badge.querySelector('button');
+            const removeBtn = chip.querySelector('.sidebar-pinned-chip-remove');
             removeBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 this.unpin(target.name);
             });
 
-            displayDiv.appendChild(badge);
+            displayDiv.appendChild(chip);
         });
     }
 };

@@ -44,6 +44,19 @@ const TargetSelectionView = {
         // Load last selections
         VisibilityTargets.loadLastTarget();
 
+        // If navigated here from a pinned-target click on another view, select it now
+        if (VisibilityTargets.pendingSelectTarget) {
+            const pendingTarget = VisibilityTargets.pendingSelectTarget;
+            const pendingLimited = VisibilityTargets.pendingSelectLimited;
+            VisibilityTargets.pendingSelectTarget = null;
+            VisibilityTargets.pendingSelectLimited = false;
+
+            VisibilityTargets.select(pendingTarget);
+            if (pendingLimited) {
+                UIManager.showToast('Limited target data available', 'warning');
+            }
+        }
+
         // Dispatch event to signal view is loaded
         document.dispatchEvent(new CustomEvent('visibility-view-loaded'));
     },
@@ -53,6 +66,14 @@ const TargetSelectionView = {
      */
     destroy() {
         document.removeEventListener('targets-updated', VisibilityTargets.initializeSearch);
+        if (VisibilityTargets._outsideClickHandler) {
+            document.removeEventListener('click', VisibilityTargets._outsideClickHandler);
+            VisibilityTargets._outsideClickHandler = null;
+        }
+        if (VisibilityTargets._escapeHandler) {
+            document.removeEventListener('keydown', VisibilityTargets._escapeHandler);
+            VisibilityTargets._escapeHandler = null;
+        }
         TargetFilter.destroyUI();
     }
 };

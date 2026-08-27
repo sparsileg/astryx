@@ -9,7 +9,7 @@
 }
 
 #target-filter-results {
-    max-height: 20vh;
+    max-height: 35.5vh;
     overflow-y: auto;
     overflow-x: hidden;
     padding-right: 0.5rem; /* prevents content from hiding under scrollbar */
@@ -20,6 +20,12 @@
     font-size: 0.9rem;
     margin-bottom: 0.25rem;
     text-align: center;
+}
+
+#filter-results-card {
+    position: relative;
+    overflow: hidden;
+    transition: min-height 0.22s ease;
 }
 
 #filter-results-card .card-header {

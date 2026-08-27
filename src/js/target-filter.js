@@ -4,8 +4,8 @@
  */
 
 /* configurable parameters */
-const INITIAL_RESULTS_BATCH = 10;
-const LAZY_LOAD_BATCH_SIZE = 10;
+const INITIAL_RESULTS_BATCH = 15;
+const LAZY_LOAD_BATCH_SIZE = 15;
 const MAX_TOTAL_RESULTS = 20000;
 const RANDOMIZE_RESULTS = true;
 const MAX_IMAGING_PROGRAM_TARGETS = 199;
@@ -387,6 +387,16 @@ const TargetFilter = {
 
         // Apply filters automatically on initialization
         this.applyFiltersToSearch();
+
+        // Imaging status badges need ToDoView's project cache; load it once and
+        // re-render whatever is currently shown so badges reflect real status
+        // rather than the 'none' default. Re-render in place (not a fresh
+        // applyFiltersToSearch pass) so an active free-text search isn't clobbered.
+        if (typeof ToDoView !== 'undefined' && ToDoView.loadImagingProjects) {
+            ToDoView.loadImagingProjects().then(() => {
+                this.displayFilterResults(this.allResults);
+            });
+        }
     },
 
     /**
@@ -719,6 +729,78 @@ const TargetFilter = {
         this.displayFilterResults(filtered);
     },
 
+    // Badge icons for Pinned status — shape-based (colorblind-safe), matches ToDoView.IMAGING_STATUS_ICONS style
+    PINNED_STATUS_ICONS: {
+        false: '<svg width="14" height="14" viewBox="0 0 12 12" style="vertical-align:middle"><path d="M6 1 L9 4 L7 6 L7 9 L6 11 L5 9 L5 6 L3 4 Z" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>',
+        true:  '<svg width="14" height="14" viewBox="0 0 12 12" style="vertical-align:middle"><path d="M6 1 L9 4 L7 6 L7 9 L6 11 L5 9 L5 6 L3 4 Z" fill="currentColor" stroke="currentColor" stroke-width="1.2"/></svg>'
+    },
+
+    // Badge icons for To Do status
+    TODO_STATUS_ICONS: {
+        false: '<svg width="14" height="14" viewBox="0 0 12 12" style="vertical-align:middle"><rect x="1.5" y="1.5" width="9" height="9" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>',
+        true:  '<svg width="14" height="14" viewBox="0 0 12 12" style="vertical-align:middle"><rect x="1.5" y="1.5" width="9" height="9" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M3.2 6.2 L5.2 8.2 L8.8 4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+    },
+
+    /**
+     * Get all known designators for a target row: its own object name plus
+     * aliases from the 'other' field (e.g. "C 9" also lists "Sh 2-155, LBN 529").
+     * The same physical object exists as separate catalog rows in the database,
+     * and pins/To-Do entries/imaging projects may be recorded under any one of
+     * its names — badge checks need to consider all of them, not just this row's.
+     */
+    getTargetDesignators(target) {
+        const designators = [target.object];
+        if (target.other) {
+            target.other.split(',').forEach(alias => {
+                const trimmed = alias.trim();
+                if (trimmed && !designators.includes(trimmed)) {
+                    designators.push(trimmed);
+                }
+            });
+        }
+        return designators;
+    },
+
+    /**
+     * Build badge HTML for a result row: Pinned / To Do / Imaging Status.
+     * Checks all of the target's known designators (see getTargetDesignators),
+     * not just this row's own name, so aliased catalog entries for the same
+     * object show consistent badges.
+     * Requires ToDoView._imagingProjects to be loaded for an accurate imaging badge;
+     * falls back to 'none' until that cache is populated.
+     */
+    buildBadgesHtml(target) {
+        const designators = this.getTargetDesignators(target);
+
+        const pinnedTargets = DataManager.getPinnedTargets();
+        const pinned = designators.some(d => pinnedTargets.some(p => p.name === d));
+
+        const inToDo = designators.some(d => ToDoManager.isInToDoList(d));
+
+        let imagingStatus = 'none';
+        if (typeof ToDoView !== 'undefined') {
+            for (const d of designators) {
+                const status = ToDoView.getImagingStatus(d);
+                if (status === 'complete') {
+                    imagingStatus = 'complete';
+                    break;
+                }
+                if (status === 'active') {
+                    imagingStatus = 'active';
+                }
+            }
+        }
+        const imagingIcon = (typeof ToDoView !== 'undefined' && ToDoView.IMAGING_STATUS_ICONS[imagingStatus])
+              ? ToDoView.IMAGING_STATUS_ICONS[imagingStatus]
+              : '';
+
+        return `
+            <span class="target-result-badge${pinned ? '' : ' inactive'}" title="${pinned ? 'Pinned' : 'Not pinned'}">${this.PINNED_STATUS_ICONS[pinned]}</span>
+            <span class="target-result-badge${inToDo ? '' : ' inactive'}" title="${inToDo ? 'On To Do list' : 'Not on To Do list'}">${this.TODO_STATUS_ICONS[inToDo]}</span>
+            <span class="target-result-badge${imagingStatus !== 'none' ? '' : ' inactive'}" title="Imaging: ${imagingStatus}">${imagingIcon}</span>
+        `;
+    },
+
     /**
      * Display filtered results with lazy loading
      */
@@ -813,10 +895,14 @@ const TargetFilter = {
             const constellation = target.constellation ? (CONSTELLATIONS[target.constellation] || target.constellation) : '';
             const commonNameDisplay = commonName || '';
             const typeDisplay = target.type ? (OBJECT_TYPES[target.type] || target.type) : 'Unknown type';
+            const badgesHtml = this.buildBadgesHtml(target);
 
             resultDiv.innerHTML = `
             <div class="target-result-row">
-                <div class="target-name">${target.object}</div>
+                <div class="target-result-left">
+                    <span class="target-name">${target.object}</span>
+                    <span class="target-result-badges">${badgesHtml}</span>
+                </div>
                 <div class="target-result-secondary">${typeDisplay}</div>
             </div>
             <div class="target-result-row">
@@ -840,6 +926,14 @@ const TargetFilter = {
         }
 
         this.isLoading = false;
+
+        // If the panel isn't scrollable yet (batch fit without overflow) but
+        // more results remain, scroll-based lazy load can never fire — load
+        // the next batch immediately instead of waiting for a scroll event
+        if (this.displayedCount < this.allResults.length &&
+            resultsDiv.scrollHeight <= resultsDiv.clientHeight) {
+            this.loadMoreResults();
+        }
     },
 
     /**
@@ -973,9 +1067,28 @@ const TargetFilter = {
     },
 
     /**
-     * Reset all filters and UI
+     * Reset all filters and UI, with confirmation toast (explicit Reset button)
      */
     resetFiltersUI() {
+        this._doResetFiltersUI(false);
+        UIManager.showToast('Filters reset', 'success');
+    },
+
+    /**
+     * Reset all filters and UI, no toast, preserving search text
+     * (triggered by free-text search taking over)
+     */
+    resetFiltersUISilent() {
+        this._doResetFiltersUI(true);
+    },
+
+    /**
+     * Shared reset logic used by both resetFiltersUI() and resetFiltersUISilent()
+     */
+    _doResetFiltersUI(preserveSearchText) {
+        const searchInput = document.getElementById('target-name');
+        const savedSearchText = (preserveSearchText && searchInput) ? searchInput.value : null;
+
         this.resetFilters();
 
         // Clear checkboxes
@@ -1014,7 +1127,12 @@ const TargetFilter = {
         this.selectAllCatalogs();
         this.selectAllTypes();
 
-        UIManager.showToast('Filters reset', 'success');
+        // Restore search text — the selectAll calls above clear it as a
+        // side effect of applyFiltersToSearch(), which is correct when
+        // filters are changed directly but not when search itself is active
+        if (preserveSearchText && searchInput) {
+            searchInput.value = savedSearchText;
+        }
     },
 
 /**

@@ -29,6 +29,9 @@ const App = {
             // Initialize UI
             UIManager.init();
 
+            // Populate sidebar pinned targets strip (persistent across all views)
+            VisibilityTargets.updatePinnedDisplay();
+
             // Apply saved theme
             SettingsManager.applyTheme(SettingsManager.getTheme());
 

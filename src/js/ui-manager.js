@@ -1857,13 +1857,15 @@ const UIManager = {
 
         // Build criteria display
         const criteriaHTML = `
-        <div class="detail-item">
-            <span class="detail-label">Criteria:</span>
-            <span class="detail-value">Min Altitude ${lastAltitude || 'N/A'}°<br>${lastDarkHours || 'N/A'}h darkness</span>
-        </div>
-        <div class="detail-item">
-            <span class="detail-label">Calculated:</span>
-            <span class="detail-value">${calculatedDisplay}</span>
+        <div class="detail-group">
+            <div class="detail-item">
+                <span class="detail-label">Criteria:</span>
+                <span class="detail-value">Min Altitude ${lastAltitude || 'N/A'}°<br>${lastDarkHours || 'N/A'}h darkness</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Calculated:</span>
+                <span class="detail-value">${calculatedDisplay}</span>
+            </div>
         </div>
     `;
 
@@ -1878,10 +1880,12 @@ const UIManager = {
 
         if (!bestMonth || !visibilityStart) {
             observabilitySection.innerHTML = criteriaHTML + `
-            <div class="detail-item">
-                <span class="detail-value" style="color: var(--text-secondary); font-style: italic;">
-                    Not observable with current criteria
-                </span>
+            <div class="detail-group">
+                <div class="detail-item" style="grid-column: 1 / -1;">
+                    <span class="detail-value" style="color: var(--text-secondary); font-style: italic;">
+                        Not observable with current criteria
+                    </span>
+                </div>
             </div>
         `;
             return;
@@ -1900,17 +1904,19 @@ const UIManager = {
         const endMonthName = monthNames[endMonth - 1];
 
         observabilitySection.innerHTML = criteriaHTML + `
-        <div class="detail-item">
-            <span class="detail-label">Best Month:</span>
-            <span class="detail-value">${bestMonthName}</span>
-        </div>
-        <div class="detail-item">
-            <span class="detail-label">Observable:</span>
-            <span class="detail-value">${startMonthName} - ${endMonthName}</span>
-        </div>
-        <div class="detail-item">
-            <span class="detail-label">Peak Altitude:</span>
-            <span class="detail-value">${peakAltitude}°</span>
+        <div class="detail-group">
+            <div class="detail-item">
+                <span class="detail-label">Best Month:</span>
+                <span class="detail-value">${bestMonthName}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Observable:</span>
+                <span class="detail-value">${startMonthName} - ${endMonthName}</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Peak Altitude:</span>
+                <span class="detail-value">${peakAltitude}°</span>
+            </div>
         </div>
     `;
     },
