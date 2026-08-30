@@ -394,7 +394,7 @@ const TargetFilter = {
         // applyFiltersToSearch pass) so an active free-text search isn't clobbered.
         if (typeof ToDoView !== 'undefined' && ToDoView.loadImagingProjects) {
             ToDoView.loadImagingProjects().then(() => {
-                this.displayFilterResults(this.allResults);
+                this.displayFilterResults(this.allResults, this._lastPreserveOrder);
             });
         }
     },
@@ -804,7 +804,7 @@ const TargetFilter = {
     /**
      * Display filtered results with lazy loading
      */
-    displayFilterResults(results) {
+    displayFilterResults(results, preserveOrder = false) {
         const resultsDiv = document.getElementById('target-filter-results');
         const countDiv = document.getElementById('target-filter-results-count');
 
@@ -817,8 +817,16 @@ const TargetFilter = {
             return;
         }
 
-        // Process results (randomize or sort)
-        const processed = RANDOMIZE_RESULTS ?
+        // Remember the mode used for this.allResults, so an async re-render
+        // (e.g. the imaging-badge refresh above) can replay the same mode
+        // instead of defaulting back to shuffle.
+        this._lastPreserveOrder = preserveOrder;
+
+        // Process results (randomize or sort) - skip when caller has already
+        // ordered results by relevance (e.g. name search's exact-match-first sort)
+        const processed = preserveOrder ?
+              results :
+              RANDOMIZE_RESULTS ?
               this.shuffleArray(results) :
               results.sort((a, b) => this.naturalSort(a, b));
 

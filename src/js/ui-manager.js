@@ -1855,20 +1855,6 @@ const UIManager = {
         const obsLocation = SettingsManager.getSelectedLocation();
         obTitle.innerHTML = `Observability from ${HtmlUtils.escapeHtml(obsLocation)}`;
 
-        // Build criteria display
-        const criteriaHTML = `
-        <div class="detail-group">
-            <div class="detail-item">
-                <span class="detail-label">Criteria:</span>
-                <span class="detail-value">Min Altitude ${lastAltitude || 'N/A'}°<br>${lastDarkHours || 'N/A'}h darkness</span>
-            </div>
-            <div class="detail-item">
-                <span class="detail-label">Calculated:</span>
-                <span class="detail-value">${calculatedDisplay}</span>
-            </div>
-        </div>
-    `;
-
         // Get current location
         const selectedLocation = SettingsManager.getSelectedLocation();
 
@@ -1877,10 +1863,27 @@ const UIManager = {
         const visibilityStart = target.visibilityStart?.[selectedLocation];
         const visibilityEnd = target.visibilityEnd?.[selectedLocation];
         const peakAltitude = target.peakAltitude?.[selectedLocation];
+        const peakAltitudeDisplay = (peakAltitude !== undefined && peakAltitude !== null)
+              ? `${peakAltitude}°`
+              : 'N/A';
+
+        // Build criteria fields (used standalone in the not-observable case,
+        // and merged with the result fields below when observable)
+        const criteriaFieldsHTML = `
+            <div class="detail-item">
+                <span class="detail-label">Criteria:</span>
+                <span class="detail-value">Min Altitude ${lastAltitude || 'N/A'}°<br>${lastDarkHours || 'N/A'}h darkness</span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Peak Altitude:</span>
+                <span class="detail-value">${peakAltitudeDisplay}</span>
+            </div>
+    `;
 
         if (!bestMonth || !visibilityStart) {
-            observabilitySection.innerHTML = criteriaHTML + `
+            observabilitySection.innerHTML = `
             <div class="detail-group">
+                ${criteriaFieldsHTML}
                 <div class="detail-item" style="grid-column: 1 / -1;">
                     <span class="detail-value" style="color: var(--text-secondary); font-style: italic;">
                         Not observable with current criteria
@@ -1903,8 +1906,13 @@ const UIManager = {
         if (endMonth > 12) endMonth = endMonth - 12; // Convert 13->1, 14->2, etc.
         const endMonthName = monthNames[endMonth - 1];
 
-        observabilitySection.innerHTML = criteriaHTML + `
+        // Single detail-group so all five fields share one bordered list -
+        // splitting Peak Altitude and Best Month into separate groups made
+        // the separator line between them disappear (last-child of the
+        // first group), even though they sit adjacent in the card.
+        observabilitySection.innerHTML = `
         <div class="detail-group">
+            ${criteriaFieldsHTML}
             <div class="detail-item">
                 <span class="detail-label">Best Month:</span>
                 <span class="detail-value">${bestMonthName}</span>
@@ -1914,8 +1922,8 @@ const UIManager = {
                 <span class="detail-value">${startMonthName} - ${endMonthName}</span>
             </div>
             <div class="detail-item">
-                <span class="detail-label">Peak Altitude:</span>
-                <span class="detail-value">${peakAltitude}°</span>
+                <span class="detail-label">Calculated:</span>
+                <span class="detail-value">${calculatedDisplay}</span>
             </div>
         </div>
     `;

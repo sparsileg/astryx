@@ -148,7 +148,7 @@ const VisibilityTargets = {
             return 0;
         });
         if (typeof TargetFilter !== 'undefined') {
-            TargetFilter.displayFilterResults(results);
+            TargetFilter.displayFilterResults(results, true);
         }
     },
 
@@ -317,7 +317,7 @@ const VisibilityTargets = {
 
         // Refresh badges on whatever's currently shown in the results list
         if (typeof TargetFilter !== 'undefined') {
-            TargetFilter.displayFilterResults(TargetFilter.allResults);
+            TargetFilter.displayFilterResults(TargetFilter.allResults, TargetFilter._lastPreserveOrder);
         }
     },
 
