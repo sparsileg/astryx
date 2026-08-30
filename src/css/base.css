@@ -472,7 +472,7 @@ label.has-tip::after {
     gap: 1.5rem;
     margin-bottom: 0.5rem;
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 35% 65%;
 }
 
 .card-no-margin {
