@@ -1,0 +1,86 @@
+name: 'release'
+
+# Scope note: only Linux .deb and Windows NSIS .exe are built for now
+# (matches docs/astryx-build-release.md's trimmed platform decision).
+# rpm/AppImage/macOS can be added back to the matrix later — see §4/§5b
+# of that doc for the full 4-platform version this was derived from.
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  publish-tauri:
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: 'ubuntu-22.04'
+            bundles: 'deb'
+          - platform: 'windows-latest'
+            bundles: 'nsis'
+
+    runs-on: ${{ matrix.platform }}
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: install Linux dependencies
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev \
+            patchelf xdg-utils
+        # Standard Tauri v2 Linux deps only — rusqlite's "bundled"
+        # feature needs nothing beyond the C compiler this image
+        # already has.
+
+      # No Windows vcpkg / pkg-config / DLL-staging steps, and no
+      # setup-node / npm install step — there's no native library to
+      # link beyond rusqlite's bundled, self-contained SQLite, and no
+      # package.json or frontend build step to run.
+
+      - name: install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          # Single crate at src-tauri/, not repo root.
+          workspaces: 'src-tauri -> target'
+
+      - uses: tauri-apps/tauri-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: v__VERSION__
+          releaseName: 'Astryx v__VERSION__'
+          releaseBody: 'See the assets below to download and install this version.'
+          releaseDraft: true
+          prerelease: ${{ contains(github.ref_name, '-beta') || contains(github.ref_name, '-rc') }}
+          args: --bundles ${{ matrix.bundles }}
+
+      - name: publish fixed-name "latest" asset (Linux)
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          find src-tauri/target -path "*bundle/deb/*.deb" -exec cp {} astryx-linux-x86_64.deb \;
+          gh release upload ${{ github.ref_name }} astryx-linux-x86_64.deb --clobber
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: publish fixed-name "latest" asset (Windows)
+        if: matrix.platform == 'windows-latest'
+        shell: pwsh
+        run: |
+          $exe = Get-ChildItem -Path src-tauri\target -Recurse -Filter *.exe |
+            Where-Object { $_.FullName -like "*bundle*nsis*" } |
+            Select-Object -First 1
+          Copy-Item $exe.FullName astryx-windows-x86_64.exe
+          gh release upload ${{ github.ref_name }} astryx-windows-x86_64.exe --clobber
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
