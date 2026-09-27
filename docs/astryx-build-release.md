@@ -49,7 +49,7 @@ directly rather than an `npm run tauri` wrapper, because there is no
 161 to stop `tauri.conf.json` and `Cargo.toml` disagreeing),
 `tauri.conf.json` here simply has no `version` field at all, so there's
 only one number to keep in sync: `src-tauri/Cargo.toml`'s `[package]
-version`, currently `1.4.0`. This is already valid SemVer — no
+version`, currently `1.7.0`. This is already valid SemVer — no
 letter-suffix cleanup needed before wiring up tag-based releases.
 
 **MSRV:** `Cargo.toml` pins `rust-version = "1.77.2"`. Any Rust
@@ -128,7 +128,9 @@ build Windows on a Windows machine (or `windows-latest` CI runner) and
 macOS on a Mac or a native-arch CI runner. Stan has no local Mac for
 Astryx, so macOS builds are CI-only in practice — see §4's matrix,
 adapted from Photyx's already-proven `macos-latest` (Apple Silicon) /
-`macos-15-intel` (Intel) split.
+`macos-15-intel` (Intel) split. **Not yet enabled**: the live workflow
+(§4) currently only builds Linux `.deb` and Windows NSIS `.exe` — see
+the scope note there.
 
 ### No native C library dependency
 
@@ -322,10 +324,25 @@ The standard way to build + release a Tauri app is
 — it runs `tauri build` on each platform in a matrix, creates the
 GitHub release, and uploads all the platform installers automatically.
 
-### Workflow file
+### Scope note (current, as implemented)
 
-Save as `.github/workflows/release.yml`. Triggers on pushing a version
-tag, matching §3's convention:
+The live workflow at `.github/workflows/release.yml` **only builds
+Linux `.deb` and Windows NSIS `.exe`**, decided 2026-09-27 as a
+deliberately narrow first cut — nothing has ever actually been built
+via CI for Astryx, so start small and verified rather than shipping
+four untested platforms at once. It scopes each platform to one bundle
+target explicitly via `tauri build --bundles <deb|nsis>`, rather than
+relying on `tauri.conf.json`'s `bundle.targets: "all"`. This also
+sidesteps §2's MSI/prerelease-string problem entirely, since MSI is
+never built. rpm, AppImage, and both macOS targets (matrix shown below
+for reference) can be added back to the matrix once the two enabled
+platforms are proven out over a few real releases.
+
+### Full workflow file (reference — not what's currently enabled)
+
+The block below is the complete 4-platform version this was derived
+from, kept here as a reference for extending the matrix later. Triggers
+on pushing a version tag, matching §3's convention:
 
 ```yaml
 name: 'release'
@@ -418,9 +435,10 @@ Notes specific to this workflow:
   pre-release; a plain `v1.4.0` doesn't.
 - **`releaseDraft: true`** — creates a draft, not a published release
   (`gh release edit <tag> --draft=false` to publish).
-- **The Windows job will attempt an MSI build on every tag**, including
-  betas — see §2's caveat; expect that step to fail on a `-beta`/`-rc`
-  tag until one of the options there is decided on.
+- **The Windows job would attempt an MSI build on every tag**, including
+  betas, if `bundle.targets` were left at `"all"` — see §2's caveat.
+  Not currently an issue: the enabled workflow scopes Windows to
+  `--bundles nsis` only, so MSI is never built.
 - **Linux runner pinned to `ubuntu-22.04`**, not `ubuntu-latest`, to
   avoid surprises when GitHub rolls the default image forward.
 - `github.ref_name` on a manual `workflow_dispatch` run falls back to
