@@ -1079,6 +1079,10 @@ const TargetFilter = {
      */
     resetFiltersUI() {
         this._doResetFiltersUI(false);
+        // Reset should bring the results list back into view
+        if (typeof VisibilityTargets !== 'undefined') {
+            VisibilityTargets.hideDetailPanel();
+        }
         UIManager.showToast('Filters reset', 'success');
     },
 

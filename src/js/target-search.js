@@ -55,6 +55,8 @@ const VisibilityTargets = {
             const panel = document.getElementById('target-detail-panel');
             if (!panel || !panel.classList.contains('active')) return;
             if (panel.contains(e.target)) return;
+            // Clicks on tutorial callouts (e.g. Next) shouldn't dismiss the panel
+            if (e.target.closest('.tutorial-callout, .tutorial-modal')) return;
             this.hideDetailPanel();
         };
         document.addEventListener('click', this._outsideClickHandler);
@@ -179,6 +181,10 @@ const VisibilityTargets = {
      */
     select(target) {
         this._suppressNextOutsideClick = true;
+        // Only meant to swallow the click that triggered this select(); when select()
+        // is called without a click (e.g. restoring a pinned target) it would otherwise
+        // stay set and swallow the next real click.
+        setTimeout(() => { this._suppressNextOutsideClick = false; }, 0);
 
         // Store the current target
         this.currentTarget = target;
@@ -257,7 +263,7 @@ const VisibilityTargets = {
             const freshTarget = (typeof DataManager !== 'undefined')
                   ? (DataManager.getTargets().find(t => t.object === target.object) || target)
                   : target;
-            UIManager.populateObjectDetail(freshTarget);
+            UIManager.populateObjectDetail(freshTarget, body);
         }
 
         this.updateDetailToDoButton();
