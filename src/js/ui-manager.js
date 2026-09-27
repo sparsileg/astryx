@@ -1728,7 +1728,7 @@ const UIManager = {
         const freshTarget = DataManager.getTargets().find(t => t.object === target.object);
 
         // Populate target details with fresh data
-        this.populateObjectDetail(freshTarget || target);
+        this.populateObjectDetail(freshTarget || target, document.getElementById('modal-body'));
         this.addToDoListButton(target);
     },
 
@@ -1791,14 +1791,17 @@ const UIManager = {
     /**
      * Populate object detail modal with target data
      */
-    populateObjectDetail(target) {
-        const detailObject = document.getElementById('detail-object');
+    populateObjectDetail(target, root = document) {
+        // The detail template lives in both the modal and the Target Selection
+        // floating panel, so IDs are duplicated — always look up within root.
+        const $ = (id) => root.querySelector('#' + id);
+        const detailObject = $('detail-object');
         if (target.object) {
             detailObject.innerHTML = `<a href="https://en.wikipedia.org/w/index.php?search=${encodeURIComponent(target.object).replace(/%20/g, '+')}&go=Go" target="_blank" class="wiki-link">${HtmlUtils.escapeHtml(target.object)}</a>`;
         } else {
             detailObject.textContent = '—';
         }
-        const detailType = document.getElementById('detail-type');
+        const detailType = $('detail-type');
         if (target.type) {
             const typeDisplay = OBJECT_TYPES[target.type] || target.type;
             detailType.innerHTML = `<a href="https://en.wikipedia.org/w/index.php?search=${encodeURIComponent(typeDisplay).replace(/%20/g, '+')}&go=Go" target="_blank" class="wiki-link">${HtmlUtils.escapeHtml(typeDisplay)}</a>`;
@@ -1806,7 +1809,7 @@ const UIManager = {
             detailType.textContent = '—';
         }
 
-        const detailCommon = document.getElementById('detail-common');
+        const detailCommon = $('detail-common');
         if (target.common) {
             const names = target.common.split(',').map(n => n.trim());
             detailCommon.innerHTML = names.map(name =>
@@ -1816,23 +1819,23 @@ const UIManager = {
             detailCommon.textContent = '—';
         }
 
-        document.getElementById('detail-other').textContent = target.other || '—';
-        document.getElementById('detail-catalogue').textContent = target.catalogue || '—';
-        document.getElementById('detail-ra').textContent = (target.ra != null && target.dec != null) ? UIManager.formatRA(target.ra, target.dec) : '—';
-        document.getElementById('detail-dec').textContent = (target.ra != null && target.dec != null) ? UIManager.formatDec(target.ra, target.dec) : '—';
-        document.getElementById('detail-const').textContent = target.constellation ? (CONSTELLATIONS[target.constellation] || target.constellation) : '—';
-        document.getElementById('detail-size-max').textContent = target.size_max ? `${target.size_max}'` : '—';
-        document.getElementById('detail-size-min').textContent = target.size_min ? `${target.size_min}'` : '—';
-        document.getElementById('detail-mag').textContent = target.mag || '—';
-        document.getElementById('detail-subr').textContent = target.subr || '—';
-        this.populateObservabilitySection(target);
+        $('detail-other').textContent = target.other || '—';
+        $('detail-catalogue').textContent = target.catalogue || '—';
+        $('detail-ra').textContent = (target.ra != null && target.dec != null) ? UIManager.formatRA(target.ra, target.dec) : '—';
+        $('detail-dec').textContent = (target.ra != null && target.dec != null) ? UIManager.formatDec(target.ra, target.dec) : '—';
+        $('detail-const').textContent = target.constellation ? (CONSTELLATIONS[target.constellation] || target.constellation) : '—';
+        $('detail-size-max').textContent = target.size_max ? `${target.size_max}'` : '—';
+        $('detail-size-min').textContent = target.size_min ? `${target.size_min}'` : '—';
+        $('detail-mag').textContent = target.mag || '—';
+        $('detail-subr').textContent = target.subr || '—';
+        this.populateObservabilitySection(target, root);
     },
 
     /**
      * Populate observability section of object detail modal
      */
-    populateObservabilitySection(target) {
-        const observabilitySection = document.getElementById('target-detail-observability');
+    populateObservabilitySection(target, root = document) {
+        const observabilitySection = root.querySelector('#target-detail-observability');
         if (!observabilitySection) return;
 
         const lastAltitude = SettingsManager.getLastBestMonthsAltitude();
@@ -1851,7 +1854,7 @@ const UIManager = {
         }
 
         // build Observability title from location
-        const obTitle = document.getElementById('target-detail-ob-title');
+        const obTitle = root.querySelector('#target-detail-ob-title');
         const obsLocation = SettingsManager.getSelectedLocation();
         obTitle.innerHTML = `Observability from ${HtmlUtils.escapeHtml(obsLocation)}`;
 
