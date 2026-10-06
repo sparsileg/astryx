@@ -486,6 +486,37 @@ const SeqPlanCalculations = {
     },
 
     /**
+     * Per-minute visibility of each target from dusk to dawn (above minimum
+     * altitude, and the horizon profile if used), stored as prefix sums so
+     * the visible minutes in any window are one subtraction
+     * @param {Array} targets - Targets in the plan
+     * @param {Object} session - Session configuration with duskJD/dawnJD
+     * @returns {Object} { startJD, step, steps, visibleBefore: Map(targetId -> Uint16Array) }
+     */
+    buildVisibility(targets, session) {
+        const step = APP_CONFIG.TARGET_SEARCH_STEP_SIZE;
+        const steps = Math.ceil((session.dawnJD - session.duskJD) / step);
+        const { latitude, longitude } = session.location;
+        const horizonArray = session.useHorizon ? session.location.horizon : null;
+        const visibleBefore = new Map();
+
+        for (const target of targets) {
+            // prefix[i] = visible samples among indices 0..i-1
+            const prefix = new Uint16Array(steps + 2);
+            for (let i = 0; i <= steps; i++) {
+                const jd = session.duskJD + i * step;
+                const altitude = getAltitude(jd, target.ra, target.dec, latitude, longitude);
+                const azimuth = getAzimuth(jd, target.ra, target.dec, latitude, longitude);
+                const visible = isAboveHorizon(altitude, azimuth, session.minAltitude, horizonArray);
+                prefix[i + 1] = prefix[i] + (visible ? 1 : 0);
+            }
+            visibleBefore.set(target.targetId, prefix);
+        }
+
+        return { startJD: session.duskJD, step, steps, visibleBefore };
+    },
+
+    /**
      * Check if target's imaging window violates altitude constraints
      *
      * IMPORTANT (Issue found 2026-07): this checks validity at the exact
@@ -581,136 +612,6 @@ const SeqPlanCalculations = {
             violationType
         };
     },
-
-    /**
-     * Find transition conflicts for all target boundaries
-     * Checks both end of current target and start of next target
-     * for meridian flips and periodic autofocus events within tolerance window
-     * @param {Array} targets - Calculated target plans (output of calculateExposureCounts)
-     * @param {Object} session - Session configuration
-     * @param {number} toleranceMinutes - Tolerance window in minutes
-     * @returns {Array} Array of conflict objects describing each conflict found
-     */
-    findTransitionConflicts(targets, session, toleranceMinutes) {
-        if (!targets || targets.length < 2 || toleranceMinutes <= 0) {
-            return [];
-        }
-
-        const toleranceJD = toleranceMinutes / 1440;
-        const conflicts = [];
-
-        for (let i = 0; i < targets.length - 1; i++) {
-            const current = targets[i];
-            const next = targets[i + 1];
-            const boundaryJD = current.imagingEndJD;
-
-            // === LOOK-BACK: events near end of current target ===
-
-            if (current.meridianFlipJD) {
-                const minutesFromEnd = (boundaryJD - current.meridianFlipJD) * 1440;
-                if (minutesFromEnd >= 0 && minutesFromEnd <= toleranceMinutes) {
-                    conflicts.push({
-                        type: 'flip_near_end',
-                        targetIndex: i,
-                        targetName: current.name,
-                        nextTargetName: next.name,
-                        eventJD: current.meridianFlipJD,
-                        boundaryJD: boundaryJD,
-                        minutesFromBoundary: minutesFromEnd,
-                        overheadMinutes: session.meridianFlipPause + session.meridianFlipDuration
-                    });
-                }
-            }
-
-            if (session.autofocusEnabled && session.autofocusInterval > 0) {
-
-                if (session.calibrationDuration < session.autofocusInterval) {
-                    const afDuration = session.autofocusDuration / 1440;
-                    const afInterval = session.autofocusInterval / 1440;
-
-                    let scheduleJD = current.imagingStartJD + afDuration +
-                                     (session.calibrationDuration / 1440);
-                    let lastAFEndJD = current.imagingStartJD + afDuration;
-
-                    if (current.meridianFlipJD) {
-                        const pauseBeforeJD = current.meridianFlipJD -
-                                              (session.meridianFlipPause / 1440);
-                        let afStart = scheduleJD + afInterval;
-
-                        while (afStart < pauseBeforeJD) {
-                            const afEnd = afStart + afDuration;
-                            lastAFEndJD = afEnd;
-                            scheduleJD = afEnd;
-                            afStart = afEnd + afInterval;
-                        }
-
-                        const flipEnd = current.meridianFlipJD +
-                                        (session.meridianFlipDuration / 1440);
-                        const postFlipAFEnd = flipEnd + afDuration;
-                        lastAFEndJD = postFlipAFEnd;
-                        scheduleJD = postFlipAFEnd;
-
-                        let afStartPost = postFlipAFEnd + afInterval;
-                        while (afStartPost < boundaryJD) {
-                            const afEnd = afStartPost + afDuration;
-                            lastAFEndJD = afEnd;
-                            scheduleJD = afEnd;
-                            afStartPost = afEnd + afInterval;
-                        }
-
-                    } else {
-                        let afStart = scheduleJD + afInterval;
-                        while (afStart < boundaryJD) {
-                            const afEnd = afStart + afDuration;
-                            lastAFEndJD = afEnd;
-                            scheduleJD = afEnd;
-                            afStart = afEnd + afInterval;
-                        }
-                    }
-
-                    const nextAFStartJD = boundaryJD;
-                    const gapMinutes = (nextAFStartJD - lastAFEndJD) * 1440;
-
-                    if (gapMinutes < 15 &&
-                        gapMinutes >= 0 &&
-                        (boundaryJD - lastAFEndJD) * 1440 <= toleranceMinutes) {
-                        conflicts.push({
-                            type: 'af_near_end',
-                            targetIndex: i,
-                            targetName: current.name,
-                            nextTargetName: next.name,
-                            eventJD: lastAFEndJD,
-                            boundaryJD: boundaryJD,
-                            minutesFromBoundary: (boundaryJD - lastAFEndJD) * 1440,
-                            gapToNextAF: gapMinutes,
-                            overheadMinutes: session.autofocusDuration
-                        });
-                    }
-                }
-            }
-
-            // === LOOK-AHEAD: events near start of next target ===
-
-            if (next.meridianFlipJD) {
-                const minutesFromStart = (next.meridianFlipJD - boundaryJD) * 1440;
-                if (minutesFromStart >= 0 && minutesFromStart <= toleranceMinutes) {
-                    conflicts.push({
-                        type: 'flip_near_start',
-                        targetIndex: i + 1,
-                        targetName: next.name,
-                        nextTargetName: next.name,
-                        eventJD: next.meridianFlipJD,
-                        boundaryJD: boundaryJD,
-                        minutesFromBoundary: minutesFromStart,
-                        overheadMinutes: session.meridianFlipPause + session.meridianFlipDuration
-                    });
-                }
-            }
-        }
-
-        return conflicts;
-    },
-
 
     /**
      * Find all periods where target violates horizon profile (but not min altitude)

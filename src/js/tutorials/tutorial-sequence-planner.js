@@ -201,21 +201,10 @@ const TUTORIAL_SEQUENCE_PLANNER = {
             highlight: true
         },
         {
-            id: 'Optimization',
-            type: 'callout',
-            title: 'Additional Optimization',
-            body: 'If multiple targets are planned, the Sequence Planner performs an initial optimization based on set time — targets that drop below the minimum altitude earliest are imaged first.<br><br>Additional optimization is controlled by the <strong>Sequence Optimization</strong> checkbox in the Target Allocation card. When enabled, the planner tries all target orderings and time allocations using a three-level priority:<br><br>1. <strong>Maximize total exposures</strong> — the primary goal, never compromised<br>2. <strong>Minimize meridian flips</strong> — preferred when total exposures are equal<br>3. <strong>Equalize image count</strong> — distribute images as evenly as possible across targets, allowing a small reduction in total exposures if needed<br><br>When <strong>Sequence Optimization</strong> is off, the planner uses equal time allocation without reordering. This typically results in fewer total exposures but a more balanced distribution — some users may prefer this as a starting point for manual adjustment.',
-            target: '#seq-plan-transition-tolerance',
-            position: 'top',
-            width: '600px',
-            waitFor: 'next',
-            highlight: true
-        },
-        {
             id: 'reset-optimize',
             type: 'callout',
             title: 'Reset & Optimize',
-            body: 'Click <strong>Reset & Optimize</strong> to generate or regenerate the plan. The planner calculates each target\'s available imaging window for the night, orders targets so that those setting earliest are imaged first, and divides the available time equally among them as a starting point.<br><br>Use this button when you want to return to the default allocation.',
+            body: `Click <strong>Reset & Optimize</strong> to generate or regenerate the plan. The planner tries different target orders and time splits, and keeps the plan that ranks best on:<br><br>1. <strong>Minimum integration</strong> — as many targets as possible get at least ${APP_CONFIG.SEQ_PLAN_MIN_INTEGRATION_MINUTES} minutes of usable integration, about what dithering needs to pay off<br>2. <strong>Least wasted time</strong> — the most total integration while each target is above the minimum altitude and horizon, with the least lost to meridian flips and handovers<br>3. <strong>Balance</strong> — integration spread as evenly as possible across targets<br><br>The plan is optimized when the planner opens and when session settings change. Your slider and order adjustments are kept until you press this button again.`,
             target: '#seq-plan-reset-btn',
             position: 'left',
             waitFor: 'next',

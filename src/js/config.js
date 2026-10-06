@@ -15,7 +15,7 @@
 const APP_CONFIG = {
     APP_NAME: 'Astryx',
     APP_TITLE: 'Astryx - Astrophotography Planning Tool',
-    APP_VERSION: '1.8.1',
+    APP_VERSION: '1.9.0',
     DB_NAME: 'astryx-db',
     DB_VERSION: 8,
     TARGET_DATA_PATH: './data/',
@@ -88,12 +88,13 @@ const APP_CONFIG = {
     FEATURES: {
         OPTIMIZER_COMBINATIONS: true,  // Issue #38 - combination mode for target optimizer
         CLOUD_COVER: true,             // Issue #81 - cloud cover strip on daily visibility timeline (experimental)
-        TRANSITION_OPTIMIZATION: true, // Issue #109 - sequence transition optimization
         DEBUG_LOGGING: false           // Issue #177 - gate for per-render/per-interaction console.log noise
     },
 
-    // Sequence transition optimization settings
-    TRANSITION_OPTIMIZATION_THRESHOLD: 0.00,  // Minimum fractional improvement to accept reorder (0%)
+    // Sequence planner optimization settings
+    SEQ_PLAN_MIN_INTEGRATION_MINUTES: 120,    // Usable integration each target should get; about what dithering needs to pay off
+    SEQ_PLAN_HANDOVER_STEP_PERCENT: 1,        // Step when searching for the best handover between targets
+    SEQ_PLAN_MAX_REORDER_TARGETS: 5,          // Above this, only the set-time order is optimized (orders grow as n!)
 
     // External data APIs
     APIS: {
