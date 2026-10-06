@@ -15,7 +15,7 @@
 const APP_CONFIG = {
     APP_NAME: 'Astryx',
     APP_TITLE: 'Astryx - Astrophotography Planning Tool',
-    APP_VERSION: '1.9.0',
+    APP_VERSION: '1.9.1',
     DB_NAME: 'astryx-db',
     DB_VERSION: 8,
     TARGET_DATA_PATH: './data/',
@@ -94,7 +94,7 @@ const APP_CONFIG = {
     // Sequence planner optimization settings
     SEQ_PLAN_MIN_INTEGRATION_MINUTES: 120,    // Usable integration each target should get; about what dithering needs to pay off
     SEQ_PLAN_HANDOVER_STEP_PERCENT: 1,        // Step when searching for the best handover between targets
-    SEQ_PLAN_MAX_REORDER_TARGETS: 5,          // Above this, only the set-time order is optimized (orders grow as n!)
+    SEQ_PLAN_MAX_REORDER_TARGETS: 3,          // Above this, only the set-time order is optimized (orders grow as n!)
 
     // External data APIs
     APIS: {
