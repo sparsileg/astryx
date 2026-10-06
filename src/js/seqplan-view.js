@@ -286,17 +286,6 @@ const SeqPlanView = {
 
         document.getElementById('seq-plan-af-enabled').checked =
             SettingsManager.getSetting('seqPlanAutofocusEnabled', true);
-
-        const toleranceCheck = document.getElementById('seq-plan-transition-tolerance');
-        if (toleranceCheck) {
-            if (!APP_CONFIG.FEATURES.TRANSITION_OPTIMIZATION) {
-                toleranceCheck.checked = false;
-                toleranceCheck.disabled = true;
-            } else {
-                toleranceCheck.checked = SettingsManager.getSetting('seqPlanTransitionTolerance', false);
-                toleranceCheck.disabled = false;
-            }
-        }
     },
 
     /**
@@ -324,9 +313,6 @@ const SeqPlanView = {
             parseFloat(this._getDropdownValue('seq-plan-cal-duration-menu', '5')));
         await SettingsManager.setFramesPerDither(
             parseInt(this._getDropdownValue('seq-plan-frames-per-dither-menu', '3')));
-
-        await SettingsManager.saveSetting('seqPlanTransitionTolerance',
-            document.getElementById('seq-plan-transition-tolerance').checked);
     },
 
     /**
@@ -454,12 +440,6 @@ const SeqPlanView = {
             }
         );
 
-        // Sequence optimization checkbox requires full regeneration
-        const toleranceInput = document.getElementById('seq-plan-transition-tolerance');
-        if (toleranceInput) {
-            toleranceInput.addEventListener('change', () => this.debouncedGenerate());
-        }
-
         // Autofocus checkbox listener to show/hide note
         const afCheckbox = document.getElementById('seq-plan-af-enabled');
         const afNote = document.getElementById('seq-plan-af-note');
@@ -553,16 +533,15 @@ const SeqPlanView = {
         this.currentSession.sessionStartJD = sessionWindow.sessionStartJD;
         this.currentSession.sessionEndJD = sessionWindow.sessionEndJD;
 
-        // Apply transition optimization (second pass, if enabled and tolerance set)
-        const transitionOptimizedTargets = SeqPlanOptimizer.optimizeTransitions(
+        // Find the best order and allocations for the night
+        const plannedTargets = SeqPlanOptimizer.optimizePlan(
             optimizedTargets,
-            this.currentSession,
-            this.currentSession.transitionTolerance
+            this.currentSession
         );
 
-        // Recalculate session window in case transition optimization changed target order
-        const transitionSessionWindow = SeqPlanCalculations.calculateSessionWindow(
-            transitionOptimizedTargets,
+        // Recalculate session window in case optimization changed target order
+        const plannedSessionWindow = SeqPlanCalculations.calculateSessionWindow(
+            plannedTargets,
             timing.duskJD,
             timing.dawnJD,
             this.currentSession.location,
@@ -572,12 +551,12 @@ const SeqPlanView = {
             this.currentSession.useHorizon,
             this.currentSession.location.horizon
         );
-        this.currentSession.sessionStartJD = transitionSessionWindow.sessionStartJD;
-        this.currentSession.sessionEndJD = transitionSessionWindow.sessionEndJD;
+        this.currentSession.sessionStartJD = plannedSessionWindow.sessionStartJD;
+        this.currentSession.sessionEndJD = plannedSessionWindow.sessionEndJD;
 
         // Calculate exposure counts
         this.calculatedResults = SeqPlanCalculations.calculateExposureCounts(
-            transitionOptimizedTargets,
+            plannedTargets,
             this.currentSession
         );
 
@@ -676,8 +655,7 @@ const SeqPlanView = {
             meridianFlipOffset: parseInt(this._getDropdownValue('seq-plan-flip-offset-menu', '0')),
             interExposureTime: SettingsManager.getFramesPerDither() === 0
                 ? SettingsManager.getLearnedSubGapS()
-                : SettingsManager.getLearnedSubGapS() + Math.round(SettingsManager.getLearnedDitherDurationS() / SettingsManager.getFramesPerDither()),
-            transitionTolerance: document.getElementById('seq-plan-transition-tolerance')?.checked ? 1 : 0
+                : SettingsManager.getLearnedSubGapS() + Math.round(SettingsManager.getLearnedDitherDurationS() / SettingsManager.getFramesPerDither())
         };
     },
 
@@ -1216,14 +1194,13 @@ const SeqPlanView = {
         this.currentSession.sessionStartJD = sessionWindow.sessionStartJD;
         this.currentSession.sessionEndJD = sessionWindow.sessionEndJD;
 
-        const transitionOptimizedTargets = SeqPlanOptimizer.optimizeTransitions(
+        const plannedTargets = SeqPlanOptimizer.optimizePlan(
             optimizedTargets,
-            this.currentSession,
-            this.currentSession.transitionTolerance
+            this.currentSession
         );
 
-        const transitionSessionWindow = SeqPlanCalculations.calculateSessionWindow(
-            transitionOptimizedTargets,
+        const plannedSessionWindow = SeqPlanCalculations.calculateSessionWindow(
+            plannedTargets,
             timing.duskJD,
             timing.dawnJD,
             this.currentSession.location,
@@ -1233,11 +1210,11 @@ const SeqPlanView = {
             this.currentSession.useHorizon,
             this.currentSession.location.horizon
         );
-        this.currentSession.sessionStartJD = transitionSessionWindow.sessionStartJD;
-        this.currentSession.sessionEndJD = transitionSessionWindow.sessionEndJD;
+        this.currentSession.sessionStartJD = plannedSessionWindow.sessionStartJD;
+        this.currentSession.sessionEndJD = plannedSessionWindow.sessionEndJD;
 
         this.calculatedResults = SeqPlanCalculations.calculateExposureCounts(
-            transitionOptimizedTargets,
+            plannedTargets,
             this.currentSession
         );
 
