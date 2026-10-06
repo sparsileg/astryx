@@ -18,8 +18,8 @@ No `package.json`, no bundler, no build step.
 ```bash
 just serve    # web build: npx serve src --listen 1420
 just dev      # desktop: cargo tauri dev (starts the server itself)
-just check    # fast Rust check: cd src-tauri && cargo check
-just test     # automated tests (Node, no dependencies)
+just test     # JS validation cases (Node) + Rust tests
+just check    # fmt-check, clippy, then all tests
 ```
 
 `just` lists every recipe (`justfile` at the repo root).
@@ -121,8 +121,14 @@ Builds, installers, and the GitHub Actions release workflow:
   `Mutex<Connection>`.
 - Pragmas on open: WAL, `foreign_keys=ON`, `synchronous=NORMAL`.
 - **Migrations** (`db/migrations.rs`) are keyed on `PRAGMA user_version` and
-  append-only. Never edit an existing migration; add `migrate_vN`. Table
+  append-only. Never edit an existing migration; add `migrate_vN` to
+  `MIGRATIONS` (the schema version follows from its length). Table
   definitions live in `db/schema.rs`.
+- Each command file has thin `#[tauri::command]` wrappers that lock with
+  `state.conn()?` and call the store's `sql::` functions, which take a
+  `&Connection` and hold the SQL. Tests live beside them and use
+  `db::test_conn()` (in-memory, fully migrated). New database code goes in
+  `sql::` with a test.
 - Commands return `Result<T, String>`. Propagate with
   `.map_err(|e| e.to_string())?`; no `unwrap()` / `println!` (use `log::`).
 - JS calls go through `DBManagerTauri`, which surfaces failures as a toast.

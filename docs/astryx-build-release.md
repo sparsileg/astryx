@@ -92,10 +92,12 @@ bundling):
 cd src-tauri && cargo check
 ```
 
-**Run the test suite**, if/when Rust-side tests exist:
+**Run the test suite** (`just test`: the JS validation cases under Node,
+then the Rust tests; `just check` adds rustfmt and clippy first):
 
 ```bash
-cd src-tauri && cargo test
+node --test tests/*.test.js
+cd src-tauri && cargo test --lib
 ```
 
 **Full compiled binary, no installer:**
@@ -709,7 +711,7 @@ link updates needed on future releases.
 | Serve frontend                        | `npx serve src --listen 1420`                                                                 |
 | Hot-reload dev (Tauri)                | `cargo tauri dev`                                                                             |
 | Fast Rust check                       | `cd src-tauri && cargo check`                                                                 |
-| Run tests                             | `cd src-tauri && cargo test`                                                                  |
+| Run tests                             | `just test` (or `just check` to add fmt + clippy)                                             |
 | Local build, no installer             | `cargo tauri build --no-bundle`                                                               |
 | Full bundled build (current platform) | `cargo tauri build`                                                                           |
 | macOS: specific arch (CI-only today)  | `cargo tauri build --target aarch64-apple-darwin`                                             |
