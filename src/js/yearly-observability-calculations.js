@@ -261,18 +261,15 @@ const YearlyObservabilityCalculations = {
                     // 3. Base score (weighted)
                     const baseScore = (transitScore * transitWeight) + (darkHoursScore * darkHoursWeight);
 
-                    // 4. Moon factor
-                    const dayIsDST = SettingsManager.isDSTActive(date, inputs.timezone);
-                    const noonJD = TimeUtils.localWallClockToJD(date.getFullYear(), date.getMonth(), date.getDate(), 12, inputs.timezone, dayIsDST);
-                    const moonPhase = getMoonPhase(noonJD);
-                    const moonIllum = moonPhase.illumination / 100; // Convert to 0-1
+                    // 4. Moon factor — sampled over this night's dusk→dawn, the
+                    // same way as Daily Visibility and the Imaging Log
+                    const moonIllum = getNightMoonPhase(duskJD, dawnJD).illumination / 100; // Convert to 0-1
 
-                    // Calculate moon-target separation at midnight
-                    const midnightJD = TimeUtils.localWallClockToJD(date.getFullYear(), date.getMonth(), date.getDate(), 0, inputs.timezone, dayIsDST);
-                    const moonPos = getMoonPosition(midnightJD);
-
-                    // Angular separation between target and moon (in degrees)
-                    const separation = getAngularSeparation(inputs.ra, inputs.dec, moonPos.ra, moonPos.dec);
+                    // Closest moon approach while the target is above threshold;
+                    // if it never gets that high, closest approach all night
+                    const separation =
+                        getMinMoonSeparation(duskJD, dawnJD, inputs.ra, inputs.dec, inputs.latitude, inputs.longitude, typeAltitudeThreshold) ??
+                        getMinMoonSeparation(duskJD, dawnJD, inputs.ra, inputs.dec, inputs.latitude, inputs.longitude, -90);
 
                     // Exponential moon separation factor
                     const separationFactor = 1 - Math.exp(-separation / 30);
@@ -359,9 +356,7 @@ const YearlyObservabilityCalculations = {
         }
 
         // Calculate moon illumination (always, regardless of observable hours)
-        const midnightJD = (duskJD + dawnJD) / 2; // Sample at middle of night
-        const moonPhase = getMoonPhase(midnightJD);
-        const moonIllumination = moonPhase.illumination / 100; // Convert to 0-1
+        const moonIllumination = getNightMoonPhase(duskJD, dawnJD).illumination / 100; // Convert to 0-1
 
         // Sample every 15 minutes during the night to find observable hours and minimum separation
         const sampleInterval = 15 / 1440; // 15 minutes in JD
