@@ -68,7 +68,7 @@ const TUTORIAL_YEARLY_OBSERVABILITY = {
             type: 'callout',
             title: 'Minimum Altitude',
             body: 'Controls the altitude threshold used in calculations. Raising it restricts results to nights when the target climbs higher — through less atmosphere — which improves image quality but shortens the observable window. Lowering it extends the window but includes nights with more atmospheric distortion.<br><br>The graph recalculates immediately when you change this value.',
-            target: '#yearly-min-altitude',
+            target: '#yo-min-alt-dropdown',
             position: 'bottom',
             waitFor: 'next',
             highlight: true

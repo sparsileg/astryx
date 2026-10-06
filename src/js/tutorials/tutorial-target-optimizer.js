@@ -67,7 +67,7 @@ const TUTORIAL_TARGET_OPTIMIZER = {
             type: 'callout',
             title: 'Session Start Time',
             body: 'Controls when your imaging session begins. <strong>Dusk</strong> starts the session at the calculated end of astronomical twilight — the earliest you can usefully image. <strong>Custom</strong> reveals a time field so you can enter a later start, for example if you cannot be at your site until midnight.<br><br>The session always ends at dawn. Setting a later start narrows the window and will reduce scores for targets that peak early in the night.',
-            target: '#optimizer-start-time',
+            target: '#optimizer-start-dropdown',
             position: 'bottom',
             waitFor: 'next',
             highlight: true
@@ -77,7 +77,7 @@ const TUTORIAL_TARGET_OPTIMIZER = {
             type: 'callout',
             title: 'Candidate Source',
             body: 'Selects the pool of targets the Optimizer will evaluate.<br><br><strong>To Do List</strong> — uses every target currently on your To Do List. This is the most common workflow: build a list of targets you are interested in imaging and let the Optimizer pick the best one for tonight.<br><br><strong>Filter Targets</strong> — uses a set of targets sent from the Target Selection view via its <em>Send to Optimizer</em> button. This option is disabled until a pool has been loaded.',
-            target: '#optimizer-source',
+            target: '#optimizer-source-dropdown',
             position: 'bottom',
             width: '420px',
             waitFor: 'next',

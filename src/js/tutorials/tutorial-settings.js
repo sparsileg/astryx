@@ -50,8 +50,8 @@ const TUTORIAL_SETTINGS = {
             id: 'dst-mode',
             type: 'callout',
             title: 'DST Mode',
-            body: 'Controls how Astryx handles Daylight Saving Time. Leave this on <strong>Automatic</strong> unless your region does not observe DST or you need custom start and end dates.',
-            target: '#dst-mode',
+            body: 'Controls how Astryx handles Daylight Saving Time. Leave this on <strong>Automatic</strong> to follow your computer\'s DST setting. Choose <strong>Never Active</strong> if your region does not observe DST, or <strong>Always Active</strong> to apply it year-round.',
+            target: '#dst-mode-dropdown',
             position: 'right',
             waitFor: 'next',
             highlight: true
@@ -61,7 +61,7 @@ const TUTORIAL_SETTINGS = {
             type: 'callout',
             title: 'Min Altitude',
             body: 'The global minimum altitude used across all analysis tools. Objects below this angle above the horizon are excluded from calculations. Can be overridden in some tools.',
-            target: '#global-min-altitude',
+            target: '#global-min-altitude-dropdown',
             position: 'left',
             waitFor: 'next',
             highlight: true
@@ -101,7 +101,7 @@ const TUTORIAL_SETTINGS = {
             type: 'callout',
             title: 'Backup Delay',
             body: 'The number of minutes Astryx waits after your last change before triggering an automatic backup. This prevents excessive backups during active use. The timer resets if there is another change before the backup is performed.',
-            target: '#backup-delay-minutes',
+            target: '#backup-delay-dropdown',
             position: 'right',
             waitFor: 'next',
             highlight: true
@@ -111,7 +111,7 @@ const TUTORIAL_SETTINGS = {
             type: 'callout',
             title: 'Backup Remindern',
             body: 'The number of days Astryx waits after your last backup before raising a toast reminding you to backup.',
-            target: '#backup-reminder-days',
+            target: '#backup-reminder-dropdown',
             position: 'right',
             waitFor: 'next',
             highlight: true

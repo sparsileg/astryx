@@ -88,7 +88,7 @@ const TUTORIAL_GETTING_STARTED = {
             type: 'callout',
             title: 'Set Your Location',
             body: 'The first time you select a new location, the "Best Month" will be calculated automatically for each object visible from that site. Select the site you just created, if necessary.',
-            target: '#sidebar-location-select',
+            target: '#location-dropdown',
             position: 'right',
             waitFor: 'next',
             highlight: true
