@@ -194,6 +194,48 @@ function getMoonPhase(jd) {
 }
 
 /**
+ * Moon phase representing a whole night, sampled at the dusk–dawn midpoint.
+ * Every view that shows one illumination figure for a night uses this, so
+ * they agree (illumination drifts several % between dusk and dawn).
+ * @param {number} duskJD - Astronomical dusk
+ * @param {number} dawnJD - Astronomical dawn
+ * @returns {Object} Same shape as getMoonPhase
+ */
+function getNightMoonPhase(duskJD, dawnJD) {
+    return getMoonPhase((duskJD + dawnJD) / 2);
+}
+
+/**
+ * Closest target–moon separation within a window, counting only moments when
+ * the target is at or above minAltitude — the worst case for imaging.
+ * @param {number} startJD - Window start (normally astronomical dusk)
+ * @param {number} endJD - Window end (normally astronomical dawn)
+ * @param {number} raHours - Target right ascension (hours)
+ * @param {number} decDeg - Target declination (degrees)
+ * @param {number} latitude - Observer latitude (degrees)
+ * @param {number} longitude - Observer longitude (degrees, West is negative)
+ * @param {number} minAltitude - Minimum target altitude (degrees)
+ * @returns {number|null} Separation in degrees, or null if the target never
+ *   reaches minAltitude in the window
+ */
+function getMinMoonSeparation(startJD, endJD, raHours, decDeg, latitude, longitude, minAltitude) {
+    const stepSize = APP_CONFIG.TARGET_SEARCH_STEP_SIZE;
+    const steps = Math.ceil((endJD - startJD) / stepSize);
+    let minSeparation = null;
+
+    for (let i = 0; i <= steps; i++) {
+        const jd = Math.min(startJD + i * stepSize, endJD);
+        if (getAltitude(jd, raHours, decDeg, latitude, longitude) < minAltitude) continue;
+        const moonPos = getMoonPosition(jd);
+        const separation = getAngularSeparation(raHours, decDeg, moonPos.ra, moonPos.dec);
+        if (minSeparation === null || separation < minSeparation) {
+            minSeparation = separation;
+        }
+    }
+    return minSeparation;
+}
+
+/**
  * Calculate horizon depression due to elevation
  * @param {number} elevationMeters - Observer elevation in meters
  * @returns {number} Horizon depression in degrees

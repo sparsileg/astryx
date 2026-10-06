@@ -903,15 +903,19 @@ const ImagingLogView = {
         }
 
         try {
+            // Session date is the evening date; the night is dusk→dawn at the
+            // location, sampled the same way as Daily Visibility.
             const [year, month, day] = dateStr.split('-').map(Number);
-            const date = new Date(year, month - 1, day, 0, 0, 0);
-            const jd = TimeUtils.dateToJD(date);
+            const localNoon = new Date(year, month - 1, day, 12, 0, 0);
+            const isDST = SettingsManager.isDSTActive(localNoon, location.timezone);
+            const noonWindow = getNoonToNoonWindow(dateStr, location.timezone, isDST);
+            // No astronomical darkness (high-latitude summer): use the whole noon-to-noon window
+            const duskJD = findAstronomicalDusk(localNoon, location.latitude, location.longitude, location.timezone, isDST) ?? noonWindow.startJD;
+            const dawnJD = findNextAstronomicalDawn(localNoon, location.latitude, location.longitude, location.timezone, isDST) ?? noonWindow.endJD;
 
-            const moonPhase = getMoonPhase(jd);
+            const moonPhase = getNightMoonPhase(duskJD, dawnJD);
             document.getElementById('session-moon-illumination').value = Math.round(moonPhase.illumination);
 
-            const isDST = SettingsManager.isDSTActive(new Date(year, month - 1, day), location.timezone);
-            const noonWindow = getNoonToNoonWindow(dateStr, location.timezone, isDST);
             const moonRiseSet = calculateMoonRiseSet(noonWindow.startJD, noonWindow.endJD, location.latitude, location.longitude, location.elevation);
 
             if (moonRiseSet.moonrise) {
@@ -930,9 +934,11 @@ const ImagingLogView = {
                 document.getElementById('session-moon-set').value = setLocal.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', timeZone: 'UTC' });
             }
 
-            const transitJD = this.findTargetTransit(jd, target.ra, target.dec, location.latitude, location.longitude);
-            const moonPos = getMoonPosition(transitJD);
-            const separation = getAngularSeparation(target.ra, target.dec, moonPos.ra, moonPos.dec);
+            // Closest approach while the target is above the global minimum
+            // altitude; if it never gets that high, closest approach all night.
+            const separation =
+                getMinMoonSeparation(duskJD, dawnJD, target.ra, target.dec, location.latitude, location.longitude, SettingsManager.getGlobalMinAltitude()) ??
+                getMinMoonSeparation(duskJD, dawnJD, target.ra, target.dec, location.latitude, location.longitude, -90);
             document.getElementById('session-angle-from-moon').value = Math.round(separation);
 
             UIManager.showToast('Moon data calculated', 'success');
@@ -941,27 +947,6 @@ const ImagingLogView = {
             console.error('Error calculating moon data:', error);
             UIManager.showToast('Error calculating moon data: ' + error.message, 'error');
         }
-    },
-
-    /**
-     * Find target transit time
-     */
-    findTargetTransit(startJD, targetRA, targetDec, latitude, longitude) {
-        const oneMinute = 1 / 1440;
-        let currentJD = startJD;
-        let maxAltitude = -90;
-        let transitJD = startJD;
-
-        for (let i = 0; i < 1440; i++) {
-            const altitude = getAltitude(currentJD, targetRA, targetDec, latitude, longitude);
-            if (altitude > maxAltitude) {
-                maxAltitude = altitude;
-                transitJD = currentJD;
-            }
-            currentJD += oneMinute;
-        }
-
-        return transitJD;
     },
 
     /**

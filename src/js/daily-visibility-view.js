@@ -489,11 +489,11 @@ const DailyVisibilityView = {
      * Populate Moon Details card
      */
     populateMoonDetails(data) {
-        const moonPhase = getMoonPhase(data.duskJD);
+        const moonPhase = getNightMoonPhase(data.duskJD, data.dawnJD);
 
         document.getElementById('moon-phase-name').textContent = moonPhase.phaseName;
         document.getElementById('moon-illumination').textContent =
-            `${moonPhase.illumination.toFixed(1)}% illuminated`;
+            `${Math.round(moonPhase.illumination)}% illuminated`;
         const moonCard = document.getElementById('dv-moon-details');
         if (moonCard) moonCard.dataset.emoji = moonPhase.phaseEmoji;
 
@@ -642,10 +642,10 @@ const DailyVisibilityView = {
         let riseTime, riseLabel;
         if (data.riseJD && data.riseJD >= data.duskJD) {
             riseTime = data.riseJD;
-            riseLabel = 'At rise:';
+            riseLabel = 'Target rise:';
         } else {
             riseTime = data.duskJD;
-            riseLabel = 'At dusk:';
+            riseLabel = 'Dusk:';
         }
         const moonPosRise = getMoonPosition(riseTime);
         const separationRise = getAngularSeparation(moonPosRise.ra, moonPosRise.dec, data.ra, data.dec);
@@ -654,13 +654,13 @@ const DailyVisibilityView = {
         let setTime, setLabel;
         if (data.setJD && data.setJD <= data.dawnJD) {
             setTime = data.setJD;
-            setLabel = 'At set:';
+            setLabel = 'Target set:';
         } else if (data.actualSetJD && data.actualSetJD <= data.dawnJD) {
             setTime = data.actualSetJD;
-            setLabel = 'At set:';
+            setLabel = 'Target set:';
         } else {
             setTime = data.dawnJD;
-            setLabel = 'At dawn:';
+            setLabel = 'Dawn:';
         }
         const moonPosSet = getMoonPosition(setTime);
         const separationSet = getAngularSeparation(moonPosSet.ra, moonPosSet.dec, data.ra, data.dec);
