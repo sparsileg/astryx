@@ -1042,7 +1042,7 @@ const ImagingLogView = {
      * Delete session
      */
     async deleteSession(sessionId) {
-        if (!confirm('Delete this imaging session?')) {
+        if (!await UIManager.confirm('Delete this imaging session?')) {
             return;
         }
 
@@ -1087,7 +1087,7 @@ const ImagingLogView = {
     async handleDeleteProject(projectId) {
         const project = await ImagingLogManager.getProject(projectId);
 
-        if (!confirm(`This action will permanently delete the project "${project.name}" and all its sessions. Are you sure?`)) {
+        if (!await UIManager.confirm(`This action will permanently delete the project "${project.name}" and all its sessions. Are you sure?`)) {
             return;
         }
 
@@ -1785,7 +1785,7 @@ const ImagingLogView = {
     async deleteProgramConfirm(programId) {
         const program = await ImagingLogManager.getProgram(programId);
 
-        if (!confirm(`Delete program "${program.name}"?`)) {
+        if (!await UIManager.confirm(`Delete program "${program.name}"?`)) {
             return;
         }
 

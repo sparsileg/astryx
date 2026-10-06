@@ -525,7 +525,7 @@ const OptimizerView = {
         if (!combo) return;
 
         const targetNames = combo.targets.map(t => t.name).join(', ');
-        if (!confirm(`Replace all pinned targets with:\n${targetNames}?`)) return;
+        if (!await UIManager.confirm(`Replace all pinned targets with:\n${targetNames}?`)) return;
 
         // Unpin all current pinned targets
         const pinned = DataManager.getPinnedTargets().slice();
