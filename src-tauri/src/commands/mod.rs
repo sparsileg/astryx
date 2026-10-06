@@ -1,5 +1,6 @@
 // src-tauri/src/commands/mod.rs
 
+pub mod backup;
 pub mod filters;
 pub mod imaging_programs;
 pub mod imaging_projects;
@@ -11,5 +12,4 @@ pub mod settings;
 pub mod targets;
 pub mod telescopes;
 pub mod todo_targets;
-pub mod backup;
 pub mod tutorial_progress;

@@ -4,12 +4,22 @@
 mod commands;
 mod db;
 
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, MutexGuard};
 
 // ── Application state ─────────────────────────────────────────────────────────
 
 pub struct AstryxState {
     pub db: Mutex<rusqlite::Connection>,
+}
+
+impl AstryxState {
+    /// Lock the database for one command. A poisoned lock (a panic while it
+    /// was held) becomes a command error rather than a second panic.
+    pub fn conn(&self) -> Result<MutexGuard<'_, rusqlite::Connection>, String> {
+        self.db
+            .lock()
+            .map_err(|_| "database lock poisoned".to_string())
+    }
 }
 
 // ── Application entry point ───────────────────────────────────────────────────
@@ -99,7 +109,6 @@ pub fn run() {
             commands::imaging_programs::create_program,
             commands::imaging_programs::update_program,
             commands::imaging_programs::delete_program,
-            // Backup
             // Backup
             commands::backup::read_zip_backup,
             commands::backup::restore_imaging_log,
