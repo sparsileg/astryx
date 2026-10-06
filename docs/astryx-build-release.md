@@ -71,18 +71,18 @@ of this writing.
 
 For day-to-day iteration you almost never need a bundled installer.
 
-**Serve the frontend** (static, no watch/rebuild needed — matches
-`tauri.conf.json`'s `devUrl`):
-
-```bash
-npx serve src --listen 1420
-```
-
-**Hot-reload dev mode** (Tauri backend, picks up the frontend served
-above):
+**Desktop dev mode** (`just dev`). `tauri.conf.json`'s
+`beforeDevCommand` starts the static server on `devUrl` (port 1420) and
+stops it when the app closes:
 
 ```bash
 cargo tauri dev
+```
+
+**Web only** (`just serve`; static, no watch/rebuild needed):
+
+```bash
+npx serve src --listen 1420
 ```
 
 **Rust-only correctness check** (fastest signal, no codegen/link, no

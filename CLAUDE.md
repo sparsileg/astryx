@@ -16,10 +16,13 @@ The project is in maintenance mode: bug fixes, UI tweaks, tutorial updates.
 No `package.json`, no bundler, no build step.
 
 ```bash
-npx serve src --listen 1420     # web build; also the Tauri devUrl
-cargo tauri dev                 # desktop, in a second terminal
-cd src-tauri && cargo check     # fast Rust check
+just serve    # web build: npx serve src --listen 1420
+just dev      # desktop: cargo tauri dev (starts the server itself)
+just check    # fast Rust check: cd src-tauri && cargo check
+just test     # automated tests (Node, no dependencies)
 ```
+
+`just` lists every recipe (`justfile` at the repo root).
 
 Builds, installers, and the GitHub Actions release workflow:
 `docs/astryx-build-release.md`.
