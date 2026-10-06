@@ -687,7 +687,7 @@ const UIManager = {
             this.showToast(`Location "${locationName}" is used by one or more imaging sessions and can't be deleted.`, 'error');
             return;
         }
-        if (!confirm(`Are you sure you want to delete location "${locationName}"?`)) {
+        if (!await this.confirm(`Are you sure you want to delete location "${locationName}"?`)) {
             return;
         }
 
@@ -1452,7 +1452,7 @@ const UIManager = {
      */
     async clearAllTargets() {
         // Show confirmation dialog
-        const confirmed = confirm(
+        const confirmed = await this.confirm(
             'Are you sure you want to clear all targets?\n\n' +
                 'This will delete all targets from the database.\n' +
                 'Locations and pinned targets will be preserved.\n\n' +
@@ -1684,6 +1684,24 @@ const UIManager = {
             toast.classList.remove('show');
             setTimeout(() => document.body.removeChild(toast), 300);
         }, duration);
+    },
+
+    /**
+     * Ask the user to confirm an action. Resolves true if confirmed.
+     * The Tauri webview does not show window.confirm(), so desktop uses the
+     * dialog plugin's native dialog. If that fails, the action is not taken.
+     */
+    async confirm(message) {
+        if (typeof window.__TAURI__ === 'undefined') {
+            return window.confirm(message);
+        }
+        try {
+            return await window.__TAURI__.dialog.confirm(message, { kind: 'warning' });
+        } catch (error) {
+            console.error('Confirmation dialog failed:', error);
+            this.showToast('Could not show confirmation dialog: ' + error, 'error');
+            return false;
+        }
     },
 
     _raToHMS(h) {
@@ -2205,7 +2223,7 @@ const UIManager = {
             this.showToast(`Telescope "${name}" is used by one or more imaging sessions and can't be deleted.`, 'error');
             return;
         }
-        if (!confirm(`Delete telescope "${name}"?`)) {
+        if (!await this.confirm(`Delete telescope "${name}"?`)) {
             return;
         }
 
@@ -2311,7 +2329,7 @@ const UIManager = {
             this.showToast(`Sensor "${name}" is used by one or more imaging sessions and can't be deleted.`, 'error');
             return;
         }
-        if (!confirm(`Delete sensor "${name}"?`)) {
+        if (!await this.confirm(`Delete sensor "${name}"?`)) {
             return;
         }
         await DataManager.deleteSensor(name);
@@ -2399,7 +2417,7 @@ const UIManager = {
             this.showToast(`Filter "${name}" is used by one or more imaging sessions and can't be deleted.`, 'error');
             return;
         }
-        if (!confirm(`Delete filter "${name}"?`)) {
+        if (!await this.confirm(`Delete filter "${name}"?`)) {
             return;
         }
 
