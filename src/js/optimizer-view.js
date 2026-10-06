@@ -542,6 +542,8 @@ const OptimizerView = {
             pinned_count++;
         }
 
+        UIManager.markDataChanged();
+        VisibilityTargets.updatePinnedDisplay();
         UIManager.showToast(`Pinned targets replaced with ${pinned_count} target${pinned_count !== 1 ? 's' : ''}`, 'success');
     },
 
@@ -575,6 +577,8 @@ const OptimizerView = {
         }
 
         await DataManager.pinTarget({ ...target, name: target.object });
+        UIManager.markDataChanged();
+        VisibilityTargets.updatePinnedDisplay();
         UIManager.showToast(`${candidate.name} pinned`, 'success');
     },
 
