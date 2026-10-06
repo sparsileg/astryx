@@ -3,6 +3,7 @@
     "productName": "Astryx",
     "identifier": "tools.astryx.astryx",
     "build": {
+        "beforeDevCommand": "npx serve src --listen 1420",
         "devUrl": "http://localhost:1420",
         "frontendDist": "../src"
     },
