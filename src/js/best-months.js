@@ -129,24 +129,50 @@ const BestMonths = {
     },
 
     /**
-     * Pre-calculate twilight times for all days of the year
-     * Returns a Map keyed by day offset (0-364)
+     * Pre-calculate per-night data for all days of the year. Everything here
+     * depends only on the location, so it is computed once and shared by all
+     * targets. Returns a Map keyed by day offset (0-364).
+     *   duskJD, dawnJD — astronomical darkness
+     *   cosLST, sinLST — at each sample time from dusk to dawn
+     *   transitLST, transitHour — LST and local clock hour at each step of
+     *     the transit search around local noon
      */
     buildTwilightCache(location) {
         Log.debug('Pre-calculating twilight times for 365 days...');
         const twilightCache = new Map();
         const startDate = new Date(new Date().getFullYear(), 0, 1);
+        const step = SAMPLING_INTERVAL_MINUTES / 1440;
+        const oneHour = 1 / 24;
 
         for (let dayOffset = 0; dayOffset < 365; dayOffset++) {
             const date = new Date(startDate);
             date.setDate(startDate.getDate() + dayOffset);
             const isDST = SettingsManager.isDSTActive(date, location.timezone);
+            const duskJD = findAstronomicalDusk(date, location.latitude, location.longitude, location.timezone, isDST);
+            const dawnJD = findNextAstronomicalDawn(date, location.latitude, location.longitude, location.timezone, isDST);
 
-            twilightCache.set(dayOffset, {
-                duskJD: findAstronomicalDusk(date, location.latitude, location.longitude, location.timezone, isDST),
-                dawnJD: findNextAstronomicalDawn(date, location.latitude, location.longitude, location.timezone, isDST),
-                date: date
-            });
+            const cosLST = [];
+            const sinLST = [];
+            if (duskJD && dawnJD) {
+                for (let jd = duskJD; jd <= dawnJD; jd += step) {
+                    const lst = hoursToRadians(getLST(jd, location.longitude));
+                    cosLST.push(Math.cos(lst));
+                    sinLST.push(Math.sin(lst));
+                }
+            }
+
+            const offsetHours = isDST ? location.timezone + 1 : location.timezone;
+            const noonJD = TimeUtils.localWallClockToJD(date.getFullYear(), date.getMonth(), date.getDate(), 12, location.timezone, isDST);
+            const transitLST = [];
+            const transitHour = [];
+            for (let hourOffset = -12; hourOffset <= 12; hourOffset += 0.1) {
+                const testJD = noonJD + hourOffset * oneHour;
+                transitLST.push(getLST(testJD, location.longitude));
+                const localDate = new Date(jdToDate(testJD).getTime() + offsetHours * 3600000);
+                transitHour.push(localDate.getUTCHours() + localDate.getUTCMinutes() / 60);
+            }
+
+            twilightCache.set(dayOffset, { duskJD, dawnJD, date, cosLST, sinLST, transitLST, transitHour });
         }
 
         Log.debug('Twilight cache complete');
@@ -465,37 +491,24 @@ const BestMonths = {
      * Returns: hours (decimal) of the longest continuous session
      */
     calculateDarkHoursAboveAltitude(date, target, location, minAltitude, twilightCache, dayOffset) {
-        // Get twilight times from cache
-        const twilight = twilightCache.get(dayOffset);
-        const duskJD = twilight.duskJD;
-        const dawnJD = twilight.dawnJD;
-
-        if (!duskJD || !dawnJD) {
-            return 0; // No astronomical darkness on this date
-        }
-        // Sample every N minutes during dark period
-        const step = SAMPLING_INTERVAL_MINUTES / 1440;
+        const night = twilightCache.get(dayOffset);
+        const stepHours = SAMPLING_INTERVAL_MINUTES / 60;
+        const geo = this.altitudeTerms(target, location, minAltitude);
 
         let longestSession = 0;
         let currentSession = 0;
 
-        for (let jd = duskJD; jd <= dawnJD; jd += step) {
-            const altitude = getAltitude(jd, target.ra, target.dec, location.latitude, location.longitude);
-
-            if (altitude >= minAltitude) {
-                // Target is above altitude - extend current session
-                currentSession += (step * 24); // Convert JD step to hours
+        for (let i = 0; i < night.cosLST.length; i++) {
+            if (this.isAboveAltitude(geo, night.cosLST[i], night.sinLST[i])) {
+                currentSession += stepHours;
             } else {
-                // Target dropped below altitude - check if this was the longest session
                 if (currentSession > longestSession) {
                     longestSession = currentSession;
                 }
-                // Reset for next potential session
                 currentSession = 0;
             }
         }
 
-        // Check final session in case it extended to dawn
         if (currentSession > longestSession) {
             longestSession = currentSession;
         }
@@ -509,23 +522,14 @@ const BestMonths = {
      * Returns: hours (decimal) of total accumulated time
      */
     calculateTotalDarkHours(date, target, location, minAltitude, twilightCache, dayOffset) {
-        // Get twilight times from cache
-        const twilight = twilightCache.get(dayOffset);
-        const duskJD = twilight.duskJD;
-        const dawnJD = twilight.dawnJD;
-
-        if (!duskJD || !dawnJD) {
-            return 0; // No astronomical darkness on this date
-        }
-        // Sample every N minutes during dark period
-        const step = SAMPLING_INTERVAL_MINUTES / 1440;
+        const night = twilightCache.get(dayOffset);
+        const stepHours = SAMPLING_INTERVAL_MINUTES / 60;
+        const geo = this.altitudeTerms(target, location, minAltitude);
         let totalHours = 0;
 
-        for (let jd = duskJD; jd <= dawnJD; jd += step) {
-            const altitude = getAltitude(jd, target.ra, target.dec, location.latitude, location.longitude);
-
-            if (altitude >= minAltitude) {
-                totalHours += (step * 24); // Convert JD step to hours
+        for (let i = 0; i < night.cosLST.length; i++) {
+            if (this.isAboveAltitude(geo, night.cosLST[i], night.sinLST[i])) {
+                totalHours += stepHours;
             }
         }
 
@@ -533,33 +537,43 @@ const BestMonths = {
     },
 
     /**
+     * Per-target terms of the altitude formula, so each sample needs no trig:
+     * sin(alt) = sin(dec)sin(lat) + cos(dec)cos(lat)cos(LST - RA)
+     */
+    altitudeTerms(target, location, minAltitude) {
+        const dec = degreesToRadians(target.dec);
+        const lat = degreesToRadians(location.latitude);
+        const ra = hoursToRadians(target.ra);
+        return {
+            a: Math.sin(dec) * Math.sin(lat),
+            b: Math.cos(dec) * Math.cos(lat),
+            cosRA: Math.cos(ra),
+            sinRA: Math.sin(ra),
+            sinMin: Math.sin(degreesToRadians(minAltitude))
+        };
+    },
+
+    isAboveAltitude(geo, cosLST, sinLST) {
+        const cosHA = cosLST * geo.cosRA + sinLST * geo.sinRA;
+        return geo.a + geo.b * cosHA >= geo.sinMin;
+    },
+
+    /**
      * Calculate the local hour when target transits on a given date
      * Returns: hour (0-24) or null if transit not found
      */
     calculateTransitHour(date, target, location, twilightCache, dayOffset) {
-        // Start searching from noon on the given date
-        const isDST = SettingsManager.isDSTActive(date, location.timezone);
-        const offsetHours = isDST ? location.timezone + 1 : location.timezone;
-        const noonJD = TimeUtils.localWallClockToJD(date.getFullYear(), date.getMonth(), date.getDate(), 12, location.timezone, isDST);
+        // Transit occurs when LST = target RA. The cache holds LST over
+        // noon-12h to noon+12h in 0.1h steps.
+        const night = twilightCache.get(dayOffset);
 
-        // Transit occurs when LST = target RA
-        // Search from noon-12h to noon+12h to find transit
-        const oneHour = 1/24;
-
-        for (let hourOffset = -12; hourOffset <= 12; hourOffset += 0.1) {
-            const testJD = noonJD + hourOffset * oneHour;
-            const lst = getLST(testJD, location.longitude);
-
-            // Check if LST is close to target RA (within 0.1 hours)
-            let diff = Math.abs(lst - target.ra);
+        for (let i = 0; i < night.transitLST.length; i++) {
+            let diff = Math.abs(night.transitLST[i] - target.ra);
             // Handle wrap-around (23.9 hours and 0.1 hours are close)
             if (diff > 12) diff = 24 - diff;
 
             if (diff < 0.05) { // Within ~3 minutes
-                // Convert JD back to local time
-                const utcDate = jdToDate(testJD);
-                const localDate = new Date(utcDate.getTime() + offsetHours * 3600000);
-                return localDate.getUTCHours() + localDate.getUTCMinutes() / 60;
+                return night.transitHour[i];
             }
         }
 
