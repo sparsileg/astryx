@@ -19,6 +19,7 @@ const TUTORIAL_REGISTRY = {
         'getting-started':          TUTORIAL_GETTING_STARTED,
         'imaging-projects':         TUTORIAL_IMAGING_PROJECTS,
         'imaging-programs-reports': TUTORIAL_IMAGING_PROGRAMS,
+        'log-analysis':             TUTORIAL_LOG_ANALYSIS,
         'sequence-planner':         TUTORIAL_SEQUENCE_PLANNER,
         'settings':                 TUTORIAL_SETTINGS,
         'sidebar':                  TUTORIAL_SIDEBAR,
@@ -29,6 +30,5 @@ const TUTORIAL_REGISTRY = {
         'utilities':                TUTORIAL_UTILITIES,
         'yearly-observability':     TUTORIAL_YEARLY_OBSERVABILITY,
         'viewfinder':               TUTORIAL_VIEWFINDER,
-        'yearly-observability':     TUTORIAL_YEARLY_OBSERVABILITY,
     }
 };

@@ -60,7 +60,7 @@ const TUTORIAL_SIDEBAR = {
             type: 'callout',
             title: 'Theme',
             body: 'Select the style and colour theme of the interface. Astryx includes Dark, Light, Matrix, Flat, and Night themes. The Night theme is designed to preserve your dark adaptation at the telescope. Try different options and select your favorite. It can be changed at any time.',
-            target: '#theme-select',
+            target: '#theme-dropdown',
             position: 'right',
             waitFor: 'next',
             highlight: true
@@ -70,7 +70,7 @@ const TUTORIAL_SIDEBAR = {
             type: 'callout',
             title: 'Observer Location',
             body: 'Select the location from which your imaging will take place. All visibility and observability calculations use this location. You can manage locations from the system menu → Admin Tools → Manage Observer Locations.<br><br>If you add a new location, the first time you select it here, the <em>Best Month</em> calculation will automagically execute.',
-            target: '#sidebar-location-select',
+            target: '#location-dropdown',
             position: 'right',
             waitFor: 'next',
             highlight: true
@@ -166,10 +166,20 @@ const TUTORIAL_SIDEBAR = {
             highlight: true
         },
         {
+            id: 'log-analysis',
+            type: 'callout',
+            title: 'Log Analysis',
+            body: 'Analyze your ASIAir session and PHD2 guide logs after an imaging night, with reports on time usage, guiding quality, frames to inspect, and recommended settings.',
+            target: '#sidebar-log-analysis',
+            position: 'right',
+            waitFor: 'next',
+            highlight: true
+        },
+        {
             id: 'utilities',
             type: 'callout',
             title: 'Utilities',
-            body: 'Access supplementary tools including cloud cover forecasts, light pollution maps, analysis of ASIAIR session and guide logs, and dust mote management.',
+            body: 'Access supplementary tools including cloud cover forecasts, light pollution maps, and dust mote management.',
             target: '#sidebar-utilities',
             position: 'right',
             waitFor: 'next',

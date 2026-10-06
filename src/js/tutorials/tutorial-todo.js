@@ -52,7 +52,7 @@ const TUTORIAL_TODO = {
             type: 'callout',
             title: 'Sort Options',
             body: 'The <strong>Sort by</strong> dropdown controls how your targets are grouped and ordered. There are three views: <strong>Type</strong>, <strong>Best Month</strong>, and <strong>Rise Time</strong>. Each serves a different planning purpose.',
-            target: '#todo-sort-select',
+            target: '#todo-sort-dropdown',
             position: 'bottom',
             waitFor: 'next',
             highlight: true
@@ -63,10 +63,10 @@ const TUTORIAL_TODO = {
             id: 'sort-by-type-intro',
             type: 'callout',
             title: 'Sort by Type',
-            body: 'Select <strong>Type</strong> from the Sort by dropdown.',
-            target: '#todo-sort-select',
+            body: 'Select <strong>Type</strong> from the Sort by dropdown. Click Next when the view has updated.',
+            target: '#todo-sort-dropdown',
             position: 'bottom',
-            waitFor: 'click',
+            waitFor: 'next',
             highlight: true
         },
         {
@@ -74,7 +74,7 @@ const TUTORIAL_TODO = {
             type: 'callout',
             title: 'Grouped by Object Type',
             body: 'In this view, targets are grouped by object type — Galaxies, Nebulae, Clusters, and so on — and sorted within each group by best imaging month. This is useful when you want to focus a session on a particular category of object, or when you are building a themed imaging program.<br><br>Each target displays a small circle icon indicating its imaging status: an empty circle means no sessions exist, a half-filled circle means an active project exists in the Imaging Log, and a filled circle means the project is complete.<br><br>When you click on the target designator or common name, you will jump to the Detail view for that object and it becomes the <strong>Current Target</strong> so you can run various analysis tools on it.',
-            target: '#todo-sort-select',
+            target: '#todo-sort-dropdown',
             position: 'bottom',
             waitFor: 'next',
             highlight: false
@@ -86,9 +86,9 @@ const TUTORIAL_TODO = {
             type: 'callout',
             title: 'Sort by Best Month',
             body: 'Select <strong>Best Month</strong> from the Sort by dropdown. Click Next when the view has updated.',
-            target: '#todo-sort-select',
+            target: '#todo-sort-dropdown',
             position: 'bottom',
-            waitFor: 'click',
+            waitFor: 'next',
             highlight: false
         },
         {
@@ -108,9 +108,9 @@ const TUTORIAL_TODO = {
             type: 'callout',
             title: 'Sort by Rise Time',
             body: 'Select <strong>Rise Time</strong> from the Sort by dropdown. Click Next when the view has updated.',
-            target: '#todo-sort-select',
+            target: '#todo-sort-dropdown',
             position: 'bottom',
-            waitFor: 'click',
+            waitFor: 'next',
             highlight: true
         },
         {

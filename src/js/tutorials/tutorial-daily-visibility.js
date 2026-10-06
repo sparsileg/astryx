@@ -78,7 +78,7 @@ const TUTORIAL_DAILY_VISIBILITY = {
             type: 'callout',
             title: 'Minimum Altitude',
             body: 'Sets the minimum elevation above the horizon in degrees that the target must reach to be considered visible. The default comes from your global Settings.<br><br>Raising this value restricts results to times when the target is higher — and therefore through less atmosphere — which generally improves image quality.',
-            target: '#dv-min-altitude',
+            target: '#dv-min-alt-dropdown',
             position: 'bottom',
             waitFor: 'next',
             highlight: true

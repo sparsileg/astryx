@@ -67,7 +67,7 @@ const TUTORIAL_IMAGING_PROJECTS = {
             type: 'callout',
             title: 'Default Status Filter',
             body: 'The Status filter defaults to <strong>All But Completed</strong>. This keeps your active projects front and center while hiding finished ones — the most common working view. Switch to <strong>All Statuses</strong> or <strong>Completed</strong> when you want to review finished work.',
-            target: '#imaging-log-project-status-filter',
+            target: '#imaging-log-status-dropdown',
             position: 'bottom',
             waitFor: 'next',
             highlight: true

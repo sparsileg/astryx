@@ -76,7 +76,7 @@ const TUTORIAL_SEQUENCE_PLANNER = {
             type: 'callout',
             title: 'Session Start Time',
             body: '<strong>Dusk</strong> starts the session at the end of astronomical twilight — the earliest time imaging is practical. <strong>Custom</strong> lets you enter a later start time, for example if you cannot be at your site until midnight.',
-            target: '#seq-plan-start-time',
+            target: '#seq-plan-start-time-dropdown',
             position: 'bottom',
             waitFor: 'next',
             highlight: true
@@ -86,7 +86,7 @@ const TUTORIAL_SEQUENCE_PLANNER = {
             type: 'callout',
             title: 'Location',
             body: 'Select the observation site you will be imaging from. The planner uses your location\'s latitude, longitude, elevation, and horizon profile for all calculations. Locations are managed in Admin Tools.',
-            target: '#seq-plan-location',
+            target: '#seq-plan-location-dropdown',
             position: 'bottom',
             waitFor: 'next',
             highlight: true
@@ -96,7 +96,7 @@ const TUTORIAL_SEQUENCE_PLANNER = {
             type: 'callout',
             title: 'Minimum Altitude',
             body: 'The minimum elevation above the horizon a target must reach before the planner will schedule imaging time for it. Targets below this threshold are still tracked but excluded from the active imaging window.<br><br>Higher values restrict imaging to times when targets are through less atmosphere, improving image quality but shortening available windows.',
-            target: '#seq-plan-min-altitude',
+            target: '#seq-plan-min-altitude-dropdown',
             position: 'bottom',
             waitFor: 'next',
             highlight: true
@@ -106,7 +106,7 @@ const TUTORIAL_SEQUENCE_PLANNER = {
             type: 'callout',
             title: 'Use Horizon Profile',
             body: 'When set to Yes, the planner applies the custom horizon profile stored for your selected location — accounting for trees, buildings, or terrain. Periods when a target is blocked by the horizon are flagged as warnings in the Imaging Plan.<br><br>Set to No to treat the horizon as perfectly flat. If your location has no horizon profile defined, this setting has no effect.',
-            target: '#seq-plan-use-horizon',
+            target: '#seq-plan-use-horizon-dropdown',
             position: 'bottom',
             waitFor: 'next',
             highlight: true
@@ -193,10 +193,10 @@ const TUTORIAL_SEQUENCE_PLANNER = {
             id: 'drag-reorder',
             type: 'callout',
             title: 'Reordering Targets',
-            body: 'Drag targets by the handle on the left of each row to change their imaging order. The planner initially suggests an order based on when each target sets — targets that drop below the minimum altitude earliest are imaged first, ensuring you capture everything before it becomes unavailable.<br><br>You can override this order by dragging. The timeline and Imaging Plan update immediately to reflect the new sequence.',
-            target: '.seq-plan-drag-handle',
+            body: 'Use the <strong>up</strong> and <strong>down</strong> arrow buttons on the left of each row to change the imaging order. The planner initially suggests an order based on when each target sets — targets that drop below the minimum altitude earliest are imaged first, ensuring you capture everything before it becomes unavailable.<br><br>You can override this order with the arrows. The timeline and Imaging Plan update immediately to reflect the new sequence.',
+            target: '.seq-plan-move-buttons',
             position: 'right',
-            position: '400px',
+            width: '400px',
             waitFor: 'next',
             highlight: true
         },
