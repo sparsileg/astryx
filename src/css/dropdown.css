@@ -51,6 +51,14 @@
     display: block;
 }
 
+/* Opened upward when there's no room below (dropdown-position.js) */
+.astryx-dropdown.open-up .astryx-dropdown-menu {
+    top: auto;
+    bottom: 100%;
+    margin-top: 0;
+    margin-bottom: 0.25rem;
+}
+
 .astryx-dropdown-item {
     display: grid;
     grid-template-columns: auto 1fr;

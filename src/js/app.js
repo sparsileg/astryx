@@ -28,6 +28,7 @@ const App = {
 
             // Initialize UI
             UIManager.init();
+            DropdownPosition.init();
 
             // Populate sidebar pinned targets strip (persistent across all views)
             VisibilityTargets.updatePinnedDisplay();
