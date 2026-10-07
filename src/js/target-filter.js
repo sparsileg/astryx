@@ -1056,6 +1056,7 @@ const TargetFilter = {
 
         try {
             await ImagingLogManager.createProgram(programData);
+            UIManager.markDataChanged();
             UIManager.closeModal();
             UIManager.showToast(`Program "${programName}" created with ${targetDesignations.length} targets`, 'success');
 

@@ -1452,6 +1452,7 @@ const UIManager = {
             await SettingsManager.setLastBestMonthsAltitude(null);
             await SettingsManager.setLastBestMonthsDarkHours(null);
             await SettingsManager.setLastBestMonthsLocation(null);
+            this.markDataChanged();
 
             // clear filter options so they can be reloaded fresh upon new target import
             TargetFilter.clearAvailableOptions();
@@ -1594,6 +1595,7 @@ const UIManager = {
 
             if (parsed.targets.length > 0) {
                 const count = await DataManager.importTargets(parsed.targets, targetVersion);
+                this.markDataChanged();
                 TargetFilter.initialize();
                 await App.updateVersionDisplay();
                 this.showToast(`Successfully imported ${count} target(s)`, 'success');

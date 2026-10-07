@@ -73,43 +73,11 @@
     background: var(--card-hover);
 }
 
-/* Drawn here rather than by the browser: the desktop (WebKitGTK) app
-   showed no checkbox in these menus */
+/* Drawn in base.css rather than by the browser */
 .astryx-dropdown-item input[type="checkbox"] {
-    -webkit-appearance: none;
-    appearance: none;
-    position: relative;
     width: 16px;
     height: 16px;
     margin: 0;
-    background: var(--input-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 3px;
-    cursor: pointer;
-}
-
-.astryx-dropdown-item input[type="checkbox"]:checked {
-    background: var(--primary-color);
-    border-color: var(--primary-color);
-}
-
-.astryx-dropdown-item input[type="checkbox"]:checked::after {
-    content: '';
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    width: 30%;
-    height: 60%;
-    box-sizing: border-box;
-    border: solid var(--checkbox-tick);
-    border-width: 0 2px 2px 0;
-    /* Up a little: the tick's corner is its heavy end */
-    transform: translate(-50%, -60%) rotate(45deg);
-}
-
-.astryx-dropdown-item input[type="checkbox"]:focus-visible {
-    outline: 2px solid var(--focus-ring);
-    outline-offset: 1px;
 }
 
 .astryx-dropdown-item label {

@@ -225,17 +225,17 @@ const BackupManagerWeb = {
         const lastChange = SettingsManager.getLastChangeTimestamp();
         if (!lastChange) return;
 
-        // Don't fire if a backup has already been made after the last change
+        // Don't fire if a backup has already been made after the last change.
+        // lastChange is epoch ms; lastBackup is a DTG string.
         const lastBackup = SettingsManager.getSetting('lastBackupTimestamp');
-        if (lastBackup && String(lastBackup) >= String(lastChange)) return;
+        if (lastBackup && TimeUtils.dtgToMs(lastBackup) >= Number(lastChange)) return;
 
         const delayMs = SettingsManager.getBackupDelayMinutes() * 60000;
         const elapsed = Date.now() - Number(lastChange);
         const remaining = delayMs - elapsed;
 
         if (remaining <= 0) {
-            // Delay already elapsed — clear the pending flag, don't fire on cold start
-            await SettingsManager.saveSetting('lastBackupTimestamp', TimeUtils.nowDTG());
+            // Delay already elapsed — don't fire on cold start
             return;
         } else {
             // Resume the countdown from where it left off
@@ -567,8 +567,86 @@ const BackupManagerWeb = {
         }, 0);
     },
 
+    // ============================================================================
+    // RESTORE COMPARISON (issue #249)
+    // ============================================================================
+
+    // Stores a backup can hold: key as used by generateBackupData and the
+    // restore checkboxes, backupKey as written in the backup file
+    RESTORE_STORES: [
+        { key: 'settings', backupKey: 'settings', name: 'Settings', isArray: false },
+        { key: 'locations', backupKey: 'locations', name: 'Locations', isArray: true },
+        { key: 'telescopes', backupKey: 'telescopes', name: 'Telescopes', isArray: true },
+        { key: 'sensors', backupKey: 'sensors', name: 'Sensors', isArray: true },
+        { key: 'filters', backupKey: 'filters', name: 'Filters', isArray: true },
+        { key: 'pinnedTargets', backupKey: 'pinnedTargets', name: 'Pinned Targets', isArray: true },
+        { key: 'toDoTargets', backupKey: 'toDoTargets', name: 'To Do List', isArray: true },
+        { key: 'imagingProjects', backupKey: 'imagingProjects', name: 'Imaging Projects', isArray: true },
+        { key: 'imagingSessions', backupKey: 'imagingSessions', name: 'Imaging Sessions', isArray: true },
+        { key: 'imagingPrograms', backupKey: 'imagingPrograms', name: 'Imaging Programs', isArray: true },
+        { key: 'targets', backupKey: 'targetDatabase', name: 'Target Database', isArray: true }
+    ],
+
     /**
-     * Show restore confirmation modal (placeholder for now)
+     * Compare each store in a backup with the current data, and decide whether
+     * the backup as a whole is identical to, newer or older than current data.
+     * Both backends call this on BackupManagerWeb; it reads through DBManager.
+     * @returns {{identical: Object<string, boolean>, verdict: string, backupChange: number, currentChange: number}}
+     */
+    async compareBackupToCurrent(backupData) {
+        const stores = this.RESTORE_STORES.filter(s => backupData[s.backupKey] !== undefined);
+        const current = await this.generateBackupData(stores.map(s => s.key));
+
+        const identical = {};
+        stores.forEach(store => {
+            identical[store.key] = this.canonicalStore(store, backupData) === this.canonicalStore(store, current);
+        });
+
+        // When the backup and current data differ, the newer one is the one
+        // whose data changed last. A backup without settings has only its export date.
+        const backupChange = Number(backupData.settings?.data?.lastChangeTimestamp ?? Date.parse(backupData.exportDate));
+        const currentChange = Number(SettingsManager.getLastChangeTimestamp() ?? 0);
+        let verdict = 'identical';
+        if (Object.values(identical).includes(false)) {
+            verdict = backupChange > currentChange ? 'newer' : 'older';
+        }
+        return { identical, verdict, backupChange, currentChange };
+    },
+
+    /**
+     * One store's data as text that is equal exactly when the data is: record
+     * order, key order, and null vs missing fields don't matter, so web and
+     * desktop data compare equal.
+     */
+    canonicalStore(store, data) {
+        if (store.key === 'settings') {
+            const kept = Object.entries(data.settings?.data ?? {})
+                .filter(([key]) => !APP_CONFIG.BACKUP_COMPARE_IGNORED_SETTINGS.includes(key));
+            return this.canonicalJson(Object.fromEntries(kept));
+        }
+        const records = data[store.backupKey].map(record => this.canonicalJson(record)).sort().join('\n');
+        // The target catalog version is part of the target database's state
+        return store.key === 'targets' ? `${data.targetVersion ?? ''}\n${records}` : records;
+    },
+
+    /**
+     * JSON with object keys sorted and null/undefined values dropped
+     */
+    canonicalJson(value) {
+        if (Array.isArray(value)) {
+            return `[${value.map(v => this.canonicalJson(v)).join(',')}]`;
+        }
+        if (value !== null && typeof value === 'object') {
+            const entries = Object.keys(value).sort()
+                .filter(key => value[key] !== null && value[key] !== undefined)
+                .map(key => `${JSON.stringify(key)}:${this.canonicalJson(value[key])}`);
+            return `{${entries.join(',')}}`;
+        }
+        return JSON.stringify(value);
+    },
+
+    /**
+     * Show restore confirmation modal
      */
     showRestoreConfirmModal(backupData) {
         UIManager.openModal('restore-confirm-template', 'Restore Backup?', (action, modalBody) => {
@@ -578,11 +656,19 @@ const BackupManagerWeb = {
         });
 
         setTimeout(async () => {
+            // Restoring must still work if the comparison can't be made
+            let comparison = null;
+            try {
+                comparison = await BackupManagerWeb.compareBackupToCurrent(backupData);
+            } catch (error) {
+                console.error('Failed to compare backup with current data:', error);
+            }
+
             // Populate file metadata
-            this.populateRestoreFileInfo(backupData);
+            this.populateRestoreFileInfo(backupData, comparison);
 
             // Populate data stores list with checkboxes
-            await this.populateRestoreStoresList(backupData);
+            await this.populateRestoreStoresList(backupData, comparison);
 
             // Setup Select All/None buttons
             const selectAllBtn = document.getElementById('restore-select-all');
@@ -611,7 +697,7 @@ const BackupManagerWeb = {
     /**
      * Populate restore file metadata display
      */
-    populateRestoreFileInfo(backupData) {
+    populateRestoreFileInfo(backupData, comparison) {
         const fileInfoDiv = document.getElementById('restore-file-info');
         if (!fileInfoDiv) return;
 
@@ -656,19 +742,53 @@ const BackupManagerWeb = {
                 </div>
         `;
 
-        // Add age warning if applicable
-        if (ageInDays > 30) {
+        // How the backup relates to current data (issue #249)
+        if (!comparison) {
             html += `
-                <div class="backup-restore-warning ${warningClass}" style="margin-top: 1rem; margin-bottom: 0;">
-                    <div class="backup-restore-warning-title">
-                        ${warningIcon} Warning: This backup is ${ageInDays} days old
-                    </div>
-                    <div class="backup-restore-warning-content">
-                        Created on ${exportDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}.
-                        Restoring old data may overwrite recent changes.
-                    </div>
+                <div class="backup-restore-warning backup-restore-verdict">
+                    <div class="backup-restore-warning-title">Couldn't compare this backup with current data</div>
                 </div>
             `;
+        } else if (comparison.verdict === 'identical') {
+            html += `
+                <div class="backup-restore-warning backup-restore-verdict identical">
+                    <div class="backup-restore-warning-title">Identical to current data — restore not needed</div>
+                </div>
+            `;
+        } else {
+            // Both change times, so the verdict can be checked at a glance
+            const formatChange = ms => {
+                if (!ms) return 'unknown';
+                const date = new Date(ms);
+                return `${date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })} at ${date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`;
+            };
+            const backupChanged = formatChange(comparison.backupChange);
+            const changes = `
+                Backup data last changed: ${backupChanged}<br>
+                Current data last changed: ${formatChange(comparison.currentChange)}
+            `;
+
+            if (comparison.verdict === 'older') {
+                const age = ageInDays > 30 ? ` This backup is ${ageInDays} days old.` : '';
+                html += `
+                    <div class="backup-restore-warning backup-restore-verdict older ${warningClass}">
+                        <div class="backup-restore-warning-title">
+                            ${warningIcon} Backup data is older than current data
+                        </div>
+                        <div class="backup-restore-warning-content">
+                            ${changes}<br>
+                            Restoring will overwrite changes made since ${backupChanged}.${age}
+                        </div>
+                    </div>
+                `;
+            } else {
+                html += `
+                    <div class="backup-restore-warning backup-restore-verdict newer">
+                        <div class="backup-restore-warning-title">Backup data is newer than current data — restore recommended</div>
+                        <div class="backup-restore-warning-content">${changes}</div>
+                    </div>
+                `;
+            }
         }
 
         html += `</div>`;
@@ -678,40 +798,32 @@ const BackupManagerWeb = {
     /**
      * Populate data stores list with checkboxes and counts
      */
-    async populateRestoreStoresList(backupData) {
+    async populateRestoreStoresList(backupData, comparison) {
         const storesListDiv = document.getElementById('restore-stores-list');
         if (!storesListDiv) return;
 
         // Get current counts
         const currentCounts = await this.countDataStoreItems();
 
-        // Define store display names and their keys in backup data
-        const storeInfo = [
-            { key: 'settings', backupKey: 'settings', name: 'Settings', isArray: false },
-            { key: 'locations', backupKey: 'locations', name: 'Locations', isArray: true },
-            { key: 'telescopes', backupKey: 'telescopes', name: 'Telescopes', isArray: true },
-            { key: 'sensors', backupKey: 'sensors', name: 'Sensors', isArray: true },
-            { key: 'filters', backupKey: 'filters', name: 'Filters', isArray: true },
-            { key: 'pinnedTargets', backupKey: 'pinnedTargets', name: 'Pinned Targets', isArray: true },
-            { key: 'toDoTargets', backupKey: 'toDoTargets', name: 'To Do List', isArray: true },
-            { key: 'imagingProjects', backupKey: 'imagingProjects', name: 'Imaging Projects', isArray: true },
-            { key: 'imagingSessions', backupKey: 'imagingSessions', name: 'Imaging Sessions', isArray: true },
-            { key: 'imagingPrograms', backupKey: 'imagingPrograms', name: 'Imaging Programs', isArray: true },
-            { key: 'targets', backupKey: 'targetDatabase', name: 'Target Database', isArray: true }
-        ];
-
         let html = '<div class="backup-restore-checkboxes">';
 
-        storeInfo.forEach(store => {
+        BackupManagerWeb.RESTORE_STORES.forEach(store => {
             // Check if this store exists in the backup
             if (backupData[store.backupKey] !== undefined) {
                 const backupCount = store.isArray ? backupData[store.backupKey].length : 1;
                 const currentCount = store.key === 'settings' ? 1 : currentCounts[store.key];
+                let rowClass = 'backup-restore-checkbox-item';
+                let status = '';
+                if (comparison) {
+                    const identical = comparison.identical[store.key];
+                    if (!identical) rowClass += ' differs';
+                    status = `<span class="backup-restore-store-status">${identical ? 'identical' : 'differs'}</span>`;
+                }
 
                 // Special handling for imagingSessions - make it disabled and linked to projects
                 if (store.key === 'imagingSessions') {
                     html += `
-                        <div class="backup-restore-checkbox-item">
+                        <div class="${rowClass}">
                             <input type="checkbox" id="restore-${store.key}" checked disabled data-store="${store.key}">
                             <label for="restore-${store.key}" class="backup-restore-checkbox-label" style="opacity: 0.6;">${store.name}</label>
                             <span class="backup-restore-count-compare" style="opacity: 0.6;">
@@ -719,11 +831,12 @@ const BackupManagerWeb = {
                                 <span class="backup-restore-count-arrow">→</span>
                                 ${backupCount}
                             </span>
+                            ${status}
                         </div>
                     `;
                 } else {
                     html += `
-                        <div class="backup-restore-checkbox-item">
+                        <div class="${rowClass}">
                             <input type="checkbox" id="restore-${store.key}" checked data-store="${store.key}">
                             <label for="restore-${store.key}" class="backup-restore-checkbox-label">${store.name}</label>
                             <span class="backup-restore-count-compare">
@@ -731,6 +844,7 @@ const BackupManagerWeb = {
                                 <span class="backup-restore-count-arrow">→</span>
                                 ${backupCount}
                             </span>
+                            ${status}
                         </div>
                     `;
                 }
@@ -779,6 +893,13 @@ const BackupManagerWeb = {
             // Execute restore for each selected store
             for (const store of selectedStores) {
                 await this.restoreDataStore(store, backupData);
+            }
+
+            // Restored settings bring back the backup's own change time. Without
+            // them the restore is a change made now, so it gets backed up.
+            // (Not with settings: marking saves the in-memory settings over them.)
+            if (!selectedStores.includes('settings')) {
+                await UIManager.markDataChanged();
             }
 
             // Close modal and show success
@@ -854,8 +975,14 @@ const BackupManagerWeb = {
             // The SETTINGS store also holds the separate target-version record.
             // Clearing it for a settings-only restore must not lose that value.
             const targetVersionRecord = await DBManager.get(APP_CONFIG.STORES.SETTINGS, 'target-version');
+            // Kept even when unset here, so e.g. a Windows backup folder never
+            // reaches a Linux machine
+            const kept = {};
+            APP_CONFIG.BACKUP_RESTORE_KEPT_SETTINGS.forEach(key => {
+                kept[key] = SettingsManager.getSetting(key);
+            });
             await DBManager.clear(mapping.storeName);
-            await DBManager.put(mapping.storeName, data);
+            await DBManager.put(mapping.storeName, { ...data, data: { ...data.data, ...kept } });
             if (targetVersionRecord) {
                 await DBManager.put(mapping.storeName, targetVersionRecord);
             }

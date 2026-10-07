@@ -15,7 +15,7 @@
 const APP_CONFIG = {
     APP_NAME: 'Astryx',
     APP_TITLE: 'Astryx - Astrophotography Planning Tool',
-    APP_VERSION: '1.11.0',
+    APP_VERSION: '1.11.1',
     DB_NAME: 'astryx-db',
     DB_VERSION: 8,
     TARGET_DATA_PATH: './data/',
@@ -83,6 +83,16 @@ const APP_CONFIG = {
     BACKUP_REMINDER_INTERVAL_DAYS: 7,   // default reminder interval (days)
     BACKUP_REMINDER_AMBER_DAYS: 7,      // sidebar indicator turns amber after this many days
     BACKUP_REMINDER_RED_DAYS: 14,       // sidebar indicator turns orange/red after this many days
+
+    // Settings left out when the restore dialog compares a backup with current
+    // data: bookkeeping and machine-specific values, not user data (issue #249)
+    BACKUP_COMPARE_IGNORED_SETTINGS: [
+        'lastChangeTimestamp', 'lastBackupTimestamp', 'lastBestMonthsCalculated', 'backupFolder'
+    ],
+
+    // Settings that belong to this machine, kept when settings are restored
+    // from a backup, e.g. a web backup has no backup folder (issue #249)
+    BACKUP_RESTORE_KEPT_SETTINGS: ['backupFolder', 'lastBackupTimestamp'],
 
     // Session analysis learned defaults (issue #145)
     DEFAULT_SUB_GAP_S: 5,              // seconds between end of exposure and start of next (camera download + overhead)
