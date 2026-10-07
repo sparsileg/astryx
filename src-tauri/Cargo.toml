@@ -1,6 +1,6 @@
 [package]
 name = "astryx"
-version = "1.10.3"
+version = "1.11.0"
 description = "Astrophotography planning and imaging session analysis"
 authors = ["sparsile"]
 license = "MIT"
@@ -29,5 +29,5 @@ tauri = { version = "2.10.3", features = [] }
 tauri-plugin-dialog = "2"
 tauri-plugin-fs = "2"
 tauri-plugin-log = "2"
-tauri-plugin-shell = "2"
+tauri-plugin-opener = "2"
 tauri-plugin-window-state = "2"

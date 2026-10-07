@@ -53,6 +53,20 @@ const TARGETS = {
     NGC253: { ra: 0.793, dec: -25.29, type: 'GALXY' },
 };
 
+/** Messier objects for a marathon-sized plan, kept apart from TARGETS so the
+ * Target Optimizer's candidates don't change. */
+const MARATHON = {
+    M74: { ra: 1.61, dec: 15.78 }, M77: { ra: 2.71, dec: -0.01 }, M33: { ra: 1.56, dec: 30.66 },
+    M31: { ra: 0.71, dec: 41.27 }, M52: { ra: 23.41, dec: 61.59 }, M103: { ra: 1.56, dec: 60.66 },
+    M76: { ra: 1.70, dec: 51.58 }, M34: { ra: 2.70, dec: 42.78 }, M45: { ra: 3.79, dec: 24.12 },
+    M79: { ra: 5.41, dec: -24.52 }, M42: { ra: 5.59, dec: -5.39 }, M78: { ra: 5.78, dec: 0.05 },
+    M1: { ra: 5.58, dec: 22.01 }, M35: { ra: 6.15, dec: 24.33 }, M37: { ra: 5.87, dec: 32.55 },
+    M41: { ra: 6.78, dec: -20.76 }, M93: { ra: 7.74, dec: -23.85 }, M47: { ra: 7.61, dec: -14.48 },
+    M46: { ra: 7.70, dec: -14.82 }, M50: { ra: 7.05, dec: -8.34 }, M48: { ra: 8.23, dec: -5.75 },
+    M44: { ra: 8.67, dec: 19.62 }, M67: { ra: 8.86, dec: 11.81 }, M95: { ra: 10.73, dec: 11.70 },
+    M65: { ra: 11.32, dec: 13.09 },
+};
+
 /** A horizon with trees to the east and a house to the north-west. */
 const BLOCKED_HORIZON = [
     { azimuth: 0, elevation: 10 }, { azimuth: 60, elevation: 30 }, { azimuth: 120, elevation: 25 },
@@ -62,9 +76,9 @@ const BLOCKED_HORIZON = [
 const location = (site, horizon = NOTIONAL_HORIZON) => ({ ...SITES[site], horizon });
 
 /** Pinned targets as SeqPlanView.loadPinnedTargets builds them. */
-function planTargets(names, exposureTime = 300) {
+function planTargets(names, exposureTime = 300, catalog = TARGETS) {
     return names.map(name => ({
-        targetId: name, name, ra: TARGETS[name].ra, dec: TARGETS[name].dec, common: '',
+        targetId: name, name, ra: catalog[name].ra, dec: catalog[name].dec, common: '',
         exposureTime, allocatedPercent: 100 / names.length,
         userOrder: 0, suggestedOrder: 0, orderOverridden: false,
     }));
@@ -91,10 +105,10 @@ function generatePlan(targets, session) {
     return { session, ...plan };
 }
 
-function checkPlanRules(name, targets, { session, ordered, results, events }) {
+function checkPlanRules(name, targets, { session, ordered, results, skipped, events }) {
     const total = results.reduce((sum, t) => sum + t.allocatedPercent, 0);
     assert.ok(Math.abs(total - 100) < 1e-9, `${name}: allocations sum to ${total}`);
-    assert.strictEqual(results.map(t => t.targetId).sort().join(), targets.map(t => t.targetId).sort().join(), `${name}: same targets`);
+    assert.strictEqual([...results, ...skipped].map(t => t.targetId).sort().join(), targets.map(t => t.targetId).sort().join(), `${name}: same targets`);
 
     assert.ok(session.duskJD <= session.sessionStartJD && session.sessionStartJD < session.sessionEndJD
         && session.sessionEndJD <= session.dawnJD, `${name}: session window inside the night`);
@@ -159,6 +173,36 @@ for (const [name, [date, loc, names, overrides]] of Object.entries(PLANS)) {
         matchSnapshot(`seqplan ${name}`, planSummary(plan));
     });
 }
+
+// More than SEQ_PLAN_MAX_REORDER_TARGETS targets: targets that are too low
+// are skipped, and no slot pays for a meridian flip it could avoid
+const MARATHON_PLAN = ['2026-03-20', location('home'), Object.keys(MARATHON), { minAltitude: 20 }];
+
+test('Sequence Planner: home, Messier marathon', () => {
+    const [date, loc, names, overrides] = MARATHON_PLAN;
+    const targets = planTargets(names, 60, MARATHON);
+    const plan = generatePlan(targets, sessionConfig(date, loc, overrides));
+    checkPlanRules('marathon', targets, plan);
+    assert.ok(plan.skipped.length > 0 && plan.results.length > plan.skipped.length, 'marathon: some targets skipped, most planned');
+    for (const t of plan.results) {
+        assert.ok(t.exposureCount > 0, `marathon: ${t.targetId} gets subs`);
+        assert.strictEqual(t.meridianFlipJD, null, `marathon: ${t.targetId} avoids its flip`);
+    }
+    matchSnapshot('seqplan home, Messier marathon', planSummary(plan));
+});
+
+test('Sequence Planner: the order targets were pinned in does not change the plan', () => {
+    const cases = [
+        [PLANS['home, autumn trio'], TARGETS, 300],
+        [PLANS['seattle, short summer night'], TARGETS, 300],
+        [MARATHON_PLAN, MARATHON, 60],
+    ];
+    for (const [[date, loc, names, overrides], catalog, exposureTime] of cases) {
+        const forward = generatePlan(planTargets(names, exposureTime, catalog), sessionConfig(date, loc, overrides));
+        const reversed = generatePlan(planTargets([...names].reverse(), exposureTime, catalog), sessionConfig(date, loc, overrides));
+        assert.deepStrictEqual(planSummary(reversed), planSummary(forward), `${names.join(', ')}`);
+    }
+});
 
 // ── Target Optimizer ──────────────────────────────────────────────────────────
 

@@ -19,6 +19,6 @@
         "fs:allow-stat",
         "fs:allow-read-dir",
         "fs:scope-appdata-recursive",
-        "shell:allow-open"
+        "opener:default"
     ]
 }

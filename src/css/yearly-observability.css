@@ -84,11 +84,6 @@
     vertical-align: middle;
 }
 
-.yo-header-buttons {
-    display: flex;
-    gap: 0.5rem;
-}
-
 /* Legend items */
 .yo-legend-item {
     display: flex;

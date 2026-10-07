@@ -7,6 +7,7 @@ const SeqPlanView = {
     currentSession: null,
     currentTargets: [],
     calculatedResults: [],
+    skippedTargets: [],
     debounceTimer: null,
     isInitializing: false,
     resizeListenerAdded: false,
@@ -492,7 +493,12 @@ const SeqPlanView = {
             UIManager.showToast('No astronomical night at this location/date', 'error');
             return;
         }
+        if (plan.results.length === 0) {
+            UIManager.showToast('None of the pinned targets is above the minimum altitude long enough tonight', 'error');
+            return;
+        }
         this.calculatedResults = plan.results;
+        this.skippedTargets = plan.skipped;
         const events = plan.events;
 
         const session = this.currentSession;
@@ -744,6 +750,13 @@ const SeqPlanView = {
                 });
             }
         });
+
+        if (this.skippedTargets.length > 0) {
+            const names = this.skippedTargets.map(target => HtmlUtils.escapeHtml(target.name)).join(', ');
+            html += `
+            <p class="seq-plan-skipped">Not planned, not above the minimum altitude long enough tonight: ${names}</p>
+            `;
+        }
 
         html += `
         </div>
@@ -1031,8 +1044,13 @@ const SeqPlanView = {
             UIManager.showToast('No astronomical night at this location/date', 'error');
             return;
         }
+        if (plan.results.length === 0) {
+            UIManager.showToast('None of the pinned targets is above the minimum altitude long enough tonight', 'error');
+            return;
+        }
         this.calculatedResults = plan.results;
-        this.currentTargets = this.calculatedResults;
+        this.skippedTargets = plan.skipped;
+        this.currentTargets = [...this.calculatedResults, ...this.skippedTargets];
 
         SeqPlanTimeline.render(plan.events, this.currentSession.sessionStartJD, this.currentSession.sessionEndJD, this.currentSession);
 

@@ -293,3 +293,9 @@
 .seq-plan-move-down:hover {
     color: var(--primary-color);
 }
+
+/* Targets the plan skipped (more than three targets only) */
+.seq-plan-skipped {
+    margin-top: 1rem;
+    color: var(--text-secondary);
+}

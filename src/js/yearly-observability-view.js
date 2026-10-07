@@ -230,13 +230,6 @@ const YearlyObservabilityView = {
             }
         }
 
-        const helpBtn = document.getElementById('yearly-observability-help-btn');
-        if (helpBtn) {
-            helpBtn.addEventListener('click', () => {
-                window.open('help/yearly-observability.html', '_blank');
-            });
-        }
-
         // Store data for theme change re-rendering
         this.lastGraphData = {
             altitudeData: altitudeData,

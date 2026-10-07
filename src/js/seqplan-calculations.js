@@ -650,9 +650,11 @@ const SeqPlanCalculations = {
      *     to an equal split before optimizing
      * @param {Object} session - Session configuration (SeqPlanView.buildSessionConfig);
      *     gains duskJD, dawnJD, sessionStartJD, and sessionEndJD
-     * @returns {Object|null} { ordered, results, events }, or null when the
-     *     night has no astronomical darkness. `ordered` is the order before
-     *     allocations were optimized.
+     * @returns {Object|null} { ordered, results, skipped, events }, or null
+     *     when the night has no astronomical darkness. `ordered` is the order
+     *     before allocations were optimized. `skipped` holds the targets not
+     *     visible long enough to plan; only plans of more than
+     *     SEQ_PLAN_MAX_REORDER_TARGETS targets skip any.
      */
     buildPlan(targets, session) {
         const timing = this.calculateSessionTiming(session.date, session.location);
@@ -667,14 +669,20 @@ const SeqPlanCalculations = {
             target.allocatedPercent = equalPercent;
         });
 
-        const ordered = SeqPlanOptimizer.optimizeTargetOrder(targets, session);
-        this.applySessionWindow(ordered, session);
-        const planned = SeqPlanOptimizer.optimizePlan(ordered, session);
+        let ordered = SeqPlanOptimizer.optimizeTargetOrder(targets, session);
+        let planned;
+        let skipped = [];
+        if (targets.length > APP_CONFIG.SEQ_PLAN_MAX_REORDER_TARGETS) {
+            ({ ordered, planned, skipped } = SeqPlanOptimizer.scheduleTargets(ordered, session));
+        } else {
+            this.applySessionWindow(ordered, session);
+            planned = SeqPlanOptimizer.optimizePlan(ordered, session);
+        }
         // Optimizing can change the order, and so the window
         this.applySessionWindow(planned, session);
 
         const results = this.planResults(planned, session);
-        return { ordered, results, events: this.generateTimelineEvents(results, session) };
+        return { ordered, results, skipped, events: this.generateTimelineEvents(results, session) };
     },
 
     /**

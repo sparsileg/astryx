@@ -41,3 +41,7 @@ serve:
 # Run the desktop app in dev mode (starts the web server itself)
 dev:
     cargo tauri dev
+
+# Build the User Guide PDF into src/help/ (needs pandoc and typst)
+guide:
+    guide/build-guide.sh

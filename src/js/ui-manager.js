@@ -178,14 +178,24 @@ const UIManager = {
     },
 
     /**
-     * Open a help page in a new browser tab
+     * Open the User Guide PDF: in a new browser tab on the web, in the
+     * system PDF viewer on desktop (the webview can't show PDFs)
      */
-    openHelpPage(filename) {
-        const url = `https://astryx.tools/help/${filename}`;
-        if (typeof window.__TAURI__ !== 'undefined') {
-            window.__TAURI__.shell.open(url);
-        } else {
-            window.open(`help/${filename}`, '_blank');
+    async openUserGuide() {
+        const url = APP_CONFIG.USER_GUIDE_PATH;
+        if (typeof window.__TAURI__ === 'undefined') {
+            window.open(url, '_blank');
+            return;
+        }
+        try {
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error(`User Guide not found (${response.status})`);
+            }
+            const pdf = new Uint8Array(await response.arrayBuffer());
+            await window.__TAURI__.core.invoke('open_user_guide', pdf);
+        } catch (error) {
+            this.showToast(`Could not open the User Guide: ${error.message ?? error}`, 'error');
         }
     },
 
@@ -296,10 +306,7 @@ const UIManager = {
             // Submenu is populated dynamically — no action needed here
             break;
         case 'help':
-            this.openHelpPage('index.html');
-            break;
-        case 'changelog':
-            this.openHelpPage('changelog.html');
+            this.openUserGuide();
             break;
         case 'about':
             this.openAboutModal();
@@ -505,13 +512,6 @@ const UIManager = {
         if (modal) {
             modal.classList.remove('active');
             this.currentModal = null;
-        }
-
-        // Hide Help button
-        const helpBtn = document.getElementById('modal-help');
-        if (helpBtn) {
-            helpBtn.style.display = 'none';
-            helpBtn.onclick = null;
         }
 
         // Hide subtitle
@@ -881,12 +881,6 @@ const UIManager = {
                 BestMonths.cancelCalculation();
             }
         });
-
-        const helpBtn = document.getElementById('modal-help');
-        if (helpBtn) {
-            helpBtn.style.display = '';
-            helpBtn.onclick = () => this.openHelpPage('best-months.html');
-        }
 
         this.populateBestMonthsModal();
     },
