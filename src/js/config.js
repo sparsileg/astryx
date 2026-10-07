@@ -15,7 +15,7 @@
 const APP_CONFIG = {
     APP_NAME: 'Astryx',
     APP_TITLE: 'Astryx - Astrophotography Planning Tool',
-    APP_VERSION: '1.10.0',
+    APP_VERSION: '1.10.1',
     DB_NAME: 'astryx-db',
     DB_VERSION: 8,
     TARGET_DATA_PATH: './data/',
@@ -43,6 +43,7 @@ const APP_CONFIG = {
     MIN_CONTINUOUS_DARK_HOURS: 2, // longest dark run above min altitude for a target to count as observable (To-Do, Best Months)
     TOAST_DURATION_MS: 3000, // how long a toast stays up
     TOAST_LONG_DURATION_MS: 6000, // for toasts with more to read
+    DROPDOWN_EDGE_MARGIN_PX: 8, // gap kept between an open dropdown menu and the edge it would cross
     MAX_SEARCH_RESULTS: 101, // maximum search results you can set
     DEFAULT_MIN_SIZE: 4.0,   // target filter arc minutes
     DEFAULT_MAX_MAG: 14.5,   // target filter magnitude
