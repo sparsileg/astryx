@@ -13,6 +13,7 @@
 
     /* Primary Colors */
     --primary-color: #d4982e;
+    --checkbox-tick: #000000;           /* tick in a ticked dropdown checkbox, on --primary-color */
     --primary-hover: #bc8025;
 
     /* Secondary Colors */
@@ -152,4 +153,19 @@ tr:nth-child(even) {
 .tutorial-modal,
 .tutorial-callout {
     box-shadow: 0 0 24px rgba(212, 152, 46, 0.3), 0 0 0 1px var(--tutorial-accent);
+}
+
+/* Restore the dropdown checkbox outline and tick suppressed by the global
+   border reset and the bottom-border-only input style */
+.astryx-dropdown-item input[type="checkbox"] {
+    border: 1px solid var(--text-secondary) !important;
+    border-radius: 3px !important;
+}
+
+.astryx-dropdown-item input[type="checkbox"]:checked {
+    border-color: var(--primary-color) !important;
+}
+
+.astryx-dropdown-item input[type="checkbox"]:checked::after {
+    border-color: var(--checkbox-tick) !important;
 }

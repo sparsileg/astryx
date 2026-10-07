@@ -13,6 +13,7 @@
 
     /* Primary Colors - Moderate red */
     --primary-color: #cc4444;       /* Dimmer (was #ff4444) */
+    --checkbox-tick: #000000;           /* tick in a ticked dropdown checkbox, on --primary-color */
     --primary-hover: #aa3333;       /* Darker (was #dd2222) */
 
     /* Secondary Colors - Dark reds */
