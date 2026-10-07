@@ -303,7 +303,7 @@ const ToDoView = {
 
         // Get today's date and calculate dusk/dawn
         const today = new Date();
-        const isDST = SettingsManager.isDSTActive(today, location.timezone);
+        const isDST = SettingsManager.isDSTOnDate(today, location);
 
         const duskJD = findAstronomicalDusk(today, location.latitude, location.longitude, location.timezone, isDST);
         const dawnJD = findNextAstronomicalDawn(today, location.latitude, location.longitude, location.timezone, isDST);
@@ -318,8 +318,8 @@ const ToDoView = {
             return;
         }
 
-        const minAltitude = 30;
-        const minDarkHours = 2;
+        const minAltitude = SettingsManager.getGlobalMinAltitude();
+        const minDarkHours = APP_CONFIG.MIN_CONTINUOUS_DARK_HOURS;
         const observable = [];
         const notObservable = [];
 
@@ -330,6 +330,8 @@ const ToDoView = {
         const day = today.getDate().toString().padStart(2, '0');
         const dateStr = `${year}-${month}-${day}`;
         const noonWindow = getNoonToNoonWindow(dateStr, location.timezone, isDST);
+
+        const nightSamples = getNightSamples(duskJD, dawnJD, location.longitude);
 
         // Calculate rise/set times for each target
         toDoTargets.forEach(target => {
@@ -354,49 +356,8 @@ const ToDoView = {
                 isCircumpolar = true;
             }
 
-            // Calculate continuous dark hours above altitude
-            let darkHours = 0;
-
-            if (isCircumpolar) {
-                // Circumpolar: entire dark period
-                darkHours = (dawnJD - duskJD) * 24;
-            } else if (riseJD && setJD) {
-                // Normal case: target rises and sets during or around dark period
-                const visibleStart = Math.max(riseJD, duskJD);
-                const visibleEnd = Math.min(setJD, dawnJD);
-                if (visibleEnd > visibleStart) {
-                    darkHours = (visibleEnd - visibleStart) * 24;
-                }
-            } else if (riseJD && !setJD) {
-                // Rises during dark, doesn't set before dawn
-                const visibleStart = Math.max(riseJD, duskJD);
-                darkHours = (dawnJD - visibleStart) * 24;
-            } else if (!riseJD && setJD) {
-                // Already up at dusk, sets during dark
-                const visibleEnd = Math.min(setJD, dawnJD);
-                darkHours = (visibleEnd - duskJD) * 24;
-            } else {
-                // Check if target is above altitude during entire dark period
-                const duskAlt = getAltitude(duskJD, target.ra, target.dec, location.latitude, location.longitude);
-                const dawnAlt = getAltitude(dawnJD, target.ra, target.dec, location.latitude, location.longitude);
-
-                if (duskAlt >= minAltitude && dawnAlt >= minAltitude) {
-                    // Likely up the whole time - sample to verify
-                    let alwaysUp = true;
-                    const steps = 12;
-                    for (let i = 0; i <= steps; i++) {
-                        const testJD = duskJD + (i / steps) * (dawnJD - duskJD);
-                        const alt = getAltitude(testJD, target.ra, target.dec, location.latitude, location.longitude);
-                        if (alt < minAltitude) {
-                            alwaysUp = false;
-                            break;
-                        }
-                    }
-                    if (alwaysUp) {
-                        darkHours = (dawnJD - duskJD) * 24;
-                    }
-                }
-            }
+            // Longest unbroken stretch above altitude in darkness
+            const darkHours = getHoursAboveAltitude(nightSamples, target.ra, target.dec, location.latitude, minAltitude).longestHours;
 
             // Format rise/set times
             let riseTimeStr = 'N/A';
@@ -605,7 +566,7 @@ const ToDoView = {
         const locationName = SettingsManager.getSelectedLocation();
         const location = DataManager.getLocation(locationName);
         const timezone = location ? location.timezone : 0;
-        const isDST = location ? SettingsManager.isDSTActive(new Date(), location.timezone) : false;
+        const isDST = location ? SettingsManager.isDSTOnDate(new Date(), location) : false;
 
         // Format dusk and dawn times
         const duskTime = this.formatLocalTime(duskJD, timezone, isDST);
@@ -1229,8 +1190,8 @@ const ToDoView = {
             if (typeof DailyVisibilityCalculations !== 'undefined') {
                 DailyVisibilityCalculations.currentTarget = target;
             }
-            if (typeof YearlyObservabilityCalculations !== 'undefined') {
-                YearlyObservabilityCalculations.currentTarget = target;
+            if (typeof YearlyObservabilityView !== 'undefined') {
+                YearlyObservabilityView.currentTarget = target;
             }
             UIManager.updateSidebarCurrentTarget(target.object);
             UIManager.openObjectDetailModal(target);

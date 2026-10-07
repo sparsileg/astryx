@@ -76,22 +76,6 @@ const SeqPlanOptimizer = {
     },
 
     /**
-     * STUB: Apply moon avoidance - placeholder for future implementation
-     * @param {Array} targets - Ordered targets
-     * @param {Object} session - Session configuration
-     * @returns {Array} Targets (unmodified for now)
-     */
-    applyMoonAvoidance(targets, session) {
-        // TODO: Implement moon avoidance algorithm
-        // 1. Get moon position and phase for session using getMoonPosition()
-        // 2. Calculate angular separation from each target using getAngularSeparation()
-        // 3. Prefer targets far from moon when moon is bright
-        // 4. Image near-moon targets when moon sets or is dim
-
-        return targets; // No modification for now
-    },
-
-    /**
      * Find the best plan for the night. Tries every target order, and for
      * each one the meridian flip boundaries and then the handover positions,
      * keeping the plan that ranks highest under comparePlans(). On a tie the
@@ -393,23 +377,5 @@ const SeqPlanOptimizer = {
             perms.forEach(perm => result.push([arr[i], ...perm]));
         }
         return result;
-    },
-
-    /**
-     * STUB: Split target imaging around horizon obstruction
-     * Future: Detect when target dips below horizon temporarily
-     * Future: Create separate imaging windows before/after obstruction
-     * @param {Object} targetPlan - Target plan with imaging window
-     * @param {Object} session - Session configuration
-     * @returns {Array} Array with single window for now
-     */
-    splitAroundObstruction(targetPlan, session) {
-        // TODO: Implement obstruction splitting
-        // 1. Scan through target's imaging window
-        // 2. Find periods when target is below horizon using isAboveHorizon()
-        // 3. Split imaging into multiple windows if needed
-        // 4. Return array of imaging windows instead of single window
-
-        return [targetPlan]; // Single window for now
     }
 };

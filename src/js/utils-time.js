@@ -4,6 +4,55 @@
  */
 
 const TimeUtils = {
+    _offsetFormats: new Map(),  // IANA zone -> Intl.DateTimeFormat (perf: building one is slow)
+
+    /**
+     * UTC offset of an IANA time zone at an instant, daylight saving included
+     * (e.g. -4 for America/New_York in July, 5.5 for Asia/Kolkata).
+     * @param {string} timeZone - IANA name
+     * @param {Date} instant
+     * @returns {number} Hours east of UTC
+     */
+    zoneOffsetHours(timeZone, instant) {
+        let format = this._offsetFormats.get(timeZone);
+        if (!format) {
+            format = new Intl.DateTimeFormat('en-US', { timeZone, timeZoneName: 'longOffset' });
+            this._offsetFormats.set(timeZone, format);
+        }
+        // "GMT-04:00", "GMT+05:30", or plain "GMT" at UTC
+        const name = format.formatToParts(instant).find(part => part.type === 'timeZoneName').value;
+        const match = name.match(/^GMT([+-])(\d{2}):(\d{2})$/);
+        if (!match) return 0;
+        const hours = Number(match[2]) + Number(match[3]) / 60;
+        return match[1] === '-' ? -hours : hours;
+    },
+
+    /**
+     * Standard-time offset of an IANA time zone: the smaller of its January
+     * and July offsets, since daylight saving adds time in either hemisphere.
+     * @param {string} timeZone - IANA name
+     * @param {number} year
+     * @returns {number} Hours east of UTC
+     */
+    standardOffsetHours(timeZone, year) {
+        return Math.min(
+            this.zoneOffsetHours(timeZone, new Date(Date.UTC(year, 0, 1))),
+            this.zoneOffsetHours(timeZone, new Date(Date.UTC(year, 6, 1)))
+        );
+    },
+
+    /**
+     * Whether the runtime knows an IANA time zone name.
+     */
+    isValidTimeZone(timeZone) {
+        try {
+            new Intl.DateTimeFormat('en-US', { timeZone });
+            return true;
+        } catch {
+            return false;
+        }
+    },
+
     /**
      * Convert Date object to Julian Date
      */
@@ -95,11 +144,13 @@ const TimeUtils = {
     },
 
     /**
-     * Format local time with date
+     * Format an instant as local time and date at a location
+     * @param {Date} utcTime
+     * @param {Object} location - { timezone, timeZone } (see SettingsManager.isDSTActive)
      */
-    formatLocalTimeWithDate(utcTime, timezone) {
-        const isDST = SettingsManager.isDSTActive(utcTime, timezone);
-        const offsetHours = isDST ? timezone + 1 : timezone;
+    formatLocalTimeWithDate(utcTime, location) {
+        const isDST = SettingsManager.isDSTActive(utcTime, location);
+        const offsetHours = isDST ? location.timezone + 1 : location.timezone;
         const localTime = new Date(utcTime.getTime() + offsetHours * 3600000);
 
         const timeStr = localTime.toLocaleTimeString('en-US', {

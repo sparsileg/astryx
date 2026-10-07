@@ -8,6 +8,7 @@ use rusqlite::{Connection, Result};
 
 const MIGRATIONS: &[fn(&Connection) -> Result<()>] = &[
     migrate_v1, // version 0 → 1: create all tables
+    migrate_v2, // version 1 → 2: location time zones
 ];
 
 pub const CURRENT_SCHEMA_VERSION: u32 = MIGRATIONS.len() as u32;
@@ -63,6 +64,10 @@ fn migrate_v1(conn: &Connection) -> Result<()> {
         schema::CREATE_PROGRAM_TARGETS_IDX_DESIGNATION,
         schema::CREATE_TUTORIAL_PROGRESS,
     ))
+}
+
+fn migrate_v2(conn: &Connection) -> Result<()> {
+    conn.execute_batch(schema::ADD_LOCATIONS_TIME_ZONE)
 }
 
 #[cfg(test)]
@@ -125,6 +130,25 @@ mod tests {
                 index
             );
         }
+    }
+
+    #[test]
+    fn v2_keeps_existing_locations_without_a_time_zone() {
+        let conn = Connection::open_in_memory().unwrap();
+        migrate_v1(&conn).unwrap();
+        set_version(&conn, 1).unwrap();
+        conn.execute(
+            "INSERT INTO locations VALUES ('Home', 39.3, -78.2, 233.0, -5, 4, '[]')",
+            [],
+        )
+        .unwrap();
+        run_migrations(&conn).unwrap();
+        let (timezone, time_zone): (f64, Option<String>) = conn
+            .query_row("SELECT timezone, time_zone FROM locations", [], |row| {
+                Ok((row.get(0)?, row.get(1)?))
+            })
+            .unwrap();
+        assert_eq!((timezone, time_zone), (-5.0, None));
     }
 
     #[test]

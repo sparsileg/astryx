@@ -67,10 +67,24 @@ const DataManager = {
                 longitude: loc.longitude,
                 elevation: loc.elevation,
                 timezone: loc.timezone,
+                timeZone: loc.timeZone ?? null,
                 bortle: loc.bortle,
                 horizon: loc.horizon || APP_CONFIG.NOTIONAL_HORIZON
             };
         });
+
+        // One-time migration: locations saved before time zones were stored
+        // take this computer's zone when its standard offset matches theirs.
+        // Others are left for the user to set; until then they get no DST.
+        const computerZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        const computerOffset = TimeUtils.standardOffsetHours(computerZone, new Date().getFullYear());
+        for (const name of Object.keys(this.locations)) {
+            const location = this.locations[name];
+            if (location.timeZone === null && location.timezone === computerOffset) {
+                location.timeZone = computerZone;
+                await DBManager.put(APP_CONFIG.STORES.LOCATIONS, { name, ...location });
+            }
+        }
 
         // One-time migration guard: fix any horizon that predates the
         // sorted-on-save invariant (Issue #206). Check-then-write so an
@@ -113,6 +127,11 @@ const DataManager = {
 
         // Guarantee sorted-by-azimuth invariant on every save (Issue #206)
         location.horizon = this.sortHorizonByAzimuth(location.horizon);
+
+        // The standard offset follows from the time zone
+        if (location.timeZone) {
+            location.timezone = TimeUtils.standardOffsetHours(location.timeZone, new Date().getFullYear());
+        }
 
         this.locations[name] = location;
         await DBManager.put(APP_CONFIG.STORES.LOCATIONS, {
@@ -380,13 +399,14 @@ const DataManager = {
      */
     async pinTarget(target) {
         // Check if already pinned
-        const existing = this.pinnedTargets.find(t => t.object === target.name);
+        const existing = this.pinnedTargets.find(t => t.name === target.name);
         if (existing) {
             return false;
         }
 
         this.pinnedTargets.push(target);
         await DBManager.put(APP_CONFIG.STORES.PINNED_TARGETS, target);
+        document.dispatchEvent(new CustomEvent('pinned-targets-updated'));
         return true;
     },
 
@@ -397,6 +417,7 @@ const DataManager = {
         this.pinnedTargets = this.pinnedTargets.filter(t => t.name !== name);
         await DBManager.delete(APP_CONFIG.STORES.PINNED_TARGETS, name);
         await this.loadPinnedTargets();
+        document.dispatchEvent(new CustomEvent('pinned-targets-updated'));
         return true;
     },
 

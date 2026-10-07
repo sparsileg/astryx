@@ -193,8 +193,8 @@ const VisibilityTargets = {
         if (typeof DailyVisibilityCalculations !== 'undefined') {
             DailyVisibilityCalculations.currentTarget = target;
         }
-        if (typeof YearlyObservabilityCalculations !== 'undefined') {
-            YearlyObservabilityCalculations.currentTarget = target;
+        if (typeof YearlyObservabilityView !== 'undefined') {
+            YearlyObservabilityView.currentTarget = target;
         }
 
         // Only update DOM if elements exist (we're on Target Selection view)
@@ -341,8 +341,8 @@ const VisibilityTargets = {
                 if (typeof DailyVisibilityCalculations !== 'undefined') {
                     DailyVisibilityCalculations.currentTarget = target;
                 }
-                if (typeof YearlyObservabilityCalculations !== 'undefined') {
-                    YearlyObservabilityCalculations.currentTarget = target;
+                if (typeof YearlyObservabilityView !== 'undefined') {
+                    YearlyObservabilityView.currentTarget = target;
                 }
 
                 UIManager.updateSidebarCurrentTarget(target.object);

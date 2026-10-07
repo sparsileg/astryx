@@ -42,7 +42,7 @@ const TOOLTIPS = {
     ilog_statusFilter:      'Show only projects in the selected\nstatus. All But Completed is the\ndefault — it hides finished projects\nwhile keeping active work visible.',
     ml_bortle:      'Level of light pollution. See Utilities for determining.',
     ml_horizProf:   'Horizon profile of the new location. One point\nper line in Azimuth Elevation order, both\nin integer degrees.',
-    ml_tzOffset:    'Timezone offset of the new\nlocation in hours, where west is\nnegative and east is positive',
+    ml_timeZone:    'Time zone of the location, such as\nAmerica/New_York or Europe/Madrid.\nSets its UTC offset and daylight saving.',
     sb_system:      'Menu for various settings and administrative operations',
     sb_theme:       'Select the style and theme of\nthe interface',
     sb_location:    'Select the location from which\nimaging will take place',

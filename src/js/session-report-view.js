@@ -947,7 +947,7 @@ const SessionReportView = {
             if (dateParts.length !== 3) return '';
 
             const localNoon = new Date(parseInt(dateParts[0], 10), parseInt(dateParts[1], 10) - 1, parseInt(dateParts[2], 10), 12, 0, 0);
-            const isDST = (typeof SettingsManager !== 'undefined') ? SettingsManager.isDSTActive(localNoon, location.timezone) : false;
+            const isDST = (typeof SettingsManager !== 'undefined') ? SettingsManager.isDSTOnDate(localNoon, location) : false;
             const duskJD = (typeof findAstronomicalDusk !== 'undefined') ? findAstronomicalDusk(localNoon, location.latitude, location.longitude, location.timezone, isDST) : null;
             const dawnJD = (typeof findNextAstronomicalDawn !== 'undefined') ? findNextAstronomicalDawn(localNoon, location.latitude, location.longitude, location.timezone, isDST) : null;
             if (duskJD == null || dawnJD == null) return '';

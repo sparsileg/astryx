@@ -33,7 +33,7 @@ pub(crate) mod sql {
     pub fn get_all_locations(conn: &Connection) -> Result<Vec<serde_json::Value>, String> {
         let mut stmt = conn
             .prepare(
-                "SELECT name, latitude, longitude, elevation, timezone, bortle, horizon
+                "SELECT name, latitude, longitude, elevation, timezone, bortle, horizon, time_zone
              FROM locations ORDER BY name",
             )
             .map_err(|e| e.to_string())?;
@@ -45,7 +45,8 @@ pub(crate) mod sql {
                     "latitude":  row.get::<_, f64>(1)?,
                     "longitude": row.get::<_, f64>(2)?,
                     "elevation": row.get::<_, f64>(3)?,
-                    "timezone":  row.get::<_, i64>(4)?,
+                    "timezone":  row.get::<_, f64>(4)?,
+                    "timeZone":  row.get::<_, Option<String>>(7)?,
                     "bortle":    row.get::<_, i64>(5)?,
                     "horizon":   serde_json::from_str::<serde_json::Value>(
                                      &row.get::<_, String>(6)?
@@ -65,23 +66,25 @@ pub(crate) mod sql {
                 .map_err(|e| e.to_string())?;
 
         conn.execute(
-            "INSERT INTO locations (name, latitude, longitude, elevation, timezone, bortle, horizon)
-             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
+            "INSERT INTO locations (name, latitude, longitude, elevation, timezone, bortle, horizon, time_zone)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)
              ON CONFLICT(name) DO UPDATE SET
                  latitude  = excluded.latitude,
                  longitude = excluded.longitude,
                  elevation = excluded.elevation,
                  timezone  = excluded.timezone,
                  bortle    = excluded.bortle,
-                 horizon   = excluded.horizon",
+                 horizon   = excluded.horizon,
+                 time_zone = excluded.time_zone",
             rusqlite::params![
                 location["name"].as_str().ok_or("missing name")?,
                 location["latitude"].as_f64().ok_or("missing latitude")?,
                 location["longitude"].as_f64().ok_or("missing longitude")?,
                 location["elevation"].as_f64().ok_or("missing elevation")?,
-                location["timezone"].as_i64().ok_or("missing timezone")?,
+                location["timezone"].as_f64().ok_or("missing timezone")?,
                 location["bortle"].as_i64().ok_or("missing bortle")?,
                 horizon,
+                location["timeZone"].as_str(),
             ],
         )
         .map(|_| ())
@@ -110,7 +113,8 @@ mod tests {
             "latitude": 39.296739,
             "longitude": -78.198136,
             "elevation": 233.0,
-            "timezone": -5,
+            "timezone": -5.0,
+            "timeZone": "America/New_York",
             "bortle": 4,
             "horizon": [{ "azimuth": 0.0, "elevation": 10.0 }, { "azimuth": 90.0, "elevation": 0.0 }],
         })
@@ -129,7 +133,7 @@ mod tests {
         let conn = test_conn();
         let origin = json!({
             "name": "Origin", "latitude": 0.0, "longitude": 0.0, "elevation": 0.0,
-            "timezone": 0, "bortle": 1, "horizon": [],
+            "timezone": 0.0, "timeZone": "UTC", "bortle": 1, "horizon": [],
         });
         save_location(&conn, &origin).unwrap();
         assert_eq!(get_all_locations(&conn).unwrap(), vec![origin]);
@@ -164,6 +168,29 @@ mod tests {
             "missing latitude"
         );
         assert!(get_all_locations(&conn).unwrap().is_empty());
+    }
+
+    #[test]
+    fn half_hour_offset_survives() {
+        let conn = test_conn();
+        let mut location = home();
+        location["timezone"] = json!(5.5);
+        location["timeZone"] = json!("Asia/Kolkata");
+        save_location(&conn, &location).unwrap();
+        assert_eq!(get_all_locations(&conn).unwrap(), vec![location]);
+    }
+
+    #[test]
+    fn location_without_time_zone_reads_back_null() {
+        // Saved before time zones were stored
+        let conn = test_conn();
+        let mut location = home();
+        location.as_object_mut().unwrap().remove("timeZone");
+        save_location(&conn, &location).unwrap();
+        assert_eq!(
+            get_all_locations(&conn).unwrap()[0]["timeZone"],
+            json!(null)
+        );
     }
 
     #[test]

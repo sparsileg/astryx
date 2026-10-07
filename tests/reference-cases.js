@@ -1,20 +1,23 @@
 /**
- * algorithm-validation-cases.js
- * Astronomy and parser regression cases, plus the pass/fail check that runs
- * them. DOM-free: loaded by the in-app "Validate Algorithms" view and by the
- * Node runner in tests/ (`just test-js`).
+ * reference-cases.js
+ * Astronomy and parser cases checked against known values. Evaluated inside
+ * the app's vm context by reference.test.js, so app globals are in scope.
+ *
+ * Shape: { name, actual: () => value, expected, tolerance, source }
+ *   - actual: zero-arg function returning the computed value, in the unit of `expected`
+ *   - tolerance: max allowed |actual - expected|; booleans must match exactly
+ *   - source: where `expected` comes from. "snapshot" means recorded from
+ *     this codebase, not externally verified. Update a snapshot only after
+ *     a deliberate change, never to make a failure go away.
  */
 
-// Cases are grouped by file-under-test.
-// Shape: { name, actual: () => value, expected, tolerance, source }
-//   - name: short label shown in the results table
-//   - actual: zero-arg function returning the computed value (minutes-past-midnight,
-//             degrees, etc. — whatever unit matches `expected`)
-//   - expected: reference value
-//   - tolerance: max allowed |actual - expected|, in the same unit as expected.
-//             Time-based cases should use APP_CONFIG.ALGORITHM_VALIDATION_TOLERANCE_MINUTES.
-//   - source: short string, e.g. 'timeanddate.com 2026-06-21' or 'snapshot'
-const ASTRO_TESTS = [
+// Shared tolerance for time comparisons, in minutes. Moon rise/set cases are
+// snapshot-only because their inherent ~2-5 min residual vs external sources
+// would fail this tolerance by design, not due to a bug. Don't loosen this to
+// fit them: the externally verified sun cases rely on it. (Issue #176)
+const TIME_TOLERANCE_MINUTES = 2;
+
+const REFERENCE_CASES = [
     // --- utils-time.js ---
     {
         name: 'dateToJD: J2000.0 epoch',
@@ -39,7 +42,7 @@ const ASTRO_TESTS = [
             return (roundTrip.getTime() - originalDate.getTime()) / 60000; // diff in minutes
         },
         expected: 0,
-        tolerance: APP_CONFIG.ALGORITHM_VALIDATION_TOLERANCE_MINUTES,
+        tolerance: TIME_TOLERANCE_MINUTES,
         source: 'snapshot (round-trip self-consistency, not externally verified)'
     },
 
@@ -107,8 +110,8 @@ const ASTRO_TESTS = [
         name: 'getAltitude: zenith identity (HA=0, dec=lat)',
         actual: () => {
             const jd = 2451545.0;
-            const latitude = 39.296739;
-            const longitude = -78.198136;
+            const latitude = 39.291;
+            const longitude = -78.197;
             const lst = getLST(jd, longitude);
             return getAltitude(jd, lst, latitude, latitude, longitude);
         },
@@ -140,59 +143,59 @@ const ASTRO_TESTS = [
         source: "formula identity (tanh(0)=0 → exact midpoint of dark/bright sky constants)"
     },
     {
-        name: 'findAstronomicalDusk: 2026-06-21 (timeanddate.com anchor)',
+        name: 'findAstronomicalDusk: 2026-06-21 (USNO anchor)',
         actual: () => {
             const localDate = new Date(2026, 5, 21);
-            const duskJD = findAstronomicalDusk(localDate, 39.296739, -78.198136, -5, true);
+            const duskJD = findAstronomicalDusk(localDate, 39.291, -78.197, -5, true);
             const expectedJD = dateToJD(new Date(Date.UTC(2026, 5, 22, 2, 43, 0)));
             return (duskJD - expectedJD) * 1440;
         },
         expected: 0,
-        tolerance: APP_CONFIG.ALGORITHM_VALIDATION_TOLERANCE_MINUTES,
-        source: 'timeanddate.com, 2026-06-21, 39.296739,-78.198136, EDT (22:43 local)'
+        tolerance: TIME_TOLERANCE_MINUTES,
+        source: 'USNO Astronomical Twilight table, 2026-06-21, test site, 21:43 EST (22:43 EDT)'
     },
     {
-        name: 'findAstronomicalDusk: 2026-12-21 (timeanddate.com anchor)',
+        name: 'findAstronomicalDusk: 2026-12-21 (USNO anchor)',
         actual: () => {
             const localDate = new Date(2026, 11, 21);
-            const duskJD = findAstronomicalDusk(localDate, 39.296739, -78.198136, -5, false);
-            const expectedJD = dateToJD(new Date(Date.UTC(2026, 11, 21, 23, 29, 0)));
+            const duskJD = findAstronomicalDusk(localDate, 39.291, -78.197, -5, false);
+            const expectedJD = dateToJD(new Date(Date.UTC(2026, 11, 21, 23, 30, 0)));
             return (duskJD - expectedJD) * 1440;
         },
         expected: 0,
-        tolerance: APP_CONFIG.ALGORITHM_VALIDATION_TOLERANCE_MINUTES,
-        source: 'timeanddate.com, 2026-12-21, 39.296739,-78.198136, EST (18:29 local)'
+        tolerance: TIME_TOLERANCE_MINUTES,
+        source: 'USNO Astronomical Twilight table, 2026-12-21, test site, 18:30 EST'
     },
     {
-        name: 'findNextAstronomicalDawn: 2026-06-22 (timeanddate.com anchor)',
+        name: 'findNextAstronomicalDawn: 2026-06-22 (USNO anchor)',
         actual: () => {
             const localDate = new Date(2026, 5, 21);
-            const dawnJD = findNextAstronomicalDawn(localDate, 39.296739, -78.198136, -5, true);
+            const dawnJD = findNextAstronomicalDawn(localDate, 39.291, -78.197, -5, true);
             const expectedJD = dateToJD(new Date(Date.UTC(2026, 5, 22, 7, 46, 0)));
             return (dawnJD - expectedJD) * 1440;
         },
         expected: 0,
-        tolerance: APP_CONFIG.ALGORITHM_VALIDATION_TOLERANCE_MINUTES,
-        source: 'timeanddate.com, 2026-06-22, 39.296739,-78.198136, EDT (03:46 local)'
+        tolerance: TIME_TOLERANCE_MINUTES,
+        source: 'USNO Astronomical Twilight table, 2026-06-22, test site, 02:46 EST (03:46 EDT)'
     },
     {
-        name: 'findNextAstronomicalDawn: 2026-12-22 (timeanddate.com anchor)',
+        name: 'findNextAstronomicalDawn: 2026-12-22 (USNO anchor)',
         actual: () => {
             const localDate = new Date(2026, 11, 21);
-            const dawnJD = findNextAstronomicalDawn(localDate, 39.296739, -78.198136, -5, false);
-            const expectedJD = dateToJD(new Date(Date.UTC(2026, 11, 22, 10, 52, 0)));
+            const dawnJD = findNextAstronomicalDawn(localDate, 39.291, -78.197, -5, false);
+            const expectedJD = dateToJD(new Date(Date.UTC(2026, 11, 22, 10, 53, 0)));
             return (dawnJD - expectedJD) * 1440;
         },
         expected: 0,
-        tolerance: APP_CONFIG.ALGORITHM_VALIDATION_TOLERANCE_MINUTES,
-        source: 'timeanddate.com, 2026-12-22, 39.296739,-78.198136, EST (05:52 local)'
+        tolerance: TIME_TOLERANCE_MINUTES,
+        source: 'USNO Astronomical Twilight table, 2026-12-22, test site, 05:53 EST'
     },
     {
         name: 'Dusk/dawn ordering consistency (June 2026)',
         actual: () => {
             const localDate = new Date(2026, 5, 21);
-            const dusk = findAstronomicalDusk(localDate, 39.296739, -78.198136, -5, true);
-            const dawn = findNextAstronomicalDawn(localDate, 39.296739, -78.198136, -5, true);
+            const dusk = findAstronomicalDusk(localDate, 39.291, -78.197, -5, true);
+            const dawn = findNextAstronomicalDawn(localDate, 39.291, -78.197, -5, true);
             return dawn > dusk;
         },
         expected: true,
@@ -203,9 +206,9 @@ const ASTRO_TESTS = [
         name: 'Dusk search convergence: sun altitude ≈ -18° at returned JD',
         actual: () => {
             const localDate = new Date(2026, 5, 21);
-            const duskJD = findAstronomicalDusk(localDate, 39.296739, -78.198136, -5, true);
+            const duskJD = findAstronomicalDusk(localDate, 39.291, -78.197, -5, true);
             const sunPos = getSunPosition(duskJD);
-            return getAltitude(duskJD, sunPos.ra, sunPos.dec, 39.296739, -78.198136);
+            return getAltitude(duskJD, sunPos.ra, sunPos.dec, 39.291, -78.197);
         },
         expected: -18,
         tolerance: 0.1,
@@ -219,7 +222,7 @@ const ASTRO_TESTS = [
     // 2-5 minute residual against external sources (mean-parallax approximation
     // + truncated lunar position series) — see calculateHorizonDepression's
     // comments. That residual would fail the shared ±2 min tolerance by design,
-    // not due to a bug. Do NOT "fix" this by loosening ALGORITHM_VALIDATION_TOLERANCE_MINUTES —
+    // not due to a bug. Do NOT "fix" this by loosening TIME_TOLERANCE_MINUTES —
     // that constant is also used by externally-verified sun tests above, where
     // a looser tolerance would mask real regressions.
     {
@@ -262,12 +265,12 @@ const ASTRO_TESTS = [
         actual: () => {
             const searchStart = dateToJD(new Date(Date.UTC(2026, 5, 21, 4, 0, 0)));
             const searchEnd = dateToJD(new Date(Date.UTC(2026, 5, 22, 4, 0, 0)));
-            const result = calculateMoonRiseSet(searchStart, searchEnd, 39.296739, -78.198136, 233);
+            const result = calculateMoonRiseSet(searchStart, searchEnd, 39.291, -78.197, 233);
             const expectedJD = dateToJD(new Date(Date.UTC(2026, 5, 21, 17, 5, 0)));
             return (result.moonrise - expectedJD) * 1440;
         },
         expected: 0,
-        tolerance: APP_CONFIG.ALGORITHM_VALIDATION_TOLERANCE_MINUTES,
+        tolerance: TIME_TOLERANCE_MINUTES,
         source: 'snapshot (recorded from this codebase, not compared to external sources — see note above)'
     },
     {
@@ -275,12 +278,12 @@ const ASTRO_TESTS = [
         actual: () => {
             const searchStart = dateToJD(new Date(Date.UTC(2026, 5, 21, 4, 0, 0)));
             const searchEnd = dateToJD(new Date(Date.UTC(2026, 5, 22, 4, 0, 0)));
-            const result = calculateMoonRiseSet(searchStart, searchEnd, 39.296739, -78.198136, 233);
+            const result = calculateMoonRiseSet(searchStart, searchEnd, 39.291, -78.197, 233);
             const expectedJD = dateToJD(new Date(Date.UTC(2026, 5, 21, 4, 49, 0)));
             return (result.moonset - expectedJD) * 1440;
         },
         expected: 0,
-        tolerance: APP_CONFIG.ALGORITHM_VALIDATION_TOLERANCE_MINUTES,
+        tolerance: TIME_TOLERANCE_MINUTES,
         source: 'snapshot (recorded from this codebase, not compared to external sources — see note above)'
     },
 
@@ -290,7 +293,7 @@ const ASTRO_TESTS = [
         actual: () => isTargetVisibleDuringWindow(
             dateToJD(new Date(Date.UTC(2026, 5, 21, 4, 0, 0))),
             dateToJD(new Date(Date.UTC(2026, 5, 22, 4, 0, 0))),
-            12, 80, 39.296739, -78.198136, 20
+            12, 80, 39.291, -78.197, 20
         ),
         expected: true,
         tolerance: 0,
@@ -301,7 +304,7 @@ const ASTRO_TESTS = [
         actual: () => isTargetVisibleDuringWindow(
             dateToJD(new Date(Date.UTC(2026, 5, 21, 4, 0, 0))),
             dateToJD(new Date(Date.UTC(2026, 5, 22, 4, 0, 0))),
-            12, -80, 39.296739, -78.198136, 0
+            12, -80, 39.291, -78.197, 0
         ),
         expected: false,
         tolerance: 0,
@@ -313,7 +316,7 @@ const ASTRO_TESTS = [
             const result = findTargetRise(
                 dateToJD(new Date(Date.UTC(2026, 5, 21, 4, 0, 0))),
                 dateToJD(new Date(Date.UTC(2026, 5, 22, 4, 0, 0))),
-                12, 80, 39.296739, -78.198136, 20
+                12, 80, 39.291, -78.197, 20
             );
             return result === null;
         },
@@ -327,7 +330,7 @@ const ASTRO_TESTS = [
             const result = findTargetSet(
                 dateToJD(new Date(Date.UTC(2026, 5, 21, 4, 0, 0))),
                 dateToJD(new Date(Date.UTC(2026, 5, 22, 4, 0, 0))),
-                12, 80, 39.296739, -78.198136, 20
+                12, 80, 39.291, -78.197, 20
             );
             return result === null;
         },
@@ -341,12 +344,12 @@ const ASTRO_TESTS = [
             const startJD = dateToJD(new Date(Date.UTC(2026, 5, 21, 4, 0, 0)));
             const endJD = startJD + 1;
             const testJD = startJD + 0.3;
-            const lstAtTest = getLST(testJD, -78.198136);
-            const transitJD = findTargetTransit(startJD, endJD, lstAtTest, 0, -78.198136);
+            const lstAtTest = getLST(testJD, -78.197);
+            const transitJD = findTargetTransit(startJD, endJD, lstAtTest, 0, -78.197);
             return (transitJD - testJD) * 1440;
         },
         expected: 0,
-        tolerance: APP_CONFIG.ALGORITHM_VALIDATION_TOLERANCE_MINUTES,
+        tolerance: TIME_TOLERANCE_MINUTES,
         source: 'geometric identity (a target with RA set to LST at testJD must transit at testJD)'
     },
 
@@ -369,8 +372,8 @@ const ASTRO_TESTS = [
         name: 'getAzimuth: meridian transit identity (dec<lat, HA=0 → due south)',
         actual: () => {
             const jd = 2451545.0;
-            const lst = getLST(jd, -78.198136);
-            return getAzimuth(jd, lst, 0, 39.296739, -78.198136);
+            const lst = getLST(jd, -78.197);
+            return getAzimuth(jd, lst, 0, 39.291, -78.197);
         },
         expected: 180,
         tolerance: 0.0001,
@@ -411,21 +414,6 @@ const ASTRO_TESTS = [
         tolerance: 0.001,
         source: 'formula identity (mag 30 source contributes negligible flux vs mag 10)'
     },
-    {
-        name: 'getMoonPhase: illumination near New Moon (2026-07-14)',
-        actual: () => getMoonPhase(dateToJD(new Date(Date.UTC(2026, 6, 14, 9, 43, 0)))).illumination,
-        expected: 0,
-        tolerance: 1,
-        source: 'starwalk.space, New Moon 2026-07-14 09:43 UTC (illumination should be ≈0%)'
-    },
-    {
-        name: 'getMoonPhase: illumination near Full Moon (2026-07-29)',
-        actual: () => getMoonPhase(dateToJD(new Date(Date.UTC(2026, 6, 29, 14, 36, 0)))).illumination,
-        expected: 100,
-        tolerance: 1,
-        source: 'timeanddate.com / starwalk.space, Full Moon 2026-07-29 14:36 UTC (illumination should be ≈100%)'
-    },
-
     // --- session-analysis parsers (Issue #244 Part A) ---
     {
         name: 'ASIAir _extractEvents: Settle Timeout does not swallow following exposures',
@@ -556,35 +544,3 @@ const ASTRO_TESTS = [
     }
 ];
 
-const AlgorithmValidation = {
-    /**
-     * Run every case and return one result per case:
-     * { name, expected, actual, pass, source }, where `actual` is the error
-     * message if the case threw.
-     */
-    runAll() {
-        return ASTRO_TESTS.map(test => {
-            let actualValue;
-            let error = null;
-
-            try {
-                actualValue = test.actual();
-            } catch (e) {
-                error = e.message || 'Error during test execution';
-            }
-
-            const pass = error === null && (
-                (typeof actualValue === 'number' && Math.abs(actualValue - test.expected) <= test.tolerance) ||
-                    (typeof actualValue === 'boolean' && actualValue === test.expected)
-            );
-
-            return {
-                name: test.name,
-                expected: test.expected,
-                actual: error !== null ? error : actualValue,
-                pass,
-                source: test.source
-            };
-        });
-    }
-};

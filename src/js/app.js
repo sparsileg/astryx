@@ -358,16 +358,6 @@ const App = {
             OptimizerView.init();
             break;
 
-            /* algorithm validation self-test */
-        case 'validate-algorithms':
-            document.getElementById('app').innerHTML = '';
-            const algorithmValidationTemplate = document.getElementById('algorithm-validation-view-template');
-            const algorithmValidationContent = algorithmValidationTemplate.content.cloneNode(true);
-            document.getElementById('app').appendChild(algorithmValidationContent);
-            this.currentView = AlgorithmValidationView;
-            AlgorithmValidationView.init();
-            break;
-
         default:
             // Default to target selection
             window.location.hash = '#target-select';

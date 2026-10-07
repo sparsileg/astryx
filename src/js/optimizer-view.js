@@ -168,25 +168,21 @@ const OptimizerView = {
             return;
         }
 
-        // Determine session start JD
+        // Determine session start JD: dusk, or the custom time in the location's timezone
         let sessionStartJD = timing.duskJD;
         if (startTimeMode === 'custom' && customStartTime) {
-            const dateParts = date.split('-');
-            const customDate = new Date(
-                parseInt(dateParts[0]),
-                parseInt(dateParts[1]) - 1,
-                parseInt(dateParts[2]),
-                parseInt(customStartTime.split(':')[0]),
-                parseInt(customStartTime.split(':')[1]),
-                0
-            );
-            sessionStartJD = dateToJD(customDate);
+            const customStartJD = SeqPlanCalculations.resolveCustomStartJD(customStartTime, timing.duskJD, timing.dawnJD, location);
+            if (customStartJD === null) {
+                UIManager.showToast(`Start time ${customStartTime} is not between dusk and dawn; starting at dusk`, 'warning', APP_CONFIG.TOAST_LONG_DURATION_MS);
+            }
+            sessionStartJD = customStartJD ?? timing.duskJD;
         }
 
         const session = {
             date,
             location,
             minAltitude: SettingsManager.getGlobalMinAltitude(),
+            duskJD: timing.duskJD,
             sessionStartJD,
             sessionEndJD: timing.dawnJD
         };

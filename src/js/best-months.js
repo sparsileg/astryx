@@ -4,8 +4,8 @@
  */
 
 // Configurable sampling parameters
-const SAMPLING_INTERVAL_MINUTES = 10;   // Minutes between altitude samples
 const DAY_SAMPLING_STEP = 3;            // 1 = every day, 2 = every other day, etc.
+const DAYS_IN_YEAR = 365;
 
 const BestMonths = {
     isCalculating: false,
@@ -133,46 +133,23 @@ const BestMonths = {
      * depends only on the location, so it is computed once and shared by all
      * targets. Returns a Map keyed by day offset (0-364).
      *   duskJD, dawnJD — astronomical darkness
-     *   cosLST, sinLST — at each sample time from dusk to dawn
-     *   transitLST, transitHour — LST and local clock hour at each step of
-     *     the transit search around local noon
+     *   samples — the night sampled for getHoursAboveAltitude
+     *   midnightJD — local midnight starting the day, for getTransitHour
      */
     buildTwilightCache(location) {
         Log.debug('Pre-calculating twilight times for 365 days...');
         const twilightCache = new Map();
         const startDate = new Date(new Date().getFullYear(), 0, 1);
-        const step = SAMPLING_INTERVAL_MINUTES / 1440;
-        const oneHour = 1 / 24;
 
         for (let dayOffset = 0; dayOffset < 365; dayOffset++) {
             const date = new Date(startDate);
             date.setDate(startDate.getDate() + dayOffset);
-            const isDST = SettingsManager.isDSTActive(date, location.timezone);
+            const isDST = SettingsManager.isDSTOnDate(date, location);
             const duskJD = findAstronomicalDusk(date, location.latitude, location.longitude, location.timezone, isDST);
             const dawnJD = findNextAstronomicalDawn(date, location.latitude, location.longitude, location.timezone, isDST);
-
-            const cosLST = [];
-            const sinLST = [];
-            if (duskJD && dawnJD) {
-                for (let jd = duskJD; jd <= dawnJD; jd += step) {
-                    const lst = hoursToRadians(getLST(jd, location.longitude));
-                    cosLST.push(Math.cos(lst));
-                    sinLST.push(Math.sin(lst));
-                }
-            }
-
-            const offsetHours = isDST ? location.timezone + 1 : location.timezone;
-            const noonJD = TimeUtils.localWallClockToJD(date.getFullYear(), date.getMonth(), date.getDate(), 12, location.timezone, isDST);
-            const transitLST = [];
-            const transitHour = [];
-            for (let hourOffset = -12; hourOffset <= 12; hourOffset += 0.1) {
-                const testJD = noonJD + hourOffset * oneHour;
-                transitLST.push(getLST(testJD, location.longitude));
-                const localDate = new Date(jdToDate(testJD).getTime() + offsetHours * 3600000);
-                transitHour.push(localDate.getUTCHours() + localDate.getUTCMinutes() / 60);
-            }
-
-            twilightCache.set(dayOffset, { duskJD, dawnJD, date, cosLST, sinLST, transitLST, transitHour });
+            const samples = getNightSamples(duskJD, dawnJD, location.longitude);
+            const midnightJD = TimeUtils.localWallClockToJD(date.getFullYear(), date.getMonth(), date.getDate(), 0, location.timezone, isDST);
+            twilightCache.set(dayOffset, { duskJD, dawnJD, date, samples, midnightJD });
         }
 
         Log.debug('Twilight cache complete');
@@ -284,9 +261,7 @@ const BestMonths = {
         // First pass: find max dark hours across the year for normalization
         let maxDarkHours = 0;
         for (let dayOffset = 0; dayOffset < 365; dayOffset += DAY_SAMPLING_STEP) {
-            const date = new Date(startDate);
-            date.setDate(startDate.getDate() + dayOffset);
-            const darkHours = this.calculateTotalDarkHours(date, target, location, altitudeThreshold, twilightCache, dayOffset);
+            const darkHours = this.hoursAboveAltitude(target, location, altitudeThreshold, twilightCache, dayOffset).totalHours;
             if (darkHours > maxDarkHours) {
                 maxDarkHours = darkHours;
             }
@@ -309,18 +284,15 @@ const BestMonths = {
             date.setDate(startDate.getDate() + dayOffset);
 
             // Calculate transit score (how close to midnight)
-            const transitHour = this.calculateTransitHour(date, target, location, twilightCache, dayOffset);
-            let transitScore = 0;
-            if (transitHour !== null) {
-                const distanceFromMidnight = Math.min(
-                    Math.abs(transitHour - 0),
-                    Math.abs(transitHour - 24)
-                );
-                transitScore = 1 - (distanceFromMidnight / 12);
-            }
+            const transitHour = getTransitHour(twilightCache.get(dayOffset).midnightJD, target.ra, location.longitude);
+            const distanceFromMidnight = Math.min(
+                Math.abs(transitHour - 0),
+                Math.abs(transitHour - 24)
+            );
+            const transitScore = 1 - (distanceFromMidnight / 12);
 
             // Calculate dark hours score (normalized)
-            const darkHours = this.calculateTotalDarkHours(date, target, location, altitudeThreshold, twilightCache, dayOffset);
+            const darkHours = this.hoursAboveAltitude(target, location, altitudeThreshold, twilightCache, dayOffset).totalHours;
             const darkHoursScore = darkHours / maxDarkHours;
 
             // Calculate weighted score
@@ -339,11 +311,12 @@ const BestMonths = {
     },
 
     /**
-     * Get altitude threshold and weights for target type
+     * Get altitude threshold and weights for target type. Best Months and
+     * Yearly Observability both score with this.
      */
     getTypeConfiguration(type) {
         // Normalize type to uppercase for comparison
-        const normalizedType = (type || '').toUpperCase();
+        const normalizedType = (type ?? '').toUpperCase();
 
         // Type-specific configurations
         const configs = {
@@ -363,7 +336,7 @@ const BestMonths = {
         };
 
         // Return config for type, or default for OTHER
-        return configs[normalizedType] || { altitude: 30, transitWeight: 0.60, darkHoursWeight: 0.40 };
+        return configs[normalizedType] ?? { altitude: 30, transitWeight: 0.60, darkHoursWeight: 0.40 };
     },
 
     /**
@@ -391,10 +364,7 @@ const BestMonths = {
         const visibleDays = [];
 
         for (let dayOffset = 0; dayOffset < 365; dayOffset++) {
-            const date = new Date(startDate);
-            date.setDate(startDate.getDate() + dayOffset);
-
-            const darkHours = this.calculateDarkHoursAboveAltitude(date, target, location, minAltitude, twilightCache, dayOffset);
+            const darkHours = this.hoursAboveAltitude(target, location, minAltitude, twilightCache, dayOffset).longestHours;
 
             if (darkHours >= minDarkHours) {
                 visibleDays.push(dayOffset);
@@ -408,75 +378,39 @@ const BestMonths = {
             };
         }
 
-        // Find the longest continuous sequence of visible days
-        // Handle wrap-around for winter targets (e.g., day 350-364, 0-60)
-        let bestStart = visibleDays[0];
-        let bestEnd = visibleDays[0];
-        let bestLength = 1;
-
-        // Check for continuous sequence without wrap
-        let currentStart = visibleDays[0];
-        let currentEnd = visibleDays[0];
-
-        for (let i = 1; i < visibleDays.length; i++) {
-            if (visibleDays[i] === visibleDays[i-1] + 1) {
-                // Continuous
-                currentEnd = visibleDays[i];
-            } else {
-                // Gap found
-                const length = currentEnd - currentStart + 1;
+        // Find the longest run of consecutive visible days. The year is a
+        // circle, so a winter run can wrap from December into January; its
+        // end is then counted past the year (e.g. day 330 to day 405).
+        const isVisible = new Set(visibleDays);
+        let bestStart = 0;
+        let bestLength = DAYS_IN_YEAR;
+        if (visibleDays.length < DAYS_IN_YEAR) {
+            bestLength = 0;
+            for (const day of visibleDays) {
+                // Count each run once, from its first day
+                if (isVisible.has((day + DAYS_IN_YEAR - 1) % DAYS_IN_YEAR)) continue;
+                let length = 1;
+                while (isVisible.has((day + length) % DAYS_IN_YEAR)) length++;
                 if (length > bestLength) {
-                    bestStart = currentStart;
-                    bestEnd = currentEnd;
+                    bestStart = day;
                     bestLength = length;
                 }
-                currentStart = visibleDays[i];
-                currentEnd = visibleDays[i];
             }
         }
-
-        // Check final sequence
-        const finalLength = currentEnd - currentStart + 1;
-        if (finalLength > bestLength) {
-            bestStart = currentStart;
-            bestEnd = currentEnd;
-            bestLength = finalLength;
-        }
-
-        // Check for wrap-around sequence (connects end of year to beginning)
-        if (visibleDays[0] < 31 && visibleDays[visibleDays.length - 1] > 334) {
-            // Might wrap around - find where the gap is
-            let gapStart = -1;
-            for (let i = 1; i < visibleDays.length; i++) {
-                if (visibleDays[i] !== visibleDays[i-1] + 1) {
-                    gapStart = i;
-                    break;
-                }
-            }
-
-            if (gapStart > 0) {
-                // Wrap-around sequence exists
-                const wrapLength = (visibleDays.length - gapStart) + gapStart;
-                if (wrapLength > bestLength) {
-                    // Use wrap-around sequence
-                    bestStart = visibleDays[gapStart];  // First day after gap
-                    bestEnd = visibleDays[gapStart - 1] + 365;  // Last day before gap, extended
-                }
-            }
-        }
+        const bestEnd = bestStart + bestLength - 1;
 
         // Convert day offsets to dates to get months
         const startDateObj = new Date(startDate);
-        startDateObj.setDate(startDate.getDate() + (bestStart % 365));
+        startDateObj.setDate(startDate.getDate() + bestStart);
 
         const endDateObj = new Date(startDate);
-        endDateObj.setDate(startDate.getDate() + (bestEnd % 365));
+        endDateObj.setDate(startDate.getDate() + (bestEnd % DAYS_IN_YEAR));
 
         let startMonth = startDateObj.getMonth() + 1;  // 1-12
         let endMonth = endDateObj.getMonth() + 1;      // 1-12
 
         // Handle wrap-around notation (e.g., November to February becomes 11 to 14)
-        if (bestEnd >= 365) {
+        if (bestEnd >= DAYS_IN_YEAR) {
             endMonth = endMonth + 12;
         }
 
@@ -487,146 +421,19 @@ const BestMonths = {
     },
 
     /**
-     * Calculate longest continuous session target is above minAltitude during astronomical darkness
-     * Returns: hours (decimal) of the longest continuous session
+     * Hours the target is at or above minAltitude on one cached night
+     * (see getHoursAboveAltitude)
      */
-    calculateDarkHoursAboveAltitude(date, target, location, minAltitude, twilightCache, dayOffset) {
-        const night = twilightCache.get(dayOffset);
-        const stepHours = SAMPLING_INTERVAL_MINUTES / 60;
-        const geo = this.altitudeTerms(target, location, minAltitude);
-
-        let longestSession = 0;
-        let currentSession = 0;
-
-        for (let i = 0; i < night.cosLST.length; i++) {
-            if (this.isAboveAltitude(geo, night.cosLST[i], night.sinLST[i])) {
-                currentSession += stepHours;
-            } else {
-                if (currentSession > longestSession) {
-                    longestSession = currentSession;
-                }
-                currentSession = 0;
-            }
-        }
-
-        if (currentSession > longestSession) {
-            longestSession = currentSession;
-        }
-
-        return longestSession;
+    hoursAboveAltitude(target, location, minAltitude, twilightCache, dayOffset) {
+        return getHoursAboveAltitude(twilightCache.get(dayOffset).samples, target.ra, target.dec, location.latitude, minAltitude);
     },
 
     /**
-     * Calculate total accumulated dark hours target is above minAltitude during astronomical darkness
-     * Used for best month scoring - sums all time above altitude (not just continuous)
-     * Returns: hours (decimal) of total accumulated time
-     */
-    calculateTotalDarkHours(date, target, location, minAltitude, twilightCache, dayOffset) {
-        const night = twilightCache.get(dayOffset);
-        const stepHours = SAMPLING_INTERVAL_MINUTES / 60;
-        const geo = this.altitudeTerms(target, location, minAltitude);
-        let totalHours = 0;
-
-        for (let i = 0; i < night.cosLST.length; i++) {
-            if (this.isAboveAltitude(geo, night.cosLST[i], night.sinLST[i])) {
-                totalHours += stepHours;
-            }
-        }
-
-        return totalHours;
-    },
-
-    /**
-     * Per-target terms of the altitude formula, so each sample needs no trig:
-     * sin(alt) = sin(dec)sin(lat) + cos(dec)cos(lat)cos(LST - RA)
-     */
-    altitudeTerms(target, location, minAltitude) {
-        const dec = degreesToRadians(target.dec);
-        const lat = degreesToRadians(location.latitude);
-        const ra = hoursToRadians(target.ra);
-        return {
-            a: Math.sin(dec) * Math.sin(lat),
-            b: Math.cos(dec) * Math.cos(lat),
-            cosRA: Math.cos(ra),
-            sinRA: Math.sin(ra),
-            sinMin: Math.sin(degreesToRadians(minAltitude))
-        };
-    },
-
-    isAboveAltitude(geo, cosLST, sinLST) {
-        const cosHA = cosLST * geo.cosRA + sinLST * geo.sinRA;
-        return geo.a + geo.b * cosHA >= geo.sinMin;
-    },
-
-    /**
-     * Calculate the local hour when target transits on a given date
-     * Returns: hour (0-24) or null if transit not found
-     */
-    calculateTransitHour(date, target, location, twilightCache, dayOffset) {
-        // Transit occurs when LST = target RA. The cache holds LST over
-        // noon-12h to noon+12h in 0.1h steps.
-        const night = twilightCache.get(dayOffset);
-
-        for (let i = 0; i < night.transitLST.length; i++) {
-            let diff = Math.abs(night.transitLST[i] - target.ra);
-            // Handle wrap-around (23.9 hours and 0.1 hours are close)
-            if (diff > 12) diff = 24 - diff;
-
-            if (diff < 0.05) { // Within ~3 minutes
-                return night.transitHour[i];
-            }
-        }
-
-        return null;
-    },
-
-    /**
-     * Calculate peak altitude when target transits
-     * This is constant for a given target/location (depends only on declination and latitude)
+     * Peak altitude, at upper culmination: 90 - |latitude - declination|.
+     * Constant for a target and location; negative for a target that never
+     * rises. Like the rest of Best Months, it ignores the horizon profile.
      */
     calculateTransitAltitude(target, location) {
-        // Transit altitude = 90 - |latitude - declination| for upper culmination
-        const transitAlt = 90 - Math.abs(location.latitude - target.dec);
-
-        // Check artificial horizon at meridian (azimuth = 180 for south, 0 for north)
-        const meridianAzimuth = location.latitude > target.dec ? 180 : 0;
-        const horizonElevation = this.getHorizonElevation(meridianAzimuth, location.horizon);
-
-        // Return the minimum of transit altitude and horizon-adjusted altitude
-        return Math.max(transitAlt, horizonElevation);
-    },
-
-    /**
-     * Get horizon elevation at a given azimuth by interpolating between points
-     */
-    getHorizonElevation(azimuth, horizon) {
-        // Normalize azimuth to 0-360
-        azimuth = ((azimuth % 360) + 360) % 360;
-
-        // Find surrounding horizon points
-        const sortedHorizon = [...horizon].sort((a, b) => a.azimuth - b.azimuth);
-
-        // Find the two points that surround the azimuth
-        let before = sortedHorizon[sortedHorizon.length - 1];
-        let after = sortedHorizon[0];
-
-        for (let i = 0; i < sortedHorizon.length; i++) {
-            if (sortedHorizon[i].azimuth <= azimuth) {
-                before = sortedHorizon[i];
-                after = sortedHorizon[(i + 1) % sortedHorizon.length];
-            } else {
-                break;
-            }
-        }
-
-        // Handle wrap-around at 0/360
-        let az1 = before.azimuth;
-        let az2 = after.azimuth;
-        if (az2 < az1) az2 += 360;
-        if (azimuth < az1) azimuth += 360;
-
-        // Linear interpolation
-        const fraction = (azimuth - az1) / (az2 - az1);
-        return before.elevation + fraction * (after.elevation - before.elevation);
+        return 90 - Math.abs(location.latitude - target.dec);
     }
 };

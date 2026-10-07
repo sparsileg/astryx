@@ -18,7 +18,7 @@ No `package.json`, no bundler, no build step.
 ```bash
 just serve    # web build: npx serve src --listen 1420
 just dev      # desktop: cargo tauri dev (starts the server itself)
-just test     # JS validation cases (Node) + Rust tests
+just test     # JS astronomy/planner tests (Node) + Rust tests
 just check    # fmt-check, clippy, then all tests
 ```
 
@@ -74,9 +74,9 @@ Builds, installers, and the GitHub Actions release workflow:
 | All configurable values | `APP_CONFIG` in `config.js` |
 | User preferences | `SettingsManager` |
 | Debug logging | `Log.debug(...)`, gated by `APP_CONFIG.FEATURES.DEBUG_LOGGING` |
-| User-facing messages | `UIManager.showToast(msg, 'success' \| 'error')` |
+| User-facing messages | `UIManager.showToast(msg, 'success' \| 'error' \| 'warning', duration)`; duration defaults to `TOAST_DURATION_MS`, `TOAST_LONG_DURATION_MS` for longer messages |
 | HTML escaping | `HtmlUtils.escapeHtml` (text content only, does not escape quotes) |
-| Time / JD / timezone / DST | `TimeUtils`, `SettingsManager.isDSTActive` |
+| Time / JD / timezone / DST | `TimeUtils`, `SettingsManager.isDSTActive` (an instant), `isDSTOnDate` (a night) |
 | Tooltips | `data-tooltip-key` → `TOOLTIPS` in `tooltips.js` |
 | Dropdowns | custom `.astryx-dropdown` (`-dropdown` / `-trigger` / `-label` / `-menu` IDs), not native `<select>` |
 | Themes | CSS custom properties, one file per theme in `src/css/themes/` (Dark, Light, Matrix, Night, Flat) |
@@ -93,13 +93,30 @@ Builds, installers, and the GitHub Actions release workflow:
 - Accuracy limits are documented at the top of each `astro-*.js` file.
   There's no precession; J2000 coordinates are used as-is.
 - RA is in **hours** throughout; Dec, altitude, and azimuth are in degrees.
-  Longitude is negative west. Timezone is the standard-time offset in hours,
-  with DST applied separately.
-- **Regression checks:** the in-app *Algorithm Validation* view
-  (`algorithm-validation-view.js`) holds golden values checked against
-  external references. Run it after any change to the astronomy code.
-  Displayed values that move after a deliberate fix are expected; update the
-  snapshots on purpose, not to make a failure go away.
+  Longitude is negative west. A location's `timezone` is its standard-time
+  offset in hours (derived from `timeZone`, its IANA name); DST is applied
+  separately and follows the location's zone, never the computer's. A
+  night's DST is decided at local noon (`isDSTOnDate`). DST is always a 1-hour shift; Lord Howe
+  Island's 30-minute shift is knowingly ignored.
+- **Regression checks:** `just test-js` runs `tests/*.test.js` under Node,
+  loading the app's scripts into a vm context, in four timezones. Run it
+  after any change to the astronomy or planner code. Test sites are in
+  `tests/lib/sites.js`.
+  - `reference` — values checked against external sources
+    (`tests/reference-cases.js`).
+  - `usno-twilight` — every 2026 dusk and dawn at each site vs saved USNO
+    tables (`tests/fixtures/usno-twilight/`).
+  - `usno-moon` — every 2026 primary moon phase vs USNO
+    (`tests/fixtures/usno-moon/`).
+  - `time-zones` — DST follows each location's zone in any computer zone.
+  - `invariants` — properties that hold for any input (dusk before dawn,
+    altitudes in range, smooth day-to-day changes).
+  - `consistency` — views that compute the same quantity agree.
+  - `planners` — sequence plan rules, plus snapshots of plans, Target
+    Optimizer, Best Months, and Yearly output (`tests/snapshots/`).
+  Snapshot values that move after a deliberate fix are expected: re-record
+  with `just update-snapshots` and review the diff. Never update a snapshot
+  to make a failure go away.
 - Changes to twilight or visibility math can invalidate cached Best Month
   values. Check whether a recalculation is needed.
 - `regression-tests/` re-runs the session-log analysis pipeline against a log

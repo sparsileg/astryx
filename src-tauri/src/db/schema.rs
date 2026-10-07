@@ -12,7 +12,10 @@ CREATE TABLE IF NOT EXISTS settings (
 );";
 
 // ── Locations ─────────────────────────────────────────────────────────────────
-// horizon is a JSON array of {azimuth, elevation} points.
+// horizon is a JSON array of {azimuth, elevation} points. timezone is the
+// standard-time offset in hours; INTEGER affinity still stores a half-hour
+// offset such as 5.5 exactly, as REAL. time_zone (added in v2) is the IANA
+// name, NULL for locations saved before it existed.
 
 pub const CREATE_LOCATIONS: &str = "
 CREATE TABLE IF NOT EXISTS locations (
@@ -24,6 +27,9 @@ CREATE TABLE IF NOT EXISTS locations (
     bortle      INTEGER NOT NULL,
     horizon     TEXT NOT NULL
 );";
+
+pub const ADD_LOCATIONS_TIME_ZONE: &str = "
+ALTER TABLE locations ADD COLUMN time_zone TEXT;";
 
 // ── Equipment ─────────────────────────────────────────────────────────────────
 // All equipment stores use name as PK. Names are immutable; update-in-place

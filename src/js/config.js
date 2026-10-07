@@ -15,7 +15,7 @@
 const APP_CONFIG = {
     APP_NAME: 'Astryx',
     APP_TITLE: 'Astryx - Astrophotography Planning Tool',
-    APP_VERSION: '1.9.4',
+    APP_VERSION: '1.10.0',
     DB_NAME: 'astryx-db',
     DB_VERSION: 8,
     TARGET_DATA_PATH: './data/',
@@ -26,6 +26,7 @@ const APP_CONFIG = {
     MOON_SEARCH_STEP_SIZE: 1/1440,
     MOON_SEARCH_MAX_STEPS: 2880,
     TARGET_SEARCH_STEP_SIZE: 1/1440,
+    DARK_HOURS_STEP_MINUTES: 10,  // sampling step for hours-above-altitude in darkness
 
     // DSS background image cache duration in ms
     DSS_CACHE_DURATION: 15 * 24 * 60 * 60 * 1000,
@@ -38,9 +39,10 @@ const APP_CONFIG = {
     TOP_RANKED_TARGETS: 37,
 
     // UI constants
-    DEFAULT_MIN_ALTITUDE: 30,
     DEFAULT_YEARLY_MIN_ALTITUDE: 35, // fallback minimum altitude for Yearly Observability (Issue #218)
-    DEFAULT_TIMEZONE: -5,
+    MIN_CONTINUOUS_DARK_HOURS: 2, // longest dark run above min altitude for a target to count as observable (To-Do, Best Months)
+    TOAST_DURATION_MS: 3000, // how long a toast stays up
+    TOAST_LONG_DURATION_MS: 6000, // for toasts with more to read
     MAX_SEARCH_RESULTS: 101, // maximum search results you can set
     DEFAULT_MIN_SIZE: 4.0,   // target filter arc minutes
     DEFAULT_MAX_MAG: 14.5,   // target filter magnitude
@@ -95,6 +97,7 @@ const APP_CONFIG = {
     SEQ_PLAN_MIN_INTEGRATION_MINUTES: 120,    // Usable integration each target should get; about what dithering needs to pay off
     SEQ_PLAN_HANDOVER_STEP_PERCENT: 1,        // Step when searching for the best handover between targets
     SEQ_PLAN_MAX_REORDER_TARGETS: 3,          // Above this, only the set-time order is optimized (orders grow as n!)
+    SEQ_PLAN_REGENERATE_DELAY_MS: 1000,       // Wait after the last input change before rebuilding the plan
 
     // External data APIs
     APIS: {
@@ -110,13 +113,6 @@ const APP_CONFIG = {
     TODO_ALTITUDE_GRAPH_STYLE: 'fill',   // 'fill' or 'line'
     TODO_ALTITUDE_GRAPH_ALPHA: 0.65,     // opacity of fill or line
     TODO_ALTITUDE_GRAPH_LINE_WIDTH: 4.0, // line width (used for both 'line' mode and fill outline)
-
-    // Validate Algorithms view (Issue #176) — global tolerance for time-based
-    // regression test comparisons, in minutes. Single shared value, no per-test
-    // override. Note: moon rise/set tests are snapshot-only (see astro-moon.js
-    // test entries) because their inherent ~2-5 min residual vs external sources
-    // would fail this tolerance by design, not due to a bug.
-    ALGORITHM_VALIDATION_TOLERANCE_MINUTES: 2,
 
     // PHD2 guide log analysis thresholds (ELR.p1-2). RMS bands are calibrated
     // against the settled-frame RMS of the 19-log corpus (see

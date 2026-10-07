@@ -6,9 +6,7 @@
 const SettingsManager = {
     settings: {
         dstConfig: {
-            mode: 'auto', // 'auto', 'custom', 'always', 'never'
-            startDate: null,
-            endDate: null
+            mode: 'auto' // 'auto', 'always', 'never'
         },
         theme: APP_CONFIG.DEFAULT_THEME,
         resultsCount: 'all', // Not in settings UI, but used by visibility calculator
@@ -145,32 +143,40 @@ const SettingsManager = {
     },
 
     /**
-     * Determine if DST is active for a given date
+     * Whether daylight saving time is in effect at a location at an instant.
+     * In 'auto' mode this follows the location's own time zone rules; a
+     * location without a time zone gets none.
+     * @param {Date} instant
+     * @param {Object} location - { timezone: standard-time offset in hours,
+     *     timeZone: IANA name (optional) }
+     * @returns {boolean}
      */
-    isDSTActive(utcDate, timezone) {
-        const standardLocalTime = new Date(utcDate.getTime() + timezone * 3600000);
-
+    isDSTActive(instant, location) {
         switch (this.settings.dstConfig.mode) {
             case 'always':
                 return true;
             case 'never':
                 return false;
-            case 'custom':
-                if (!this.settings.dstConfig.startDate || !this.settings.dstConfig.endDate) {
-                    return false;
-                }
-                const year = standardLocalTime.getFullYear();
-                const start = new Date(year, this.settings.dstConfig.startDate.getMonth(),
-                                      this.settings.dstConfig.startDate.getDate());
-                const end = new Date(year, this.settings.dstConfig.endDate.getMonth(),
-                                    this.settings.dstConfig.endDate.getDate());
-                return standardLocalTime >= start && standardLocalTime <= end;
             case 'auto':
             default:
-                const jan = new Date(standardLocalTime.getFullYear(), 0, 1).getTimezoneOffset();
-                const jul = new Date(standardLocalTime.getFullYear(), 6, 1).getTimezoneOffset();
-                return Math.max(jan, jul) !== standardLocalTime.getTimezoneOffset();
+                if (!location.timeZone) {
+                    return false;
+                }
+                return TimeUtils.zoneOffsetHours(location.timeZone, instant) > location.timezone;
         }
+    },
+
+    /**
+     * Whether daylight saving applies to the night starting on a calendar
+     * date. Decided at local noon, so every view agrees on the days the
+     * clocks change (they change in the small hours).
+     * @param {Date} date - Its local year, month, and day give the calendar date
+     * @param {Object} location - As for isDSTActive
+     * @returns {boolean}
+     */
+    isDSTOnDate(date, location) {
+        const noon = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate(), 12) - location.timezone * 3600000;
+        return this.isDSTActive(new Date(noon), location);
     },
 
     /**
@@ -208,14 +214,14 @@ const SettingsManager = {
      * Get global minimum altitude
      */
     getGlobalMinAltitude() {
-        return this.settings.globalMinAltitude !== undefined ? this.settings.globalMinAltitude : 35;
+        return this.settings.globalMinAltitude;
     },
 
     /**
      * Get minimum altitude for daily visibility
      */
     getMinAltitudeDaily() {
-        return this.settings.minAltitudeDaily !== undefined ? this.settings.minAltitudeDaily : 35;
+        return this.settings.minAltitudeDaily;
     },
 
     /**
@@ -230,7 +236,7 @@ const SettingsManager = {
      * Get minimum altitude for yearly observability
      */
     getMinAltitudeYearly() {
-        return this.settings.minAltitudeYearly !== undefined ? this.settings.minAltitudeYearly : 35;
+        return this.settings.minAltitudeYearly;
     },
 
     /**
@@ -325,13 +331,6 @@ const SettingsManager = {
 
     getSelectedSensor() {
         return this.settings.selectedSensor;
-    },
-
-    /**
-     * Get global minimum altitude
-     */
-    getGlobalMinAltitude() {
-        return this.settings.globalMinAltitude !== undefined ? this.settings.globalMinAltitude : 35;
     },
 
     /**

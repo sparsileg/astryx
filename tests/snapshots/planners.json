@@ -1,0 +1,2597 @@
+{
+  "seqplan home, two galaxies": {
+    "dusk": 2461329.50217,
+    "dawn": 2461329.913194,
+    "start": 2461329.50217,
+    "end": 2461329.90217,
+    "targets": [
+      {
+        "id": "M31",
+        "percent": 41,
+        "subs": 44,
+        "overhead": 5,
+        "start": 2461329.50217,
+        "end": 2461329.66617,
+        "flip": null,
+        "transit": 2461329.678261,
+        "constraint": {
+          "isValid": true,
+          "validStartJD": 2461329.50217,
+          "validEndJD": 2461329.66617,
+          "violationType": null
+        },
+        "horizonViolations": []
+      },
+      {
+        "id": "M33",
+        "percent": 59,
+        "subs": 62,
+        "overhead": 16,
+        "start": 2461329.66617,
+        "end": 2461329.90217,
+        "flip": 2461329.713664,
+        "transit": 2461329.713664,
+        "constraint": {
+          "isValid": true,
+          "validStartJD": 2461329.66617,
+          "validEndJD": 2461329.90217,
+          "violationType": null
+        },
+        "horizonViolations": []
+      }
+    ],
+    "events": [
+      [
+        "calibration",
+        "M31",
+        2461329.50217,
+        2461329.505642
+      ],
+      [
+        "imaging",
+        "M31",
+        2461329.505642,
+        2461329.66617
+      ],
+      [
+        "calibration",
+        "M33",
+        2461329.66617,
+        2461329.669642
+      ],
+      [
+        "imaging",
+        "M33",
+        2461329.669642,
+        2461329.710886
+      ],
+      [
+        "flip",
+        "M33",
+        2461329.710886,
+        2461329.715053
+      ],
+      [
+        "calibration",
+        "M33",
+        2461329.715053,
+        2461329.718525
+      ],
+      [
+        "imaging",
+        "M33",
+        2461329.718525,
+        2461329.903282
+      ]
+    ]
+  },
+  "seqplan home, autumn trio": {
+    "dusk": 2461329.50217,
+    "dawn": 2461329.913194,
+    "start": 2461329.50217,
+    "end": 2461329.913194,
+    "targets": [
+      {
+        "id": "M31",
+        "percent": 24,
+        "subs": 26,
+        "overhead": 5,
+        "start": 2461329.50217,
+        "end": 2461329.600816,
+        "flip": null,
+        "transit": 2461329.678261,
+        "constraint": {
+          "isValid": true,
+          "validStartJD": 2461329.50217,
+          "validEndJD": 2461329.600816,
+          "violationType": null
+        },
+        "horizonViolations": []
+      },
+      {
+        "id": "NGC7000",
+        "percent": 30,
+        "subs": 33,
+        "overhead": 5,
+        "start": 2461329.600816,
+        "end": 2461329.724123,
+        "flip": null,
+        "transit": 2461329.523186,
+        "constraint": {
+          "isValid": true,
+          "validStartJD": 2461329.600816,
+          "validEndJD": 2461329.724123,
+          "violationType": null
+        },
+        "horizonViolations": []
+      },
+      {
+        "id": "M45",
+        "percent": 46,
+        "subs": 49,
+        "overhead": 16,
+        "start": 2461329.724123,
+        "end": 2461329.913194,
+        "flip": 2461329.806161,
+        "transit": 2461329.806161,
+        "constraint": {
+          "isValid": true,
+          "validStartJD": 2461329.724123,
+          "validEndJD": 2461329.913194,
+          "violationType": null
+        },
+        "horizonViolations": []
+      }
+    ],
+    "events": [
+      [
+        "calibration",
+        "M31",
+        2461329.50217,
+        2461329.505642
+      ],
+      [
+        "imaging",
+        "M31",
+        2461329.505642,
+        2461329.600816
+      ],
+      [
+        "calibration",
+        "NGC7000",
+        2461329.600816,
+        2461329.604288
+      ],
+      [
+        "imaging",
+        "NGC7000",
+        2461329.604288,
+        2461329.724123
+      ],
+      [
+        "calibration",
+        "M45",
+        2461329.724123,
+        2461329.727595
+      ],
+      [
+        "imaging",
+        "M45",
+        2461329.727595,
+        2461329.803383
+      ],
+      [
+        "flip",
+        "M45",
+        2461329.803383,
+        2461329.80755
+      ],
+      [
+        "calibration",
+        "M45",
+        2461329.80755,
+        2461329.811022
+      ],
+      [
+        "imaging",
+        "M45",
+        2461329.811022,
+        2461329.91608
+      ]
+    ]
+  },
+  "seqplan home, four targets, over the reorder limit": {
+    "dusk": 2461355.482205,
+    "dawn": 2461355.930556,
+    "start": 2461355.482205,
+    "end": 2461355.90651,
+    "targets": [
+      {
+        "id": "M27",
+        "percent": 21,
+        "subs": 23,
+        "overhead": 5,
+        "start": 2461355.482205,
+        "end": 2461355.571309,
+        "flip": null,
+        "transit": null,
+        "constraint": {
+          "isValid": true,
+          "validStartJD": 2461355.482205,
+          "validEndJD": 2461355.571309,
+          "violationType": null
+        },
+        "horizonViolations": []
+      },
+      {
+        "id": "NGC7000",
+        "percent": 24,
+        "subs": 27,
+        "overhead": 5,
+        "start": 2461355.571309,
+        "end": 2461355.673142,
+        "flip": null,
+        "transit": null,
+        "constraint": {
+          "isValid": false,
+          "validStartJD": 2461355.571309,
+          "validEndJD": 2461355.66367,
+          "violationType": "ends_late"
+        },
+        "horizonViolations": []
+      },
+      {
+        "id": "M31",
+        "percent": 33,
+        "subs": 37,
+        "overhead": 5,
+        "start": 2461355.673142,
+        "end": 2461355.813163,
+        "flip": null,
+        "transit": 2461355.60727,
+        "constraint": {
+          "isValid": true,
+          "validStartJD": 2461355.673142,
+          "validEndJD": 2461355.813163,
+          "violationType": null
+        },
+        "horizonViolations": []
+      },
+      {
+        "id": "M42",
+        "percent": 22,
+        "subs": 24,
+        "overhead": 5,
+        "start": 2461355.813163,
+        "end": 2461355.90651,
+        "flip": null,
+        "transit": 2461355.809882,
+        "constraint": {
+          "isValid": false,
+          "validStartJD": 2461355.813163,
+          "validEndJD": 2461355.906219,
+          "violationType": "ends_late"
+        },
+        "horizonViolations": []
+      }
+    ],
+    "events": [
+      [
+        "calibration",
+        "M27",
+        2461355.482205,
+        2461355.485677
+      ],
+      [
+        "imaging",
+        "M27",
+        2461355.485677,
+        2461355.571309
+      ],
+      [
+        "calibration",
+        "NGC7000",
+        2461355.571309,
+        2461355.574781
+      ],
+      [
+        "imaging",
+        "NGC7000",
+        2461355.574781,
+        2461355.673142
+      ],
+      [
+        "calibration",
+        "M31",
+        2461355.673142,
+        2461355.676615
+      ],
+      [
+        "imaging",
+        "M31",
+        2461355.676615,
+        2461355.813163
+      ],
+      [
+        "calibration",
+        "M42",
+        2461355.813163,
+        2461355.816635
+      ],
+      [
+        "imaging",
+        "M42",
+        2461355.816635,
+        2461355.907203
+      ]
+    ]
+  },
+  "seqplan home, blocked horizon": {
+    "dusk": 2461329.50217,
+    "dawn": 2461329.913194,
+    "start": 2461329.50217,
+    "end": 2461329.913194,
+    "targets": [
+      {
+        "id": "M31",
+        "percent": 31,
+        "subs": 34,
+        "overhead": 5,
+        "start": 2461329.50217,
+        "end": 2461329.629588,
+        "flip": null,
+        "transit": 2461329.678261,
+        "constraint": {
+          "isValid": true,
+          "validStartJD": 2461329.50217,
+          "validEndJD": 2461329.629588,
+          "violationType": null
+        },
+        "horizonViolations": []
+      },
+      {
+        "id": "IC1396",
+        "percent": 31,
+        "subs": 34,
+        "overhead": 5,
+        "start": 2461329.629588,
+        "end": 2461329.757005,
+        "flip": null,
+        "transit": 2461329.551026,
+        "constraint": {
+          "isValid": true,
+          "validStartJD": 2461329.629588,
+          "validEndJD": 2461329.757005,
+          "violationType": null
+        },
+        "horizonViolations": []
+      },
+      {
+        "id": "M45",
+        "percent": 38,
+        "subs": 40,
+        "overhead": 16,
+        "start": 2461329.757005,
+        "end": 2461329.913194,
+        "flip": 2461329.806161,
+        "transit": 2461329.806161,
+        "constraint": {
+          "isValid": true,
+          "validStartJD": 2461329.757005,
+          "validEndJD": 2461329.913194,
+          "violationType": null
+        },
+        "horizonViolations": []
+      }
+    ],
+    "events": [
+      [
+        "calibration",
+        "M31",
+        2461329.50217,
+        2461329.505642
+      ],
+      [
+        "imaging",
+        "M31",
+        2461329.505642,
+        2461329.629588
+      ],
+      [
+        "calibration",
+        "IC1396",
+        2461329.629588,
+        2461329.63306
+      ],
+      [
+        "imaging",
+        "IC1396",
+        2461329.63306,
+        2461329.757005
+      ],
+      [
+        "calibration",
+        "M45",
+        2461329.757005,
+        2461329.760477
+      ],
+      [
+        "imaging",
+        "M45",
+        2461329.760477,
+        2461329.803383
+      ],
+      [
+        "flip",
+        "M45",
+        2461329.803383,
+        2461329.80755
+      ],
+      [
+        "calibration",
+        "M45",
+        2461329.80755,
+        2461329.811022
+      ],
+      [
+        "imaging",
+        "M45",
+        2461329.811022,
+        2461329.91608
+      ]
+    ]
+  },
+  "seqplan home, custom start after midnight": {
+    "dusk": 2461376.476128,
+    "dawn": 2461376.94401,
+    "start": 2461376.770833,
+    "end": 2461376.854167,
+    "targets": [
+      {
+        "id": "M42",
+        "percent": 48,
+        "subs": 10,
+        "overhead": 5,
+        "start": 2461376.770833,
+        "end": 2461376.810833,
+        "flip": null,
+        "transit": 2461376.752543,
+        "constraint": {
+          "isValid": true,
+          "validStartJD": 2461376.770833,
+          "validEndJD": 2461376.810833,
+          "violationType": null
+        },
+        "horizonViolations": []
+      },
+      {
+        "id": "M45",
+        "percent": 52,
+        "subs": 11,
+        "overhead": 5,
+        "start": 2461376.810833,
+        "end": 2461376.854167,
+        "flip": null,
+        "transit": 2461376.677831,
+        "constraint": {
+          "isValid": false,
+          "validStartJD": 2461376.810833,
+          "validEndJD": 2461376.853889,
+          "violationType": "ends_late"
+        },
+        "horizonViolations": []
+      }
+    ],
+    "events": [
+      [
+        "calibration",
+        "M42",
+        2461376.770833,
+        2461376.774306
+      ],
+      [
+        "imaging",
+        "M42",
+        2461376.774306,
+        2461376.810833
+      ],
+      [
+        "calibration",
+        "M45",
+        2461376.810833,
+        2461376.814306
+      ],
+      [
+        "imaging",
+        "M45",
+        2461376.814306,
+        2461376.857778
+      ]
+    ]
+  },
+  "seqplan home, autofocus and flip offset": {
+    "dusk": 2461329.50217,
+    "dawn": 2461329.913194,
+    "start": 2461329.50217,
+    "end": 2461329.884809,
+    "targets": [
+      {
+        "id": "NGC7000",
+        "percent": 48,
+        "subs": 45,
+        "overhead": 28,
+        "start": 2461329.50217,
+        "end": 2461329.685837,
+        "flip": 2461329.53013,
+        "transit": 2461329.523186,
+        "constraint": {
+          "isValid": true,
+          "validStartJD": 2461329.50217,
+          "validEndJD": 2461329.685837,
+          "violationType": null
+        },
+        "horizonViolations": []
+      },
+      {
+        "id": "M31",
+        "percent": 52,
+        "subs": 52,
+        "overhead": 15,
+        "start": 2461329.685837,
+        "end": 2461329.884809,
+        "flip": null,
+        "transit": 2461329.678261,
+        "constraint": {
+          "isValid": true,
+          "validStartJD": 2461329.685837,
+          "validEndJD": 2461329.884809,
+          "violationType": null
+        },
+        "horizonViolations": []
+      }
+    ],
+    "events": [
+      [
+        "calibration",
+        "NGC7000",
+        2461329.50217,
+        2461329.505642
+      ],
+      [
+        "autofocus",
+        "NGC7000",
+        2461329.505642,
+        2461329.507031
+      ],
+      [
+        "imaging",
+        "NGC7000",
+        2461329.507031,
+        2461329.527352
+      ],
+      [
+        "flip",
+        "NGC7000",
+        2461329.527352,
+        2461329.531519
+      ],
+      [
+        "autofocus",
+        "NGC7000",
+        2461329.531519,
+        2461329.532908
+      ],
+      [
+        "calibration",
+        "NGC7000",
+        2461329.532908,
+        2461329.53638
+      ],
+      [
+        "imaging",
+        "NGC7000",
+        2461329.53638,
+        2461329.579852
+      ],
+      [
+        "autofocus",
+        "NGC7000",
+        2461329.579852,
+        2461329.581241
+      ],
+      [
+        "imaging",
+        "NGC7000",
+        2461329.581241,
+        2461329.624714
+      ],
+      [
+        "autofocus",
+        "NGC7000",
+        2461329.624714,
+        2461329.626102
+      ],
+      [
+        "imaging",
+        "NGC7000",
+        2461329.626102,
+        2461329.669575
+      ],
+      [
+        "autofocus",
+        "NGC7000",
+        2461329.669575,
+        2461329.670964
+      ],
+      [
+        "imaging",
+        "NGC7000",
+        2461329.670964,
+        2461329.685837
+      ],
+      [
+        "calibration",
+        "M31",
+        2461329.685837,
+        2461329.689309
+      ],
+      [
+        "autofocus",
+        "M31",
+        2461329.689309,
+        2461329.690698
+      ],
+      [
+        "imaging",
+        "M31",
+        2461329.690698,
+        2461329.73417
+      ],
+      [
+        "autofocus",
+        "M31",
+        2461329.73417,
+        2461329.735559
+      ],
+      [
+        "imaging",
+        "M31",
+        2461329.735559,
+        2461329.779031
+      ],
+      [
+        "autofocus",
+        "M31",
+        2461329.779031,
+        2461329.78042
+      ],
+      [
+        "imaging",
+        "M31",
+        2461329.78042,
+        2461329.823892
+      ],
+      [
+        "autofocus",
+        "M31",
+        2461329.823892,
+        2461329.825281
+      ],
+      [
+        "imaging",
+        "M31",
+        2461329.825281,
+        2461329.868753
+      ],
+      [
+        "autofocus",
+        "M31",
+        2461329.868753,
+        2461329.870142
+      ],
+      [
+        "imaging",
+        "M31",
+        2461329.870142,
+        2461329.888256
+      ]
+    ]
+  },
+  "seqplan cerro tololo, southern trio": {
+    "dusk": 2461101.52691,
+    "dawn": 2461101.884115,
+    "start": 2461101.52691,
+    "end": 2461101.884115,
+    "targets": [
+      {
+        "id": "NGC2070",
+        "percent": 43,
+        "subs": 41,
+        "overhead": 5,
+        "start": 2461101.52691,
+        "end": 2461101.680508,
+        "flip": null,
+        "transit": null,
+        "constraint": {
+          "isValid": true,
+          "validStartJD": 2461101.52691,
+          "validEndJD": 2461101.680508,
+          "violationType": null
+        },
+        "horizonViolations": []
+      },
+      {
+        "id": "NGC3372",
+        "percent": 56,
+        "subs": 52,
+        "overhead": 16,
+        "start": 2461101.680508,
+        "end": 2461101.880543,
+        "flip": 2461101.700175,
+        "transit": 2461101.700175,
+        "constraint": {
+          "isValid": true,
+          "validStartJD": 2461101.680508,
+          "validEndJD": 2461101.880543,
+          "violationType": null
+        },
+        "horizonViolations": []
+      },
+      {
+        "id": "NGC104",
+        "percent": 1,
+        "subs": 0,
+        "overhead": 5,
+        "start": 2461101.880543,
+        "end": 2461101.884115,
+        "flip": null,
+        "transit": null,
+        "constraint": {
+          "isValid": false,
+          "validStartJD": 2461101.884115,
+          "validEndJD": 2461101.884115,
+          "violationType": "never_visible"
+        },
+        "horizonViolations": []
+      }
+    ],
+    "events": [
+      [
+        "calibration",
+        "NGC2070",
+        2461101.52691,
+        2461101.530382
+      ],
+      [
+        "imaging",
+        "NGC2070",
+        2461101.530382,
+        2461101.680508
+      ],
+      [
+        "calibration",
+        "NGC3372",
+        2461101.680508,
+        2461101.68398
+      ],
+      [
+        "imaging",
+        "NGC3372",
+        2461101.68398,
+        2461101.697397
+      ],
+      [
+        "flip",
+        "NGC3372",
+        2461101.697397,
+        2461101.701564
+      ],
+      [
+        "calibration",
+        "NGC3372",
+        2461101.701564,
+        2461101.705036
+      ],
+      [
+        "imaging",
+        "NGC3372",
+        2461101.705036,
+        2461101.880543
+      ],
+      [
+        "calibration",
+        "NGC104",
+        2461101.880543,
+        2461101.884015
+      ],
+      [
+        "imaging",
+        "NGC104",
+        2461101.884015,
+        2461101.887637
+      ]
+    ]
+  },
+  "seqplan tromso, winter": {
+    "dusk": 2461396.164063,
+    "dawn": 2461396.728733,
+    "start": 2461396.164063,
+    "end": 2461396.728733,
+    "targets": [
+      {
+        "id": "M31",
+        "percent": 34.388651,
+        "subs": 50,
+        "overhead": 16,
+        "start": 2461396.164063,
+        "end": 2461396.358245,
+        "flip": 2461396.226178,
+        "transit": 2461396.226178,
+        "constraint": {
+          "isValid": true,
+          "validStartJD": 2461396.164063,
+          "validEndJD": 2461396.358245,
+          "violationType": null
+        },
+        "horizonViolations": []
+      },
+      {
+        "id": "M45",
+        "percent": 25,
+        "subs": 38,
+        "overhead": 5,
+        "start": 2461396.358245,
+        "end": 2461396.499412,
+        "flip": null,
+        "transit": 2461396.354078,
+        "constraint": {
+          "isValid": true,
+          "validStartJD": 2461396.358245,
+          "validEndJD": 2461396.499412,
+          "violationType": null
+        },
+        "horizonViolations": []
+      },
+      {
+        "id": "IC1396",
+        "percent": 40.611349,
+        "subs": 62,
+        "overhead": 5,
+        "start": 2461396.499412,
+        "end": 2461396.728733,
+        "flip": null,
+        "transit": null,
+        "constraint": {
+          "isValid": true,
+          "validStartJD": 2461396.499412,
+          "validEndJD": 2461396.728733,
+          "violationType": null
+        },
+        "horizonViolations": []
+      }
+    ],
+    "events": [
+      [
+        "calibration",
+        "M31",
+        2461396.164063,
+        2461396.167535
+      ],
+      [
+        "imaging",
+        "M31",
+        2461396.167535,
+        2461396.223401
+      ],
+      [
+        "flip",
+        "M31",
+        2461396.223401,
+        2461396.227567
+      ],
+      [
+        "calibration",
+        "M31",
+        2461396.227567,
+        2461396.23104
+      ],
+      [
+        "imaging",
+        "M31",
+        2461396.23104,
+        2461396.358245
+      ],
+      [
+        "calibration",
+        "M45",
+        2461396.358245,
+        2461396.361717
+      ],
+      [
+        "imaging",
+        "M45",
+        2461396.361717,
+        2461396.499412
+      ],
+      [
+        "calibration",
+        "IC1396",
+        2461396.499412,
+        2461396.502885
+      ],
+      [
+        "imaging",
+        "IC1396",
+        2461396.502885,
+        2461396.731114
+      ]
+    ]
+  },
+  "seqplan seattle, short summer night": {
+    "dusk": 2461213.805122,
+    "dawn": 2461213.877604,
+    "start": 2461213.805122,
+    "end": 2461213.877604,
+    "targets": [
+      {
+        "id": "NGC7000",
+        "percent": 50,
+        "subs": 9,
+        "overhead": 5,
+        "start": 2461213.805122,
+        "end": 2461213.841363,
+        "flip": null,
+        "transit": null,
+        "constraint": {
+          "isValid": true,
+          "validStartJD": 2461213.805122,
+          "validEndJD": 2461213.841363,
+          "violationType": null
+        },
+        "horizonViolations": []
+      },
+      {
+        "id": "IC1396",
+        "percent": 50,
+        "subs": 9,
+        "overhead": 5,
+        "start": 2461213.841363,
+        "end": 2461213.877604,
+        "flip": null,
+        "transit": null,
+        "constraint": {
+          "isValid": true,
+          "validStartJD": 2461213.841363,
+          "validEndJD": 2461213.877604,
+          "violationType": null
+        },
+        "horizonViolations": []
+      }
+    ],
+    "events": [
+      [
+        "calibration",
+        "NGC7000",
+        2461213.805122,
+        2461213.808594
+      ],
+      [
+        "imaging",
+        "NGC7000",
+        2461213.808594,
+        2461213.841363
+      ],
+      [
+        "calibration",
+        "IC1396",
+        2461213.841363,
+        2461213.844835
+      ],
+      [
+        "imaging",
+        "IC1396",
+        2461213.844835,
+        2461213.881062
+      ]
+    ]
+  },
+  "optimizer home": {
+    "scored": [
+      {
+        "id": "M31",
+        "window": [
+          2461329.50217,
+          2461329.884809
+        ],
+        "peak": 87.906507,
+        "transit": 2461329.678261,
+        "moonSeparation": 119.014354,
+        "dip": null,
+        "scores": {
+          "window": 100,
+          "altitude": 96,
+          "centering": 86,
+          "moon": 96,
+          "composite": 96
+        }
+      },
+      {
+        "id": "M33",
+        "window": [
+          2461329.525781,
+          2461329.90217
+        ],
+        "peak": 81.36826,
+        "transit": 2461329.713664,
+        "moonSeparation": 126.460467,
+        "dip": null,
+        "scores": {
+          "window": 100,
+          "altitude": 84,
+          "centering": 97,
+          "moon": 98,
+          "composite": 95
+        }
+      },
+      {
+        "id": "M45",
+        "window": [
+          2461329.630642,
+          2461329.913194
+        ],
+        "peak": 74.817836,
+        "transit": 2461329.806161,
+        "moonSeparation": 153.285388,
+        "dip": null,
+        "scores": {
+          "window": 83,
+          "altitude": 72,
+          "centering": 52,
+          "moon": 100,
+          "composite": 81
+        }
+      },
+      {
+        "id": "IC1396",
+        "window": [
+          2461329.50217,
+          2461329.785503
+        ],
+        "peak": 71.790909,
+        "transit": 2461329.551026,
+        "moonSeparation": 99.119998,
+        "dip": null,
+        "scores": {
+          "window": 83,
+          "altitude": 67,
+          "centering": 24,
+          "moon": 94,
+          "composite": 73
+        }
+      },
+      {
+        "id": "NGC7000",
+        "window": [
+          2461329.50217,
+          2461329.734809
+        ],
+        "peak": 84.960762,
+        "transit": 2461329.523186,
+        "moonSeparation": 85.6668,
+        "dip": null,
+        "scores": {
+          "window": 65,
+          "altitude": 91,
+          "centering": 10,
+          "moon": 92,
+          "composite": 71
+        }
+      },
+      {
+        "id": "M27",
+        "window": [
+          2461329.50217,
+          2461329.655642
+        ],
+        "peak": 72.327761,
+        "transit": null,
+        "moonSeparation": 61.481658,
+        "dip": null,
+        "scores": {
+          "window": 38,
+          "altitude": 68,
+          "centering": 0,
+          "moon": 80,
+          "composite": 52
+        }
+      },
+      {
+        "id": "M42",
+        "window": [
+          2461329.784809,
+          2461329.913194
+        ],
+        "peak": 45.317329,
+        "transit": 2461329.880873,
+        "moonSeparation": 146.528334,
+        "dip": null,
+        "scores": {
+          "window": 30,
+          "altitude": 19,
+          "centering": 16,
+          "moon": 100,
+          "composite": 46
+        }
+      }
+    ],
+    "eliminated": {
+      "Never rises above minimum altitude": 4
+    },
+    "combos": {
+      "singles": [
+        [
+          [
+            "M31"
+          ],
+          881.599947
+        ],
+        [
+          [
+            "M33"
+          ],
+          858.166616
+        ],
+        [
+          [
+            "M45"
+          ],
+          549.281266
+        ],
+        [
+          [
+            "IC1396"
+          ],
+          496.39997
+        ],
+        [
+          [
+            "NGC7000"
+          ],
+          396.416643
+        ]
+      ],
+      "pairs": [
+        [
+          [
+            "M31",
+            "M33"
+          ],
+          458.437473
+        ],
+        [
+          [
+            "M31",
+            "M45"
+          ],
+          445.515623
+        ],
+        [
+          [
+            "M31",
+            "M42"
+          ],
+          426.468738
+        ],
+        [
+          [
+            "M33",
+            "NGC7000"
+          ],
+          419.099975
+        ],
+        [
+          [
+            "M33",
+            "M45"
+          ],
+          416.990624
+        ]
+      ],
+      "triplets": [
+        [
+          [
+            "M31",
+            "M33",
+            "M45"
+          ],
+          301.968748
+        ],
+        [
+          [
+            "M31",
+            "M33",
+            "M42"
+          ],
+          293.079158
+        ],
+        [
+          [
+            "M31",
+            "M33",
+            "NGC7000"
+          ],
+          289.60739
+        ],
+        [
+          [
+            "M31",
+            "M33",
+            "IC1396"
+          ],
+          287.869427
+        ],
+        [
+          [
+            "M31",
+            "M33",
+            "M27"
+          ],
+          286.405538
+        ]
+      ]
+    }
+  },
+  "optimizer cerro tololo": {
+    "scored": [
+      {
+        "id": "NGC3372",
+        "window": [
+          2461101.52691,
+          2461101.884115
+        ],
+        "peak": 60.299881,
+        "transit": 2461101.700175,
+        "moonSeparation": 73.489966,
+        "dip": null,
+        "scores": {
+          "window": 100,
+          "altitude": 46,
+          "centering": 97,
+          "moon": 2,
+          "composite": 57
+        }
+      },
+      {
+        "id": "M42",
+        "window": [
+          2461101.52691,
+          2461101.631076
+        ],
+        "peak": 61.527514,
+        "transit": null,
+        "moonSeparation": 64.772779,
+        "dip": null,
+        "scores": {
+          "window": 21,
+          "altitude": 48,
+          "centering": 0,
+          "moon": 1,
+          "composite": 19
+        }
+      },
+      {
+        "id": "NGC2070",
+        "window": [
+          2461101.52691,
+          2461101.68316
+        ],
+        "peak": 50.235183,
+        "transit": null,
+        "moonSeparation": 94.281312,
+        "dip": null,
+        "scores": {
+          "window": 39,
+          "altitude": 28,
+          "centering": 0,
+          "moon": 2,
+          "composite": 19
+        }
+      }
+    ],
+    "eliminated": {
+      "Never rises above minimum altitude": 8
+    },
+    "combos": {
+      "singles": [
+        [
+          [
+            "NGC3372"
+          ],
+          488.65625
+        ],
+        [
+          [
+            "NGC2070"
+          ],
+          71.249996
+        ],
+        [
+          [
+            "M42"
+          ],
+          47.499997
+        ]
+      ],
+      "pairs": [
+        [
+          [
+            "NGC3372",
+            "M42"
+          ],
+          220.578126
+        ],
+        [
+          [
+            "NGC3372",
+            "NGC2070"
+          ],
+          208.703127
+        ],
+        [
+          [
+            "M42",
+            "NGC2070"
+          ],
+          35.624998
+        ]
+      ],
+      "triplets": [
+        [
+          [
+            "NGC3372",
+            "M42",
+            "NGC2070"
+          ],
+          133.857641
+        ]
+      ]
+    }
+  },
+  "best months": {
+    "home M31": {
+      "bestMonth": 10,
+      "peakAltitude": 88,
+      "visibilityStart": 7,
+      "visibilityEnd": 13
+    },
+    "home M33": {
+      "bestMonth": 10,
+      "peakAltitude": 81.4,
+      "visibilityStart": 7,
+      "visibilityEnd": 13
+    },
+    "home M42": {
+      "bestMonth": 12,
+      "peakAltitude": 45.3,
+      "visibilityStart": 10,
+      "visibilityEnd": 14
+    },
+    "home M45": {
+      "bestMonth": 11,
+      "peakAltitude": 74.8,
+      "visibilityStart": 8,
+      "visibilityEnd": 14
+    },
+    "home NGC7000": {
+      "bestMonth": 8,
+      "peakAltitude": 85,
+      "visibilityStart": 5,
+      "visibilityEnd": 12
+    },
+    "home IC1396": {
+      "bestMonth": 8,
+      "peakAltitude": 71.8,
+      "visibilityStart": 5,
+      "visibilityEnd": 12
+    },
+    "home M27": {
+      "bestMonth": 7,
+      "peakAltitude": 73.4,
+      "visibilityStart": 5,
+      "visibilityEnd": 11
+    },
+    "home NGC2070": {
+      "bestMonth": null,
+      "peakAltitude": -18.4,
+      "visibilityStart": null,
+      "visibilityEnd": null
+    },
+    "home NGC3372": {
+      "bestMonth": null,
+      "peakAltitude": -9.2,
+      "visibilityStart": null,
+      "visibilityEnd": null
+    },
+    "home NGC104": {
+      "bestMonth": null,
+      "peakAltitude": -21.4,
+      "visibilityStart": null,
+      "visibilityEnd": null
+    },
+    "home NGC253": {
+      "bestMonth": null,
+      "peakAltitude": 25.4,
+      "visibilityStart": null,
+      "visibilityEnd": null
+    },
+    "capeTown M31": {
+      "bestMonth": null,
+      "peakAltitude": 14.8,
+      "visibilityStart": null,
+      "visibilityEnd": null
+    },
+    "capeTown M33": {
+      "bestMonth": null,
+      "peakAltitude": 25.4,
+      "visibilityStart": null,
+      "visibilityEnd": null
+    },
+    "capeTown M42": {
+      "bestMonth": 12,
+      "peakAltitude": 61.5,
+      "visibilityStart": 10,
+      "visibilityEnd": 14
+    },
+    "capeTown M45": {
+      "bestMonth": null,
+      "peakAltitude": 32,
+      "visibilityStart": null,
+      "visibilityEnd": null
+    },
+    "capeTown NGC7000": {
+      "bestMonth": null,
+      "peakAltitude": 11.8,
+      "visibilityStart": null,
+      "visibilityEnd": null
+    },
+    "capeTown IC1396": {
+      "bestMonth": null,
+      "peakAltitude": -1.4,
+      "visibilityStart": null,
+      "visibilityEnd": null
+    },
+    "capeTown M27": {
+      "bestMonth": 8,
+      "peakAltitude": 33.4,
+      "visibilityStart": null,
+      "visibilityEnd": null
+    },
+    "capeTown NGC2070": {
+      "bestMonth": 12,
+      "peakAltitude": 54.8,
+      "visibilityStart": 8,
+      "visibilityEnd": 16
+    },
+    "capeTown NGC3372": {
+      "bestMonth": 3,
+      "peakAltitude": 64.1,
+      "visibilityStart": 12,
+      "visibilityEnd": 19
+    },
+    "capeTown NGC104": {
+      "bestMonth": 10,
+      "peakAltitude": 51.8,
+      "visibilityStart": 5,
+      "visibilityEnd": 13
+    },
+    "capeTown NGC253": {
+      "bestMonth": 10,
+      "peakAltitude": 81.4,
+      "visibilityStart": 6,
+      "visibilityEnd": 12
+    },
+    "helsinki M31": {
+      "bestMonth": 10,
+      "peakAltitude": 71.1,
+      "visibilityStart": 8,
+      "visibilityEnd": 14
+    },
+    "helsinki M33": {
+      "bestMonth": 10,
+      "peakAltitude": 60.5,
+      "visibilityStart": 8,
+      "visibilityEnd": 14
+    },
+    "helsinki M42": {
+      "bestMonth": null,
+      "peakAltitude": 24.4,
+      "visibilityStart": null,
+      "visibilityEnd": null
+    },
+    "helsinki M45": {
+      "bestMonth": 11,
+      "peakAltitude": 54,
+      "visibilityStart": 9,
+      "visibilityEnd": 14
+    },
+    "helsinki NGC7000": {
+      "bestMonth": 9,
+      "peakAltitude": 74.2,
+      "visibilityStart": 8,
+      "visibilityEnd": 13
+    },
+    "helsinki IC1396": {
+      "bestMonth": 10,
+      "peakAltitude": 87.3,
+      "visibilityStart": 8,
+      "visibilityEnd": 16
+    },
+    "helsinki M27": {
+      "bestMonth": 9,
+      "peakAltitude": 52.6,
+      "visibilityStart": 8,
+      "visibilityEnd": 11
+    },
+    "helsinki NGC2070": {
+      "bestMonth": null,
+      "peakAltitude": -39.3,
+      "visibilityStart": null,
+      "visibilityEnd": null
+    },
+    "helsinki NGC3372": {
+      "bestMonth": null,
+      "peakAltitude": -30,
+      "visibilityStart": null,
+      "visibilityEnd": null
+    },
+    "helsinki NGC104": {
+      "bestMonth": null,
+      "peakAltitude": -42.2,
+      "visibilityStart": null,
+      "visibilityEnd": null
+    },
+    "helsinki NGC253": {
+      "bestMonth": null,
+      "peakAltitude": 4.5,
+      "visibilityStart": null,
+      "visibilityEnd": null
+    },
+    "maunaKea M31": {
+      "bestMonth": 10,
+      "peakAltitude": 68.6,
+      "visibilityStart": 7,
+      "visibilityEnd": 13
+    },
+    "maunaKea M33": {
+      "bestMonth": 10,
+      "peakAltitude": 79.2,
+      "visibilityStart": 7,
+      "visibilityEnd": 13
+    },
+    "maunaKea M42": {
+      "bestMonth": 12,
+      "peakAltitude": 64.8,
+      "visibilityStart": 9,
+      "visibilityEnd": 15
+    },
+    "maunaKea M45": {
+      "bestMonth": 11,
+      "peakAltitude": 85.7,
+      "visibilityStart": 8,
+      "visibilityEnd": 14
+    },
+    "maunaKea NGC7000": {
+      "bestMonth": 8,
+      "peakAltitude": 65.5,
+      "visibilityStart": 5,
+      "visibilityEnd": 11
+    },
+    "maunaKea IC1396": {
+      "bestMonth": 8,
+      "peakAltitude": 52.3,
+      "visibilityStart": 5,
+      "visibilityEnd": 11
+    },
+    "maunaKea M27": {
+      "bestMonth": 7,
+      "peakAltitude": 87.1,
+      "visibilityStart": 4,
+      "visibilityEnd": 10
+    },
+    "maunaKea NGC2070": {
+      "bestMonth": null,
+      "peakAltitude": 1.1,
+      "visibilityStart": null,
+      "visibilityEnd": null
+    },
+    "maunaKea NGC3372": {
+      "bestMonth": null,
+      "peakAltitude": 10.3,
+      "visibilityStart": null,
+      "visibilityEnd": null
+    },
+    "maunaKea NGC104": {
+      "bestMonth": null,
+      "peakAltitude": -1.9,
+      "visibilityStart": null,
+      "visibilityEnd": null
+    },
+    "maunaKea NGC253": {
+      "bestMonth": 10,
+      "peakAltitude": 44.9,
+      "visibilityStart": 8,
+      "visibilityEnd": 12
+    }
+  },
+  "yearly": {
+    "home M31": {
+      "maxAltitude": 88.021,
+      "weekly": [
+        [
+          0,
+          84.326688,
+          0.039631,
+          0.620373
+        ],
+        [
+          7,
+          78.190842,
+          0.278427,
+          13.584329
+        ],
+        [
+          14,
+          71.832116,
+          0.499841,
+          31.115341
+        ],
+        [
+          21,
+          65.368201,
+          0.349402,
+          11.642779
+        ],
+        [
+          28,
+          58.954257,
+          0.080625,
+          1.632314
+        ],
+        [
+          35,
+          52.501363,
+          0.127747,
+          3.788761
+        ],
+        [
+          42,
+          46.263934,
+          0.297529,
+          11.974479
+        ],
+        [
+          49,
+          40.041307,
+          0.223252,
+          3.265294
+        ],
+        [
+          56,
+          34.083617,
+          0.08194,
+          0.721728
+        ],
+        [
+          63,
+          28.206793,
+          0.038405,
+          0
+        ],
+        [
+          70,
+          22.558127,
+          0.137957,
+          0
+        ],
+        [
+          77,
+          17.180594,
+          0.107058,
+          0
+        ],
+        [
+          84,
+          12.036215,
+          0.045834,
+          0
+        ],
+        [
+          91,
+          8.88767,
+          0.002176,
+          0
+        ],
+        [
+          98,
+          10.936641,
+          0.032765,
+          0
+        ],
+        [
+          105,
+          13.006745,
+          0.079056,
+          0
+        ],
+        [
+          112,
+          15.142839,
+          0.09079,
+          0
+        ],
+        [
+          119,
+          17.583885,
+          0.003761,
+          0
+        ],
+        [
+          126,
+          19.941315,
+          0.103713,
+          0
+        ],
+        [
+          133,
+          22.671535,
+          0.184947,
+          0
+        ],
+        [
+          140,
+          25.691526,
+          0.211622,
+          0
+        ],
+        [
+          147,
+          28.948612,
+          0.035762,
+          0
+        ],
+        [
+          154,
+          32.637075,
+          0.109931,
+          0.754125
+        ],
+        [
+          161,
+          36.771572,
+          0.257307,
+          1.913916
+        ],
+        [
+          168,
+          41.540738,
+          0.345725,
+          8.095565
+        ],
+        [
+          175,
+          46.918478,
+          0.107034,
+          1.818246
+        ],
+        [
+          182,
+          52.778478,
+          0.089852,
+          1.273545
+        ],
+        [
+          189,
+          58.887418,
+          0.349858,
+          6.754142
+        ],
+        [
+          196,
+          65.651977,
+          0.535962,
+          24.189348
+        ],
+        [
+          203,
+          72.305769,
+          0.233344,
+          8.147004
+        ],
+        [
+          210,
+          79.295679,
+          0.04666,
+          0.681927
+        ],
+        [
+          217,
+          86.166177,
+          0.416136,
+          12.232206
+        ],
+        [
+          224,
+          88.018926,
+          0.723272,
+          46.525781
+        ],
+        [
+          231,
+          88.018722,
+          0.405518,
+          20.54312
+        ],
+        [
+          238,
+          88.018868,
+          0.000442,
+          0.000941
+        ],
+        [
+          245,
+          88.020937,
+          0.440003,
+          15.889311
+        ],
+        [
+          252,
+          88.020967,
+          0.879449,
+          68.729515
+        ],
+        [
+          259,
+          88.020987,
+          0.609359,
+          40.932426
+        ],
+        [
+          266,
+          88.020998,
+          0.063667,
+          1.080176
+        ],
+        [
+          273,
+          88.019759,
+          0.417916,
+          16.780006
+        ],
+        [
+          280,
+          88.020919,
+          0.961565,
+          79.297166
+        ],
+        [
+          287,
+          88.019301,
+          0.760772,
+          58.907808
+        ],
+        [
+          294,
+          88.019345,
+          0.16403,
+          4.164071
+        ],
+        [
+          301,
+          88.020994,
+          0.282175,
+          11.546536
+        ],
+        [
+          308,
+          88.019682,
+          0.818917,
+          65.913276
+        ],
+        [
+          315,
+          88.018873,
+          0.758827,
+          61.134687
+        ],
+        [
+          322,
+          88.019981,
+          0.24244,
+          6.94743
+        ],
+        [
+          329,
+          88.020115,
+          0.145113,
+          4.968084
+        ],
+        [
+          336,
+          88.019435,
+          0.64224,
+          47.809911
+        ],
+        [
+          343,
+          88.020357,
+          0.688986,
+          53.870403
+        ],
+        [
+          350,
+          88.020835,
+          0.27985,
+          8.049837
+        ],
+        [
+          357,
+          88.02056,
+          0.040916,
+          0.859182
+        ],
+        [
+          364,
+          85.298944,
+          0.452826,
+          28.261076
+        ]
+      ]
+    },
+    "cerroTololo NGC3372": {
+      "maxAltitude": 60.3,
+      "weekly": [
+        [
+          0,
+          59.86458,
+          0.049134,
+          1.007703
+        ],
+        [
+          7,
+          60.299947,
+          0.317935,
+          10.771697
+        ],
+        [
+          14,
+          60.299952,
+          0.682499,
+          38.868682
+        ],
+        [
+          21,
+          60.299897,
+          0.679665,
+          43.630625
+        ],
+        [
+          28,
+          60.3,
+          0.163622,
+          6.068676
+        ],
+        [
+          35,
+          60.299968,
+          0.254039,
+          8.163597
+        ],
+        [
+          42,
+          60.299962,
+          0.737811,
+          45.963233
+        ],
+        [
+          49,
+          60.299951,
+          0.859121,
+          62.820511
+        ],
+        [
+          56,
+          60.299902,
+          0.312985,
+          15.151297
+        ],
+        [
+          63,
+          60.299976,
+          0.147627,
+          3.606011
+        ],
+        [
+          70,
+          60.299933,
+          0.712038,
+          44.280708
+        ],
+        [
+          77,
+          60.29999,
+          0.958121,
+          73.612692
+        ],
+        [
+          84,
+          60.299997,
+          0.440881,
+          24.657272
+        ],
+        [
+          91,
+          60.299954,
+          0.041463,
+          0.591948
+        ],
+        [
+          98,
+          60.299996,
+          0.528403,
+          30.929418
+        ],
+        [
+          105,
+          60.299994,
+          0.862085,
+          62.369792
+        ],
+        [
+          112,
+          60.299929,
+          0.49378,
+          28.259123
+        ],
+        [
+          119,
+          60.299944,
+          0.014607,
+          0.136158
+        ],
+        [
+          126,
+          60.299984,
+          0.35259,
+          17.893995
+        ],
+        [
+          133,
+          60.299999,
+          0.728357,
+          49.998062
+        ],
+        [
+          140,
+          60.299941,
+          0.502003,
+          27.323323
+        ],
+        [
+          147,
+          60.206038,
+          0.068347,
+          1.188659
+        ],
+        [
+          154,
+          59.508331,
+          0.202769,
+          7.79602
+        ],
+        [
+          161,
+          58.1391,
+          0.552384,
+          32.833797
+        ],
+        [
+          168,
+          56.147088,
+          0.453495,
+          21.793615
+        ],
+        [
+          175,
+          53.550014,
+          0.111782,
+          2.377031
+        ],
+        [
+          182,
+          50.482109,
+          0.089481,
+          2.297545
+        ],
+        [
+          189,
+          47.111007,
+          0.361476,
+          15.818031
+        ],
+        [
+          196,
+          43.458087,
+          0.343049,
+          11.85015
+        ],
+        [
+          203,
+          39.674752,
+          0.118002,
+          2.077661
+        ],
+        [
+          210,
+          35.829509,
+          0.021431,
+          0.202766
+        ],
+        [
+          217,
+          31.97952,
+          0.169507,
+          2.606719
+        ],
+        [
+          224,
+          28.097263,
+          0.168561,
+          0
+        ],
+        [
+          231,
+          24.382728,
+          0.074632,
+          0
+        ],
+        [
+          238,
+          20.798472,
+          0.000051,
+          0
+        ],
+        [
+          245,
+          18.941247,
+          0.048828,
+          0
+        ],
+        [
+          252,
+          21.121363,
+          0.028718,
+          0
+        ],
+        [
+          259,
+          23.249008,
+          0.030932,
+          0
+        ],
+        [
+          266,
+          25.502662,
+          0.007373,
+          0
+        ],
+        [
+          273,
+          27.678661,
+          0.061864,
+          0
+        ],
+        [
+          280,
+          29.964426,
+          0.146755,
+          0
+        ],
+        [
+          287,
+          32.181297,
+          0.164858,
+          1.239589
+        ],
+        [
+          294,
+          34.5382,
+          0.053517,
+          0.450275
+        ],
+        [
+          301,
+          36.978497,
+          0.10284,
+          1.758557
+        ],
+        [
+          308,
+          39.488693,
+          0.286725,
+          5.902481
+        ],
+        [
+          315,
+          42.09713,
+          0.337832,
+          9.336745
+        ],
+        [
+          322,
+          44.732033,
+          0.157367,
+          3.988012
+        ],
+        [
+          329,
+          47.563277,
+          0.090158,
+          1.995519
+        ],
+        [
+          336,
+          50.472123,
+          0.385715,
+          11.040003
+        ],
+        [
+          343,
+          53.22694,
+          0.515406,
+          23.686939
+        ],
+        [
+          350,
+          55.886287,
+          0.311313,
+          12.526634
+        ],
+        [
+          357,
+          58.133469,
+          0.039683,
+          0.703736
+        ],
+        [
+          364,
+          59.693344,
+          0.438254,
+          16.22991
+        ]
+      ]
+    },
+    "helsinki IC1396": {
+      "maxAltitude": 87.33,
+      "weekly": [
+        [
+          0,
+          67.572367,
+          0.054291,
+          2.0997
+        ],
+        [
+          7,
+          63.211252,
+          0.264526,
+          23.690481
+        ],
+        [
+          14,
+          58.759556,
+          0.506399,
+          63.205155
+        ],
+        [
+          21,
+          54.272677,
+          0.414736,
+          37.402852
+        ],
+        [
+          28,
+          49.881223,
+          0.103438,
+          6.747609
+        ],
+        [
+          35,
+          45.649836,
+          0.129667,
+          10.818921
+        ],
+        [
+          42,
+          42.909547,
+          0.328242,
+          43.31225
+        ],
+        [
+          49,
+          43.797015,
+          0.30253,
+          30.462433
+        ],
+        [
+          56,
+          44.539946,
+          0.121559,
+          10.012861
+        ],
+        [
+          63,
+          45.129642,
+          0.050289,
+          2.472872
+        ],
+        [
+          70,
+          45.595353,
+          0.245608,
+          21.40689
+        ],
+        [
+          77,
+          45.765045,
+          0.321483,
+          20.958961
+        ],
+        [
+          84,
+          45.791208,
+          0.189879,
+          11.771542
+        ],
+        [
+          91,
+          45.446838,
+          0.014321,
+          0.268131
+        ],
+        [
+          98,
+          44.56439,
+          0.240578,
+          13.556579
+        ],
+        [
+          105,
+          42.603614,
+          0.36813,
+          14.074431
+        ],
+        [
+          112,
+          37.065705,
+          0,
+          0
+        ],
+        [
+          119,
+          39.182218,
+          0,
+          0
+        ],
+        [
+          126,
+          41.47501,
+          0,
+          0
+        ],
+        [
+          133,
+          43.931856,
+          0,
+          0
+        ],
+        [
+          140,
+          46.540393,
+          0,
+          0
+        ],
+        [
+          147,
+          49.288235,
+          0,
+          0
+        ],
+        [
+          154,
+          52.163057,
+          0,
+          0
+        ],
+        [
+          161,
+          55.152646,
+          0,
+          0
+        ],
+        [
+          168,
+          58.244896,
+          0,
+          0
+        ],
+        [
+          175,
+          61.427769,
+          0,
+          0
+        ],
+        [
+          182,
+          64.68915,
+          0,
+          0
+        ],
+        [
+          189,
+          68.016555,
+          0,
+          0
+        ],
+        [
+          196,
+          71.396495,
+          0,
+          0
+        ],
+        [
+          203,
+          74.812976,
+          0,
+          0
+        ],
+        [
+          210,
+          78.243386,
+          0,
+          0
+        ],
+        [
+          217,
+          81.644402,
+          0,
+          0
+        ],
+        [
+          224,
+          84.883618,
+          0,
+          0
+        ],
+        [
+          231,
+          87.212791,
+          0,
+          0
+        ],
+        [
+          238,
+          87.329854,
+          0.004488,
+          0.013632
+        ],
+        [
+          245,
+          87.329703,
+          0.428908,
+          13.624564
+        ],
+        [
+          252,
+          87.329909,
+          0.799301,
+          45.798886
+        ],
+        [
+          259,
+          87.329609,
+          0.551872,
+          31.851512
+        ],
+        [
+          266,
+          87.329556,
+          0.074182,
+          1.582397
+        ],
+        [
+          273,
+          87.329967,
+          0.351117,
+          17.836578
+        ],
+        [
+          280,
+          87.329724,
+          0.802334,
+          70.413556
+        ],
+        [
+          287,
+          87.329882,
+          0.664904,
+          57.70512
+        ],
+        [
+          294,
+          87.329633,
+          0.17852,
+          7.360592
+        ],
+        [
+          301,
+          87.329582,
+          0.245031,
+          14.593843
+        ],
+        [
+          308,
+          87.329784,
+          0.736261,
+          77.490623
+        ],
+        [
+          315,
+          87.329636,
+          0.70145,
+          75.237021
+        ],
+        [
+          322,
+          86.999753,
+          0.272189,
+          14.99517
+        ],
+        [
+          329,
+          85.289378,
+          0.117847,
+          5.8225
+        ],
+        [
+          336,
+          82.777588,
+          0.578078,
+          59.127767
+        ],
+        [
+          343,
+          79.716958,
+          0.638275,
+          70.554472
+        ],
+        [
+          350,
+          76.213628,
+          0.325244,
+          20.873501
+        ],
+        [
+          357,
+          72.400549,
+          0.027574,
+          0.867196
+        ],
+        [
+          364,
+          68.320084,
+          0.431367,
+          45.056619
+        ]
+      ]
+    }
+  }
+}
