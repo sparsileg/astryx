@@ -985,6 +985,57 @@ input[type="checkbox"] {
     cursor: pointer;
 }
 
+/* Checkboxes drawn here rather than by the browser: the desktop (WebKitGTK)
+   app draws native ones from the GTK theme, which showed none in dropdown
+   menus and an invisible unticked box on the Matrix theme. Sizes stay with
+   each module. */
+.astryx-dropdown-item input[type="checkbox"],
+.backup-restore-checkbox-item input[type="checkbox"],
+.backup-restore-confirmation input[type="checkbox"] {
+    -webkit-appearance: none;
+    appearance: none;
+    position: relative;
+    flex-shrink: 0;
+    background: var(--input-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 3px;
+}
+
+.astryx-dropdown-item input[type="checkbox"]:checked,
+.backup-restore-checkbox-item input[type="checkbox"]:checked,
+.backup-restore-confirmation input[type="checkbox"]:checked {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.astryx-dropdown-item input[type="checkbox"]:checked::after,
+.backup-restore-checkbox-item input[type="checkbox"]:checked::after,
+.backup-restore-confirmation input[type="checkbox"]:checked::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 30%;
+    height: 60%;
+    box-sizing: border-box;
+    border: solid var(--checkbox-tick);
+    border-width: 0 2px 2px 0;
+    /* Up a little: the tick's corner is its heavy end */
+    transform: translate(-50%, -60%) rotate(45deg);
+}
+
+.astryx-dropdown-item input[type="checkbox"]:focus-visible,
+.backup-restore-checkbox-item input[type="checkbox"]:focus-visible,
+.backup-restore-confirmation input[type="checkbox"]:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 1px;
+}
+
+.backup-restore-checkbox-item input[type="checkbox"]:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
 /* Range slider styling to match theme */
 input[type="range"] {
     -webkit-appearance: none;

@@ -1215,6 +1215,7 @@ const ToDoView = {
             btn.addEventListener('click', async (e) => {
                 const targetId = btn.dataset.targetId;
                 await ToDoManager.removeFromToDoList(targetId);
+                UIManager.markDataChanged();
                 UIManager.showToast(`Removed ${targetId} from To Do List`, 'success');
             });
         });

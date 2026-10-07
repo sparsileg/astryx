@@ -203,6 +203,24 @@ const TimeUtils = {
     },
 
     /**
+     * Convert a DTG string (YYYYMMDD-HHMMSS, local time) to epoch ms.
+     * Older settings hold epoch ms, which pass through unchanged.
+     * @returns {number} Epoch ms, NaN if unparseable
+     */
+    dtgToMs(dtg) {
+        if (typeof dtg !== 'string' || !dtg.includes('-')) return Number(dtg);
+        const [datePart, timePart] = dtg.split('-');
+        return new Date(
+            parseInt(datePart.substring(0, 4)),
+            parseInt(datePart.substring(4, 6)) - 1,
+            parseInt(datePart.substring(6, 8)),
+            parseInt(timePart.substring(0, 2)),
+            parseInt(timePart.substring(2, 4)),
+            parseInt(timePart.substring(4, 6))
+        ).getTime();
+    },
+
+    /**
      * Current Julian epoch as decimal year (e.g. 2025.2)
      */
     currentEpoch() {

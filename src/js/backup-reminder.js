@@ -40,23 +40,7 @@ const BackupReminder = {
         const lastBackup = SettingsManager.getSetting('lastBackupTimestamp');
         if (!lastBackup) return null;
 
-        // Handle both DTG string (YYYYMMDD-HHMMSS) and epoch ms (legacy)
-        let lastBackupMs;
-        if (typeof lastBackup === 'string' && lastBackup.includes('-')) {
-            // Parse DTG string: YYYYMMDD-HHMMSS
-            const [datePart, timePart] = lastBackup.split('-');
-            const year   = parseInt(datePart.substring(0, 4));
-            const month  = parseInt(datePart.substring(4, 6)) - 1;
-            const day    = parseInt(datePart.substring(6, 8));
-            const hour   = parseInt(timePart.substring(0, 2));
-            const minute = parseInt(timePart.substring(2, 4));
-            const second = parseInt(timePart.substring(4, 6));
-            lastBackupMs = new Date(year, month, day, hour, minute, second).getTime();
-        } else {
-            // Legacy epoch ms
-            lastBackupMs = Number(lastBackup);
-        }
-
+        const lastBackupMs = TimeUtils.dtgToMs(lastBackup);
         if (isNaN(lastBackupMs)) return null;
         return (Date.now() - lastBackupMs) / this._MS_PER_DAY;
     },

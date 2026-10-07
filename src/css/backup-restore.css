@@ -335,6 +335,74 @@
     color: var(--primary-color);
 }
 
+/* Backup vs current data (issue #249) */
+.backup-restore-store-status {
+    margin-left: 0.75rem;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+/* Stores whose backup differs from current data: colors reversed */
+.backup-restore-checkbox-item.differs,
+.backup-restore-checkbox-item.differs:hover {
+    background-color: var(--warning-color);
+}
+
+.backup-restore-checkbox-item.differs .backup-restore-checkbox-label,
+.backup-restore-checkbox-item.differs .backup-restore-count-compare,
+.backup-restore-checkbox-item.differs .backup-restore-count-arrow,
+.backup-restore-checkbox-item.differs .backup-restore-store-status {
+    color: var(--on-warning-color);
+}
+
+.backup-restore-checkbox-item.differs .backup-restore-store-status {
+    font-weight: 600;
+}
+
+.backup-restore-verdict {
+    margin-top: 1rem;
+    margin-bottom: 0;
+}
+
+.backup-restore-verdict.identical,
+.backup-restore-verdict.newer {
+    background: var(--card-bg);
+}
+
+.backup-restore-verdict.identical {
+    border-color: var(--success-color);
+}
+
+.backup-restore-verdict.identical .backup-restore-warning-title {
+    color: var(--success-color);
+    margin-bottom: 0;
+}
+
+.backup-restore-verdict.newer {
+    border-color: var(--primary-color);
+}
+
+.backup-restore-verdict.newer .backup-restore-warning-title {
+    color: var(--primary-color);
+}
+
+/* Warnings about losing data on restore: make them hard to miss */
+.backup-restore-verdict.older .backup-restore-warning-title,
+.backup-restore-flash .backup-restore-warning-title {
+    animation: backup-restore-flash 1s ease-in-out infinite;
+}
+
+@keyframes backup-restore-flash {
+    50% { opacity: 0.2; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .backup-restore-verdict.older .backup-restore-warning-title,
+    .backup-restore-flash .backup-restore-warning-title {
+        animation: none;
+    }
+}
+
 #backup-reminder-indicator {
     font-family: "Lucida Console", "Courier", monospace;
     position: absolute;

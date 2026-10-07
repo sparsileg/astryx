@@ -129,7 +129,8 @@ const BackupManagerTauri = {
         try {
             const backupData = await this.generateBackupData(selectedStores);
             const dtg = TimeUtils.nowDTG();
-            const defaultFilename = `${APP_CONFIG.APP_NAME}-v${APP_CONFIG.APP_VERSION}-d${APP_CONFIG.DB_VERSION}-userdata-${dtg}.zip`;
+            const baseName = `${APP_CONFIG.APP_NAME}-v${APP_CONFIG.APP_VERSION}-d${APP_CONFIG.DB_VERSION}-userdata-${dtg}`;
+            const defaultFilename = `${baseName}.zip`;
 
             const backupFolder = SettingsManager.getBackupFolder();
             let savePath;
@@ -146,7 +147,7 @@ const BackupManagerTauri = {
 
             const jsonString = JSON.stringify(backupData, null, 2);
             const zip = new JSZip();
-            zip.file(defaultFilename, jsonString);
+            zip.file(`${baseName}.json`, jsonString);
             const zipBlob = await zip.generateAsync({ type: 'uint8array', compression: 'DEFLATE' });
             await window.__TAURI__.fs.writeFile(savePath, zipBlob);
 
@@ -191,17 +192,17 @@ const BackupManagerTauri = {
         const lastChange = SettingsManager.getLastChangeTimestamp();
         if (!lastChange) return;
 
-        // Don't fire if a backup has already been made after the last change
+        // Don't fire if a backup has already been made after the last change.
+        // lastChange is epoch ms; lastBackup is a DTG string.
         const lastBackup = SettingsManager.getSetting('lastBackupTimestamp');
-        if (lastBackup && String(lastBackup) >= String(lastChange)) return;
+        if (lastBackup && TimeUtils.dtgToMs(lastBackup) >= Number(lastChange)) return;
 
         const delayMs = SettingsManager.getBackupDelayMinutes() * 60000;
         const elapsed = Date.now() - Number(lastChange);
         const remaining = delayMs - elapsed;
 
         if (remaining <= 0) {
-            // Delay already elapsed — clear the pending flag, don't fire on cold start
-            await SettingsManager.saveSetting('lastBackupTimestamp', TimeUtils.nowDTG());
+            // Delay already elapsed — don't fire on cold start
             return;
         } else {
             // Resume the countdown from where it left off
@@ -225,12 +226,12 @@ const BackupManagerTauri = {
 
             const backupData = await this.generateBackupData(selectedStores);
             const dtg = TimeUtils.nowDTG();
-            const filename = `${APP_CONFIG.APP_NAME}-v${APP_CONFIG.APP_VERSION}-d${APP_CONFIG.DB_VERSION}-userdata-${dtg}.zip`;
-            const savePath = `${backupFolder}/${filename}`;
+            const baseName = `${APP_CONFIG.APP_NAME}-v${APP_CONFIG.APP_VERSION}-d${APP_CONFIG.DB_VERSION}-userdata-${dtg}`;
+            const savePath = `${backupFolder}/${baseName}.zip`;
 
             const jsonString = JSON.stringify(backupData, null, 2);
             const zip = new JSZip();
-            zip.file(filename, jsonString);
+            zip.file(`${baseName}.json`, jsonString);
             const zipBlob = await zip.generateAsync({ type: 'uint8array', compression: 'DEFLATE' });
             await window.__TAURI__.fs.writeFile(savePath, zipBlob);
 
@@ -300,12 +301,12 @@ const BackupManagerTauri = {
         BackupManagerWeb.showRestoreConfirmModal.call(this, backupData);
     },
 
-    populateRestoreFileInfo(backupData) {
-        BackupManagerWeb.populateRestoreFileInfo.call(this, backupData);
+    populateRestoreFileInfo(backupData, comparison) {
+        BackupManagerWeb.populateRestoreFileInfo.call(this, backupData, comparison);
     },
 
-    async populateRestoreStoresList(backupData) {
-        return BackupManagerWeb.populateRestoreStoresList.call(this, backupData);
+    async populateRestoreStoresList(backupData, comparison) {
+        return BackupManagerWeb.populateRestoreStoresList.call(this, backupData, comparison);
     },
 
     restoreSelectAll(checked) {
