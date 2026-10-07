@@ -33,16 +33,17 @@ const OptimizerCalculations = {
     /**
      * Score candidate targets for a given night
      * @param {Array} candidates - Normalized candidate array from assembleCandidatePool
-     * @param {Object} session - { date, location, minAltitude, sessionStartJD, sessionEndJD }
+     * @param {Object} session - { date, location, minAltitude, duskJD, sessionStartJD, sessionEndJD (dawn) }
      * @returns {Array} Top N scored candidates sorted by composite score descending
      */
     scoreCandidates(candidates, session) {
-        const { location, minAltitude, sessionStartJD, sessionEndJD } = session;
+        const { location, minAltitude, duskJD, sessionStartJD, sessionEndJD } = session;
         const sessionMidJD = (sessionStartJD + sessionEndJD) / 2;
         const sessionDurationJD = sessionEndJD - sessionStartJD;
 
-        // Get moon illumination at session midpoint (phase doesn't change significantly across one night)
-        const moonIllum = getMoonPhase(sessionMidJD).illumination / 100;
+        // The night's moon illumination, sampled as every other view samples it
+        // (the session runs to dawn but may start after dusk)
+        const moonIllum = getNightMoonPhase(duskJD, sessionEndJD).illumination / 100;
 
         // Precompute moon position/altitude on a session-anchored 15-min grid —
         // moon data is candidate-independent (perf: O(samples) instead of

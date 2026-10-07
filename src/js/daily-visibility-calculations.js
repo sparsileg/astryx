@@ -9,7 +9,7 @@ const DailyVisibilityCalculations = {
      * Calculate astronomical twilight times for a given date
      * Uses the same algorithm as the original app
      */
-    calculateTwilightTimes(date, latitude, longitude, timezone) {
+    calculateTwilightTimes(date, location) {
         // Parse the date string into a local-noon Date object — findAstronomicalDusk/
         // findNextAstronomicalDawn build their own timezone-independent instant
         // internally from this, via the single canonical implementation in astro-sun.js.
@@ -20,10 +20,10 @@ const DailyVisibilityCalculations = {
             parseInt(dateParts[2]),
             12, 0, 0
         );
-        const isDST = SettingsManager.isDSTActive(localDate, timezone);
+        const isDST = SettingsManager.isDSTOnDate(localDate, location);
 
-        const duskJD = findAstronomicalDusk(localDate, latitude, longitude, timezone, isDST);
-        const dawnJD = findNextAstronomicalDawn(localDate, latitude, longitude, timezone, isDST);
+        const duskJD = findAstronomicalDusk(localDate, location.latitude, location.longitude, location.timezone, isDST);
+        const dawnJD = findNextAstronomicalDawn(localDate, location.latitude, location.longitude, location.timezone, isDST);
 
         // Convert JD to local time strings
         if (duskJD && dawnJD) {
@@ -33,8 +33,8 @@ const DailyVisibilityCalculations = {
             return {
                 duskJD: duskJD,
                 dawnJD: dawnJD,
-                dusk: TimeUtils.formatLocalTimeWithDate(duskUTC, timezone, isDST),
-                dawn: TimeUtils.formatLocalTimeWithDate(dawnUTC, timezone, isDST)
+                dusk: TimeUtils.formatLocalTimeWithDate(duskUTC, location),
+                dawn: TimeUtils.formatLocalTimeWithDate(dawnUTC, location)
             };
         }
 
@@ -45,7 +45,8 @@ const DailyVisibilityCalculations = {
     /**
      * Calculate results for a single day
      */
-    calculateSingleDay(dateStr, duskJD, dawnJD, ra, dec, latitude, longitude, elevation, timezone, minAltitude, horizonArray = null) {
+    calculateSingleDay(dateStr, duskJD, dawnJD, ra, dec, location, minAltitude, horizonArray = null) {
+        const { latitude, longitude, elevation } = location;
         if (!duskJD || !dawnJD) {
             Log.debug(`No dark sky on ${dateStr}`);
             return null;
@@ -53,8 +54,8 @@ const DailyVisibilityCalculations = {
         // Calculate noon-to-noon search window for rise/set times
         const dateParts = dateStr.split('-');
         const obsDate = new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) - 1, parseInt(dateParts[2]));
-        const isDST = SettingsManager.isDSTActive(obsDate, timezone);
-        const noonWindow = getNoonToNoonWindow(dateStr, timezone, isDST);
+        const isDST = SettingsManager.isDSTOnDate(obsDate, location);
+        const noonWindow = getNoonToNoonWindow(dateStr, location.timezone, isDST);
 
         // Find rise/set times within noon-to-noon window (not just dusk-to-dawn)
         const riseJD = findTargetRise(noonWindow.startJD, noonWindow.endJD, ra, dec,
@@ -130,7 +131,8 @@ const DailyVisibilityCalculations = {
             setJD: setJD,
             actualSetJD: actualSetJD,
             moonRiseSet: moonRiseSet,
-            timezone: timezone,
+            timezone: location.timezone,
+            timeZone: location.timeZone,
             locationName: this.currentLocationName,
             blockedMinutes: blockedMinutes
         };
@@ -145,12 +147,7 @@ const DailyVisibilityCalculations = {
         const location = DataManager.getLocation(locationName);
         if (!location) return null;
 
-        const twilight = this.calculateTwilightTimes(
-            dateStr,
-            location.latitude,
-            location.longitude,
-            location.timezone
-        );
+        const twilight = this.calculateTwilightTimes(dateStr, location);
         if (!twilight.duskJD || !twilight.dawnJD) return null;
 
         const horizonArray = (useHorizon && location.horizon) ? location.horizon : null;
@@ -161,10 +158,7 @@ const DailyVisibilityCalculations = {
             twilight.dawnJD,
             target.ra,
             target.dec,
-            location.latitude,
-            location.longitude,
-            location.elevation,
-            location.timezone,
+            location,
             minAltitude,
             horizonArray
         );

@@ -126,13 +126,29 @@ function calculateSkyLight(moonAltitude, targetAltitude, separation, moonIllumin
 }
 
 /**
- * Find astronomical dusk for a given date
- * @param {Date} localDate - Date at local noon
- * @param {number} latitude - Observer latitude (degrees)
- * @param {number} longitude - Observer longitude (degrees)
- * @param {number} timezone - Timezone offset (hours, e.g., -5 for EST)
- * @returns {number|null} Dusk JD when sun goes below -18�, or null if no dusk
+ * The sun's lowest point after a local noon: lower culmination, when its
+ * hour angle reaches 12h. Its declination drifts too little in a night to
+ * move the lowest altitude off this moment by more than seconds.
+ * @param {number} noonJD - Local noon
+ * @param {number} longitude - Observer longitude (degrees, West is negative)
+ * @returns {number} JD of solar midnight
  */
+function findSolarMidnight(noonJD, longitude) {
+    const SIDEREAL_DAY_RATIO = 0.9972695663; // solar days per sidereal day
+    // Start half a day on, then correct twice for the sun's motion in RA
+    let jd = noonJD + 0.5;
+    for (let pass = 0; pass < 2; pass++) {
+        const hoursToGo = ((getSunPosition(jd).ra + 12 - getLST(jd, longitude)) % 24 + 36) % 24 - 12;
+        jd += (hoursToGo / 24) * SIDEREAL_DAY_RATIO;
+    }
+    return jd;
+}
+
+function sunAltitudeAt(jd, latitude, longitude) {
+    const sunPos = getSunPosition(jd);
+    return getAltitude(jd, sunPos.ra, sunPos.dec, latitude, longitude);
+}
+
 /**
  * Find astronomical dusk for a given date
  * @param {Date} localDate - Date at local noon
@@ -184,7 +200,15 @@ function findAstronomicalDusk(localDate, latitude, longitude, timezone, isDST) {
     }
 
     if (bracketStartJD === null) {
-        return null; // No astronomical dusk found (e.g., polar regions in summer)
+        // Darkness shorter than one coarse step can fall between samples
+        // (the first or last dark nights near the poles): check the sun's
+        // lowest point. Dusk then lies between the last sample and it.
+        const midnightJD = findSolarMidnight(noonJD, longitude);
+        if (sunAltitudeAt(midnightJD, latitude, longitude) > targetAlt) {
+            return null; // No astronomical dusk (e.g., polar regions in summer)
+        }
+        bracketStartJD = noonJD + Math.floor((midnightJD - noonJD) / coarseStep) * coarseStep;
+        bracketEndJD = midnightJD;
     }
 
     // Refine within the 10-minute bracket to 1-minute precision
@@ -214,18 +238,20 @@ function findAstronomicalDusk(localDate, latitude, longitude, timezone, isDST) {
  * @param {number} longitude - Observer longitude (degrees)
  * @param {number} timezone - Timezone offset in standard time (hours, e.g., -5 for EST)
  * @param {boolean} isDST - Whether DST is active on this date
- * @returns {number|null} Dawn JD when sun comes above -18°, or null if no dawn
+ * @returns {number|null} Dawn JD when sun comes above -18°, or null if the
+ *     sun never gets below -18° that night (or never rises above it)
  */
 function findNextAstronomicalDawn(localDate, latitude, longitude, timezone, isDST) {
-    // Start from midnight of the NEXT day. Built via Date.UTC so the
-    // browser's local timezone never enters the calculation — otherwise
-    // localMidnight.getTime() already carries the browser's offset, and
-    // subtracting offsetHours applies the location's offset a second time.
-    const nextDay = new Date(localDate);
-    nextDay.setDate(nextDay.getDate() + 1);
+    // Start from noon of the given date, as findAstronomicalDusk does, and
+    // find the first rise above -18 after the sun has been below it. Starting
+    // at the next local midnight instead returned 00:00 as "dawn" whenever
+    // darkness began after midnight — short nights where solar midnight falls
+    // after clock midnight (e.g. Seattle or western France in June) — putting
+    // dawn before dusk. Built via Date.UTC so the browser's local timezone
+    // never enters the calculation.
     const offsetHours = isDST ? timezone + 1 : timezone;
-    const utcMidnight = new Date(Date.UTC(nextDay.getFullYear(), nextDay.getMonth(), nextDay.getDate(), 0, 0, 0) - offsetHours * 3600000);
-    const midnightJD = dateToJD(utcMidnight);
+    const utcNoon = new Date(Date.UTC(localDate.getFullYear(), localDate.getMonth(), localDate.getDate(), 12, 0, 0) - offsetHours * 3600000);
+    const noonJD = dateToJD(utcNoon);
 
     const targetAlt = -18;
 
@@ -236,31 +262,37 @@ function findNextAstronomicalDawn(localDate, latitude, longitude, timezone, isDS
     const coarseStep = 10/1440;
     const maxCoarseIterations = 144; // 24 hours / 10 min
 
-    let jd = midnightJD;
-    let sunPos = getSunPosition(jd);
-    let altitude = getAltitude(jd, sunPos.ra, sunPos.dec, latitude, longitude);
-
-    if (altitude >= targetAlt) {
-        return jd; // Already above threshold at midnight (edge case, e.g. polar)
-    }
-
     let bracketStartJD = null;
     let bracketEndJD = null;
+    let darkSeen = false;
 
-    for (let i = 1; i <= maxCoarseIterations; i++) {
-        jd = midnightJD + i * coarseStep;
-        sunPos = getSunPosition(jd);
-        altitude = getAltitude(jd, sunPos.ra, sunPos.dec, latitude, longitude);
+    for (let i = 0; i <= maxCoarseIterations; i++) {
+        const jd = noonJD + i * coarseStep;
+        const sunPos = getSunPosition(jd);
+        const altitude = getAltitude(jd, sunPos.ra, sunPos.dec, latitude, longitude);
 
-        if (altitude >= targetAlt) {
+        if (altitude < targetAlt) {
+            darkSeen = true;
+        } else if (darkSeen) {
             bracketStartJD = jd - coarseStep;
             bracketEndJD = jd;
             break;
         }
     }
 
+    if (bracketStartJD === null && !darkSeen) {
+        // Darkness shorter than one coarse step can fall between samples:
+        // check the sun's lowest point. Dawn then lies between it and the
+        // next sample.
+        const midnightJD = findSolarMidnight(noonJD, longitude);
+        if (sunAltitudeAt(midnightJD, latitude, longitude) < targetAlt) {
+            bracketStartJD = midnightJD;
+            bracketEndJD = noonJD + Math.ceil((midnightJD - noonJD) / coarseStep) * coarseStep;
+        }
+    }
+
     if (bracketStartJD === null) {
-        return null; // No astronomical dawn found (e.g., polar regions in winter)
+        return null; // No darkness this night (high-latitude summer), or no end to it (polar winter)
     }
 
     // Refine within the 10-minute bracket to 1-minute precision

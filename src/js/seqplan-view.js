@@ -468,7 +468,7 @@ const SeqPlanView = {
         }
         this.debounceTimer = setTimeout(() => {
             this.generatePlan();
-        }, 1000);
+        }, APP_CONFIG.SEQ_PLAN_REGENERATE_DELAY_MS);
     },
 
     /**
@@ -485,112 +485,21 @@ const SeqPlanView = {
         // Save settings
         await this.saveSettings();
 
-        // Build session configuration
+        // Build session configuration and plan the night
         this.currentSession = this.buildSessionConfig();
-
-        // Calculate dusk and dawn only
-        const timing = SeqPlanCalculations.calculateSessionTiming(
-            this.currentSession.date,
-            this.currentSession.location
-        );
-
-        if (!timing) {
+        const plan = SeqPlanCalculations.buildPlan(this.currentTargets, this.currentSession);
+        if (!plan) {
             UIManager.showToast('No astronomical night at this location/date', 'error');
             return;
         }
+        this.calculatedResults = plan.results;
+        const events = plan.events;
 
-        this.currentSession.duskJD = timing.duskJD;
-        this.currentSession.dawnJD = timing.dawnJD;
-
-        // Reset allocations to equal split before optimization   prevents manual
-        // slider adjustments from polluting results on date/setting changes
-        const equalPercent = 100 / this.currentTargets.length;
-        this.currentTargets.forEach(target => {
-            target.allocatedPercent = equalPercent;
-        });
-
-        // Optimize target order
-        const optimizedTargets = SeqPlanOptimizer.optimizeTargetOrder(
-            this.currentTargets,
-            { ...this.currentSession,
-              sessionStartJD: timing.duskJD,
-              sessionEndJD: timing.dawnJD }
-        );
-
-        // Calculate session window based on first/last target altitude constraints
-        const sessionWindow = SeqPlanCalculations.calculateSessionWindow(
-            optimizedTargets,
-            timing.duskJD,
-            timing.dawnJD,
-            this.currentSession.location,
-            this.currentSession.minAltitude,
-            this.currentSession.startTimeMode,
-            this.currentSession.customStartTime,
-            this.currentSession.useHorizon,
-            this.currentSession.location.horizon
-        );
-
-        this.currentSession.sessionStartJD = sessionWindow.sessionStartJD;
-        this.currentSession.sessionEndJD = sessionWindow.sessionEndJD;
-
-        // Find the best order and allocations for the night
-        const plannedTargets = SeqPlanOptimizer.optimizePlan(
-            optimizedTargets,
-            this.currentSession
-        );
-
-        // Recalculate session window in case optimization changed target order
-        const plannedSessionWindow = SeqPlanCalculations.calculateSessionWindow(
-            plannedTargets,
-            timing.duskJD,
-            timing.dawnJD,
-            this.currentSession.location,
-            this.currentSession.minAltitude,
-            this.currentSession.startTimeMode,
-            this.currentSession.customStartTime,
-            this.currentSession.useHorizon,
-            this.currentSession.location.horizon
-        );
-        this.currentSession.sessionStartJD = plannedSessionWindow.sessionStartJD;
-        this.currentSession.sessionEndJD = plannedSessionWindow.sessionEndJD;
-
-        // Calculate exposure counts
-        this.calculatedResults = SeqPlanCalculations.calculateExposureCounts(
-            plannedTargets,
-            this.currentSession
-        );
-
-        // Check altitude constraints for each target
-        this.calculatedResults.forEach(target => {
-            const constraint = SeqPlanCalculations.checkTargetAltitudeConstraint(
-                target,
-                this.currentSession
-            );
-            target.altitudeConstraint = constraint;
-            target.altitudeViolation = !constraint.isValid;
-
-            // Find horizon violations if using horizon profile
-            if (this.currentSession.useHorizon && this.currentSession.location.horizon) {
-                target.horizonViolations = SeqPlanCalculations.findHorizonViolations(
-                    target.imagingStartJD,
-                    target.imagingEndJD,
-                    target.ra,
-                    target.dec,
-                    this.currentSession.location.latitude,
-                    this.currentSession.location.longitude,
-                    this.currentSession.minAltitude,
-                    this.currentSession.location.horizon
-                );
-            } else {
-                target.horizonViolations = [];
-            }
-        });
-
-        // Generate timeline events
-        const events = SeqPlanCalculations.generateTimelineEvents(
-            this.calculatedResults,
-            this.currentSession
-        );
+        const session = this.currentSession;
+        if (session.startTimeMode === 'custom' && session.customStartTime &&
+            SeqPlanCalculations.resolveCustomStartJD(session.customStartTime, session.duskJD, session.dawnJD, session.location) === null) {
+            UIManager.showToast(`Start time ${session.customStartTime} is not between dusk and dawn; the plan starts at dusk`, 'warning', APP_CONFIG.TOAST_LONG_DURATION_MS);
+        }
 
         // Store last target's max allocation   set once per plan generation, never during slider interaction
         if (this.calculatedResults.length > 0) {
@@ -1074,34 +983,7 @@ const SeqPlanView = {
     recalculateAndUpdate() {
         if (this.isInitializing) return;
 
-        this.calculatedResults = SeqPlanCalculations.calculateExposureCounts(
-            this.calculatedResults,
-            this.currentSession
-        );
-
-        this.calculatedResults.forEach(target => {
-            const constraint = SeqPlanCalculations.checkTargetAltitudeConstraint(
-                target,
-                this.currentSession
-            );
-            target.altitudeConstraint = constraint;
-            target.altitudeViolation = !constraint.isValid;
-
-            if (this.currentSession.useHorizon && this.currentSession.location.horizon) {
-                target.horizonViolations = SeqPlanCalculations.findHorizonViolations(
-                    target.imagingStartJD,
-                    target.imagingEndJD,
-                    target.ra,
-                    target.dec,
-                    this.currentSession.location.latitude,
-                    this.currentSession.location.longitude,
-                    this.currentSession.minAltitude,
-                    this.currentSession.location.horizon
-                );
-            } else {
-                target.horizonViolations = [];
-            }
-        });
+        this.calculatedResults = SeqPlanCalculations.planResults(this.calculatedResults, this.currentSession);
 
         this.calculatedResults.forEach(target => {
             const slider = document.getElementById(`slider-${target.targetId}`);
@@ -1132,19 +1014,7 @@ const SeqPlanView = {
 
 
     _afterReorder() {
-        const sessionWindow = SeqPlanCalculations.calculateSessionWindow(
-            this.calculatedResults,
-            this.currentSession.duskJD,
-            this.currentSession.dawnJD,
-            this.currentSession.location,
-            this.currentSession.minAltitude,
-            this.currentSession.startTimeMode,
-            this.currentSession.customStartTime,
-            this.currentSession.useHorizon,
-            this.currentSession.location.horizon
-        );
-        this.currentSession.sessionStartJD = sessionWindow.sessionStartJD;
-        this.currentSession.sessionEndJD = sessionWindow.sessionEndJD;
+        SeqPlanCalculations.applySessionWindow(this.calculatedResults, this.currentSession);
         this.recalculateAndUpdate();
         this.renderTargetAllocation();
     },
@@ -1156,100 +1026,15 @@ const SeqPlanView = {
         if (!this.currentSession || this.calculatedResults.length === 0) return;
 
         this.currentSession = this.buildSessionConfig();
-
-        const timing = SeqPlanCalculations.calculateSessionTiming(
-            this.currentSession.date,
-            this.currentSession.location
-        );
-        if (!timing) {
+        const plan = SeqPlanCalculations.buildPlan(this.currentTargets, this.currentSession);
+        if (!plan) {
             UIManager.showToast('No astronomical night at this location/date', 'error');
             return;
         }
-        this.currentSession.duskJD = timing.duskJD;
-        this.currentSession.dawnJD = timing.dawnJD;
-        this.currentSession.sessionStartJD = timing.duskJD;
-        this.currentSession.sessionEndJD = timing.dawnJD;
-
-        const equalPercent = 100 / this.currentTargets.length;
-        this.currentTargets.forEach(target => {
-            target.allocatedPercent = equalPercent;
-        });
-
-        const optimizedTargets = SeqPlanOptimizer.optimizeTargetOrder(
-            this.currentTargets,
-            this.currentSession
-        );
-
-        const sessionWindow = SeqPlanCalculations.calculateSessionWindow(
-            optimizedTargets,
-            timing.duskJD,
-            timing.dawnJD,
-            this.currentSession.location,
-            this.currentSession.minAltitude,
-            this.currentSession.startTimeMode,
-            this.currentSession.customStartTime,
-            this.currentSession.useHorizon,
-            this.currentSession.location.horizon
-        );
-        this.currentSession.sessionStartJD = sessionWindow.sessionStartJD;
-        this.currentSession.sessionEndJD = sessionWindow.sessionEndJD;
-
-        const plannedTargets = SeqPlanOptimizer.optimizePlan(
-            optimizedTargets,
-            this.currentSession
-        );
-
-        const plannedSessionWindow = SeqPlanCalculations.calculateSessionWindow(
-            plannedTargets,
-            timing.duskJD,
-            timing.dawnJD,
-            this.currentSession.location,
-            this.currentSession.minAltitude,
-            this.currentSession.startTimeMode,
-            this.currentSession.customStartTime,
-            this.currentSession.useHorizon,
-            this.currentSession.location.horizon
-        );
-        this.currentSession.sessionStartJD = plannedSessionWindow.sessionStartJD;
-        this.currentSession.sessionEndJD = plannedSessionWindow.sessionEndJD;
-
-        this.calculatedResults = SeqPlanCalculations.calculateExposureCounts(
-            plannedTargets,
-            this.currentSession
-        );
-
+        this.calculatedResults = plan.results;
         this.currentTargets = this.calculatedResults;
 
-        this.calculatedResults.forEach(target => {
-            const constraint = SeqPlanCalculations.checkTargetAltitudeConstraint(
-                target,
-                this.currentSession
-            );
-            target.altitudeConstraint = constraint;
-            target.altitudeViolation = !constraint.isValid;
-
-            if (this.currentSession.useHorizon && this.currentSession.location.horizon) {
-                target.horizonViolations = SeqPlanCalculations.findHorizonViolations(
-                    target.imagingStartJD,
-                    target.imagingEndJD,
-                    target.ra,
-                    target.dec,
-                    this.currentSession.location.latitude,
-                    this.currentSession.location.longitude,
-                    this.currentSession.minAltitude,
-                    this.currentSession.location.horizon
-                );
-            } else {
-                target.horizonViolations = [];
-            }
-        });
-
-        const events = SeqPlanCalculations.generateTimelineEvents(
-            this.calculatedResults,
-            this.currentSession
-        );
-
-        SeqPlanTimeline.render(events, this.currentSession.sessionStartJD, this.currentSession.sessionEndJD, this.currentSession);
+        SeqPlanTimeline.render(plan.events, this.currentSession.sessionStartJD, this.currentSession.sessionEndJD, this.currentSession);
 
         this.displayResults();
         this.renderTargetAllocation();
@@ -1278,70 +1063,14 @@ const SeqPlanView = {
         await this.saveSettings();
 
         this.currentSession = this.buildSessionConfig();
-
-        const timing = SeqPlanCalculations.calculateSessionTiming(
-            this.currentSession.date,
-            this.currentSession.location
-        );
-
-        if (!timing) {
+        const plan = SeqPlanCalculations.replan(this.calculatedResults, this.currentSession);
+        if (!plan) {
             UIManager.showToast('No astronomical night at this location/date', 'error');
             return;
         }
+        this.calculatedResults = plan.results;
 
-        this.currentSession.duskJD = timing.duskJD;
-        this.currentSession.dawnJD = timing.dawnJD;
-
-        const sessionWindow = SeqPlanCalculations.calculateSessionWindow(
-            this.calculatedResults,
-            timing.duskJD,
-            timing.dawnJD,
-            this.currentSession.location,
-            this.currentSession.minAltitude,
-            this.currentSession.startTimeMode,
-            this.currentSession.customStartTime,
-            this.currentSession.useHorizon,
-            this.currentSession.location.horizon
-        );
-
-        this.currentSession.sessionStartJD = sessionWindow.sessionStartJD;
-        this.currentSession.sessionEndJD = sessionWindow.sessionEndJD;
-
-        this.calculatedResults = SeqPlanCalculations.calculateExposureCounts(
-            this.calculatedResults,
-            this.currentSession
-        );
-
-        this.calculatedResults.forEach(target => {
-            const constraint = SeqPlanCalculations.checkTargetAltitudeConstraint(
-                target,
-                this.currentSession
-            );
-            target.altitudeConstraint = constraint;
-            target.altitudeViolation = !constraint.isValid;
-
-            if (this.currentSession.useHorizon && this.currentSession.location.horizon) {
-                target.horizonViolations = SeqPlanCalculations.findHorizonViolations(
-                    target.imagingStartJD,
-                    target.imagingEndJD,
-                    target.ra,
-                    target.dec,
-                    this.currentSession.location.latitude,
-                    this.currentSession.location.longitude,
-                    this.currentSession.minAltitude,
-                    this.currentSession.location.horizon
-                );
-            } else {
-                target.horizonViolations = [];
-            }
-        });
-
-        const events = SeqPlanCalculations.generateTimelineEvents(
-            this.calculatedResults,
-            this.currentSession
-        );
-
-        SeqPlanTimeline.render(events, this.currentSession.sessionStartJD, this.currentSession.sessionEndJD, this.currentSession);
+        SeqPlanTimeline.render(plan.events, this.currentSession.sessionStartJD, this.currentSession.sessionEndJD, this.currentSession);
 
         this.displayResults();
         this.renderTargetAllocation();

@@ -907,7 +907,7 @@ const ImagingLogView = {
             // location, sampled the same way as Daily Visibility.
             const [year, month, day] = dateStr.split('-').map(Number);
             const localNoon = new Date(year, month - 1, day, 12, 0, 0);
-            const isDST = SettingsManager.isDSTActive(localNoon, location.timezone);
+            const isDST = SettingsManager.isDSTOnDate(localNoon, location);
             const noonWindow = getNoonToNoonWindow(dateStr, location.timezone, isDST);
             // No astronomical darkness (high-latitude summer): use the whole noon-to-noon window
             const duskJD = findAstronomicalDusk(localNoon, location.latitude, location.longitude, location.timezone, isDST) ?? noonWindow.startJD;
@@ -920,7 +920,7 @@ const ImagingLogView = {
 
             if (moonRiseSet.moonrise) {
                 const riseDate = TimeUtils.jdToDate(moonRiseSet.moonrise);
-                const isDSTRise = SettingsManager.isDSTActive(riseDate, location.timezone);
+                const isDSTRise = SettingsManager.isDSTActive(riseDate, location);
                 const riseOffset = isDSTRise ? location.timezone + 1 : location.timezone;
                 const riseLocal = new Date(riseDate.getTime() + riseOffset * 3600000);
                 document.getElementById('session-moon-rise').value = riseLocal.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', timeZone: 'UTC' });
@@ -928,7 +928,7 @@ const ImagingLogView = {
 
             if (moonRiseSet.moonset) {
                 const setDate = TimeUtils.jdToDate(moonRiseSet.moonset);
-                const isDSTSet = SettingsManager.isDSTActive(setDate, location.timezone);
+                const isDSTSet = SettingsManager.isDSTActive(setDate, location);
                 const setOffset = isDSTSet ? location.timezone + 1 : location.timezone;
                 const setLocal = new Date(setDate.getTime() + setOffset * 3600000);
                 document.getElementById('session-moon-set').value = setLocal.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', timeZone: 'UTC' });

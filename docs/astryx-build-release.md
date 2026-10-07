@@ -92,8 +92,9 @@ bundling):
 cd src-tauri && cargo check
 ```
 
-**Run the test suite** (`just test`: the JS validation cases under Node,
-then the Rust tests; `just check` adds rustfmt and clippy first):
+**Run the test suite** (`just test`: the JS astronomy and planner tests
+under Node in four timezones, then the Rust tests; `just check` adds rustfmt
+and clippy first):
 
 ```bash
 node --test tests/*.test.js

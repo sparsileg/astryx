@@ -218,6 +218,82 @@ function findTargetTransit(startJD, endJD, raHours, dec, longitude) {
     return transitJD <= endJD ? transitJD : null;
 }
 
+/**
+ * Hours after local midnight at which a target transits (0-24). Best Months
+ * and Yearly Observability both score transit time with this.
+ * @param {number} midnightJD - Local midnight at the start of the day
+ * @param {number} raHours - Target right ascension (hours)
+ * @param {number} longitude - Observer longitude (degrees, West is negative)
+ * @returns {number} Hours after midnight
+ */
+function getTransitHour(midnightJD, raHours, longitude) {
+    // A sidereal day is shorter than a solar day, so a transit always falls within it
+    return (findTargetTransit(midnightJD, midnightJD + 1, raHours, null, longitude) - midnightJD) * 24;
+}
+
+/**
+ * A night sampled every DARK_HOURS_STEP_MINUTES from dusk to dawn, held as
+ * the cosine and sine of local sidereal time at each sample. Shared by every
+ * target on that night, so getHoursAboveAltitude needs no trig per sample.
+ * @param {number|null} duskJD - Astronomical dusk, or null for no darkness
+ * @param {number|null} dawnJD - Astronomical dawn, or null for no darkness
+ * @param {number} longitude - Observer longitude (degrees, West is negative)
+ * @returns {Object} { cosLST: number[], sinLST: number[] }, empty without darkness
+ */
+function getNightSamples(duskJD, dawnJD, longitude) {
+    const cosLST = [];
+    const sinLST = [];
+    if (duskJD !== null && dawnJD !== null) {
+        const step = APP_CONFIG.DARK_HOURS_STEP_MINUTES / 1440;
+        for (let jd = duskJD; jd <= dawnJD; jd += step) {
+            const lst = hoursToRadians(getLST(jd, longitude));
+            cosLST.push(Math.cos(lst));
+            sinLST.push(Math.sin(lst));
+        }
+    }
+    return { cosLST, sinLST };
+}
+
+/**
+ * Hours a target spends at or above minAltitude during a night. Every view
+ * that counts "dark hours" uses this (Best Months, Yearly Observability,
+ * the To-Do list), so they agree.
+ * @param {Object} samples - From getNightSamples
+ * @param {number} raHours - Target right ascension (hours)
+ * @param {number} decDeg - Target declination (degrees)
+ * @param {number} latitude - Observer latitude (degrees)
+ * @param {number} minAltitude - Minimum altitude (degrees)
+ * @returns {Object} { totalHours, longestHours }: all time above, and the
+ *   longest unbroken stretch
+ */
+function getHoursAboveAltitude(samples, raHours, decDeg, latitude, minAltitude) {
+    // sin(alt) = sin(dec)sin(lat) + cos(dec)cos(lat)cos(LST - RA)
+    const dec = degreesToRadians(decDeg);
+    const lat = degreesToRadians(latitude);
+    const ra = hoursToRadians(raHours);
+    const a = Math.sin(dec) * Math.sin(lat);
+    const b = Math.cos(dec) * Math.cos(lat);
+    const cosRA = Math.cos(ra);
+    const sinRA = Math.sin(ra);
+    const sinMin = Math.sin(degreesToRadians(minAltitude));
+    const stepHours = APP_CONFIG.DARK_HOURS_STEP_MINUTES / 60;
+
+    let totalHours = 0;
+    let longestHours = 0;
+    let currentHours = 0;
+    for (let i = 0; i < samples.cosLST.length; i++) {
+        const cosHA = samples.cosLST[i] * cosRA + samples.sinLST[i] * sinRA;
+        if (a + b * cosHA >= sinMin) {
+            totalHours += stepHours;
+            currentHours += stepHours;
+            longestHours = Math.max(longestHours, currentHours);
+        } else {
+            currentHours = 0;
+        }
+    }
+    return { totalHours, longestHours };
+}
+
 // ----------------------------------------------------------------------
 // ----------------------------------------------------------------------
 // ----------------------------------------------------------------------

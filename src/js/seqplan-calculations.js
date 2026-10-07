@@ -23,7 +23,7 @@ const SeqPlanCalculations = {
 
         // location objects don't carry an isDST property — compute it the
         // same way every other caller does (todo-view, best-months, yearly)
-        const isDST = SettingsManager.isDSTActive(localDate, location.timezone);
+        const isDST = SettingsManager.isDSTOnDate(localDate, location);
         const duskJD = findAstronomicalDusk(localDate, location.latitude, location.longitude,
                                             location.timezone, isDST);
         const dawnJD = findNextAstronomicalDawn(localDate, location.latitude, location.longitude,
@@ -369,6 +369,29 @@ const SeqPlanCalculations = {
     },
 
     /**
+     * A custom start time as a JD: the first time after dusk that the clock
+     * at the location reads HH:MM, so "01:30" means after midnight. The
+     * Sequence Planner and Target Optimizer both start sessions with this.
+     * @param {string} customStartTime - Local time (HH:MM)
+     * @param {number} duskJD - Astronomical dusk
+     * @param {number} dawnJD - Astronomical dawn
+     * @param {Object} location - Location data (timezone)
+     * @returns {number|null} JD, or null if that time is not between dusk and dawn
+     */
+    resolveCustomStartJD(customStartTime, duskJD, dawnJD, location) {
+        const [hours, minutes] = customStartTime.split(':').map(Number);
+        const isDST = SettingsManager.isDSTActive(jdToDate(duskJD), location);
+        const offsetHours = isDST ? location.timezone + 1 : location.timezone;
+        const duskLocal = new Date(jdToDate(duskJD).getTime() + offsetHours * 3600000);
+        let startJD = TimeUtils.localWallClockToJD(duskLocal.getUTCFullYear(), duskLocal.getUTCMonth(),
+            duskLocal.getUTCDate(), hours, location.timezone, isDST) + minutes / 1440;
+        if (startJD < duskJD) {
+            startJD += 1;
+        }
+        return startJD <= dawnJD ? startJD : null;
+    },
+
+    /**
      * Calculate session start/end based on target altitude constraints
      * @param {Array} optimizedTargets - Targets in optimized order
      * @param {number} duskJD - Dusk time
@@ -385,51 +408,7 @@ const SeqPlanCalculations = {
         let initialStartJD = duskJD;
 
         if (startTimeMode === 'custom' && customStartTime) {
-            const [hours, minutes] = customStartTime.split(':').map(Number);
-            // Custom time is local — convert to UTC using location timezone
-            const timezone = location ? location.timezone : 0;
-            const duskDateForDST = jdToDate(duskJD);
-            const isDST = location ? SettingsManager.isDSTActive(duskDateForDST, timezone) : false;
-            const utcOffset = timezone + (isDST ? 1 : 0);
-            const localMinutes = hours * 60 + minutes;
-            const utcMinutes = localMinutes - utcOffset * 60;
-            const utcHours = Math.floor(((utcMinutes % 1440) + 1440) % 1440 / 60);
-            const utcMins = ((utcMinutes % 1440) + 1440) % 1440 % 60;
-            const dayOffset = Math.floor((utcMinutes + 1440) / 1440) - 1;
-
-            const duskDate = jdToDate(duskJD);
-            const dateAtMidnight = new Date(Date.UTC(
-                duskDate.getUTCFullYear(),
-                duskDate.getUTCMonth(),
-                duskDate.getUTCDate(),
-                0, 0, 0, 0
-            ));
-            const midnightJD = dateToJD(dateAtMidnight);
-            const timeOffset = (utcHours + utcMins / 60) / 24;
-            let customJD = midnightJD + timeOffset;
-            Log.debug('Custom time debug:', {
-                customStartTime,
-                hours, minutes,
-                timezone, utcOffset,
-                utcHours, utcMins, dayOffset,
-                midnightJD,
-                customJD,
-                duskJD,
-                dawnJD,
-                diff_dusk: (customJD - duskJD) * 1440,
-                diff_dawn: (dawnJD - customJD) * 1440
-            });
-
-            // If UTC time is early morning (wrapped past midnight), advance one day
-            if (utcHours < 12 && customJD < duskJD) {
-                customJD += 1;
-            }
-
-            if (customJD >= duskJD && customJD <= dawnJD) {
-                initialStartJD = customJD;
-            } else {
-                console.warn('Custom start time outside dusk-dawn window, using dusk');
-            }
+            initialStartJD = this.resolveCustomStartJD(customStartTime, duskJD, dawnJD, location) ?? duskJD;
         }
 
         let sessionStartJD = initialStartJD;
@@ -662,6 +641,102 @@ const SeqPlanCalculations = {
         }
 
         return violations;
+    },
+
+    /**
+     * Plan a night from scratch: find the target order, allocations, and
+     * session window, then the exposures, constraint checks, and timeline.
+     * @param {Array} targets - Pinned targets; each one's allocation is reset
+     *     to an equal split before optimizing
+     * @param {Object} session - Session configuration (SeqPlanView.buildSessionConfig);
+     *     gains duskJD, dawnJD, sessionStartJD, and sessionEndJD
+     * @returns {Object|null} { ordered, results, events }, or null when the
+     *     night has no astronomical darkness. `ordered` is the order before
+     *     allocations were optimized.
+     */
+    buildPlan(targets, session) {
+        const timing = this.calculateSessionTiming(session.date, session.location);
+        if (!timing) {
+            return null;
+        }
+        Object.assign(session, timing, { sessionStartJD: timing.duskJD, sessionEndJD: timing.dawnJD });
+
+        // Start from an equal split so earlier slider changes don't carry over
+        const equalPercent = 100 / targets.length;
+        targets.forEach(target => {
+            target.allocatedPercent = equalPercent;
+        });
+
+        const ordered = SeqPlanOptimizer.optimizeTargetOrder(targets, session);
+        this.applySessionWindow(ordered, session);
+        const planned = SeqPlanOptimizer.optimizePlan(ordered, session);
+        // Optimizing can change the order, and so the window
+        this.applySessionWindow(planned, session);
+
+        const results = this.planResults(planned, session);
+        return { ordered, results, events: this.generateTimelineEvents(results, session) };
+    },
+
+    /**
+     * Re-plan a night keeping the targets' order and allocations, after a
+     * change to the date, location, or overhead settings.
+     * @param {Array} targets - Targets in plan order, with allocations
+     * @param {Object} session - Session configuration; gains duskJD, dawnJD,
+     *     sessionStartJD, and sessionEndJD
+     * @returns {Object|null} { results, events }, or null when the night has
+     *     no astronomical darkness
+     */
+    replan(targets, session) {
+        const timing = this.calculateSessionTiming(session.date, session.location);
+        if (!timing) {
+            return null;
+        }
+        Object.assign(session, timing);
+        this.applySessionWindow(targets, session);
+        const results = this.planResults(targets, session);
+        return { results, events: this.generateTimelineEvents(results, session) };
+    },
+
+    /**
+     * Set the session's start and end for targets imaged in this order
+     * (see calculateSessionWindow).
+     */
+    applySessionWindow(targets, session) {
+        const window = this.calculateSessionWindow(targets, session.duskJD, session.dawnJD,
+            session.location, session.minAltitude, session.startTimeMode, session.customStartTime,
+            session.useHorizon, session.location.horizon);
+        session.sessionStartJD = window.sessionStartJD;
+        session.sessionEndJD = window.sessionEndJD;
+    },
+
+    /**
+     * Exposure counts for targets in plan order, each marked with its
+     * altitude constraint and any horizon obstructions while it is imaged.
+     * @returns {Array} The targets with imaging windows and checks
+     */
+    planResults(targets, session) {
+        const results = this.calculateExposureCounts(targets, session);
+        results.forEach(target => {
+            const constraint = this.checkTargetAltitudeConstraint(target, session);
+            target.altitudeConstraint = constraint;
+            target.altitudeViolation = !constraint.isValid;
+
+            if (session.useHorizon && session.location.horizon) {
+                target.horizonViolations = this.findHorizonViolations(
+                    target.imagingStartJD,
+                    target.imagingEndJD,
+                    target.ra,
+                    target.dec,
+                    session.location.latitude,
+                    session.location.longitude,
+                    session.minAltitude,
+                    session.location.horizon
+                );
+            } else {
+                target.horizonViolations = [];
+            }
+        });
+        return results;
     }
 
 };

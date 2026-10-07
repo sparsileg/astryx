@@ -501,12 +501,12 @@ const DailyVisibilityView = {
         let riseSetHTML = '';
         if (data.moonRiseSet.moonrise) {
             const riseDate = TimeUtils.jdToDate(data.moonRiseSet.moonrise);
-            const riseStr = TimeUtils.formatLocalTimeWithDate(riseDate, data.timezone);
+            const riseStr = TimeUtils.formatLocalTimeWithDate(riseDate, data);
             riseSetHTML += `Rise: ${riseStr}<br>`;
         }
         if (data.moonRiseSet.moonset) {
             const setDate = TimeUtils.jdToDate(data.moonRiseSet.moonset);
-            const setStr = TimeUtils.formatLocalTimeWithDate(setDate, data.timezone);
+            const setStr = TimeUtils.formatLocalTimeWithDate(setDate, data);
             riseSetHTML += `Set: ${setStr}`;
         }
         document.getElementById('moon-rise-set').innerHTML = riseSetHTML || 'No rise/set during observation';
@@ -544,7 +544,7 @@ const DailyVisibilityView = {
 
             if (maxAltitudeJD) {
                 const peakTime = TimeUtils.jdToDate(maxAltitudeJD);
-                const isDST = SettingsManager.isDSTActive(peakTime, data.timezone);
+                const isDST = SettingsManager.isDSTActive(peakTime, data);
                 const offsetHours = isDST ? data.timezone + 1 : data.timezone;
                 const adjustedTime = new Date(peakTime.getTime() + offsetHours * 3600000);
                 const peakTimeStr = adjustedTime.toLocaleTimeString('en-US', {
@@ -573,7 +573,7 @@ const DailyVisibilityView = {
         // Rise time
         if (data.riseJD) {
             const riseDate = TimeUtils.jdToDate(data.riseJD);
-            const riseStr = TimeUtils.formatLocalTimeWithDate(riseDate, data.timezone);
+            const riseStr = TimeUtils.formatLocalTimeWithDate(riseDate, data);
 
             // Check if rise is before dusk
             if (data.riseJD < data.duskJD) {
@@ -588,7 +588,7 @@ const DailyVisibilityView = {
         // Set time
         if (data.setJD) {
             const setDate = TimeUtils.jdToDate(data.setJD);
-            const setStr = TimeUtils.formatLocalTimeWithDate(setDate, data.timezone);
+            const setStr = TimeUtils.formatLocalTimeWithDate(setDate, data);
 
             // Check if set is after dawn
             if (data.setJD > data.dawnJD) {
@@ -599,7 +599,7 @@ const DailyVisibilityView = {
         } else if (data.actualSetJD) {
             // Extended search found set time after dawn
             const actualSetDate = TimeUtils.jdToDate(data.actualSetJD);
-            const actualSetStr = TimeUtils.formatLocalTimeWithDate(actualSetDate, data.timezone);
+            const actualSetStr = TimeUtils.formatLocalTimeWithDate(actualSetDate, data);
             riseSetHTML += `Set: ${actualSetStr}*`;
         } else {
             riseSetHTML += `Set: After dawn`;
@@ -615,8 +615,8 @@ const DailyVisibilityView = {
             const dip = findVisibilityDip(data.duskJD, data.dawnJD, targetRA, targetDEC,
                 latitude, longitude, data.minAltitude, horizonArray);
             if (dip) {
-                const dipStartStr = TimeUtils.formatLocalTimeWithDate(TimeUtils.jdToDate(dip.dipStartJD), data.timezone);
-                const dipEndStr = TimeUtils.formatLocalTimeWithDate(TimeUtils.jdToDate(dip.dipEndJD), data.timezone);
+                const dipStartStr = TimeUtils.formatLocalTimeWithDate(TimeUtils.jdToDate(dip.dipStartJD), data);
+                const dipEndStr = TimeUtils.formatLocalTimeWithDate(TimeUtils.jdToDate(dip.dipEndJD), data);
                 riseSetHTML += `<br>Dips below min altitude ${dipStartStr}–${dipEndStr}`;
             }
         }
@@ -714,7 +714,7 @@ const DailyVisibilityView = {
         const noonMonth = parseInt(dateParts[1]) - 1;
         const noonDay = parseInt(dateParts[2]);
         const noonRefDate = new Date(noonYear, noonMonth, noonDay, 12, 0, 0);
-        const noonIsDST = SettingsManager.isDSTActive(noonRefDate, data.timezone);
+        const noonIsDST = SettingsManager.isDSTOnDate(noonRefDate, data);
 
         // Convert to JD honoring the observing location's timezone, not the browser's
         const noonStartJD = TimeUtils.localWallClockToJD(noonYear, noonMonth, noonDay, 12, data.timezone, noonIsDST);
@@ -855,7 +855,7 @@ const DailyVisibilityView = {
             if (position === null || position < 0 || position > 100) return;
 
             const localTime = TimeUtils.jdToDate(jd);
-            const isDST = SettingsManager.isDSTActive(localTime, data.timezone);
+            const isDST = SettingsManager.isDSTActive(localTime, data);
             const offsetHours = isDST ? data.timezone + 1 : data.timezone;
             const adjustedTime = new Date(localTime.getTime() + offsetHours * 3600000);
 

@@ -53,10 +53,10 @@ const UIManager = {
                 themeLink.addEventListener('load', () => {
                     // Re-render yearly observability if it's currently displayed
                     const yearlyObservabilityContainer = document.getElementById('yearly-observability-container');
-                    if (yearlyObservabilityContainer && yearlyObservabilityContainer.style.display !== 'none' && YearlyObservabilityCalculations.lastGraphData) {
-                        YearlyObservabilityCalculations.renderYearlyObservabilityGraph(
-                            YearlyObservabilityCalculations.lastGraphData.altitudeData,
-                            YearlyObservabilityCalculations.lastGraphData.inputs
+                    if (yearlyObservabilityContainer && yearlyObservabilityContainer.style.display !== 'none' && YearlyObservabilityView.lastGraphData) {
+                        YearlyObservabilityView.renderYearlyObservabilityGraph(
+                            YearlyObservabilityView.lastGraphData.altitudeData,
+                            YearlyObservabilityView.lastGraphData.inputs
                         );
                     }
                     // Re-render sequence planner timeline if it's currently displayed
@@ -288,9 +288,6 @@ const UIManager = {
             break;
         case 'check-target-updates':
             this.checkForTargetUpdates();
-            break;
-        case 'validate-algorithms':
-            window.location.hash = '#validate-algorithms';
             break;
         case 'clear-all-targets':
             this.clearAllTargets();
@@ -566,6 +563,14 @@ const UIManager = {
 
         this.populateManageLocationsModal();
 
+        // Suggest every zone the runtime knows; a new location starts in this computer's zone
+        const zoneList = document.getElementById('manage-time-zone-list');
+        if (zoneList) {
+            zoneList.innerHTML = Intl.supportedValuesOf('timeZone')
+                .map(zone => `<option value="${HtmlUtils.escapeHtml(zone)}"></option>`).join('');
+        }
+        document.getElementById('manage-time-zone').value = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
         const trigger = document.getElementById('manage-bortle-trigger');
         const dropdown = document.getElementById('manage-bortle-dropdown');
         const menu = document.getElementById('manage-bortle-menu');
@@ -611,7 +616,7 @@ const UIManager = {
                             <small style="color: var(--text-secondary);">
                                 ${loc.latitude.toFixed(4)}°, ${loc.longitude.toFixed(4)}° |
                                 Elev: ${loc.elevation}m |
-                                TZ: ${loc.timezone > 0 ? '+' : ''}${loc.timezone} |
+                                ${HtmlUtils.escapeHtml(loc.timeZone ?? 'Time zone not set')} (UTC${loc.timezone >= 0 ? '+' : ''}${loc.timezone}) |
                                 Bortle: ${loc.bortle}
                             </small>
                         </div>
@@ -648,7 +653,7 @@ const UIManager = {
         document.getElementById('manage-latitude').value = location.latitude;
         document.getElementById('manage-longitude').value = location.longitude;
         document.getElementById('manage-elevation').value = location.elevation;
-        document.getElementById('manage-timezone').value = location.timezone;
+        document.getElementById('manage-time-zone').value = location.timeZone ?? '';
         const bortleMenu = document.getElementById('manage-bortle-menu');
         const bortleLabel = document.getElementById('manage-bortle-label');
         if (bortleMenu) {
@@ -710,7 +715,7 @@ const UIManager = {
         const latInput = document.getElementById('manage-latitude');
         const lonInput = document.getElementById('manage-longitude');
         const elevInput = document.getElementById('manage-elevation');
-        const tzInput = document.getElementById('manage-timezone');
+        const timeZoneInput = document.getElementById('manage-time-zone');
         const bortleInput = document.getElementById('manage-bortle-menu');
         const horizonInput = document.getElementById('manage-horizon');
 
@@ -718,7 +723,7 @@ const UIManager = {
         const latitude = parseFloat(latInput.value);
         const longitude = parseFloat(lonInput.value);
         const elevation = parseInt(elevInput.value);
-        const timezone = parseInt(tzInput.value);
+        const timeZone = timeZoneInput.value.trim();
         const bortle = parseInt(bortleInput?.querySelector('.astryx-dropdown-item.selected')?.dataset.value ?? '4');
 
         // Validation
@@ -738,8 +743,8 @@ const UIManager = {
             this.showToast('Elevation must be a positive number', 'error');
             return;
         }
-        if (isNaN(timezone)) {
-            this.showToast('Please enter a valid timezone offset', 'error');
+        if (timeZone === '' || !TimeUtils.isValidTimeZone(timeZone)) {
+            this.showToast('Please enter a time zone, such as America/New_York', 'error');
             return;
         }
         if (isNaN(bortle) || bortle < 1 || bortle > 9) {
@@ -803,7 +808,7 @@ const UIManager = {
             latitude,
             longitude,
             elevation,
-            timezone,
+            timeZone,
             bortle,
             horizon
         });
@@ -815,23 +820,6 @@ const UIManager = {
         document.dispatchEvent(new CustomEvent('locations-updated'));
     },
 
-    /**
-     * Clear location form
-     */
-    clearLocationForm() {
-        document.getElementById('manage-location-name').value = '';
-        document.getElementById('manage-latitude').value = '';
-        document.getElementById('manage-longitude').value = '';
-        document.getElementById('manage-elevation').value = '';
-        document.getElementById('manage-timezone').value = '';
-        document.getElementById('manage-bortle').value = '4';
-        document.getElementById('location-form-title').textContent = 'Add New Location';
-
-        const saveBtn = document.getElementById('save-location-btn');
-        if (saveBtn.dataset.editingLocation) {
-            delete saveBtn.dataset.editingLocation;
-        }
-    },
 
     /**
      * Open Manage Equipment modal
@@ -974,8 +962,8 @@ const UIManager = {
         }
 
         // Get parameters from system settings (used only for visibility window calculation)
-        const minAltitude = SettingsManager.getMinAltitudeYearly() || 35;
-        const minDarkHours = 2; // Default continuous dark hours for visibility window
+        const minAltitude = SettingsManager.getMinAltitudeYearly();
+        const minDarkHours = APP_CONFIG.MIN_CONTINUOUS_DARK_HOURS;
 
         // Hide calculate button, show progress
         const calculateBtn = modalBody.querySelector('[data-action="calculate"]');
@@ -1232,7 +1220,7 @@ const UIManager = {
                 });
             }
 
-            // Handle selection + show/hide custom dates
+            // Handle selection
             dstModeMenu.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const item = e.target.closest('.astryx-dropdown-item');
@@ -1518,8 +1506,8 @@ const UIManager = {
     },
 
     async autoCalculateBestMonths(locationName) {
-        const minAltitude = SettingsManager.getMinAltitudeYearly() || 35;
-        const minDarkHours = 2;
+        const minAltitude = SettingsManager.getMinAltitudeYearly();
+        const minDarkHours = APP_CONFIG.MIN_CONTINUOUS_DARK_HOURS;
 
         this.showProgressToast(`Calculating Best Months for ${locationName}: 0%`);
 
@@ -1669,7 +1657,7 @@ const UIManager = {
         }
     },
 
-    showToast(message, type = 'info', duration = 3000) {
+    showToast(message, type = 'info', duration = APP_CONFIG.TOAST_DURATION_MS) {
         const toast = document.createElement('div');
         toast.className = `toast toast-${type}`;
         toast.textContent = message;
@@ -2113,15 +2101,13 @@ const UIManager = {
             }
         }
 
-        if (typeof YearlyObservabilityCalculations !== 'undefined') {
-            if (typeof VisibilityTargets !== 'undefined' && VisibilityTargets.currentTarget) {
-                YearlyObservabilityCalculations.currentTarget = VisibilityTargets.currentTarget;
-            }
-            const inputs = YearlyObservabilityCalculations.getYearlyInputs();
-            if (inputs.targetName && inputs.ra !== null) {
-                const altitudeData = YearlyObservabilityCalculations.calculateYearlyAltitudeData(inputs);
-                YearlyObservabilityCalculations.lastGraphData = { altitudeData, inputs };
-            }
+        if (typeof VisibilityTargets !== 'undefined' && VisibilityTargets.currentTarget) {
+            YearlyObservabilityView.currentTarget = VisibilityTargets.currentTarget;
+        }
+        const inputs = YearlyObservabilityView.getYearlyInputs();
+        if (inputs.targetName && inputs.ra !== null) {
+            const altitudeData = YearlyObservabilityCalculations.calculateYearlyAltitudeData(inputs);
+            YearlyObservabilityView.lastGraphData = { altitudeData, inputs };
         }
 
         window.location.hash = '#yearly-observability';

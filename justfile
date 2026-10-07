@@ -6,9 +6,14 @@ default:
 # Run every automated test
 test: test-js test-rust
 
-# Algorithm Validation cases under Node (same cases as the in-app view)
+# Astronomy and planner tests under Node, once per timezone: the app must
+# give the same answers wherever the computer running it is
 test-js:
-    node --test tests/*.test.js
+    for tz in America/New_York UTC Australia/Sydney Asia/Kolkata; do echo "TZ=$tz"; TZ=$tz node --test --test-reporter=dot tests/*.test.js || exit 1; done
+
+# Re-record tests/snapshots/ after a deliberate change to a calculation
+update-snapshots:
+    UPDATE_SNAPSHOTS=1 node --test tests/*.test.js
 
 # Rust tests: migrations, every command's database code, backup restore
 test-rust:

@@ -252,7 +252,8 @@ function getAzimuth(jd, raHours, decDeg, latitude, longitude) {
         azimuth = 2 * Math.PI - azimuth;
     }
 
-    return radiansToDegrees(azimuth);
+    // Due north with a tiny positive hour angle comes out as 360; keep [0, 360)
+    return radiansToDegrees(azimuth) % 360;
 }
 
 /**

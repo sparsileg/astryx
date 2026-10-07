@@ -226,9 +226,9 @@ const TUTORIAL_ADMIN_TOOLS = {
         {
             id: 'location-timezone',
             type: 'callout',
-            title: 'Timezone',
-            body: 'Enter the timezone offset in hours from UTC. Locations west of the UTC meridian are negative. Locations east are positive',
-            target: '#manage-timezone',
+            title: 'Time Zone',
+            body: 'Enter the location\'s time zone, such as America/New_York or Europe/Madrid. It starts as this computer\'s zone. Astryx works out the UTC offset and daylight saving dates from it.',
+            target: '#manage-time-zone',
             position: 'bottom',
             waitFor: 'next',
             highlight: true
