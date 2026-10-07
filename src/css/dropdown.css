@@ -96,13 +96,15 @@
 .astryx-dropdown-item input[type="checkbox"]:checked::after {
     content: '';
     position: absolute;
-    left: 4px;
-    top: 1px;
-    width: 4px;
-    height: 8px;
-    border: solid var(--primary-text);
+    left: 50%;
+    top: 50%;
+    width: 30%;
+    height: 60%;
+    box-sizing: border-box;
+    border: solid var(--checkbox-tick);
     border-width: 0 2px 2px 0;
-    transform: rotate(45deg);
+    /* Up a little: the tick's corner is its heavy end */
+    transform: translate(-50%, -60%) rotate(45deg);
 }
 
 .astryx-dropdown-item input[type="checkbox"]:focus-visible {

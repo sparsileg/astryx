@@ -13,6 +13,7 @@
 
     /* Primary Colors */
     --primary-color: #0d6efd;
+    --checkbox-tick: #ffffff;           /* tick in a ticked dropdown checkbox, on --primary-color */
     --primary-hover: #0b5ed7;
 
     /* Secondary Colors */
