@@ -6,12 +6,20 @@
 const SeqPlanOptimizer = {
 
     /**
-     * Suggest optimal target order based on transit times
+     * Starting target order: targets that set during the session go first,
+     * earliest set first; targets still up at the end follow, earliest rise
+     * first (one already up at the start counts as rising then). Ties go to
+     * the earlier transit, imaging each target nearer its highest, and then
+     * to the name, so the order targets were pinned in never affects the plan
      * @param {Array} targets - Array of target plans
      * @param {Object} session - Session configuration
      * @returns {Array} Targets sorted in suggested order
      */
     optimizeTargetOrder(targets, session) {
+        const { latitude, longitude } = session.location;
+        const horizonArray = session.useHorizon ? session.location.horizon : null;
+        const midJD = (session.sessionStartJD + session.sessionEndJD) / 2;
+
         const scoredTargets = targets.map(target => {
             // Find transit time during session
             const transitJD = findTargetTransit(
@@ -19,19 +27,28 @@ const SeqPlanOptimizer = {
                 session.sessionEndJD,
                 target.ra,
                 target.dec,
-                session.location.longitude
+                longitude
             );
 
+            // The transit nearest the middle of the session, even outside it
+            const nearestTransitJD = findTargetTransit(midJD - 0.5, midJD + 0.5, target.ra, target.dec, longitude);
+
+            // A target dipping behind an obstruction and back still counts as
+            // up at the end, so only a target down at the end has set
+            const endAltitude = getAltitude(session.sessionEndJD, target.ra, target.dec, latitude, longitude);
+            const endAzimuth = getAzimuth(session.sessionEndJD, target.ra, target.dec, latitude, longitude);
+            const upAtEnd = isAboveHorizon(endAltitude, endAzimuth, session.minAltitude, horizonArray);
+
             // Find when target sets below minimum altitude
-            const setJD = findTargetSet(
+            const setJD = upAtEnd ? null : findTargetSet(
                 session.sessionStartJD,
                 session.sessionEndJD,
                 target.ra,
                 target.dec,
-                session.location.latitude,
-                session.location.longitude,
+                latitude,
+                longitude,
                 session.minAltitude,
-                null
+                horizonArray
             );
 
             // Find when target rises above minimum altitude
@@ -40,31 +57,29 @@ const SeqPlanOptimizer = {
                 session.sessionEndJD,
                 target.ra,
                 target.dec,
-                session.location.latitude,
-                session.location.longitude,
+                latitude,
+                longitude,
                 session.minAltitude,
-                null
+                horizonArray
             );
-
-            // Score by set time (earliest setting targets first)
-            // Targets that never set (visible all night) score last
-            // Use riseJD as secondary to avoid scheduling before target is visible
-            const setScore = setJD ? (setJD - session.sessionStartJD) : 999;
 
             return {
                 ...target,
                 transitJD: transitJD,
                 riseJD: riseJD,
                 setJD: setJD,
-                score: setScore,
+                nearestTransitJD: nearestTransitJD,
                 suggestedOrder: 0,
                 userOrder: 0,
                 orderOverridden: false
             };
         });
 
-        // Sort by set time (earliest setting targets imaged first)
-        scoredTargets.sort((a, b) => a.score - b.score);
+        scoredTargets.sort((a, b) =>
+            (a.setJD ?? Infinity) - (b.setJD ?? Infinity) ||
+            (a.riseJD ?? session.sessionStartJD) - (b.riseJD ?? session.sessionStartJD) ||
+            a.nearestTransitJD - b.nearestTransitJD ||
+            a.name.localeCompare(b.name));
 
         // Assign suggested order
         scoredTargets.forEach((target, index) => {
@@ -79,8 +94,8 @@ const SeqPlanOptimizer = {
      * Find the best plan for the night. Tries every target order, and for
      * each one the meridian flip boundaries and then the handover positions,
      * keeping the plan that ranks highest under comparePlans(). On a tie the
-     * earlier order wins, so the set-time order is kept unless beaten.
-     * Above SEQ_PLAN_MAX_REORDER_TARGETS only the given order is tried
+     * earlier order wins, so the set-time order is kept unless beaten. For
+     * up to SEQ_PLAN_MAX_REORDER_TARGETS targets; scheduleTargets() plans more
      * @param {Array} targets - Ordered targets (output of optimizeTargetOrder)
      * @param {Object} session - Session configuration with duskJD/dawnJD
      * @returns {Array} Targets in the best order with the best allocations
@@ -89,12 +104,9 @@ const SeqPlanOptimizer = {
         if (targets.length < 2) return targets;
 
         const visibility = SeqPlanCalculations.buildVisibility(targets, session);
-        const orders = targets.length > APP_CONFIG.SEQ_PLAN_MAX_REORDER_TARGETS
-            ? [targets]
-            : this.getPermutations(targets);
         let best = null;
 
-        for (const perm of orders) {
+        for (const perm of this.getPermutations(targets)) {
             // The session window depends only on the first and last target
             const permSession = this.withSessionWindow(perm, session);
             const flipped = this.optimizeFlipBoundaries(perm, permSession, visibility) ?? perm;
@@ -108,6 +120,173 @@ const SeqPlanOptimizer = {
         }
 
         return best.targets;
+    },
+
+    /**
+     * Plan more than SEQ_PLAN_MAX_REORDER_TARGETS targets, as for a Messier
+     * marathon. Targets not visible for an equal share of the night, or for
+     * SEQ_PLAN_MIN_INTEGRATION_MINUTES if that's less, are skipped. The rest
+     * are imaged earliest deadline first: whenever one finishes, the next is
+     * the visible target that sets soonest. A binary
+     * search finds the most imaging time every target can get that way, and
+     * the handover search then hands out the time left over
+     * @param {Array} targets - Ordered targets (output of optimizeTargetOrder)
+     * @param {Object} session - Session configuration with duskJD/dawnJD
+     * @returns {Object} { ordered, planned, skipped }: the imaged targets in
+     *     order with an equal split, then with their allocations, and the
+     *     skipped targets
+     */
+    scheduleTargets(targets, session) {
+        const visibility = SeqPlanCalculations.buildVisibility(targets, session);
+        const toIndex = jd => Math.min(visibility.steps + 1,
+            Math.max(0, Math.round((jd - visibility.startJD) / visibility.step)));
+        const startIndex = toIndex(this.withSessionWindow([], session).sessionStartJD);
+        const endIndex = visibility.steps + 1;
+
+        const windows = new Map(targets.map(target => {
+            const prefix = visibility.visibleBefore.get(target.targetId);
+            const visibleAt = i => prefix[i + 1] > prefix[i];
+            let release = startIndex;
+            while (release < endIndex && !visibleAt(release)) release++;
+            let deadline = endIndex;
+            while (deadline > release && !visibleAt(deadline - 1)) deadline--;
+            const flipIndex = toIndex(target.nearestTransitJD + session.meridianFlipOffset / 1440);
+            return [target.targetId, { prefix, release, deadline, flipIndex }];
+        }));
+        const visibleMinutes = target => {
+            const { prefix } = windows.get(target.targetId);
+            return prefix[endIndex] - prefix[startIndex];
+        };
+
+        // Skip targets not visible for an equal share (capped at the floor);
+        // skipping some raises the share, so repeat until none drop out
+        let imaged = targets.filter(target => visibleMinutes(target) > 0);
+        for (;;) {
+            const share = Math.min(APP_CONFIG.SEQ_PLAN_MIN_INTEGRATION_MINUTES,
+                (endIndex - startIndex) / imaged.length);
+            const keep = imaged.filter(target => visibleMinutes(target) >= share);
+            if (keep.length === 0 || keep.length === imaged.length) break;
+            imaged = keep;
+        }
+
+        // Find the largest imaging time every target gets; a target that
+        // can't be caught even briefly is skipped too
+        let slots = this.scheduleSlots(imaged, windows, startIndex, session, 1);
+        while (slots.missed) {
+            imaged = imaged.filter(target => target !== slots.missed);
+            slots = this.scheduleSlots(imaged, windows, startIndex, session, 1);
+        }
+        let low = 1;
+        let high = endIndex - startIndex;
+        while (low < high) {
+            const minutes = Math.ceil((low + high) / 2);
+            const attempt = this.scheduleSlots(imaged, windows, startIndex, session, minutes);
+            if (attempt.missed) {
+                high = minutes - 1;
+            } else {
+                low = minutes;
+                slots = attempt;
+            }
+        }
+
+        // Each target images until the next one starts, the last until the
+        // session ends, so gaps go to the target before them
+        const order = slots.slots.map(slot => slot.target);
+        const planSession = this.withSessionWindow(order, session);
+        const toJD = index => visibility.startJD + index * visibility.step;
+        const boundaries = [planSession.sessionStartJD,
+            ...slots.slots.slice(1).map(slot => toJD(slot.start)), planSession.sessionEndJD]
+            .map(jd => Math.min(planSession.sessionEndJD, Math.max(planSession.sessionStartJD, jd)));
+        const totalJD = planSession.sessionEndJD - planSession.sessionStartJD;
+        const scheduled = order.map((target, i) => ({
+            ...target,
+            allocatedPercent: Math.max(0, boundaries[i + 1] - boundaries[i]) / totalJD * 100
+        }));
+
+        // Hand out the time left over without taking any target below the
+        // floor: the usual one, or what the weakest target got if less
+        const seconds = this.usableSeconds(scheduled, planSession, visibility);
+        const floorSeconds = Math.min(APP_CONFIG.SEQ_PLAN_MIN_INTEGRATION_MINUTES * 60, ...seconds);
+        const planned = this.optimizeHandovers(scheduled, planSession, visibility, floorSeconds) ?? scheduled;
+
+        const equalPercent = 100 / order.length;
+        return {
+            ordered: order.map(target => ({ ...target, allocatedPercent: equalPercent })),
+            planned,
+            skipped: targets.filter(target => !order.includes(target))
+        };
+    },
+
+    /**
+     * Lay out one slot per target, earliest deadline first, each long enough
+     * for its overhead and the given visible imaging minutes. A slot that
+     * would hold the target's meridian flip starts after the flip instead,
+     * the target before it imaging on meanwhile. The flip is paid for only
+     * when waiting would run past the target's deadline, or for the first
+     * target if paying ends sooner, since nothing images while it waits
+     * @param {Array} targets - Targets to image, in tie-break order
+     * @param {Map} windows - Per target: visibility prefix sums, first
+     *     visible index (release), end of last visible index (deadline), and
+     *     flip index, all in minutes from dusk
+     * @param {number} startIndex - Session start, in minutes from dusk
+     * @param {Object} session - Session configuration
+     * @param {number} minutes - Visible imaging minutes each target needs
+     * @returns {Object} { slots: [{ target, start, end }] }, or { missed }
+     *     with the first target that couldn't be fitted in
+     */
+    scheduleSlots(targets, windows, startIndex, session, minutes) {
+        const autofocus = session.autofocusEnabled ? session.autofocusDuration : 0;
+        const overhead = session.calibrationDuration + autofocus;
+        const flipOverhead = session.meridianFlipPause + session.meridianFlipDuration +
+            session.calibrationDuration + autofocus;
+
+        // End of a slot starting at start: past the overhead, then on until
+        // the target has been visible for the needed minutes
+        const slotEnd = (window, start) => {
+            let end = start + overhead;
+            const from = window.prefix[Math.min(end, window.deadline)];
+            while (end < window.deadline && window.prefix[end] - from < minutes) end++;
+            return window.prefix[end] - from >= minutes ? end : null;
+        };
+
+        const slots = [];
+        const todo = [...targets];
+        let time = startIndex;
+        while (todo.length > 0) {
+            const released = todo.filter(target => windows.get(target.targetId).release <= time);
+            if (released.length === 0) {
+                time = Math.min(...todo.map(target => windows.get(target.targetId).release));
+                continue;
+            }
+            // Earliest deadline first; on a tie, the earlier target in the given order
+            const target = released.reduce((best, t) =>
+                windows.get(t.targetId).deadline < windows.get(best.targetId).deadline ? t : best);
+            const window = windows.get(target.targetId);
+
+            let start = time;
+            let end = slotEnd(window, start);
+            if (end !== null && window.flipIndex > start && window.flipIndex < end) {
+                // Wait until the flip is over, or pay for it
+                const withFlip = end + flipOverhead <= window.deadline ? end + flipOverhead : null;
+                const afterStart = window.flipIndex + session.meridianFlipDuration;
+                const afterEnd = slotEnd(window, afterStart);
+                const first = slots.length === 0;
+                if (afterEnd !== null && (!first || withFlip === null || afterEnd <= withFlip)) {
+                    start = afterStart;
+                    end = afterEnd;
+                } else {
+                    end = withFlip;
+                }
+            }
+            if (end === null) {
+                return { missed: target };
+            }
+
+            slots.push({ target, start, end });
+            todo.splice(todo.indexOf(target), 1);
+            time = end;
+        }
+        return { slots };
     },
 
     /**
@@ -249,12 +428,13 @@ const SeqPlanOptimizer = {
      * @param {Array} targets - Ordered targets with allocations
      * @param {Object} session - Session configuration with session window
      * @param {Object} visibility - Output of SeqPlanCalculations.buildVisibility()
+     * @param {number} floorSeconds - Usable integration each target should get
      * @returns {Array|null} Targets with adjusted allocations, or null if no improvement
      */
-    optimizeHandovers(targets, session, visibility) {
+    optimizeHandovers(targets, session, visibility, floorSeconds = APP_CONFIG.SEQ_PLAN_MIN_INTEGRATION_MINUTES * 60) {
         const step = APP_CONFIG.SEQ_PLAN_HANDOVER_STEP_PERCENT;
         let bestAllocations = targets.map(t => t.allocatedPercent);
-        const baseScore = this.scoreAllocations(targets, bestAllocations, session, visibility);
+        const baseScore = this.scoreAllocations(targets, bestAllocations, session, visibility, floorSeconds);
         let bestScore = baseScore;
         let improved = true;
 
@@ -267,7 +447,7 @@ const SeqPlanOptimizer = {
                     const testAllocations = [...bestAllocations];
                     testAllocations[i] = percent;
                     testAllocations[i + 1] = pairPercent - percent;
-                    const testScore = this.scoreAllocations(targets, testAllocations, session, visibility);
+                    const testScore = this.scoreAllocations(targets, testAllocations, session, visibility, floorSeconds);
 
                     if (this.comparePlans(testScore, bestScore) > 0) {
                         bestScore = testScore;
@@ -292,14 +472,12 @@ const SeqPlanOptimizer = {
      * @param {Array} allocations - Allocated percent per target
      * @param {Object} session - Session configuration with session window
      * @param {Object} visibility - Output of SeqPlanCalculations.buildVisibility()
+     * @param {number} floorSeconds - Usable integration each target should get
      * @returns {Object} { floorMet, weakest, total, variance } for comparePlans()
      */
-    scoreAllocations(targets, allocations, session, visibility) {
-        const calculated = SeqPlanCalculations.calculateExposureCounts(
-            targets.map((t, i) => ({ ...t, allocatedPercent: allocations[i] })), session);
-        const floorSeconds = APP_CONFIG.SEQ_PLAN_MIN_INTEGRATION_MINUTES * 60;
-        const seconds = this.usableSubCounts(calculated, visibility)
-            .map((subs, i) => subs * calculated[i].exposureTime);
+    scoreAllocations(targets, allocations, session, visibility, floorSeconds = APP_CONFIG.SEQ_PLAN_MIN_INTEGRATION_MINUTES * 60) {
+        const seconds = this.usableSeconds(
+            targets.map((t, i) => ({ ...t, allocatedPercent: allocations[i] })), session, visibility);
 
         return {
             floorMet: seconds.filter(s => s >= floorSeconds).length,
@@ -307,6 +485,19 @@ const SeqPlanOptimizer = {
             total: seconds.reduce((sum, s) => sum + s, 0),
             variance: this.calcVariance(seconds)
         };
+    },
+
+    /**
+     * Usable integration time per target, in whole seconds
+     * @param {Array} targets - Ordered targets with allocations
+     * @param {Object} session - Session configuration with session window
+     * @param {Object} visibility - Output of SeqPlanCalculations.buildVisibility()
+     * @returns {Array} Seconds per target
+     */
+    usableSeconds(targets, session, visibility) {
+        const calculated = SeqPlanCalculations.calculateExposureCounts(targets, session);
+        return this.usableSubCounts(calculated, visibility)
+            .map((subs, i) => subs * calculated[i].exposureTime);
     },
 
     /**

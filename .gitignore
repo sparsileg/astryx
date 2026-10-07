@@ -43,3 +43,6 @@ Thumbs.db
 
 # emacs temp files
 \#*\#
+
+# Astryx User Guide intermediate build files
+guide/build/

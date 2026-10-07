@@ -50,7 +50,7 @@ pub fn run() {
         })
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
-        .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_window_state::Builder::default().build())
         .manage(state)
         .invoke_handler(tauri::generate_handler![
@@ -116,6 +116,8 @@ pub fn run() {
             commands::tutorial_progress::get_tutorial_progress,
             commands::tutorial_progress::save_tutorial_progress,
             commands::tutorial_progress::delete_tutorial_progress,
+            // Help
+            commands::help::open_user_guide,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

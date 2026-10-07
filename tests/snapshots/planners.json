@@ -208,69 +208,69 @@
     "targets": [
       {
         "id": "M27",
-        "percent": 21,
-        "subs": 23,
+        "percent": 21.440263,
+        "subs": 24,
         "overhead": 5,
         "start": 2461355.482205,
-        "end": 2461355.571309,
+        "end": 2461355.573177,
         "flip": null,
         "transit": null,
         "constraint": {
           "isValid": true,
           "validStartJD": 2461355.482205,
-          "validEndJD": 2461355.571309,
+          "validEndJD": 2461355.573177,
           "violationType": null
         },
         "horizonViolations": []
       },
       {
         "id": "NGC7000",
-        "percent": 24,
-        "subs": 27,
+        "percent": 21.440263,
+        "subs": 24,
         "overhead": 5,
-        "start": 2461355.571309,
-        "end": 2461355.673142,
+        "start": 2461355.573177,
+        "end": 2461355.664149,
         "flip": null,
         "transit": null,
         "constraint": {
           "isValid": false,
-          "validStartJD": 2461355.571309,
-          "validEndJD": 2461355.66367,
+          "validStartJD": 2461355.573177,
+          "validEndJD": 2461355.664149,
           "violationType": "ends_late"
         },
         "horizonViolations": []
       },
       {
         "id": "M31",
-        "percent": 33,
-        "subs": 37,
+        "percent": 34.69722,
+        "subs": 39,
         "overhead": 5,
-        "start": 2461355.673142,
-        "end": 2461355.813163,
+        "start": 2461355.664149,
+        "end": 2461355.811372,
         "flip": null,
         "transit": 2461355.60727,
         "constraint": {
           "isValid": true,
-          "validStartJD": 2461355.673142,
-          "validEndJD": 2461355.813163,
+          "validStartJD": 2461355.664149,
+          "validEndJD": 2461355.811372,
           "violationType": null
         },
         "horizonViolations": []
       },
       {
         "id": "M42",
-        "percent": 22,
-        "subs": 24,
+        "percent": 22.422254,
+        "subs": 25,
         "overhead": 5,
-        "start": 2461355.813163,
+        "start": 2461355.811372,
         "end": 2461355.90651,
         "flip": null,
         "transit": 2461355.809882,
         "constraint": {
-          "isValid": false,
-          "validStartJD": 2461355.813163,
-          "validEndJD": 2461355.906219,
-          "violationType": "ends_late"
+          "isValid": true,
+          "validStartJD": 2461355.811372,
+          "validEndJD": 2461355.90651,
+          "violationType": null
         },
         "horizonViolations": []
       }
@@ -286,43 +286,43 @@
         "imaging",
         "M27",
         2461355.485677,
-        2461355.571309
+        2461355.573177
       ],
       [
         "calibration",
         "NGC7000",
-        2461355.571309,
-        2461355.574781
+        2461355.573177,
+        2461355.576649
       ],
       [
         "imaging",
         "NGC7000",
-        2461355.574781,
-        2461355.673142
+        2461355.576649,
+        2461355.664149
       ],
       [
         "calibration",
         "M31",
-        2461355.673142,
-        2461355.676615
+        2461355.664149,
+        2461355.667622
       ],
       [
         "imaging",
         "M31",
-        2461355.676615,
-        2461355.813163
+        2461355.667622,
+        2461355.811372
       ],
       [
         "calibration",
         "M42",
-        2461355.813163,
-        2461355.816635
+        2461355.811372,
+        2461355.814844
       ],
       [
         "imaging",
         "M42",
-        2461355.816635,
-        2461355.907203
+        2461355.814844,
+        2461355.909034
       ]
     ]
   },
@@ -992,6 +992,596 @@
         "IC1396",
         2461213.844835,
         2461213.881062
+      ]
+    ]
+  },
+  "seqplan home, Messier marathon": {
+    "dusk": 2461120.538194,
+    "dawn": 2461120.90625,
+    "start": 2461120.538194,
+    "end": 2461120.90625,
+    "targets": [
+      {
+        "id": "M76",
+        "percent": 3.207547,
+        "subs": 9,
+        "overhead": 5,
+        "start": 2461120.538194,
+        "end": 2461120.55,
+        "flip": null,
+        "transit": null,
+        "constraint": {
+          "isValid": true,
+          "validStartJD": 2461120.538194,
+          "validEndJD": 2461120.55,
+          "violationType": null
+        },
+        "horizonViolations": []
+      },
+      {
+        "id": "M34",
+        "percent": 3.207547,
+        "subs": 9,
+        "overhead": 5,
+        "start": 2461120.55,
+        "end": 2461120.561806,
+        "flip": null,
+        "transit": null,
+        "constraint": {
+          "isValid": true,
+          "validStartJD": 2461120.55,
+          "validEndJD": 2461120.561806,
+          "violationType": null
+        },
+        "horizonViolations": []
+      },
+      {
+        "id": "M45",
+        "percent": 3.207547,
+        "subs": 9,
+        "overhead": 5,
+        "start": 2461120.561806,
+        "end": 2461120.573611,
+        "flip": null,
+        "transit": null,
+        "constraint": {
+          "isValid": true,
+          "validStartJD": 2461120.561806,
+          "validEndJD": 2461120.573611,
+          "violationType": null
+        },
+        "horizonViolations": []
+      },
+      {
+        "id": "M41",
+        "percent": 3.207547,
+        "subs": 9,
+        "overhead": 5,
+        "start": 2461120.573611,
+        "end": 2461120.585417,
+        "flip": null,
+        "transit": null,
+        "constraint": {
+          "isValid": true,
+          "validStartJD": 2461120.573611,
+          "validEndJD": 2461120.585417,
+          "violationType": null
+        },
+        "horizonViolations": []
+      },
+      {
+        "id": "M42",
+        "percent": 3.207547,
+        "subs": 9,
+        "overhead": 5,
+        "start": 2461120.585417,
+        "end": 2461120.597222,
+        "flip": null,
+        "transit": null,
+        "constraint": {
+          "isValid": true,
+          "validStartJD": 2461120.585417,
+          "validEndJD": 2461120.597222,
+          "violationType": null
+        },
+        "horizonViolations": []
+      },
+      {
+        "id": "M103",
+        "percent": 3.207547,
+        "subs": 9,
+        "overhead": 5,
+        "start": 2461120.597222,
+        "end": 2461120.609028,
+        "flip": null,
+        "transit": null,
+        "constraint": {
+          "isValid": true,
+          "validStartJD": 2461120.597222,
+          "validEndJD": 2461120.609028,
+          "violationType": null
+        },
+        "horizonViolations": []
+      },
+      {
+        "id": "M93",
+        "percent": 3.207547,
+        "subs": 9,
+        "overhead": 5,
+        "start": 2461120.609028,
+        "end": 2461120.620833,
+        "flip": null,
+        "transit": 2461120.543686,
+        "constraint": {
+          "isValid": true,
+          "validStartJD": 2461120.609028,
+          "validEndJD": 2461120.620833,
+          "violationType": null
+        },
+        "horizonViolations": []
+      },
+      {
+        "id": "M78",
+        "percent": 3.207547,
+        "subs": 9,
+        "overhead": 5,
+        "start": 2461120.620833,
+        "end": 2461120.632639,
+        "flip": null,
+        "transit": null,
+        "constraint": {
+          "isValid": true,
+          "validStartJD": 2461120.620833,
+          "validEndJD": 2461120.632639,
+          "violationType": null
+        },
+        "horizonViolations": []
+      },
+      {
+        "id": "M50",
+        "percent": 3.207547,
+        "subs": 9,
+        "overhead": 5,
+        "start": 2461120.632639,
+        "end": 2461120.644444,
+        "flip": null,
+        "transit": null,
+        "constraint": {
+          "isValid": true,
+          "validStartJD": 2461120.632639,
+          "validEndJD": 2461120.644444,
+          "violationType": null
+        },
+        "horizonViolations": []
+      },
+      {
+        "id": "M47",
+        "percent": 3.207547,
+        "subs": 9,
+        "overhead": 5,
+        "start": 2461120.644444,
+        "end": 2461120.65625,
+        "flip": null,
+        "transit": 2461120.538284,
+        "constraint": {
+          "isValid": true,
+          "validStartJD": 2461120.644444,
+          "validEndJD": 2461120.65625,
+          "violationType": null
+        },
+        "horizonViolations": []
+      },
+      {
+        "id": "M46",
+        "percent": 3.207547,
+        "subs": 9,
+        "overhead": 5,
+        "start": 2461120.65625,
+        "end": 2461120.668056,
+        "flip": null,
+        "transit": 2461120.542024,
+        "constraint": {
+          "isValid": true,
+          "validStartJD": 2461120.65625,
+          "validEndJD": 2461120.668056,
+          "violationType": null
+        },
+        "horizonViolations": []
+      },
+      {
+        "id": "M1",
+        "percent": 3.207547,
+        "subs": 9,
+        "overhead": 5,
+        "start": 2461120.668056,
+        "end": 2461120.679861,
+        "flip": null,
+        "transit": null,
+        "constraint": {
+          "isValid": true,
+          "validStartJD": 2461120.668056,
+          "validEndJD": 2461120.679861,
+          "violationType": null
+        },
+        "horizonViolations": []
+      },
+      {
+        "id": "M35",
+        "percent": 3.207547,
+        "subs": 9,
+        "overhead": 5,
+        "start": 2461120.679861,
+        "end": 2461120.691667,
+        "flip": null,
+        "transit": null,
+        "constraint": {
+          "isValid": true,
+          "validStartJD": 2461120.679861,
+          "validEndJD": 2461120.691667,
+          "violationType": null
+        },
+        "horizonViolations": []
+      },
+      {
+        "id": "M37",
+        "percent": 4,
+        "subs": 13,
+        "overhead": 5,
+        "start": 2461120.691667,
+        "end": 2461120.706389,
+        "flip": null,
+        "transit": null,
+        "constraint": {
+          "isValid": true,
+          "validStartJD": 2461120.691667,
+          "validEndJD": 2461120.706389,
+          "violationType": null
+        },
+        "horizonViolations": []
+      },
+      {
+        "id": "M48",
+        "percent": 4.207547,
+        "subs": 14,
+        "overhead": 5,
+        "start": 2461120.706389,
+        "end": 2461120.721875,
+        "flip": null,
+        "transit": 2461120.564047,
+        "constraint": {
+          "isValid": true,
+          "validStartJD": 2461120.706389,
+          "validEndJD": 2461120.721875,
+          "violationType": null
+        },
+        "horizonViolations": []
+      },
+      {
+        "id": "M67",
+        "percent": 6,
+        "subs": 22,
+        "overhead": 5,
+        "start": 2461120.721875,
+        "end": 2461120.743958,
+        "flip": null,
+        "transit": 2461120.590225,
+        "constraint": {
+          "isValid": true,
+          "validStartJD": 2461120.721875,
+          "validEndJD": 2461120.743958,
+          "violationType": null
+        },
+        "horizonViolations": []
+      },
+      {
+        "id": "M44",
+        "percent": 9,
+        "subs": 35,
+        "overhead": 5,
+        "start": 2461120.743958,
+        "end": 2461120.777083,
+        "flip": null,
+        "transit": 2461120.58233,
+        "constraint": {
+          "isValid": true,
+          "validStartJD": 2461120.743958,
+          "validEndJD": 2461120.777083,
+          "violationType": null
+        },
+        "horizonViolations": []
+      },
+      {
+        "id": "M95",
+        "percent": 12,
+        "subs": 48,
+        "overhead": 5,
+        "start": 2461120.777083,
+        "end": 2461120.82125,
+        "flip": null,
+        "transit": 2461120.667929,
+        "constraint": {
+          "isValid": true,
+          "validStartJD": 2461120.777083,
+          "validEndJD": 2461120.82125,
+          "violationType": null
+        },
+        "horizonViolations": []
+      },
+      {
+        "id": "M65",
+        "percent": 12,
+        "subs": 48,
+        "overhead": 5,
+        "start": 2461120.82125,
+        "end": 2461120.865417,
+        "flip": null,
+        "transit": 2461120.692445,
+        "constraint": {
+          "isValid": true,
+          "validStartJD": 2461120.82125,
+          "validEndJD": 2461120.865417,
+          "violationType": null
+        },
+        "horizonViolations": []
+      },
+      {
+        "id": "M52",
+        "percent": 11.09434,
+        "subs": 44,
+        "overhead": 5,
+        "start": 2461120.865417,
+        "end": 2461120.90625,
+        "flip": null,
+        "transit": null,
+        "constraint": {
+          "isValid": true,
+          "validStartJD": 2461120.865417,
+          "validEndJD": 2461120.90625,
+          "violationType": null
+        },
+        "horizonViolations": []
+      }
+    ],
+    "events": [
+      [
+        "calibration",
+        "M76",
+        2461120.538194,
+        2461120.541667
+      ],
+      [
+        "imaging",
+        "M76",
+        2461120.541667,
+        2461120.55
+      ],
+      [
+        "calibration",
+        "M34",
+        2461120.55,
+        2461120.553472
+      ],
+      [
+        "imaging",
+        "M34",
+        2461120.553472,
+        2461120.561806
+      ],
+      [
+        "calibration",
+        "M45",
+        2461120.561806,
+        2461120.565278
+      ],
+      [
+        "imaging",
+        "M45",
+        2461120.565278,
+        2461120.573611
+      ],
+      [
+        "calibration",
+        "M41",
+        2461120.573611,
+        2461120.577083
+      ],
+      [
+        "imaging",
+        "M41",
+        2461120.577083,
+        2461120.585417
+      ],
+      [
+        "calibration",
+        "M42",
+        2461120.585417,
+        2461120.588889
+      ],
+      [
+        "imaging",
+        "M42",
+        2461120.588889,
+        2461120.597222
+      ],
+      [
+        "calibration",
+        "M103",
+        2461120.597222,
+        2461120.600694
+      ],
+      [
+        "imaging",
+        "M103",
+        2461120.600694,
+        2461120.609028
+      ],
+      [
+        "calibration",
+        "M93",
+        2461120.609028,
+        2461120.6125
+      ],
+      [
+        "imaging",
+        "M93",
+        2461120.6125,
+        2461120.620833
+      ],
+      [
+        "calibration",
+        "M78",
+        2461120.620833,
+        2461120.624306
+      ],
+      [
+        "imaging",
+        "M78",
+        2461120.624306,
+        2461120.632639
+      ],
+      [
+        "calibration",
+        "M50",
+        2461120.632639,
+        2461120.636111
+      ],
+      [
+        "imaging",
+        "M50",
+        2461120.636111,
+        2461120.644444
+      ],
+      [
+        "calibration",
+        "M47",
+        2461120.644444,
+        2461120.647917
+      ],
+      [
+        "imaging",
+        "M47",
+        2461120.647917,
+        2461120.65625
+      ],
+      [
+        "calibration",
+        "M46",
+        2461120.65625,
+        2461120.659722
+      ],
+      [
+        "imaging",
+        "M46",
+        2461120.659722,
+        2461120.668056
+      ],
+      [
+        "calibration",
+        "M1",
+        2461120.668056,
+        2461120.671528
+      ],
+      [
+        "imaging",
+        "M1",
+        2461120.671528,
+        2461120.679861
+      ],
+      [
+        "calibration",
+        "M35",
+        2461120.679861,
+        2461120.683333
+      ],
+      [
+        "imaging",
+        "M35",
+        2461120.683333,
+        2461120.691667
+      ],
+      [
+        "calibration",
+        "M37",
+        2461120.691667,
+        2461120.695139
+      ],
+      [
+        "imaging",
+        "M37",
+        2461120.695139,
+        2461120.706389
+      ],
+      [
+        "calibration",
+        "M48",
+        2461120.706389,
+        2461120.709861
+      ],
+      [
+        "imaging",
+        "M48",
+        2461120.709861,
+        2461120.721875
+      ],
+      [
+        "calibration",
+        "M67",
+        2461120.721875,
+        2461120.725347
+      ],
+      [
+        "imaging",
+        "M67",
+        2461120.725347,
+        2461120.743958
+      ],
+      [
+        "calibration",
+        "M44",
+        2461120.743958,
+        2461120.747431
+      ],
+      [
+        "imaging",
+        "M44",
+        2461120.747431,
+        2461120.777083
+      ],
+      [
+        "calibration",
+        "M95",
+        2461120.777083,
+        2461120.780556
+      ],
+      [
+        "imaging",
+        "M95",
+        2461120.780556,
+        2461120.82125
+      ],
+      [
+        "calibration",
+        "M65",
+        2461120.82125,
+        2461120.824722
+      ],
+      [
+        "imaging",
+        "M65",
+        2461120.824722,
+        2461120.865417
+      ],
+      [
+        "calibration",
+        "M52",
+        2461120.865417,
+        2461120.868889
+      ],
+      [
+        "imaging",
+        "M52",
+        2461120.868889,
+        2461120.90691
       ]
     ]
   },
