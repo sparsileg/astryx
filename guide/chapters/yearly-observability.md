@@ -25,7 +25,7 @@ At the top are the target's name and common name, and a summary line:
   They're missing if the target has no Best Month from this location.
 
 Below the summary, **Minimum Altitude:** sets the altitude you need, from 5°
-to 60°. It starts at 35°.
+to 60°. It starts at the Min Altitude in Settings.
 
 Under the graph, a legend names each part of it: Target Altitude, Minimum
 Altitude, Observability (darker = better), Full Moon, and Current Day.

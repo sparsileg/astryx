@@ -4,6 +4,7 @@
  */
 
 const ToDoView = {
+    showsTargetData: true,          // re-renders on targets-updated / best-months-updated
     container: null,
     currentSort: 'rise', // 'type', 'month', or 'rise'
     riseTimeViewMode: 'chart',  // 'list' or 'chart'
@@ -43,6 +44,10 @@ const ToDoView = {
         if (!this._locationChangedHandler) {
             this._locationChangedHandler = () => this.renderToDoList();
             document.addEventListener('selected-location-changed', this._locationChangedHandler);
+        }
+        if (!this._minAltitudeChangedHandler) {
+            this._minAltitudeChangedHandler = () => this.renderToDoList();
+            document.addEventListener('min-altitude-changed', this._minAltitudeChangedHandler);
         }
     },
 
@@ -1221,6 +1226,10 @@ const ToDoView = {
         if (this._locationChangedHandler) {
             document.removeEventListener('selected-location-changed', this._locationChangedHandler);
             this._locationChangedHandler = null;
+        }
+        if (this._minAltitudeChangedHandler) {
+            document.removeEventListener('min-altitude-changed', this._minAltitudeChangedHandler);
+            this._minAltitudeChangedHandler = null;
         }
     },
 

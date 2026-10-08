@@ -78,13 +78,20 @@ the slightly earlier transit.
 ## Observable Months
 
 The Observable months are the longest unbroken run of nights on which the
-target spends at least **2 hours in a row** above **35°** during
+target spends at least **2 hours in a row** above the **Min Altitude** in
+Settings during
 astronomical darkness. A run can wrap from December into January, for
 as in "Observable: Nov–Feb" in Yearly Observability.
 
-These figures are fixed: they don't follow the Min Altitude in Settings or
-the target's type. That's why a target can have a Best Month but no
+The Best Month uses the type's own altitude, and the Observable months use
+your Min Altitude. That's why a target can have a Best Month but no
 Observable months, or the other way around.
+
+When you change Min Altitude, the stored Observable months still use the old
+value until you recalculate. Astryx offers to recalculate the location in
+the sidebar when you save the change, and each other location when you
+choose it. Until then, Target Details shows the altitude they were
+calculated with under **Criteria**, and the new one beside it.
 
 ## Targets with No Best Month
 

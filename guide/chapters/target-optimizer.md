@@ -24,16 +24,18 @@ summary line, and the first three result cards.
 | Control | What it does |
 |:------------|:--------------------------------------------------------|
 | Date | The night to plan: the evening of this date and the morning after. It starts at today. |
-| Start | **Dusk** starts the night at astronomical dusk. **Custom** shows a time field for a later start, for example if you can't be at the telescope until 23:00. |
+| Start | **Dusk** starts the night at astronomical dusk. **Custom** shows a time field for your own start, for example if you can't be at the telescope until 23:00. |
 | Source | The targets to rank: **To Do List**, or **Filter Targets**, the targets you sent from Target Selection. |
 | Find Targets | Ranks the targets and shows the results. |
 
 The night always ends at astronomical dawn. The Optimizer uses the location
 chosen in the sidebar and the Min Altitude from Settings.
 
-A Custom time is in your location's local time and must fall between dusk
-and dawn; a time earlier than dusk, such as 01:00, means that time after
-midnight. If it's outside the night, Astryx says so and starts at dusk.
+A Custom time is in your location's local time. It can be up to 60
+minutes before dusk; Astryx uses it as you typed it and warns you it's
+before dusk. Later times, such as 01:00, mean that time after midnight. A
+time more than 60 minutes before dusk or after dawn can't be used, so
+Astryx says so and starts at dusk.
 
 ### Sending Targets from a Filter
 
@@ -91,9 +93,10 @@ and Centering at 15%. [Target Optimizer Scoring](appendix-optimizer.md) gives th
 formulas.
 
 ::: note
-The Optimizer checks only your Min Altitude, not your horizon profile. A
-target behind a tree can still rank high; check it with **Daily
-Visibility**, which does use the horizon.
+The Optimizer uses your Min Altitude and the location's horizon profile, so
+a target behind your trees ranks lower or is left out. To see how much the
+horizon costs a target, open it in **Daily Visibility** and turn
+**Horizon** off and on.
 :::
 
 ### What You Can Do with a Card

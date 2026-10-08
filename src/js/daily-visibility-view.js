@@ -68,6 +68,14 @@ const DailyVisibilityView = {
             this._targetChangedHandler = () => this.recalculate();
             document.addEventListener('current-target-changed', this._targetChangedHandler);
         }
+        if (!this._minAltitudeChangedHandler) {
+            this._minAltitudeChangedHandler = (e) => {
+                const label = document.getElementById('dv-min-alt-label');
+                if (label) label.textContent = `${e.detail.altitude}°`;
+                this.recalculate();
+            };
+            document.addEventListener('min-altitude-changed', this._minAltitudeChangedHandler);
+        }
     },
 
     /**
@@ -87,6 +95,10 @@ const DailyVisibilityView = {
         if (this._targetChangedHandler) {
             document.removeEventListener('current-target-changed', this._targetChangedHandler);
             this._targetChangedHandler = null;
+        }
+        if (this._minAltitudeChangedHandler) {
+            document.removeEventListener('min-altitude-changed', this._minAltitudeChangedHandler);
+            this._minAltitudeChangedHandler = null;
         }
     },
 

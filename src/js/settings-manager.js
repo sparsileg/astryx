@@ -11,10 +11,9 @@ const SettingsManager = {
         theme: APP_CONFIG.DEFAULT_THEME,
         resultsCount: 'all', // Not in settings UI, but used by visibility calculator
         selectedLocation: null, // Currently selected observer location
-        minAltitudeDaily: 35, // Minimum altitude for daily visibility
-        minAltitudeYearly: 35, // Minimum altitude for yearly observability
         globalMinAltitude: 35, // Global default minimum altitude for all tools
-        lastBestMonthsAltitude: null, // Last altitude used for best months calc
+        bestMonthsAltitudes: {},      // Min altitude each location's best months were calculated with
+        lastBestMonthsAltitude: null, // Altitude of every best months calc before per-location tracking
         lastBestMonthsDarkHours: null, // Last dark hours used for best months calc
         lastBestMonthsCalculated: null, // Timestamp of last best months calc
         lastBestMonthsLocation: null,  // Location used for last best months calc
@@ -218,47 +217,21 @@ const SettingsManager = {
     },
 
     /**
-     * Get minimum altitude for daily visibility
+     * Min altitude a location's best months were calculated with. Locations
+     * calculated before per-location tracking all used lastBestMonthsAltitude.
      */
-    getMinAltitudeDaily() {
-        return this.settings.minAltitudeDaily;
+    getBestMonthsAltitude(locationName) {
+        return this.settings.bestMonthsAltitudes[locationName] ?? this.settings.lastBestMonthsAltitude;
     },
 
-    /**
-     * Set minimum altitude for daily visibility
-     */
-    async setMinAltitudeDaily(altitude) {
-        this.settings.minAltitudeDaily = altitude;
+    async setBestMonthsAltitude(locationName, altitude) {
+        this.settings.bestMonthsAltitudes = { ...this.settings.bestMonthsAltitudes, [locationName]: altitude };
         await this.saveSettings();
     },
 
-    /**
-     * Get minimum altitude for yearly observability
-     */
-    getMinAltitudeYearly() {
-        return this.settings.minAltitudeYearly;
-    },
-
-    /**
-     * Set minimum altitude for yearly observability
-     */
-    async setMinAltitudeYearly(altitude) {
-        this.settings.minAltitudeYearly = altitude;
-        await this.saveSettings();
-    },
-
-    /**
-     * Get last best months altitude parameter
-     */
-    getLastBestMonthsAltitude() {
-        return this.settings.lastBestMonthsAltitude;
-    },
-
-    /**
-     * Set last best months altitude parameter
-     */
-    async setLastBestMonthsAltitude(altitude) {
-        this.settings.lastBestMonthsAltitude = altitude;
+    async clearBestMonthsAltitudes() {
+        this.settings.bestMonthsAltitudes = {};
+        this.settings.lastBestMonthsAltitude = null;
         await this.saveSettings();
     },
 
@@ -337,8 +310,10 @@ const SettingsManager = {
      * Update global minimum altitude
      */
     async updateGlobalMinAltitude(altitude) {
+        if (altitude === this.settings.globalMinAltitude) return;
         this.settings.globalMinAltitude = altitude;
         await this.saveSettings();
+        document.dispatchEvent(new CustomEvent('min-altitude-changed', { detail: { altitude } }));
     },
 
     getOptimizerCandidateCount() {

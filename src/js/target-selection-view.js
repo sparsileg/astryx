@@ -4,6 +4,7 @@
  */
 
 const TargetSelectionView = {
+    showsTargetData: true,          // re-renders on targets-updated / best-months-updated
     container: null,
 
     /**
@@ -11,12 +12,6 @@ const TargetSelectionView = {
      */
     render(container, params) {
         this.container = container;
-
-        // Always hide/remove yearly observability container
-        const yearlyObservabilityContainer = document.getElementById('yearly-observability-container');
-        if (yearlyObservabilityContainer) {
-            yearlyObservabilityContainer.remove();
-        }
 
         // Load template
         const template = document.getElementById('ts-visibility-template');
@@ -31,12 +26,6 @@ const TargetSelectionView = {
             pageTitle.textContent = '🔭 Visibility';
         }
 
-        // Make sure the main visibility form is visible
-        const twoColGrid = document.querySelector('.ts-two-col-grid');
-        if (twoColGrid) {
-            twoColGrid.style.display = 'grid';
-        }
-        // ... rest of method
         // Initialize components
         VisibilityTargets.init();
         TargetFilter.initUI();
@@ -52,7 +41,7 @@ const TargetSelectionView = {
      * Cleanup when view is destroyed
      */
     destroy() {
-        document.removeEventListener('targets-updated', VisibilityTargets.initializeSearch);
-        TargetFilter.destroyUI();
+        // No listeners registered by this view — present for consistency
+        // with app.js's `if (this.currentView.destroy)` check.
     }
 };

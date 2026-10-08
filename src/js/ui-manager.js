@@ -51,14 +51,6 @@ const UIManager = {
             const themeLink = document.getElementById('theme-css');
             if (themeLink) {
                 themeLink.addEventListener('load', () => {
-                    // Re-render yearly observability if it's currently displayed
-                    const yearlyObservabilityContainer = document.getElementById('yearly-observability-container');
-                    if (yearlyObservabilityContainer && yearlyObservabilityContainer.style.display !== 'none' && YearlyObservabilityView.lastGraphData) {
-                        YearlyObservabilityView.renderYearlyObservabilityGraph(
-                            YearlyObservabilityView.lastGraphData.altitudeData,
-                            YearlyObservabilityView.lastGraphData.inputs
-                        );
-                    }
                     // Re-render sequence planner timeline if it's currently displayed
                     const seqPlanTimeline = document.getElementById('seq-plan-timeline');
                     if (seqPlanTimeline && SeqPlanView.calculatedResults?.length > 0 && SeqPlanView.currentSession) {
@@ -957,7 +949,7 @@ const UIManager = {
         }
 
         // Get parameters from system settings (used only for visibility window calculation)
-        const minAltitude = SettingsManager.getMinAltitudeYearly();
+        const minAltitude = SettingsManager.getGlobalMinAltitude();
         const minDarkHours = APP_CONFIG.MIN_CONTINUOUS_DARK_HOURS;
 
         // Hide calculate button, show progress
@@ -1068,11 +1060,6 @@ const UIManager = {
                     </p>
                `;
             }
-
-            // Dispatch event to notify visibility view
-            document.dispatchEvent(new CustomEvent('best-months-updated', {
-                detail: { locationName, minAltitude }
-            }));
         }
     },
 
@@ -1179,12 +1166,6 @@ const UIManager = {
                 resultsDiv.style.display = 'block';
                 resultsDiv.innerHTML = summaryHTML;
             }
-
-            // Dispatch event for last location processed
-            const lastLocation = Object.keys(result.locationResults).pop();
-            document.dispatchEvent(new CustomEvent('best-months-updated', {
-                detail: { locationName: lastLocation, minAltitude }
-            }));
         }
     },
 
@@ -1371,10 +1352,14 @@ const UIManager = {
      * Save settings from modal
      */
     async saveSettingsFromModal(modalBody) {
+        // Only an actual change counts toward the automatic backup
+        const settingsBefore = JSON.stringify(SettingsManager.getSettings());
+
         const dstMode = modalBody.querySelector('#dst-mode-menu')?.querySelector('.astryx-dropdown-item.selected')?.dataset.value ?? 'auto';
         await SettingsManager.updateDSTConfig({ mode: dstMode });
 
         const minAlt = modalBody.querySelector('#global-min-altitude-menu')?.querySelector('.astryx-dropdown-item.selected')?.dataset.value;
+        const minAltChanged = minAlt && parseInt(minAlt) !== SettingsManager.getGlobalMinAltitude();
         if (minAlt) {
             await SettingsManager.updateGlobalMinAltitude(parseInt(minAlt));
         }
@@ -1427,7 +1412,13 @@ const UIManager = {
         }
 
         this.showToast('Settings saved successfully', 'success');
-        this.markDataChanged();
+        if (JSON.stringify(SettingsManager.getSettings()) !== settingsBefore) {
+            this.markDataChanged();
+        }
+
+        if (minAltChanged) {
+            await this.offerBestMonthsRecalc(SettingsManager.getSelectedLocation());
+        }
     },
 
     /**
@@ -1450,7 +1441,7 @@ const UIManager = {
             await DBManager.clear(APP_CONFIG.STORES.TARGETS);
             await DataManager.setTargetVersion(null);
             await SettingsManager.setLastBestMonthsCalculated(null);
-            await SettingsManager.setLastBestMonthsAltitude(null);
+            await SettingsManager.clearBestMonthsAltitudes();
             await SettingsManager.setLastBestMonthsDarkHours(null);
             await SettingsManager.setLastBestMonthsLocation(null);
             this.markDataChanged();
@@ -1476,10 +1467,7 @@ const UIManager = {
             this.showToast('All targets cleared successfully', 'success');
             await App.updateVersionDisplay();
 
-            // Refresh visibility view if it's current
-            if (window.location.hash === '#target-select') {
-                document.dispatchEvent(new CustomEvent('targets-updated'));
-            }
+            document.dispatchEvent(new CustomEvent('targets-updated'));
         } catch (error) {
             console.error('Error clearing targets:', error);
             this.showToast('Error clearing targets: ' + error.message, 'error');
@@ -1495,6 +1483,28 @@ const UIManager = {
         return sample.some(t => t.bestMonth && t.bestMonth[locationName] !== undefined);
     },
 
+    /**
+     * True when a location's observable months were calculated with a
+     * different minimum altitude than the one in Settings
+     */
+    bestMonthsAltitudeStale(locationName) {
+        return this.locationHasBestMonths(locationName) &&
+            SettingsManager.getBestMonthsAltitude(locationName) !== SettingsManager.getGlobalMinAltitude();
+    },
+
+    async offerBestMonthsRecalc(locationName) {
+        if (!locationName || !this.bestMonthsAltitudeStale(locationName)) return;
+        const confirmed = await this.confirm(
+            `The observable months for ${locationName} were calculated with a ` +
+                `minimum altitude of ${SettingsManager.getBestMonthsAltitude(locationName)}°. ` +
+                `Your Min Altitude is ${SettingsManager.getGlobalMinAltitude()}°.\n\n` +
+                'Recalculate Best Months for this location now?'
+        );
+        if (confirmed) {
+            await this.autoCalculateBestMonths(locationName);
+        }
+    },
+
     async markDataChanged() {
         await SettingsManager.setLastChangeTimestamp(Date.now());
         if (!SettingsManager.getAutoBackupEnabled()) return;
@@ -1502,7 +1512,7 @@ const UIManager = {
     },
 
     async autoCalculateBestMonths(locationName) {
-        const minAltitude = SettingsManager.getMinAltitudeYearly();
+        const minAltitude = SettingsManager.getGlobalMinAltitude();
         const minDarkHours = APP_CONFIG.MIN_CONTINUOUS_DARK_HOURS;
 
         this.showProgressToast(`Calculating Best Months for ${locationName}: 0%`);
@@ -1605,10 +1615,7 @@ const UIManager = {
                     this.closeModal();
                 }
 
-                // Refresh target selection view if it's current
-                if (App.currentView === TargetSelectionView) {
-                    document.dispatchEvent(new CustomEvent('targets-updated'));
-                }
+                document.dispatchEvent(new CustomEvent('targets-updated'));
 
                 // Auto-calculate best months for current location
                 const locationName = SettingsManager.getSelectedLocation();
@@ -1852,7 +1859,6 @@ const UIManager = {
         const observabilitySection = root.querySelector('#target-detail-observability');
         if (!observabilitySection) return;
 
-        const lastAltitude = SettingsManager.getLastBestMonthsAltitude();
         const lastDarkHours = SettingsManager.getLastBestMonthsDarkHours();
         const lastCalculated = SettingsManager.getLastBestMonthsCalculated();
 
@@ -1874,6 +1880,10 @@ const UIManager = {
 
         // Get current location
         const selectedLocation = SettingsManager.getSelectedLocation();
+        const bestMonthsAltitude = SettingsManager.getBestMonthsAltitude(selectedLocation);
+        const staleAltitudeNote = this.bestMonthsAltitudeStale(selectedLocation)
+              ? `<br>Settings now ${SettingsManager.getGlobalMinAltitude()}°: recalculate Best Months`
+              : '';
 
         // Check if target meets criteria - all properties are now per-location
         const bestMonth = target.bestMonth?.[selectedLocation];
@@ -1889,7 +1899,7 @@ const UIManager = {
         const criteriaFieldsHTML = `
             <div class="detail-item">
                 <span class="detail-label">Criteria:</span>
-                <span class="detail-value">Min Altitude ${lastAltitude || 'N/A'}°<br>${lastDarkHours || 'N/A'}h darkness</span>
+                <span class="detail-value">Min Altitude ${bestMonthsAltitude ?? 'N/A'}°<br>${lastDarkHours || 'N/A'}h darkness${staleAltitudeNote}</span>
             </div>
             <div class="detail-item">
                 <span class="detail-label">Peak Altitude:</span>
@@ -1977,6 +1987,8 @@ const UIManager = {
                 await SettingsManager.setSelectedLocation(locationName);
                 if (!this.locationHasBestMonths(locationName)) {
                     await this.autoCalculateBestMonths(locationName);
+                } else {
+                    await this.offerBestMonthsRecalc(locationName);
                 }
             }
         });

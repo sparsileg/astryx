@@ -1715,7 +1715,7 @@
       }
     ],
     "eliminated": {
-      "Never rises above minimum altitude": 4
+      "Never rises above minimum altitude and horizon": 4
     },
     "combos": {
       "singles": [
@@ -1889,7 +1889,7 @@
       }
     ],
     "eliminated": {
-      "Never rises above minimum altitude": 8
+      "Never rises above minimum altitude and horizon": 8
     },
     "combos": {
       "singles": [

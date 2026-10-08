@@ -71,7 +71,6 @@ const TOOLTIPS = {
     sp_flipDuration:'Duration of the actual meridian flip',
     sp_flipOffset:  'How many minutes after the target\npasses meridian before the mount starts\nto flip',
     sp_flipPause:   'How long imaging pauses before\nthe mount begins the meridian flip',
-    sp_horizon:     'Use the imported or default\nhorizon data',
     sp_location:    'Location the imaging session\nwill take place',
     sp_minAltitude: 'Minimum altitude of a target\nbefore imaging should occur',
     sp_startDate:   'Date of the imaging session',

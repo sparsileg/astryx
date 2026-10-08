@@ -9,8 +9,7 @@ The night runs from astronomical dusk (the Sun 18° below the horizon), or
 your Custom start, to astronomical dawn. Within it, the session:
 
 - starts when the first target in the plan is above your minimum altitude
-  (and horizon profile, with **Use Horizon** on), if that's later than the
-  start, and
+  and horizon profile, if that's later than the start, and
 - ends when the last target sets below them, if that's before dawn.
 
 So the session's length depends on which targets come first and last, and

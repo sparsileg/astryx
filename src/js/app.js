@@ -39,11 +39,24 @@ const App = {
             // Setup navigation
             this.setupNavigation();
 
+            // Global delegated handler to close all custom dropdowns
+            document.addEventListener('click', () => {
+                document.querySelectorAll('.astryx-dropdown.open').forEach(d => d.classList.remove('open'));
+            });
+
             // sidebar toggle
             this.initSidebarToggle();
 
             // Setup routing
             this.setupRouter();
+
+            // Views showing stored target data re-render when it changes
+            document.addEventListener('targets-updated', () => this.refreshTargetDataView());
+            document.addEventListener('best-months-updated', (e) => {
+                if (e.detail.locationName === SettingsManager.getSelectedLocation()) {
+                    this.refreshTargetDataView();
+                }
+            });
 
             // Initial route
             this.route();
@@ -68,11 +81,6 @@ const App = {
 
             // Initialize backup reminder system
             BackupReminder.init();
-
-            // Global delegated handler to close all custom dropdowns
-            document.addEventListener('click', () => {
-                document.querySelectorAll('.astryx-dropdown.open').forEach(d => d.classList.remove('open'));
-            });
 
             // Resume tutorial if flagged before a reload
             const resumeTutorial = localStorage.getItem('resumeTutorialAfterReload');
@@ -156,20 +164,10 @@ const App = {
                         return;
                     }
 
-                    // If clicking on visibility while already on visibility, hide yearly observability container
+                    // Already on Target Selection: the hash won't change, so re-render directly
                     if (view === 'target-select' && window.location.hash === '#target-select') {
-                        const yearlyObservabilityContainer = document.getElementById('yearly-observability-container');
-                        if (yearlyObservabilityContainer) {
-                            yearlyObservabilityContainer.remove();
-                        }
-                        const twoColGrid = document.querySelector('.ts-two-col-grid');
-                        if (twoColGrid) {
-                            twoColGrid.style.display = 'grid';
-                        }
-
-                        // Force the view to re-render which will reset the title
-                        this.loadView('visibility');
-                        return; // Don't continue to the hash setting
+                        this.loadView('target-select');
+                        return;
                     }
 
                     window.location.hash = `#${view}`;
@@ -181,16 +179,6 @@ const App = {
         const appTitle = document.querySelector('.sidebar-header h1');
         if (appTitle) {
             appTitle.addEventListener('click', () => {
-                // Same cleanup logic when clicking the app title
-                const yearlyObservabilityContainer = document.getElementById('yearly-observability-container');
-                if (yearlyObservabilityContainer) {
-                    yearlyObservabilityContainer.remove();
-                }
-                const twoColGrid = document.querySelector('.ts-two-col-grid');
-                if (twoColGrid) {
-                    twoColGrid.style.display = 'grid';
-                }
-
                 window.location.hash = '#target-select';
             });
         }
@@ -228,6 +216,12 @@ const App = {
         window.addEventListener('hashchange', () => {
             this.route();
         });
+    },
+
+    refreshTargetDataView() {
+        if (this.currentView?.showsTargetData) {
+            this.route();
+        }
     },
 
     /**

@@ -165,7 +165,7 @@ until you have a reason to change it. Open the system menu (≡), choose
 | Setting | Default | What it does |
 |:------|:---|:--------------|
 | DST Mode | Automatic | Automatic follows each location's time zone. **Always Active** and **Never Active** override it for every location; you shouldn't need them. |
-| Min Altitude | 35° | The lowest a target can be and still count as up. It's the starting value in Daily Visibility and the Sequence Planner, and the value the Target Optimizer and To Do List use. |
+| Min Altitude | 35° | The lowest a target can be and still count as up. It's the starting value in Daily Visibility, Yearly Observability, and the Sequence Planner, and the value the Target Optimizer, To Do List, and Visibility filter use. Changing it means recalculating Best Months; Astryx offers to. |
 | Min Target Size | 4.0′ | The starting minimum size, in arcminutes, for the Target Selection filters. |
 | Max Magnitude | 14.5 | The starting faintest magnitude for the Target Selection filters. |
 | Automatic backups on change | On | Saves a backup a while after you change your data. |

@@ -9,6 +9,7 @@ const SeqPlanView = {
     calculatedResults: [],
     skippedTargets: [],
     debounceTimer: null,
+    exposureInputTimer: null,
     isInitializing: false,
     resizeListenerAdded: false,
     _resizeObserver: null,
@@ -250,7 +251,6 @@ const SeqPlanView = {
         const globalMinAlt = SettingsManager.getGlobalMinAltitude();
         this._setDropdownValue('seq-plan-min-altitude-menu', 'seq-plan-min-altitude-label', globalMinAlt);
 
-        this._setDropdownValue('seq-plan-use-horizon-menu', 'seq-plan-use-horizon-label', 'yes');
 
         this._setDropdownValue(
             'seq-plan-af-interval-menu', 'seq-plan-af-interval-label',
@@ -375,14 +375,6 @@ const SeqPlanView = {
             }
         );
 
-        // Use horizon dropdown — triggers full regeneration
-        this._wireDropdown(
-            'seq-plan-use-horizon-trigger',
-            'seq-plan-use-horizon-dropdown',
-            'seq-plan-use-horizon-menu',
-            'seq-plan-use-horizon-label',
-            () => this.debouncedGenerate()
-        );
 
         // Overhead dropdowns — trigger recalculation only
         this._wireDropdown(
@@ -502,9 +494,14 @@ const SeqPlanView = {
         const events = plan.events;
 
         const session = this.currentSession;
-        if (session.startTimeMode === 'custom' && session.customStartTime &&
-            SeqPlanCalculations.resolveCustomStartJD(session.customStartTime, session.duskJD, session.dawnJD, session.location) === null) {
-            UIManager.showToast(`Start time ${session.customStartTime} is not between dusk and dawn; the plan starts at dusk`, 'warning', APP_CONFIG.TOAST_LONG_DURATION_MS);
+        if (session.startTimeMode === 'custom' && session.customStartTime) {
+            const customStartJD = SeqPlanCalculations.customStartJD(session);
+            if (customStartJD === null) {
+                UIManager.showToast(`Start time ${session.customStartTime} is more than ${APP_CONFIG.SEQ_PLAN_MAX_EARLY_START_MINUTES} min before dusk or after dawn; the plan starts at dusk`, 'warning', APP_CONFIG.TOAST_LONG_DURATION_MS);
+            } else if (customStartJD < session.duskJD) {
+                const minutes = Math.round((session.duskJD - customStartJD) * 1440);
+                UIManager.showToast(`Start time ${session.customStartTime} is ${minutes} min before astronomical dusk`, 'warning', APP_CONFIG.TOAST_LONG_DURATION_MS);
+            }
         }
 
         // Store last target's max allocation   set once per plan generation, never during slider interaction
@@ -558,7 +555,6 @@ const SeqPlanView = {
             date: date,
             location: location,
             minAltitude: parseInt(this._getDropdownValue('seq-plan-min-altitude-menu', '35')),
-            useHorizon: this._getDropdownValue('seq-plan-use-horizon-menu', 'yes') === 'yes',
             startTimeMode: this._getDropdownValue('seq-plan-start-time-menu', 'dusk'),
             customStartTime: document.getElementById('seq-plan-custom-time').value,
             autofocusEnabled: document.getElementById('seq-plan-af-enabled').checked,
@@ -801,7 +797,6 @@ const SeqPlanView = {
                 <div class="seq-plan-target-name">${target.name}</div>
                 <div style="display: flex; align-items: center; gap: 0.3rem;">
                     <input type="number"
-                        list="exposure-times-global"
                         class="seq-plan-exposure-input"
                         id="exposure-${target.targetId}"
                         value="${target.exposureTime}"
@@ -887,11 +882,14 @@ const SeqPlanView = {
                 }, {passive: false});
             }
 
-            // Exposure time change listener
+            // Exposure time: recalculate once typing pauses
             const exposureInput = document.getElementById(`exposure-${target.targetId}`);
             if (exposureInput) {
-                exposureInput.addEventListener('change', (e) => {
-                    this.handleExposureChange(target.targetId, parseFloat(e.target.value));
+                exposureInput.addEventListener('input', (e) => {
+                    clearTimeout(this.exposureInputTimer);
+                    this.exposureInputTimer = setTimeout(() => {
+                        this.handleExposureChange(target.targetId, parseFloat(e.target.value));
+                    }, APP_CONFIG.SEQ_PLAN_EXPOSURE_INPUT_DELAY_MS);
                 });
             }
         });
@@ -986,6 +984,9 @@ const SeqPlanView = {
         const target = this.calculatedResults.find(t => t.targetId === targetId);
         if (target && newExposure > 0) {
             target.exposureTime = newExposure;
+            // Plans are rebuilt from currentTargets; keep the typed time there too
+            const source = this.currentTargets.find(t => t.targetId === targetId);
+            if (source) source.exposureTime = newExposure;
             this.recalculateAndUpdate();
         }
     },
@@ -1237,5 +1238,7 @@ const SeqPlanView = {
             this._resizeObserver.disconnect();
             this._resizeObserver = null;
         }
+        clearTimeout(this.exposureInputTimer);
+        this.exposureInputTimer = null;
     }
 };

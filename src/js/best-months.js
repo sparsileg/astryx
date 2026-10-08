@@ -108,10 +108,12 @@ const BestMonths = {
               now.getUTCMinutes().toString().padStart(2, '0') +
               now.getUTCSeconds().toString().padStart(2, '0') + 'Z';
 
-        await SettingsManager.setLastBestMonthsAltitude(minAltitude);
+        await SettingsManager.setBestMonthsAltitude(locationName, minAltitude);
         await SettingsManager.setLastBestMonthsDarkHours(minDarkHours);
         await SettingsManager.setLastBestMonthsCalculated(timestamp);
         await SettingsManager.setLastBestMonthsLocation(locationName);
+
+        document.dispatchEvent(new CustomEvent('best-months-updated', { detail: { locationName } }));
 
         return {
             cancelled: false,

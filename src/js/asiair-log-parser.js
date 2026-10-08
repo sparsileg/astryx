@@ -1752,7 +1752,7 @@ const AsiairLogParser = {
      */
     async updateLearnedValues(parsed) {
         const { recommendations } = parsed;
-        const EMA_WEIGHT = 0.2; // weight given to new observation
+        const EMA_WEIGHT = APP_CONFIG.ASIAIR_LEARNED_VALUE_WEIGHT;
 
         if (recommendations.subGapMeetsMinSamples) {
             const storedSubGap = SettingsManager.getLearnedSubGapS();

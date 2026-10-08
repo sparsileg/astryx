@@ -6,7 +6,59 @@
 }
 
 
-/* Session Settings - Two separate row grids */
+/* Session Settings rows: each label + control + unit is one field that never
+   wraps inside; whole fields wrap to the next line when the card is narrow. */
+#seqplan-session-settings {
+    --ss-number-width: 4.5rem;
+    --ss-wide-width: 7rem;
+    --ss-location-width: 14rem;
+    --ss-time-width: 5rem;
+}
+
+.seq-plan-ss-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem 2rem;
+    margin-bottom: 0.75rem;
+}
+
+#session-settings-body > .seq-plan-ss-row:first-child {
+    margin-top: 0.5rem;
+}
+
+.seq-plan-ss-field {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    white-space: nowrap;
+}
+
+.seq-plan-ss-number {
+    width: var(--ss-number-width);
+}
+
+.seq-plan-ss-wide {
+    width: var(--ss-wide-width);
+}
+
+.seq-plan-ss-location {
+    width: var(--ss-location-width);
+}
+
+.seq-plan-ss-separator {
+    margin: 1rem 0;
+    border: none;
+    border-top: 1px solid var(--border-color);
+}
+
+.seqplan-ss-note {
+    margin-left: 1rem;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+/* Target Optimizer settings rows (optimizer-view-template) */
 .seq-plan-session-row-1 {
     display: grid;
     grid-template-columns: 35px 150px 40px 150px 80px;
@@ -16,89 +68,14 @@
     margin-bottom: 0.75rem;
 }
 
-.seq-plan-session-row-2 {
-    display: grid;
-    grid-template-columns: 60px 170px 55px 80px 90px 80px;
-    gap: 0.5rem 1rem;
-    align-items: center;
-}
-
 /* Keep custom time input in layout but invisible when not needed */
 #seq-plan-custom-time {
+    width: var(--ss-time-width);
     opacity: 0;
     pointer-events: none;
 }
 
-.seq-plan-settings-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1rem;
-    align-items: center;
-    margin-bottom: 0.75rem;
-}
-
-.seq-plan-settings-row label {
-    white-space: nowrap;
-    margin-right: 0.3rem;
-}
-
-.seq-plan-settings-row:last-child {
-    margin-bottom: 0;
-}
-
-#seq-plan-date,
-#seq-plan-location,
-#seq-plan-start-time,
-#seq-plan-min-altitude {
-    background: var(--bg-color);
-    color: var(--text-color);
-    border: 1px solid var(--border-color);
-    padding: 0.4rem;
-    border-radius: 4px;
-}
-
-
-/* ---------------------------------------------------------------------- */
-/* Overhead Settings - Three Row Grids */
-.seq-plan-overhead-row-1 {
-    display: grid;
-    grid-template-columns: 7rem 5rem 5rem 3rem 5.5rem 4rem 3rem;
-    gap: 0.5rem 1rem;
-    align-items: center;
-    margin-bottom: 0.75rem;
-}
-
-.seq-plan-overhead-row-2 {
-    display: grid;
-    grid-template-columns: 5rem 4rem 3rem 6rem 3rem 2rem 5rem 3rem 2rem;
-    gap: 0.5rem 1rem;
-    align-items: center;
-    margin-bottom: 0.75rem;
-}
-
-.seq-plan-overhead-row-3 {
-    display: grid;
-    grid-template-columns: 8rem 3rem 2rem 9rem 3rem 5rem;
-    gap: 0.5rem 1rem;
-    align-items: center;
-    margin-bottom: 0.75rem;
-}
-
-.seq-plan-overhead-row-4 {
-    display: flex;
-    gap: 0.5rem;
-    align-items: center;
-}
-
-.seq-plan-overhead-row-4 label {
-    white-space: nowrap;
-}
-
-/* Style all overhead selects to match other inputs */
-.seq-plan-overhead-row-1 select,
-.seq-plan-overhead-row-2 select,
-.seq-plan-overhead-row-3 select,
-.seq-plan-overhead-row-4 select {
+#seq-plan-date {
     background: var(--bg-color);
     color: var(--text-color);
     border: 1px solid var(--border-color);
@@ -108,7 +85,6 @@
 
 #seq-plan-af-note {
     display: inline-block;
-    margin-left: 1rem;
     font-size: 0.85rem;
     color: var(--text-secondary);
 }

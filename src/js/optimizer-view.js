@@ -173,7 +173,10 @@ const OptimizerView = {
         if (startTimeMode === 'custom' && customStartTime) {
             const customStartJD = SeqPlanCalculations.resolveCustomStartJD(customStartTime, timing.duskJD, timing.dawnJD, location);
             if (customStartJD === null) {
-                UIManager.showToast(`Start time ${customStartTime} is not between dusk and dawn; starting at dusk`, 'warning', APP_CONFIG.TOAST_LONG_DURATION_MS);
+                UIManager.showToast(`Start time ${customStartTime} is more than ${APP_CONFIG.SEQ_PLAN_MAX_EARLY_START_MINUTES} min before dusk or after dawn; starting at dusk`, 'warning', APP_CONFIG.TOAST_LONG_DURATION_MS);
+            } else if (customStartJD < timing.duskJD) {
+                const minutes = Math.round((timing.duskJD - customStartJD) * 1440);
+                UIManager.showToast(`Start time ${customStartTime} is ${minutes} min before astronomical dusk`, 'warning', APP_CONFIG.TOAST_LONG_DURATION_MS);
             }
             sessionStartJD = customStartJD ?? timing.duskJD;
         }

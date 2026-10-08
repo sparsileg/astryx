@@ -6,6 +6,7 @@
 
 const YearlyObservabilityView = {
     followsCurrentTarget: true,     // redraws on current-target-changed
+    showsTargetData: true,          // re-renders on targets-updated / best-months-updated
     _resizeObserver: null,
     currentTarget: null,
     lastGraphData: null,
@@ -63,6 +64,14 @@ const YearlyObservabilityView = {
             this._targetChangedHandler = () => this.calculateYearly();
             document.addEventListener('current-target-changed', this._targetChangedHandler);
         }
+        if (!this._minAltitudeChangedHandler) {
+            this._minAltitudeChangedHandler = (e) => {
+                const label = document.getElementById('yo-min-alt-label');
+                if (label) label.textContent = `${e.detail.altitude}°`;
+                this.calculateYearly();
+            };
+            document.addEventListener('min-altitude-changed', this._minAltitudeChangedHandler);
+        }
     },
 
     /**
@@ -81,6 +90,10 @@ const YearlyObservabilityView = {
             document.removeEventListener('current-target-changed', this._targetChangedHandler);
             this._targetChangedHandler = null;
         }
+        if (this._minAltitudeChangedHandler) {
+            document.removeEventListener('min-altitude-changed', this._minAltitudeChangedHandler);
+            this._minAltitudeChangedHandler = null;
+        }
     },
 
     /**
@@ -91,9 +104,9 @@ const YearlyObservabilityView = {
         const locationName = SettingsManager.getSelectedLocation();
         const location = DataManager.getLocation(locationName);
 
-        // Try modal element first, fall back to main view element, then default
+        // The view's dropdown while it's open; Settings Min Altitude when entering the view
         const yoLabel = document.getElementById('yo-min-alt-label');
-        const minAltitude = yoLabel ? parseFloat(yoLabel.textContent) : APP_CONFIG.DEFAULT_YEARLY_MIN_ALTITUDE;
+        const minAltitude = yoLabel ? parseFloat(yoLabel.textContent) : SettingsManager.getGlobalMinAltitude();
 
         return {
             targetName: this.currentTarget ? this.currentTarget.object : '',
@@ -212,7 +225,7 @@ const YearlyObservabilityView = {
 
         if (yoTrigger && yoDropdown && yoMenu && yoLabel) {
             // Set initial label
-            const currentVal = inputs.minAltitude ?? APP_CONFIG.DEFAULT_YEARLY_MIN_ALTITUDE;
+            const currentVal = inputs.minAltitude;
             const initialItem = yoMenu.querySelector(`[data-value="${currentVal}"]`);
             if (initialItem) yoLabel.textContent = initialItem.textContent;
 
