@@ -56,9 +56,9 @@ Visibility.
 
 ::: note
 This is not the same test as the Visibility filter in Target Selection,
-which uses a fixed 35° over a whole month. A target can be in season by the
-Visibility filter and still be Not Observable Tonight, or the reverse,
-especially if your Min Altitude is well below or above 35°.
+which looks at a whole month. A target can be in season by the Visibility
+filter and still be Not Observable Tonight, or the reverse, on a night when
+it's poorly placed.
 :::
 
 ### The List

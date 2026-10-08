@@ -385,8 +385,9 @@ const TargetFilter = {
             if (magInput) magInput.value = this.filters.magnitude.value;
         }
 
-        // Apply filters automatically on initialization
-        this.applyFiltersToSearch();
+        // Apply filters automatically on initialization. Keep the saved search:
+        // loadLastTarget re-runs it after this, if it was used last.
+        this.runFilters();
 
         // Imaging status badges need ToDoView's project cache; load it once and
         // re-render whatever is currently shown so badges reflect real status
@@ -529,16 +530,6 @@ const TargetFilter = {
                 document.querySelector('#target-filter-catalog-trigger')?.parentElement.classList.remove('open');
                 document.querySelector('#target-filter-month-trigger')?.parentElement.classList.remove('open');
             });
-        }
-
-        // Close dropdowns when clicking outside
-        if (!this._documentClickHandler) {
-            this._documentClickHandler = () => {
-                document.querySelectorAll('.astryx-dropdown').forEach(dd => {
-                    dd.classList.remove('open');
-                });
-            };
-            document.addEventListener('click', this._documentClickHandler);
         }
 
         // Catalog checkbox changes
@@ -704,12 +695,21 @@ const TargetFilter = {
      * Apply filters to entire database and display results
      */
     applyFiltersToSearch() {
-        // Clear search text (filters work on entire DB, not search)
+        // Clear search text (filters work on entire DB, not search), and the
+        // saved search, so returning to the view shows these filter results
         const searchInput = document.getElementById('target-name');
         if (searchInput) {
             searchInput.value = '';
         }
+        localStorage.setItem('lastSearchQuery', '');
 
+        this.runFilters();
+    },
+
+    /**
+     * Run the current filters and display results
+     */
+    runFilters() {
         // Get initial target set based on filter scope
         const filterScope = document.querySelector('input[name="target-filter-scope"]:checked')?.value;
         let targets;
@@ -1156,16 +1156,6 @@ const TargetFilter = {
         // filters are changed directly but not when search itself is active
         if (preserveSearchText && searchInput) {
             searchInput.value = savedSearchText;
-        }
-    },
-
-/**
-     * Cleanup UI listeners — call when view is destroyed
-     */
-    destroyUI() {
-        if (this._documentClickHandler) {
-            document.removeEventListener('click', this._documentClickHandler);
-            this._documentClickHandler = null;
         }
     }
 };

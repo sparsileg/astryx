@@ -8,13 +8,13 @@ use it.
 
 The night runs from the start you chose (astronomical dusk, or your Custom
 time) to astronomical dawn, at the location chosen in the sidebar. A
-target's **window** is the time it spends above the Min Altitude from
-Settings during the night. Your horizon profile isn't used.
+target's **window** is the time it spends above both the Min Altitude from
+Settings and the location's horizon profile during the night.
 
-A target is left out if it never gets above the Min Altitude, or if its
-window is shorter than one hour. If a target dips below the Min Altitude
-and comes back up, the window is one of the two parts; the dip is shown on
-the card but doesn't change the scores.
+A target is left out if it never gets above them, or if its window is
+shorter than one hour. If a target dips below them and comes back up, the
+window is one of the two parts; the dip is shown on the card but doesn't
+change the scores.
 
 ## The Four Scores
 

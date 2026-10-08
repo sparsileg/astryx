@@ -35,6 +35,10 @@ its own when you choose a location in the sidebar that doesn't have them
 yet, and when it starts; a message at the bottom of the screen shows the
 progress.
 
+When you change **Min Altitude** in Settings, Astryx offers to calculate
+them again for the location in the sidebar, and for each other location
+when you choose it.
+
 Calculate them again yourself after you move a location's coordinates, or
 after Astryx's target database has been updated:
 

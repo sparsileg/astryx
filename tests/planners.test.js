@@ -88,7 +88,7 @@ function planTargets(names, exposureTime = 300, catalog = TARGETS) {
 function sessionConfig(date, loc, overrides = {}) {
     const framesPerDither = SettingsManager.getFramesPerDither();
     return {
-        date, location: loc, minAltitude: 35, useHorizon: true, startTimeMode: 'dusk', customStartTime: '',
+        date, location: loc, minAltitude: 35, startTimeMode: 'dusk', customStartTime: '',
         autofocusEnabled: false, autofocusInterval: 60, autofocusDuration: 2, calibrationDuration: 5,
         meridianFlipPause: 4, meridianFlipDuration: 2, meridianFlipOffset: 0,
         interExposureTime: framesPerDither === 0

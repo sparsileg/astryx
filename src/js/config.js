@@ -15,7 +15,7 @@
 const APP_CONFIG = {
     APP_NAME: 'Astryx',
     APP_TITLE: 'Astryx - Astrophotography Planning Tool',
-    APP_VERSION: '1.14.0',
+    APP_VERSION: '1.15.9',
     DB_NAME: 'astryx-db',
     DB_VERSION: 8,
     TARGET_DATA_PATH: './data/',
@@ -44,7 +44,6 @@ const APP_CONFIG = {
     TOP_RANKED_TARGETS: 37,
 
     // UI constants
-    DEFAULT_YEARLY_MIN_ALTITUDE: 35, // fallback minimum altitude for Yearly Observability (Issue #218)
     MIN_CONTINUOUS_DARK_HOURS: 2, // longest dark run above min altitude for a target to count as observable (To-Do, Best Months)
     TOAST_DURATION_MS: 3000, // how long a toast stays up
     TOAST_LONG_DURATION_MS: 6000, // for toasts with more to read
@@ -117,6 +116,8 @@ const APP_CONFIG = {
     SEQ_PLAN_HANDOVER_STEP_PERCENT: 1,        // Step when searching for the best handover between targets
     SEQ_PLAN_MAX_REORDER_TARGETS: 3,          // Up to this, every target order is tried (orders grow as n!); above it, targets are scheduled earliest deadline first
     SEQ_PLAN_REGENERATE_DELAY_MS: 1000,       // Wait after the last input change before rebuilding the plan
+    SEQ_PLAN_EXPOSURE_INPUT_DELAY_MS: 300,    // Wait after the last keystroke in an exposure field before recalculating
+    SEQ_PLAN_MAX_EARLY_START_MINUTES: 60,     // A Custom start may be up to this long before astronomical dusk
 
     // External data APIs
     APIS: {
@@ -161,6 +162,12 @@ const APP_CONFIG = {
     // given night's log. Below this, the stored value is left untouched
     // rather than updated from too little/noisy data.
     ASIAIR_MIN_CLEAN_SAMPLES: 5,
+
+    // Share of the gap between the stored and the observed value that one
+    // night's log closes. Values are whole seconds, so a change under half a
+    // second rounds away: at 0.5 the stored value settles within 1 s of what
+    // the logs measure (at 0.2 it stalled up to 2 s short).
+    ASIAIR_LEARNED_VALUE_WEIGHT: 0.5,
 
     // Session analysis fusion/invariant thresholds (ELR.p3-2). All values
     // sourced from threshold-calibration.md §11's summary table — rig-

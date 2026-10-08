@@ -17,7 +17,7 @@ const SeqPlanOptimizer = {
      */
     optimizeTargetOrder(targets, session) {
         const { latitude, longitude } = session.location;
-        const horizonArray = session.useHorizon ? session.location.horizon : null;
+        const horizonArray = session.location.horizon;
         const midJD = (session.sessionStartJD + session.sessionEndJD) / 2;
 
         const scoredTargets = targets.map(target => {
@@ -303,9 +303,7 @@ const SeqPlanOptimizer = {
             session.location,
             session.minAltitude,
             session.startTimeMode,
-            session.customStartTime,
-            session.useHorizon,
-            session.useHorizon ? session.location.horizon : null
+            session.customStartTime
         );
         return {
             ...session,

@@ -75,7 +75,8 @@ A few things about the filters aren't obvious:
   None** and forget to tick anything, the Results card is empty.
 - **Visibility depends on your location.** A target counts as well placed in
   a month when, from the location chosen in the sidebar, it spends at least
-  two unbroken hours above 35° in full darkness on nights in that month.
+  two unbroken hours above your **Min Altitude** (in Settings) in full
+  darkness on nights in that month.
   Change locations and the list changes with it. With **Any month**, the
   list includes targets that never rise high enough to image from where you
   are.

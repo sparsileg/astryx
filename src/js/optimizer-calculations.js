@@ -67,13 +67,13 @@ const OptimizerCalculations = {
                 sessionStartJD, sessionEndJD,
                 candidate.ra, candidate.dec,
                 location.latitude, location.longitude,
-                minAltitude, null
+                minAltitude, location.horizon
             );
             const setJD = findTargetSet(
                 sessionStartJD, sessionEndJD,
                 candidate.ra, candidate.dec,
                 location.latitude, location.longitude,
-                minAltitude, null
+                minAltitude, location.horizon
             );
 
             // Hard elimination: check if target is visible at all during session
@@ -81,11 +81,11 @@ const OptimizerCalculations = {
                 sessionStartJD, sessionEndJD,
                 candidate.ra, candidate.dec,
                 location.latitude, location.longitude,
-                minAltitude
+                minAltitude, location.horizon
             );
 
             if (!isVisible) {
-                eliminated.push({ ...candidate, eliminationReason: 'Never rises above minimum altitude' });
+                eliminated.push({ ...candidate, eliminationReason: 'Never rises above minimum altitude and horizon' });
                 continue;
             }
 
@@ -117,7 +117,7 @@ const OptimizerCalculations = {
                 sessionStartJD, sessionEndJD,
                 candidate.ra, candidate.dec,
                 location.latitude, location.longitude,
-                minAltitude, null
+                minAltitude, location.horizon
             );
 
             // Find true peak altitude by scanning the visible window

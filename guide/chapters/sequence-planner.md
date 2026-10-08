@@ -36,13 +36,14 @@ Allocation with three rows, the Timeline, and the Imaging Plan.
 | Setting | What it does |
 |:--------------|:--------------------------------------------------------|
 | Date | The night to plan: the evening of this date and the morning after. It starts at today. |
-| Start | **Dusk** starts at astronomical dusk. **Custom** shows a field for a later start; type the time as HH:MM, in the location's local time. |
+| Start | **Dusk** starts at astronomical dusk. **Custom** shows a field for your own start; type the time as HH:MM, in the location's local time. |
 | Location | Where you'll image. It starts at the location chosen in the sidebar, and can be set to any of your locations. |
-| Min Alt | The lowest altitude you'll image at. It starts at the Min Altitude in Settings; a different value is highlighted. |
-| Use Horizon | **Yes** keeps targets above your horizon profile too. |
+| Min Alt | The lowest altitude you'll image at. It starts at the Min Altitude in Settings; a different value is highlighted. Targets must also be above the location's horizon profile. |
 
-A Custom time earlier than dusk, such as 01:30, means that time after
-midnight. If it falls outside the night, Astryx says so and starts at dusk.
+A Custom time can be up to 60 minutes before dusk; Astryx uses it as you
+typed it and warns you it's before dusk. Later times, such as 01:30, mean
+that time after midnight. A time more than 60 minutes before dusk or after
+dawn can't be used, so Astryx says so and starts at dusk.
 
 The plan never starts before the first target is above your minimum
 altitude, and ends when the last target sets or at astronomical dawn,
@@ -96,8 +97,7 @@ Each row has:
 - the up and down arrows at the left, to move the target earlier or later
   in the night,
 - the target's name,
-- the exposure length in seconds: type it, or choose from the list (5
-  seconds to 20 minutes); it starts at 300,
+- the exposure length in seconds; it starts at 300,
 - a slider for the target's share of the night, and
 - the result, for example "40% 36 × 300s": the share and the number of
   exposures.
@@ -110,20 +110,19 @@ target's slider can't go above the share it had when the plan was built,
 because the night ends when that target sets, or at dawn.
 
 **Reset & Optimize** throws away your changes to the order and the sliders
-and builds the best plan again.
+and builds the best plan again. Your exposure lengths stay.
 
 ::: note
-Set the exposure lengths last. Changing **Date**, **Start**, **Location**,
-**Min Alt**, or **Use Horizon**, changing your Pinned Targets, or clicking
-**Reset & Optimize** builds a new plan, and the exposure lengths go back to
-300 seconds.
+Changing your Pinned Targets, or leaving the Sequence Planner and coming
+back, builds a new plan, and the exposure lengths go back to 300 seconds.
+Every other change keeps them.
 :::
 
 ### When the Plan Changes
 
 | You change | What happens |
 |:----------------------------------------------|:------------------------------------|
-| Date, Start, Location, Min Alt, Use Horizon, or the Pinned Targets | A new plan is built from the start. |
+| Date, Start, Location, Min Alt, or the Pinned Targets | A new plan is built from the start. |
 | Any other session setting | The exposure counts are worked out again; the order and shares stay. |
 | An exposure length or a slider | The same. |
 | The order, with the arrows | The same, and the night's start and end move to suit the new first and last targets. |

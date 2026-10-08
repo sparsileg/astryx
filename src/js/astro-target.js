@@ -12,7 +12,8 @@
  */
 
 /**
- * Check if target is visible above minimum altitude during observation window
+ * Check if target is visible above minimum altitude (and horizon if provided)
+ * during observation window
  * @param {number} duskJD - Dusk Julian Date
  * @param {number} dawnJD - Dawn Julian Date
  * @param {number} raHours - Target right ascension (hours)
@@ -20,16 +21,18 @@
  * @param {number} latitude - Observer latitude (degrees)
  * @param {number} longitude - Observer longitude (degrees, West is negative)
  * @param {number} minAltitude - Minimum altitude threshold (degrees)
+ * @param {Array|null} horizonArray - Horizon profile, or null for none
  * @returns {boolean} True if target is visible above minimum altitude
  */
-function isTargetVisibleDuringWindow(duskJD, dawnJD, raHours, decDeg, latitude, longitude, minAltitude) {
+function isTargetVisibleDuringWindow(duskJD, dawnJD, raHours, decDeg, latitude, longitude, minAltitude, horizonArray = null) {
     const stepSize = APP_CONFIG.TARGET_SEARCH_STEP_SIZE;
     const steps = Math.ceil((dawnJD - duskJD) / stepSize);
 
     for (let i = 0; i <= steps; i++) {
         const testJD = duskJD + i * stepSize;
         const altitude = getAltitude(testJD, raHours, decDeg, latitude, longitude);
-        if (altitude >= minAltitude) {
+        const azimuth = getAzimuth(testJD, raHours, decDeg, latitude, longitude);
+        if (isAboveHorizon(altitude, azimuth, minAltitude, horizonArray)) {
             return true;
         }
     }

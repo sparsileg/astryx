@@ -14,10 +14,11 @@ sidebar, or the calculation was cancelled. Run **Calculate Best Months**
 from **Admin Tools** (see [Admin Tools](admin-tools.md)).
 
 **A target passes the Visibility filter, but the To Do List says it isn't
-observable tonight.** The two use different minimum altitudes. The
-Visibility filter and the Observable months use a fixed 35°; the To Do List
-uses the **Min Altitude** in Settings. See the note in [To Do
-List](todo-list.md).
+observable tonight.** The Visibility filter looks at the whole month; the
+To Do List looks at tonight only. See the note in [To Do
+List](todo-list.md). If you've changed **Min Altitude** since Best Months
+were calculated, Target Details says so under **Criteria**; recalculate
+them (see [Admin Tools](admin-tools.md)).
 
 **A target I know is missing from the results.** Check **Min Size (′)** and
 **Limiting Mag**: they start at your Settings, and can hide small or faint

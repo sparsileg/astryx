@@ -369,14 +369,17 @@ const SeqPlanCalculations = {
     },
 
     /**
-     * A custom start time as a JD: the first time after dusk that the clock
-     * at the location reads HH:MM, so "01:30" means after midnight. The
-     * Sequence Planner and Target Optimizer both start sessions with this.
+     * A custom start time as a JD: the first time from
+     * SEQ_PLAN_MAX_EARLY_START_MINUTES before dusk that the clock at the
+     * location reads HH:MM, so "01:30" means after midnight and a time a
+     * little before dusk is used as typed. The Sequence Planner and Target
+     * Optimizer both start sessions with this.
      * @param {string} customStartTime - Local time (HH:MM)
      * @param {number} duskJD - Astronomical dusk
      * @param {number} dawnJD - Astronomical dawn
      * @param {Object} location - Location data (timezone)
-     * @returns {number|null} JD, or null if that time is not between dusk and dawn
+     * @returns {number|null} JD, or null if that time is after dawn (so
+     *     also when it is too long before dusk)
      */
     resolveCustomStartJD(customStartTime, duskJD, dawnJD, location) {
         const [hours, minutes] = customStartTime.split(':').map(Number);
@@ -385,9 +388,8 @@ const SeqPlanCalculations = {
         const duskLocal = new Date(jdToDate(duskJD).getTime() + offsetHours * 3600000);
         let startJD = TimeUtils.localWallClockToJD(duskLocal.getUTCFullYear(), duskLocal.getUTCMonth(),
             duskLocal.getUTCDate(), hours, location.timezone, isDST) + minutes / 1440;
-        if (startJD < duskJD) {
-            startJD += 1;
-        }
+        const earliestJD = duskJD - APP_CONFIG.SEQ_PLAN_MAX_EARLY_START_MINUTES / 1440;
+        startJD -= Math.floor(startJD - earliestJD);
         return startJD <= dawnJD ? startJD : null;
     },
 
@@ -396,14 +398,14 @@ const SeqPlanCalculations = {
      * @param {Array} optimizedTargets - Targets in optimized order
      * @param {number} duskJD - Dusk time
      * @param {number} dawnJD - Dawn time
-     * @param {Object} location - Location data
+     * @param {Object} location - Location data (with its horizon profile)
      * @param {number} minAltitude - Minimum altitude constraint
      * @param {string} startTimeMode - 'dusk' or 'custom'
      * @param {string} customStartTime - Custom start time (HH:MM)
      * @returns {Object} { sessionStartJD, sessionEndJD }
      */
     calculateSessionWindow(optimizedTargets, duskJD, dawnJD, location, minAltitude,
-                           startTimeMode, customStartTime, useHorizon = false, horizonProfile = null) {
+                           startTimeMode, customStartTime) {
 
         let initialStartJD = duskJD;
 
@@ -427,7 +429,7 @@ const SeqPlanCalculations = {
                     location.latitude,
                     location.longitude,
                     minAltitude,
-                    useHorizon ? horizonProfile : null
+                    location.horizon
                 );
 
                 if (riseJD) {
@@ -451,7 +453,7 @@ const SeqPlanCalculations = {
                 location.latitude,
                 location.longitude,
                 minAltitude,
-                useHorizon ? horizonProfile : null
+                location.horizon
             );
 
             if (setJD) {
@@ -474,16 +476,17 @@ const SeqPlanCalculations = {
      */
     buildVisibility(targets, session) {
         const step = APP_CONFIG.TARGET_SEARCH_STEP_SIZE;
-        const steps = Math.ceil((session.dawnJD - session.duskJD) / step);
+        const startJD = Math.min(session.duskJD, this.customStartJD(session) ?? session.duskJD);
+        const steps = Math.ceil((session.dawnJD - startJD) / step);
         const { latitude, longitude } = session.location;
-        const horizonArray = session.useHorizon ? session.location.horizon : null;
+        const horizonArray = session.location.horizon;
         const visibleBefore = new Map();
 
         for (const target of targets) {
             // prefix[i] = visible samples among indices 0..i-1
             const prefix = new Uint16Array(steps + 2);
             for (let i = 0; i <= steps; i++) {
-                const jd = session.duskJD + i * step;
+                const jd = startJD + i * step;
                 const altitude = getAltitude(jd, target.ra, target.dec, latitude, longitude);
                 const azimuth = getAzimuth(jd, target.ra, target.dec, latitude, longitude);
                 const visible = isAboveHorizon(altitude, azimuth, session.minAltitude, horizonArray);
@@ -492,7 +495,16 @@ const SeqPlanCalculations = {
             visibleBefore.set(target.targetId, prefix);
         }
 
-        return { startJD: session.duskJD, step, steps, visibleBefore };
+        return { startJD, step, steps, visibleBefore };
+    },
+
+    /**
+     * The session's custom start as a JD (see resolveCustomStartJD), or null
+     * when it starts at dusk or the custom time is after dawn
+     */
+    customStartJD(session) {
+        if (session.startTimeMode !== 'custom' || !session.customStartTime) return null;
+        return this.resolveCustomStartJD(session.customStartTime, session.duskJD, session.dawnJD, session.location);
     },
 
     /**
@@ -520,7 +532,7 @@ const SeqPlanCalculations = {
     checkTargetAltitudeConstraint(target, session) {
         const location = session.location;
         const minAlt = session.minAltitude;
-        const horizonArray = session.useHorizon ? session.location.horizon : null;
+        const horizonArray = session.location.horizon;
 
         let validStartJD = target.imagingStartJD;
         let validEndJD = target.imagingEndJD;
@@ -711,8 +723,7 @@ const SeqPlanCalculations = {
      */
     applySessionWindow(targets, session) {
         const window = this.calculateSessionWindow(targets, session.duskJD, session.dawnJD,
-            session.location, session.minAltitude, session.startTimeMode, session.customStartTime,
-            session.useHorizon, session.location.horizon);
+            session.location, session.minAltitude, session.startTimeMode, session.customStartTime);
         session.sessionStartJD = window.sessionStartJD;
         session.sessionEndJD = window.sessionEndJD;
     },
@@ -729,7 +740,7 @@ const SeqPlanCalculations = {
             target.altitudeConstraint = constraint;
             target.altitudeViolation = !constraint.isValid;
 
-            if (session.useHorizon && session.location.horizon) {
+            if (session.location.horizon) {
                 target.horizonViolations = this.findHorizonViolations(
                     target.imagingStartJD,
                     target.imagingEndJD,
