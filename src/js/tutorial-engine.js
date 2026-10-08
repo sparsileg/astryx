@@ -155,8 +155,18 @@ const TutorialEngine = {
         }
     },
 
+    /**
+     * First element matching the selector that is actually shown. A hidden
+     * match (e.g. the static modal's Close button after the modal has closed)
+     * counts as missing, so the step falls back to a centered callout with Next.
+     */
+    _findTarget(selector) {
+        return [...document.querySelectorAll(selector)].find(el =>
+            el.getClientRects().length > 0 && getComputedStyle(el).visibility !== 'hidden') ?? null;
+    },
+
     _showCallout(step, index, total) {
-        const targetEl = step.target ? document.querySelector(step.target) : null;
+        const targetEl = step.target ? this._findTarget(step.target) : null;
 
         // Scroll target into view if explicitly requested, then wait for scroll to settle
         if (targetEl && step.scrollTo) {
@@ -242,7 +252,7 @@ const TutorialEngine = {
                     this._clickHandler = handler;
                 }
             } else {
-                // Target not found — add Next button dynamically
+                // Target not found or not shown — add Next button dynamically
                 const footer = panel.querySelector('.tutorial-callout-footer');
                 const nextBtn = document.createElement('button');
                 nextBtn.className = 'tutorial-btn-next';

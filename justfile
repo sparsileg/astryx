@@ -45,3 +45,11 @@ dev:
 # Build the User Guide PDF into src/help/ (needs pandoc and typst)
 guide:
     guide/build-guide.sh
+
+# Headless-browser smoke test (Playwright is installed outside the repo)
+ui-test:
+    PLAYWRIGHT_DIR=$HOME/.local/share/astryx-playwright node tests/ui/smoke.mjs
+
+# Step through every tutorial in headless Chromium (optionally one: just ui-tutorials sidebar)
+ui-tutorials id="":
+    PLAYWRIGHT_DIR=$HOME/.local/share/astryx-playwright node tests/ui/tutorials.mjs {{id}}

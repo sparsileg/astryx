@@ -137,6 +137,16 @@ const TUTORIAL_IMAGING_PROGRAMS = {
             highlight: true
         },
         {
+            id: 'close-program-results',
+            type: 'callout',
+            title: 'Review the Match Results',
+            body: 'If a match summary appeared, review any failed matches, then click <strong>Close</strong>. Otherwise click Next.',
+            target: '#modal-close',
+            position: 'left',
+            waitFor: 'click',
+            highlight: true
+        },
+        {
             id: 'edit-delete',
             type: 'callout',
             title: 'Editing and Deleting Programs',
