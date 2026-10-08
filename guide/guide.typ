@@ -38,6 +38,17 @@
   ]
 }
 
+// A captured screenshot, from ::: shot when images/<id>.png exists
+// (callouts.lua); the caption is the text written inside the shot box.
+// The height cap keeps tall window captures from filling the page.
+#let screenshot(path, caption) = figure(
+  block(stroke: 0.6pt + rule-color, image(path, width: 100%, height: 14cm, fit: "contain")),
+  caption: caption,
+)
+#show figure.where(kind: image): set figure.caption(position: bottom)
+#show figure.where(kind: image): set block(above: 1.3em, below: 1.3em)
+#show figure.caption: set text(font: sans, size: 9pt, fill: muted)
+
 #set document(title: "Astryx User Guide", author: "Astryx")
 #set text(font: "IBM Plex Serif", size: 10.5pt, fill: ink, lang: "en")
 #set par(justify: true, leading: 0.7em, spacing: 1.15em)
