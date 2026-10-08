@@ -2,7 +2,7 @@
  * tutorial-target-search.js
  * "Searching for Targets" tutorial definition.
  * Covers: the Target Selection layout, searching by name, reading result rows
- * and badges, the floating detail panel, adding to the To Do list, and pinning
+ * and badges, the Target Details modal, adding to the To Do list, and pinning
  * (including the Pinned Targets strip in the sidebar).
  *
  * Modal — use when there's no specific element to point at (introductions,
@@ -90,21 +90,20 @@ const TUTORIAL_TARGET_SEARCH = {
             id: 'select-result',
             type: 'callout',
             title: 'Select a Target',
-            body: 'Click the <strong>M 101</strong> result in the list. It becomes the <strong>Current Target</strong>, shown in the left navigation panel, so you can use the other analysis tools on it without searching again. A detail panel also opens over the results.',
+            body: 'Click the <strong>M 101</strong> result in the list. It becomes the <strong>Current Target</strong>, shown in the left navigation panel, so you can use the other analysis tools on it without searching again. Its details also open in a window.',
             target: '#target-filter-results',
             position: 'left',
             waitFor: 'click',
             highlight: true
         },
         {
-            id: 'details-panel',
+            id: 'details-modal',
             type: 'callout',
-            title: 'Reading the Detail Panel',
-            body: 'The detail panel shows the target name and its imaging status, followed by its designations, visual information (type, size, magnitude), coordinates, and observability from your current location.<br><br>The <strong>Pin</strong> and <strong>Add to To Do</strong> buttons at the top act on this target. Close the panel with the ✕ button, the <strong>Esc</strong> key, or by clicking outside it — the results list is still there underneath.',
-            target: '#target-detail-panel',
+            title: 'Reading the Target Details',
+            body: 'The Target Details window shows the target\'s designations, visual information (type, size, magnitude), coordinates, and observability from your current location.<br><br>The <strong>Pin</strong> and <strong>Add to To Do List</strong> buttons at the top act on this target. The same window opens wherever you click a target: a search result, a pinned target, the Current Target, or a target on your To Do List.',
+            target: '#modal-body',
             position: 'left',
             width: '450px',
-            scrollTo: true, // delay render until the panel's open animation settles
             waitFor: 'next',
             highlight: false
         },
@@ -112,8 +111,8 @@ const TUTORIAL_TARGET_SEARCH = {
             id: 'todo-intro',
             type: 'callout',
             title: 'The To Do List',
-            body: 'The <strong>To Do List</strong> is a personal queue of targets you plan to image. Click <strong>Add to To Do</strong> to place this target on your list.',
-            target: '#target-detail-todo-btn',
+            body: 'The <strong>To Do List</strong> is a personal queue of targets you plan to image. Click <strong>Add to To Do List</strong> to place this target on your list.',
+            target: '#modal-todo-btn',
             position: 'left',
             waitFor: 'click',
             highlight: true
@@ -122,8 +121,8 @@ const TUTORIAL_TARGET_SEARCH = {
             id: 'todo-confirmed',
             type: 'callout',
             title: 'Added to To Do',
-            body: 'The target is now on your To Do list. The button now reads <strong>Remove from To Do</strong> so you can take it off the list later, and the To Do badge in the results list is now checked. You can review the whole list any time from <strong>To Do List</strong> in the left navigation panel.',
-            target: '#target-detail-todo-btn',
+            body: 'The target is now on your To Do list. The button now reads <strong>Remove from To Do List</strong> so you can take it off the list later, and the To Do badge in the results list is now checked. You can review the whole list any time from <strong>To Do List</strong> in the left navigation panel.',
+            target: '#modal-todo-btn',
             position: 'left',
             waitFor: 'next',
             highlight: true
@@ -132,8 +131,18 @@ const TUTORIAL_TARGET_SEARCH = {
             id: 'pin-intro',
             type: 'callout',
             title: 'Pinning Targets',
-            body: 'Pinning saves a target to your <strong>Pinned Targets</strong> list, typically the targets you want to image next. The <strong>Sequence Planner</strong> uses your pinned targets when generating an imaging session for a given night.<br><br>Click the <strong>Pin</strong> button to pin the Current Target.',
-            target: '#target-detail-pin-btn',
+            body: 'Pinning saves a target to your <strong>Pinned Targets</strong> list, typically the targets you want to image next. The <strong>Sequence Planner</strong> uses your pinned targets when generating an imaging session for a given night.<br><br>Click the <strong>Pin</strong> button to pin this target. It then reads <strong>Unpin</strong>.',
+            target: '#modal-pin-btn',
+            position: 'left',
+            waitFor: 'click',
+            highlight: true
+        },
+        {
+            id: 'close-details',
+            type: 'callout',
+            title: 'Close the Target Details',
+            body: 'Close the window with the <strong>Close</strong> button or the <strong>Esc</strong> key. The results list is still there underneath.<br><br>Click <strong>Close</strong> now.',
+            target: '#modal-close',
             position: 'left',
             waitFor: 'click',
             highlight: true
@@ -142,7 +151,7 @@ const TUTORIAL_TARGET_SEARCH = {
             id: 'pin-confirmed',
             type: 'callout',
             title: 'Target Pinned',
-            body: 'Pinned targets are listed in the <strong>Pinned Targets</strong> strip at the bottom of the left navigation panel, and it is visible from every view. Click a pinned target there to make it the Current Target, or click the × to unpin it.',
+            body: 'Pinned targets are listed in the <strong>Pinned Targets</strong> strip at the bottom of the left navigation panel, and it is visible from every view. Click a pinned target there to make it the Current Target and open its details, or click the × to unpin it. In Daily Visibility, Yearly Observability, and the Viewfinder, the click skips the details and switches the view straight to that target, so you can click between pinned targets to compare them.',
             target: '.sidebar-pinned-section',
             position: 'right',
             waitFor: 'next',

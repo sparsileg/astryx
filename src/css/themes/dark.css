@@ -54,6 +54,7 @@ body {
     --tutorial-accent: #f7a74f;
     --tutorial-accent-text: #000000;
     --todo-altitude-graph-color: rgba(255, 255, 255, 0.9);
+    --dv-moon-haze: #ef5350;             /* Daily Visibility moon dial haze */
 }
 
 .tutorial-modal,

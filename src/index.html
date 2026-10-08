@@ -382,26 +382,6 @@
 
             <!-- Filter Results Card -->
             <div class="card card-no-margin" id="filter-results-card">
-
-              <!-- Floating Target Detail Panel -->
-              <div id="target-detail-panel" class="target-detail-panel">
-                <button id="target-detail-close-btn" class="target-detail-close" aria-label="Close">✕</button>
-                <div class="target-detail-header">
-                  <div class="target-detail-name-group">
-                    <h3 id="target-detail-name">—</h3>
-                    <span id="target-detail-imaging-badge" class="target-detail-imaging-badge"></span>
-                  </div>
-                  <div class="target-detail-actions">
-                    <button id="target-detail-pin-btn" class="btn-secondary btn-sm tooltip-host"
-                            data-tooltip-key="ts_PIN">📌 Pin</button>
-                    <button id="target-detail-todo-btn" class="btn-secondary btn-sm">☐ Add to To Do</button>
-                  </div>
-                </div>
-                <div class="target-detail-body" id="target-detail-body">
-                  <!-- target-detail-template content cloned in here by JS -->
-                </div>
-              </div>
-
               <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
                 <h3 id="filter-results-label">📋 Results</h3>
                 <div id="filter-results-options" style="display: flex; flex-direction: column; gap: 0.35rem; align-items: flex-end;">
@@ -545,43 +525,22 @@
               <!-- Moon Details Card -->
               <div class="info-card" id="dv-moon-details">
                 <h3>Moon Details</h3>
-                <div class="info-card-content">
-                  <div class="info-section">
-                    <div id="moon-phase-name" class="info-value"></div>
-                    <div id="moon-illumination" class="info-subtext"></div>
-                  </div>
-                  <div class="info-section">
-                    <div class="info-label">Rise-Set Times</div>
-                    <div id="moon-rise-set" class="info-value"></div>
-                  </div>
-                </div>
+                <div id="dv-moon-rows" class="dv-card-rows"></div>
               </div>
 
               <!-- Target Details Card -->
               <div class="info-card" id="dv-target-details">
                 <h3>Target Details</h3>
-                <div class="info-card-content">
-                  <div class="info-section">
-                    <div id="target-altitude" class="info-subtext"></div>
-                    <div id="target-rise-set" class="info-value"></div>
-                    <div id="target-blocked" class="info-value"></div>
-                    <div id="target-peak-altitude" class="info-value"></div>
-                  </div>
-                </div>
+                <div id="dv-target-rows" class="dv-card-rows"></div>
               </div>
 
               <!-- Target-Moon Separation Card -->
               <div class="info-card" id="dv-moon-separation">
                 <h3>Target-Moon Separation</h3>
-                <div class="info-card-content">
-                  <div class="info-section">
-                    <div id="separation-dusk" class="info-value"></div>
-                    <div id="separation-dusk-desc" class="info-subtext"></div>
-                  </div>
-                  <div class="info-section dv-separation-dawn">
-                    <div id="separation-dawn" class="info-value"></div>
-                    <div id="separation-dawn-desc" class="info-subtext"></div>
-                  </div>
+                <div id="dv-moon-dial" class="dv-moon-dial"></div>
+                <div class="dv-moon-interference">
+                  <span class="dv-card-label">Interference:</span>
+                  <span id="dv-moon-interference" class="dv-card-value"></span>
                 </div>
               </div>
             </div>
@@ -1045,106 +1004,93 @@
       <template id="fov-template">
         <div class="fov-view view-bg-icon view-bg-icon-viewfinder">
           <h2 class="view-title">Viewfinder</h2>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 2rem;">
-            <!-- Left Column: Equipment and Settings -->
-            <div>
-              <!-- Target Info Card -->
-              <div class="card">
-                <div class="card-header" id="fov-current-tgt">
-                  <h3>📍 Current Target</h3>
-                </div>
-                <div class="card-body">
-                  <div id="fov-target-info">
-                    <p style="color: var(--text-secondary);">No target selected.</p>
-                  </div>
+          <div class="fov-top-row">
+            <!-- Target Info Card -->
+            <div class="card">
+              <div class="card-header" id="fov-current-tgt">
+                <h3>📍 Current Target</h3>
+              </div>
+              <div class="card-body">
+                <div id="fov-target-info">
+                  <p class="fov-placeholder">No target selected.</p>
                 </div>
               </div>
-              <!-- Equipment Selection Card -->
-              <div class="card">
-                <div class="card-header">
-                  <h3>🔭 Equipment</h3>
-                </div>
-                <div class="card-body">
-                  <div id="fov-telescope-sensor" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem 1rem; align-items: end; margin-bottom: 1rem;">
-                    <div>
-                      <label>Telescope:</label>
-                      <div class="astryx-dropdown" id="fov-telescope-dropdown">
-                        <div class="astryx-dropdown-trigger" id="fov-telescope-trigger">
-                          <span id="fov-telescope-label">Select telescope...</span>
-                          <span class="astryx-dropdown-arrow"> </span>
-                        </div>
-                        <div class="astryx-dropdown-menu" id="fov-telescope-menu"></div>
-                      </div>
-                    </div>
-                    <div>
-                      <label>Sensor:</label>
-                      <div class="astryx-dropdown" id="fov-sensor-dropdown">
-                        <div class="astryx-dropdown-trigger" id="fov-sensor-trigger">
-                          <span id="fov-sensor-label">Select sensor...</span>
-                          <span class="astryx-dropdown-arrow"> </span>
-                        </div>
-                        <div class="astryx-dropdown-menu" id="fov-sensor-menu"></div>
-                      </div>
-                    </div>
-                  </div>
-                  <div style="display: flex; gap: 1.2rem; align-items: center; margin-bottom: 0.5rem;">
-                    <label style="display: flex; align-items: center; gap: 0.3rem; font-size: 0.85rem; cursor: pointer;">
-                      <input type="checkbox" id="fov-show-dss" style="cursor: pointer;">DSS image
-                    </label>
-                    <label style="display: flex; align-items: center; gap: 0.3rem; font-size: 0.85rem; cursor: pointer;">
-                      <input type="checkbox" id="fov-show-target" style="cursor: pointer;">Target size
-                    </label>
-                    <label style="display: flex; align-items: center; gap: 0.3rem; font-size: 0.85rem; cursor: pointer;">
-                      <input type="checkbox" id="fov-show-moon" style="cursor: pointer;">Full moon
-                    </label>
-                    <label style="display: flex; align-items: center; gap: 0.3rem; font-size: 0.85rem; cursor: pointer;">
-                      <input type="checkbox" id="fov-show-crosshair" style="cursor: pointer;">Crosshair
-                    </label>
-                  </div>
-                </div>
+            </div>
+            <!-- Equipment Selection Card -->
+            <div class="card">
+              <div class="card-header">
+                <h3>🔭 Equipment</h3>
               </div>
-              <!-- Results Card -->
-              <div class="card">
-                <div class="card-body">
-                  <div id="fov-results">
-                    <p style="color: var(--text-secondary);">Select telescope and sensor to calculate field of view.</p>
+              <div class="card-body">
+                <div id="fov-telescope-sensor" class="fov-equipment">
+                  <div>
+                    <label>Telescope:</label>
+                    <div class="astryx-dropdown" id="fov-telescope-dropdown">
+                      <div class="astryx-dropdown-trigger" id="fov-telescope-trigger">
+                        <span id="fov-telescope-label">Select telescope...</span>
+                        <span class="astryx-dropdown-arrow"> </span>
+                      </div>
+                      <div class="astryx-dropdown-menu" id="fov-telescope-menu"></div>
+                    </div>
+                  </div>
+                  <div>
+                    <label>Sensor:</label>
+                    <div class="astryx-dropdown" id="fov-sensor-dropdown">
+                      <div class="astryx-dropdown-trigger" id="fov-sensor-trigger">
+                        <span id="fov-sensor-label">Select sensor...</span>
+                        <span class="astryx-dropdown-arrow"> </span>
+                      </div>
+                      <div class="astryx-dropdown-menu" id="fov-sensor-menu"></div>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-            <!-- Right Column: Canvas Visualization -->
-            <div>
-              <!-- Visualization Card -->
-              <div class="card">
-                <div class="card-header">
-                  <h3 id="fov-mode-toggle-container">👁️ Field of View <div class="fov-mode-toggle" id="fov-mode-toggle">
-                      <span class="fov-mode-option active"
-                            data-mode="actual">Actual</span>
-                      <span class="fov-mode-option"
-                            data-mode="larger">Wider</span>
-                  </div></h3>
+          </div>
+          <!-- Visualization Card: controls on the left, the view on the right -->
+          <div class="card">
+            <div class="card-header">
+              <h3>👁️ Field of View</h3>
+            </div>
+            <div class="card-body fov-view-body">
+              <div class="fov-controls">
+                <div class="fov-mode-toggle" id="fov-mode-toggle">
+                  <span class="fov-mode-option active"
+                        data-mode="actual">Actual</span>
+                  <span class="fov-mode-option"
+                        data-mode="larger">Wider</span>
                 </div>
-                <div class="card-body" style="display: flex; flex-direction: column; align-items: center; position: relative;">
-                  <div style="position: relative;">
-                    <canvas id="fov-canvas" width="600" height="600" style="max-width: 100%; border: 1px solid var(--border-color);"></canvas>
-                    <div id="fov-moon-note" style="position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); color: var(--text-secondary); font-size: 0.9rem; font-style: italic; display: none;">
-                      Full moon outlined displayed
-                    </div>
-                  </div>
-                  <div id="fov-center-coords" style="display: none; margin-top: 0.5rem; text-align: center; font-family: monospace; font-size: 0.9rem; color: var(--text-color);"></div>
-                  <div id="fov-rotation-control" style="display: none; margin-top: 0.5rem; text-align: center;">
-                    <label style="font-size: 0.9rem; color: var(--text-color);">Rotate camera to:&nbsp;
-                      <button id="fov-rotate-ccw" class="btn-secondary btn-sm">↺</button>
-                      <input type="number" id="fov-rotation-input" value="0" min="-180" max="180" step="1"
-                             style="width: 5rem; text-align: center; margin: 0 0.4rem; background: var(--bg-color); color: var(--text-color); border: 1px solid var(--border-color); border-radius: 4px; padding: 0.2rem;">
-                      °
-                      <button id="fov-rotate-cw" class="btn-secondary btn-sm">↻</button>
-                    </label>
-                  </div>
-                  <div style="margin-top: 0.5rem; text-align: center;">
-                    <button id="fov-snapshot-btn" class="btn-primary btn-sm">📷 Snapshot</button>
+                <div class="fov-checkboxes">
+                  <label><input type="checkbox" id="fov-show-dss">DSS image</label>
+                  <label><input type="checkbox" id="fov-show-target">Target size</label>
+                  <label><input type="checkbox" id="fov-show-moon">Full moon</label>
+                  <label><input type="checkbox" id="fov-show-crosshair">Crosshair</label>
+                </div>
+                <div id="fov-rotation-control" class="fov-rotation-control">
+                  <label for="fov-rotation-input">Rotate camera to:</label>
+                  <div class="fov-rotation-row">
+                    <button id="fov-rotate-ccw" class="btn-secondary btn-sm">↺</button>
+                    <input type="number" id="fov-rotation-input" value="0" min="-180" max="180" step="1">
+                    <span>°</span>
+                    <button id="fov-rotate-cw" class="btn-secondary btn-sm">↻</button>
                   </div>
                 </div>
+                <div id="fov-center-coords" class="fov-center-coords"></div>
+                <button id="fov-snapshot-btn" class="btn-primary btn-sm">📷 Snapshot</button>
+              </div>
+              <div class="fov-canvas-wrap">
+                <canvas id="fov-canvas" width="600" height="600"></canvas>
+                <div id="fov-moon-note" class="fov-moon-note">
+                  Full moon outlined displayed
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Results Card -->
+          <div class="card fov-results-card">
+            <div class="card-body">
+              <div id="fov-results">
+                <p class="fov-placeholder">Select telescope and sensor to calculate field of view.</p>
               </div>
             </div>
           </div>
@@ -2675,6 +2621,7 @@
       <script src="js/yearly-observability-calculations.js"></script>
       <script src="js/target-selection-view.js"></script>
       <script src="js/daily-visibility-calculations.js"></script>
+      <script src="js/dv-moon-dial.js"></script>
       <script src="js/daily-visibility-view.js"></script>
       <script src="js/dss-cache.js"></script>
       <script src="js/fov-calculations.js"></script>

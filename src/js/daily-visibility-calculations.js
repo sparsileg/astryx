@@ -131,6 +131,7 @@ const DailyVisibilityCalculations = {
             setJD: setJD,
             actualSetJD: actualSetJD,
             moonRiseSet: moonRiseSet,
+            moonUp: isMoonUpDuring(duskJD, dawnJD, latitude, longitude, elevation),
             timezone: location.timezone,
             timeZone: location.timeZone,
             locationName: this.currentLocationName,

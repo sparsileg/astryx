@@ -149,6 +149,7 @@ tr:nth-child(even) {
     --tutorial-accent: #d4982e;
     --tutorial-accent-text: #2a2018;
     --todo-altitude-graph-color: rgba(255, 235, 180, 0.9);
+    --dv-moon-haze: #e0604a;             /* Daily Visibility moon dial haze */
 }
 
 .tutorial-modal,

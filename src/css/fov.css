@@ -17,8 +17,7 @@
     border-radius: 20px;
     padding: 2px;
     gap: 0;
-    vertical-align: middle;
-    margin-left: 0.5rem;
+    align-self: flex-start;
 }
 
 .fov-mode-option {
@@ -35,4 +34,160 @@
     background: var(--primary-color);
     color: var(--bg-color);
     font-weight: bold;
+}
+
+/* Layout: Current Target and Equipment side by side, then the Field of
+   View card at full width (controls left, view right), then the results
+   card, half width and centered */
+.fov-top-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-top: 2rem;
+}
+
+/* Current Target: one line per row, whatever the target */
+.fov-target-rows {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.5rem 1rem;
+    align-items: center;
+}
+
+.fov-target-value {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.fov-equipment {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem 1rem;
+    align-items: end;
+}
+
+.fov-placeholder {
+    color: var(--text-secondary);
+}
+
+.fov-view-body {
+    display: flex;
+    gap: 1.5rem;
+    align-items: flex-start;
+}
+
+.fov-controls {
+    flex: 0 0 13rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.fov-checkboxes {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.fov-checkboxes label {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+.fov-checkboxes input {
+    cursor: pointer;
+}
+
+.fov-rotation-control {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    font-size: 0.9rem;
+    color: var(--text-color);
+}
+
+.fov-rotation-row {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+#fov-rotation-input {
+    width: 5rem;
+    text-align: center;
+    background: var(--bg-color);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 0.2rem;
+}
+
+/* Shown by fov-controller.js once there is a center to report; the RA and
+   Dec go on separate lines, values aligned */
+.fov-center-coords {
+    display: none;
+    font-family: monospace;
+    font-size: 0.9rem;
+    color: var(--text-color);
+    white-space: pre;
+}
+
+#fov-snapshot-btn {
+    align-self: flex-start;
+}
+
+.fov-canvas-wrap {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    justify-content: center;
+    position: relative;
+}
+
+/* Sized by FOVCanvas.sizeToFrame; an outline, unlike a border, adds no width */
+#fov-canvas {
+    max-width: 100%;
+    outline: 1px solid var(--border-color);
+}
+
+.fov-moon-note {
+    display: none;
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    font-style: italic;
+}
+
+.fov-results-card {
+    width: 50%;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Narrow windows: one column, controls above the view */
+@media (max-width: 900px) {
+    .fov-top-row {
+        grid-template-columns: 1fr;
+    }
+
+    .fov-view-body {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .fov-controls {
+        flex-basis: auto;
+    }
+
+    .fov-results-card {
+        width: auto;
+    }
 }

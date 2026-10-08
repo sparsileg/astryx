@@ -1183,18 +1183,7 @@ const ToDoView = {
     selectTarget(targetId) {
         const target = DataManager.getTargets().find(t => t.object === targetId);
         if (target) {
-            localStorage.setItem('lastSelectedTarget', JSON.stringify(target));
-            if (typeof VisibilityTargets !== 'undefined') {
-                VisibilityTargets.currentTarget = target;
-            }
-            if (typeof DailyVisibilityCalculations !== 'undefined') {
-                DailyVisibilityCalculations.currentTarget = target;
-            }
-            if (typeof YearlyObservabilityView !== 'undefined') {
-                YearlyObservabilityView.currentTarget = target;
-            }
-            UIManager.updateSidebarCurrentTarget(target.object);
-            UIManager.openObjectDetailModal(target);
+            VisibilityTargets.select(target);
         }
     },
 

@@ -89,7 +89,7 @@ const TUTORIAL_SIDEBAR = {
             id: 'target-selection',
             type: 'callout',
             title: 'Target Selection',
-            body: 'Search by name or filter the target database of thousands of deep-sky objects. Select a result to see its details, then pin it for quick access and imaging session planning or add it to your To Do list from the detail panel.<br><br>Once you create a <strong>To Do List</strong>, you can use it for searches and filters instead of the entire target database.',
+            body: 'Search by name or filter the target database of thousands of deep-sky objects. Select a result to see its details, then pin it for quick access and imaging session planning or add it to your To Do list from its Target Details.<br><br>Once you create a <strong>To Do List</strong>, you can use it for searches and filters instead of the entire target database.',
             target: '#sidebar-target-selection',
             position: 'right',
             waitFor: 'next',

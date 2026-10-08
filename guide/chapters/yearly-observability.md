@@ -1,84 +1,133 @@
 # Yearly Observability
 
-The graph visualizes peak target altitude during astronomical darkness
-throughout the year. The background gradient shows the observability
-score for each day based on:
+::: {.note title="At a glance"}
+**Yearly Observability** shows a whole year for one target: how high it gets
+during full darkness each night, and how good each night is for imaging it.
+Use it to find a target's season, see where the full Moons fall in it, and
+understand why a target isn't available in a given month.
+:::
 
-- How close the transit is to midnight
-- Dark hours available (total time above type-specific threshold)
+## What You'll See
 
-Darker shading indicates better observing conditions.
-- **Black/very dark**: Excellent - target transits near midnight, maximum dark hours, new moon
-- **Medium gray**: Good - target observable but moon present or transit offset
-- **Light gray**: Marginal - limited dark hours or unfavorable moon
-- **White**: Poor/impossible - target too low or sun interference
+Open **Yearly Observability** in the sidebar. It shows the Current Target
+from the location chosen in the sidebar (see
+[Introduction](introduction.md)). To look at a different target, change the
+Current Target, for example by clicking it in Target Selection or the To Do
+List, then come back. Changing the location in the sidebar redraws the
+graph.
 
+At the top are the target's name and common name, and a summary line:
+
+- **Peak altitude**: the highest the target gets during astronomical
+  darkness on any night of the year.
+- **Best month** and **Observable**: the same Best Month and run of
+  Observable months shown in the target's details in Target Selection.
+  They're missing if the target has no Best Month from this location.
+
+Below the summary, **Minimum Altitude:** sets the altitude you need, from 5°
+to 60°. It starts at 35°.
+
+Under the graph, a legend names each part of it: Target Altitude, Minimum
+Altitude, Observability (darker = better), Full Moon, and Current Day.
+
+::: {.shot id="yearly-observability-overview"}
+Yearly Observability for M 42 from a mid-northern location: the summary line,
+the Minimum Altitude control, and the graph with its dark season and the
+full-Moon markers.
+:::
 
 ## Reading the Graph
 
-- **Red/coral line**: Target's peak altitude during darkness each night
-- **Dashed red line**: Your minimum altitude threshold (adjustable)
-- **Background gradient**: Darker = better observing conditions
-- **Yellow circles**: Full moon dates
-- **Vertical orange line**: Today's date
+The graph covers twelve months, starting on the first day of the current
+month. Month names run along the bottom, with the year under the first month
+and under each January. Height on the graph is altitude, from the horizon at
+the bottom to straight overhead at the top.
 
+| Part | What it shows |
+|:----------------|:------------------------------------|
+| White line | The target's highest altitude during astronomical darkness on each night. Gaps mean it stays below the horizon all night. |
+| Yellow dashed line | Your Minimum Altitude. |
+| Background | How good each night is for imaging this target. Darker is better. White means the target doesn't reach your Minimum Altitude in darkness that night, or there's no astronomical darkness at all. |
+| Gold circles along the top | Full Moons. |
+| Orange vertical line | Today. |
 
-## Controls
+The background shading takes three things into account for each night:
 
-- **Minimum Altitude slider**: Set your personal minimum (affects dashed line only, not scoring)
+- how close to midnight the target crosses the meridian (its highest point),
+- how many hours it spends high enough in full darkness, and
+- the Moon: how bright it is, and how close it comes to the target.
 
+So the dark stretch of the background is the target's season, and the pale
+gaps that recur inside it, centered on the gold circles, are the full-Moon
+weeks.
 
-## The Key Insight
+::: note
+The Minimum Altitude here only moves the dashed line and turns nights below
+it white. It doesn't change how the remaining nights are shaded. That
+shading uses a fixed altitude for each type of target; [Yearly Observability
+Details](appendix-yearly.md) has the values.
+:::
 
-Every target reaches its absolute maximum altitude every single night of
-the year when it transits (crosses the meridian). This is determined purely
-by geometry - its declination and your latitude. This never changes. But
-the graph shows **peak** altitude during astronomical darkness and that can
-vary, hence the flat sections and the descending/ascending sections.
+### The Shape of the Line
 
+The white line is flat across the middle of a target's season, and slopes
+down on either side. That's because of *when* the target is highest, not
+how high it can get:
 
-## Flat section
+- **Flat:** every night, the target reaches the same highest altitude when
+  it crosses the meridian. When that happens during full darkness, the line
+  shows the full altitude, so it stays level.
+- **Sloping:** the target crosses the meridian about four minutes earlier
+  each night, or two hours earlier each month. Before its season, it's
+  highest after dawn; after its season, it's highest before dusk. Either
+  way, darkness only catches it while it's lower, so the line slopes down.
 
-Transit occurs at different times during the year. For example, at a
-certain location a target might transit around 11pm in October, close to
-midnight in December, and around 1am in February. All these times are
-within astronomical darkness so the graph shows the peak altitude - the
-target's full potential. The result is a flat line at maximum altitude.
+How long the flat stretch lasts depends on how long your nights are: long
+winter nights catch more of each target's arc than short summer ones.
 
+::: why
+The line shows how high a target *can* get, not how long it stays there.
+Early and late in the season, a target may reach a good altitude for only an
+hour at the start or end of the night. Check those nights in Daily
+Visibility before you plan around them.
+:::
 
-## Descending curve
+## Using It
 
-As you move past the optimal season (e.g., winter into spring), the target
-transits progressively earlier. For example, the target might transit at
-midnight in December, 8pm in February, and 4pm in April. In December and
-February, these times are well within astronomical darkness, showing the
-full altitude. By April, the target transits at 4pm - before darkness even
-begins around 8pm. By the time it's dark enough, the target has already
-passed its peak and is descending, it's altitude decreasing. The graph
-shows a descending curve as darkness catches the target after its peak.
+- **Find the season.** Look for the dark stretch of background and the flat
+  part of the line. That's when to image the target.
+- **Avoid the Moon.** Within the season, plan your nights in the dark gaps
+  between the gold circles.
+- **See why a target isn't available.** If the line never reaches the dashed
+  line, the target never gets high enough from this location. If it does,
+  but not this month, it's out of season; the graph shows when it comes
+  back.
+- **Set the bar.** Raise **Minimum Altitude** if trees or buildings block
+  your low sky, or if you want the steadier air higher up. The white parts
+  of the background grow to show the nights you'd lose.
 
+## Tips
 
-## Ascending curve
+::: tip
+Check Yearly Observability before starting a long project. A target that
+needs twenty hours of integration needs a season with enough dark,
+moon-free nights to collect them. If the season is nearly over, start
+something else and come back next year.
+:::
 
-As you move away from the optimal season (e.g., late summer into fall), the
-target transits progressively earlier into the night. For example, it might
-transit at 8am in August, 6am in September, and 4am in October. In August,
-darkness ends around 5am, so the target is still rising when darkness ends,
-below its peak altitude. By October, darkness extends to 6am, so the target
-transits at 4am during darkness, reaching its full 73° altitude. The graph
-shows an ascending curve as progressively more of the target's rising arc
-is captured within darkness.
+::: tip
+Set **Minimum Altitude** to match the Min Altitude in Settings, so the
+dashed line here is the same one you see in Daily Visibility and the
+Sequence Planner.
+:::
 
+## Related
 
-## Bottom line
-
-- Flat section = "target's transit happens during darkness."
-- Sloped sections = "darkness only catches before or after a transit."
-
-
-## How to use the graph
-
-- Identify your imaging season (flat section = prime time)
-- Plan around moon phases (dark areas between yellow circles)
-- Understand why targets aren't visible certain months
-- Compare transit timing preferences vs. moon avoidance
+- [Finding Targets](target-selection.md): the Best Month and Observable
+  months in a target's details.
+- [To Do List](todo-list.md): changing the Current Target from your
+  shortlist.
+- [Yearly Observability Details](appendix-yearly.md): how the shading is
+  scored.
+- [Best Month Calculation](appendix-best-months.md): how the Best Month and Observable
+  months are worked out.

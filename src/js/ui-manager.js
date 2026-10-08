@@ -352,6 +352,7 @@ const UIManager = {
         }
 
         // Clear any existing custom header buttons
+        document.getElementById('modal-pin-btn')?.remove();
         const existingTodoBtn = document.getElementById('modal-todo-btn');
         if (existingTodoBtn) {
             existingTodoBtn.remove();
@@ -1731,62 +1732,74 @@ const UIManager = {
 
         // Populate target details with fresh data
         this.populateObjectDetail(freshTarget || target, document.getElementById('modal-body'));
-        this.addToDoListButton(target);
+        this.addTargetActionButtons(freshTarget || target);
     },
 
     /**
-     * Add To Do List button to modal header
+     * Add Pin and To Do List buttons to the target detail modal header
      */
-    addToDoListButton(target) {
+    addTargetActionButtons(target) {
         const headerButtons = document.getElementById('modal-header-buttons');
         if (!headerButtons) return;
 
-        // Remove any existing todo button
-        const existingBtn = document.getElementById('modal-todo-btn');
-        if (existingBtn) {
-            existingBtn.remove();
-        }
+        // Remove any existing target buttons
+        document.getElementById('modal-pin-btn')?.remove();
+        document.getElementById('modal-todo-btn')?.remove();
 
-        // Create the button 'btn-primary btn-sm'
+        const pinBtn = document.createElement('button');
+        pinBtn.id = 'modal-pin-btn';
+        pinBtn.className = 'btn-primary';
+
+        const isPinned = () => DataManager.getPinnedTargets().some(p => p.name === target.object);
+        const updatePinState = () => {
+            pinBtn.textContent = isPinned() ? 'Unpin' : 'Pin';
+        };
+        updatePinState();
+
+        pinBtn.addEventListener('click', async () => {
+            if (isPinned()) {
+                await DataManager.unpinTarget(target.object);
+                this.showToast(`Unpinned ${target.object}`, 'success');
+            } else {
+                await DataManager.pinTarget({
+                    name: target.object,
+                    ra: target.ra,
+                    dec: target.dec,
+                    common: target.common ?? ''
+                });
+                this.showToast(`Pinned ${target.object}`, 'success');
+            }
+            this.markDataChanged();
+            updatePinState();
+            VisibilityTargets.updatePinnedDisplay();
+            TargetFilter.refreshResultBadges();
+        });
+
         const todoBtn = document.createElement('button');
         todoBtn.id = 'modal-todo-btn';
         todoBtn.className = 'btn-primary';
-        todoBtn.style.cursor = 'pointer';
 
-
-        const updateButtonState = () => {
-            const isInList = ToDoManager.isInToDoList(target.object);
-
-            if (isInList) {
-                todoBtn.textContent = 'Remove from To Do List';
-            } else {
-                todoBtn.textContent = 'Add to To Do List';
-            }
+        const updateToDoState = () => {
+            todoBtn.textContent = ToDoManager.isInToDoList(target.object)
+                ? 'Remove from To Do List'
+                : 'Add to To Do List';
         };
+        updateToDoState();
 
-        // Set initial state
-        updateButtonState();
-
-        // Add click handler
         todoBtn.addEventListener('click', async () => {
-            const isInList = ToDoManager.isInToDoList(target.object);
-
-            if (isInList) {
-                // Remove from list
+            if (ToDoManager.isInToDoList(target.object)) {
                 await ToDoManager.removeFromToDoList(target.object);
                 this.showToast(`Removed ${target.object} from To Do List`, 'success');
-                UIManager.markDataChanged();
             } else {
-                // Add to list
                 await ToDoManager.addToToDoList(target.object);
                 this.showToast(`Added ${target.object} to To Do List`, 'success');
-                UIManager.markDataChanged();
             }
-
-            // Update button state
-            updateButtonState();
+            this.markDataChanged();
+            updateToDoState();
+            TargetFilter.refreshResultBadges();
         });
 
+        headerButtons.appendChild(pinBtn);
         headerButtons.appendChild(todoBtn);
     },
 
@@ -1794,8 +1807,7 @@ const UIManager = {
      * Populate object detail modal with target data
      */
     populateObjectDetail(target, root = document) {
-        // The detail template lives in both the modal and the Target Selection
-        // floating panel, so IDs are duplicated — always look up within root.
+        // Look up within root, so the template's IDs never clash with the page's.
         const $ = (id) => root.querySelector('#' + id);
         const detailObject = $('detail-object');
         if (target.object) {
