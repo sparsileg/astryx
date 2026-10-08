@@ -15,7 +15,7 @@
 const APP_CONFIG = {
     APP_NAME: 'Astryx',
     APP_TITLE: 'Astryx - Astrophotography Planning Tool',
-    APP_VERSION: '1.11.1',
+    APP_VERSION: '1.14.0',
     DB_NAME: 'astryx-db',
     DB_VERSION: 8,
     TARGET_DATA_PATH: './data/',
@@ -35,6 +35,10 @@ const APP_CONFIG = {
     // Chunk size (bytes) for base64 conversion of cached DSS images — avoids
     // spreading large byte arrays into String.fromCharCode all at once.
     DSS_BASE64_CHUNK_SIZE: 8192,
+    // Viewfinder: sky image pixels across the frame's long side, and the
+    // tallest the view may be, in percent of the window height
+    FOV_DSS_FRAME_PIXELS: 1200,
+    FOV_VIEW_MAX_HEIGHT_VH: 70,
 
     // Number of the top-ranked targets used to generate combinations
     TOP_RANKED_TARGETS: 37,
@@ -78,6 +82,9 @@ const APP_CONFIG = {
 
     // Daily visibility: hours past midnight before which we default to previous night
     DV_LOOKBACK_CUTOFF_HOUR: 12,
+
+    // Daily visibility: how long the moon dial takes to move to a new night
+    DV_MOON_DIAL_ANIMATION_MS: 600,
 
     // Backup reminder constants
     BACKUP_REMINDER_INTERVAL_DAYS: 7,   // default reminder interval (days)

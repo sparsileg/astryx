@@ -13,6 +13,31 @@
 // sections, where the headings already separate them, so leave a gap only
 #let divider() = v(0.3em)
 
+// Callout boxes, written in the chapters as ::: tip, ::: why, or ::: note
+// (callouts.lua turns them into calls to this)
+#let callout-styles = (
+  tip: (title: "Astryx Tip", color: rgb("#b7791f"), fill: rgb("#fdf6e7")),
+  why: (title: "Why this matters", color: accent, fill: rgb("#eef3fa")),
+  note: (title: "Note", color: muted, fill: rgb("#f3f5f8")),
+  shot: (title: "Screenshot", color: rgb("#9aa3ae"), fill: white),
+)
+#let callout(kind, title: none, body) = {
+  let style = callout-styles.at(kind)
+  block(
+    width: 100%,
+    fill: style.fill,
+    stroke: if kind == "shot" { (paint: style.color, thickness: 1pt, dash: "dashed") } else { (left: 3pt + style.color) },
+    inset: (left: 12pt, right: 10pt, y: 9pt),
+    above: 1.3em,
+    below: 1.3em,
+    breakable: false,
+  )[
+    #block(below: 0.65em, text(font: sans, size: 9pt, weight: "semibold", fill: style.color)[#(if title == none { style.title } else { title })])
+    #set par(spacing: 0.8em)
+    #body
+  ]
+}
+
 #set document(title: "Astryx User Guide", author: "Astryx")
 #set text(font: "IBM Plex Serif", size: 10.5pt, fill: ink, lang: "en")
 #set par(justify: true, leading: 0.7em, spacing: 1.15em)
@@ -27,18 +52,21 @@
   stroke: (_, y) => if y == 0 { (bottom: 0.8pt + accent) } else { (bottom: 0.4pt + rule-color) },
 )
 #show table: set text(size: 9.5pt)
+// pandoc wraps each table in a figure, which won't break across pages
+#show figure.where(kind: table): set block(breakable: true)
 #show table: set par(justify: false)
 #show table.cell.where(y: 0): set text(font: sans, weight: "semibold")
 
-// Chapters are numbered; sections below them are not
-#show heading.where(level: 1, outlined: true): set heading(numbering: "1")
+// Chapters are numbered; sections below them are not. Appendices are
+// lettered (appendices.lua switches over at the first one)
+#show heading.where(level: 1, outlined: true): set heading(numbering: "1", supplement: [Chapter])
 #show heading: set text(font: sans, fill: accent, weight: "semibold")
 #show heading: set par(justify: false)
 #show heading.where(level: 1): it => {
   pagebreak(weak: true)
   v(1.8cm)
   if it.numbering != none {
-    text(size: 11pt, fill: muted, weight: "regular")[Chapter #counter(heading).display()]
+    text(size: 11pt, fill: muted, weight: "regular")[#it.supplement #counter(heading).display()]
   }
   v(0.1cm)
   text(size: 24pt, it.body)

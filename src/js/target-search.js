@@ -5,11 +5,8 @@
 
 const VisibilityTargets = {
     searchTimeout: null,
-    pendingSelectTarget: null,
-    pendingSelectLimited: false,
     searchActive: false,
     currentTarget: null, // Track the selected target
-    _suppressNextOutsideClick: false,
 
     /**
      * Initialize target functionality
@@ -31,44 +28,6 @@ const VisibilityTargets = {
                 e.target.select();
             });
         }
-
-        const closeBtn = document.getElementById('target-detail-close-btn');
-        if (closeBtn) {
-            closeBtn.addEventListener('click', () => this.hideDetailPanel());
-        }
-
-        const pinBtn = document.getElementById('target-detail-pin-btn');
-        if (pinBtn) {
-            pinBtn.addEventListener('click', () => this.pinCurrent());
-        }
-
-        const todoBtn = document.getElementById('target-detail-todo-btn');
-        if (todoBtn) {
-            todoBtn.addEventListener('click', () => this.toggleToDo());
-        }
-
-        this._outsideClickHandler = (e) => {
-            if (this._suppressNextOutsideClick) {
-                this._suppressNextOutsideClick = false;
-                return;
-            }
-            const panel = document.getElementById('target-detail-panel');
-            if (!panel || !panel.classList.contains('active')) return;
-            if (panel.contains(e.target)) return;
-            // Clicks on tutorial callouts (e.g. Next) shouldn't dismiss the panel
-            if (e.target.closest('.tutorial-callout, .tutorial-modal')) return;
-            this.hideDetailPanel();
-        };
-        document.addEventListener('click', this._outsideClickHandler);
-
-        this._escapeHandler = (e) => {
-            if (e.key !== 'Escape') return;
-            const panel = document.getElementById('target-detail-panel');
-            if (panel && panel.classList.contains('active')) {
-                this.hideDetailPanel();
-            }
-        };
-        document.addEventListener('keydown', this._escapeHandler);
     },
 
     /**
@@ -177,16 +136,25 @@ const VisibilityTargets = {
     },
 
     /**
-     * Select a target
+     * Make a target the Current Target and open its detail modal
      */
     select(target) {
-        this._suppressNextOutsideClick = true;
-        // Only meant to swallow the click that triggered this select(); when select()
-        // is called without a click (e.g. restoring a pinned target) it would otherwise
-        // stay set and swallow the next real click.
-        setTimeout(() => { this._suppressNextOutsideClick = false; }, 0);
+        this.changeCurrentTarget(target);
+        UIManager.openObjectDetailModal(target);
+    },
 
-        // Store the current target
+    /**
+     * Make a target the Current Target and have the open view redraw for it
+     */
+    changeCurrentTarget(target) {
+        this.setCurrentTarget(target);
+        document.dispatchEvent(new CustomEvent('current-target-changed'));
+    },
+
+    /**
+     * Make a target the Current Target for every view, without opening its details
+     */
+    setCurrentTarget(target) {
         this.currentTarget = target;
 
         // Only set if DailyVisibilityCalculations exists
@@ -197,134 +165,11 @@ const VisibilityTargets = {
             YearlyObservabilityView.currentTarget = target;
         }
 
-        // Only update DOM if elements exist (we're on Target Selection view)
-        const targetNameInput = document.getElementById('target-name');
-        if (targetNameInput) {
-            targetNameInput.value = target.object;
-        }
-
-        this.showDetailPanel(target);
-
         // Save last selected target (save full target object)
         localStorage.setItem('lastSelectedTarget', JSON.stringify(target));
-        localStorage.setItem('lastSearchQuery', target.object);
 
         // Update sidebar current target display
         UIManager.updateSidebarCurrentTarget(target.object);
-    },
-
-    /**
-     * Show the floating detail panel for a target, full-cover over the Results card.
-     * Reuses the same template and population logic as UIManager's object detail
-     * modal, so the panel shows the full detail content, not a summary.
-     */
-    showDetailPanel(target) {
-        const panel = document.getElementById('target-detail-panel');
-        const body = document.getElementById('target-detail-body');
-        if (!panel || !body) return;
-
-        const nameEl = document.getElementById('target-detail-name');
-        if (nameEl) nameEl.textContent = target.object;
-
-        const imagingBadgeEl = document.getElementById('target-detail-imaging-badge');
-        if (imagingBadgeEl) {
-            const designators = (typeof TargetFilter !== 'undefined')
-                  ? TargetFilter.getTargetDesignators(target)
-                  : [target.object];
-
-            let status = 'none';
-            if (typeof ToDoView !== 'undefined') {
-                for (const d of designators) {
-                    const s = ToDoView.getImagingStatus(d);
-                    if (s === 'complete') {
-                        status = 'complete';
-                        break;
-                    }
-                    if (s === 'active') {
-                        status = 'active';
-                    }
-                }
-            }
-
-            const icon = (typeof ToDoView !== 'undefined' && ToDoView.IMAGING_STATUS_ICONS[status])
-                  ? ToDoView.IMAGING_STATUS_ICONS[status]
-                  : '';
-            imagingBadgeEl.innerHTML = icon;
-            imagingBadgeEl.title = `Imaging: ${status}`;
-        }
-
-        const template = document.getElementById('target-detail-template');
-        if (template) {
-            body.innerHTML = '';
-            body.appendChild(template.content.cloneNode(true));
-        }
-
-        if (typeof UIManager !== 'undefined' && UIManager.populateObjectDetail) {
-            const freshTarget = (typeof DataManager !== 'undefined')
-                  ? (DataManager.getTargets().find(t => t.object === target.object) || target)
-                  : target;
-            UIManager.populateObjectDetail(freshTarget, body);
-        }
-
-        this.updateDetailToDoButton();
-
-        panel.classList.add('active');
-
-        // Grow the results card to fit the panel's full content instead of
-        // internal-scrolling. scrollHeight reflects the true content height
-        // even while the panel is still visually constrained to the card's
-        // current size via inset:0.
-        const card = document.getElementById('filter-results-card');
-        if (card) {
-            requestAnimationFrame(() => {
-                card.style.minHeight = panel.scrollHeight + 'px';
-            });
-        }
-    },
-
-    /**
-     * Hide the floating detail panel (shrink back to results)
-     */
-    hideDetailPanel() {
-        const panel = document.getElementById('target-detail-panel');
-        if (panel) panel.classList.remove('active');
-
-        const card = document.getElementById('filter-results-card');
-        if (card) card.style.minHeight = '';
-    },
-
-    /**
-     * Reflect current To Do state on the detail panel's To Do button
-     */
-    updateDetailToDoButton() {
-        const todoBtn = document.getElementById('target-detail-todo-btn');
-        if (!todoBtn || !this.currentTarget) return;
-        const inToDo = ToDoManager.isInToDoList(this.currentTarget.object);
-        todoBtn.textContent = inToDo ? '☑ Remove from To Do' : '☐ Add to To Do';
-    },
-
-    /**
-     * Toggle the currently selected target's To Do list membership
-     */
-    async toggleToDo() {
-        if (!this.currentTarget) return;
-        const targetId = this.currentTarget.object;
-
-        if (ToDoManager.isInToDoList(targetId)) {
-            await ToDoManager.removeFromToDoList(targetId);
-            UIManager.showToast(`Removed "${targetId}" from To Do list`, 'success');
-        } else {
-            await ToDoManager.addToToDoList(targetId);
-            UIManager.showToast(`Added "${targetId}" to To Do list`, 'success');
-        }
-
-        UIManager.markDataChanged();
-        this.updateDetailToDoButton();
-
-        // Refresh badges on whatever's currently shown in the results list
-        if (typeof TargetFilter !== 'undefined') {
-            TargetFilter.displayFilterResults(TargetFilter.allResults, TargetFilter._lastPreserveOrder);
-        }
     },
 
     /**
@@ -334,21 +179,9 @@ const VisibilityTargets = {
         const lastTarget = localStorage.getItem('lastSelectedTarget');
         if (lastTarget) {
             try {
-                const target = JSON.parse(lastTarget);
-                this.currentTarget = target;
+                this.setCurrentTarget(JSON.parse(lastTarget));
 
-                // Only set if DailyVisibilityCalculations exists
-                if (typeof DailyVisibilityCalculations !== 'undefined') {
-                    DailyVisibilityCalculations.currentTarget = target;
-                }
-                if (typeof YearlyObservabilityView !== 'undefined') {
-                    YearlyObservabilityView.currentTarget = target;
-                }
-
-                UIManager.updateSidebarCurrentTarget(target.object);
-
-                // Restore search box and re-run the last search if there was one;
-                // the detail panel itself stays closed until the person picks a result
+                // Restore search box and re-run the last search if there was one
                 const targetNameInput = document.getElementById('target-name');
                 const lastQuery = localStorage.getItem('lastSearchQuery');
                 if (lastQuery && targetNameInput) {
@@ -366,32 +199,6 @@ const VisibilityTargets = {
 
     clearFields() {
         this.currentTarget = null;
-        this.hideDetailPanel();
-    },
-
-    /**
-     * Pin current target
-     */
-    async pinCurrent() {
-        if (!this.currentTarget) {
-            UIManager.showToast('Please select a target first', 'error');
-            return;
-        }
-
-        const success = await DataManager.pinTarget({
-            name: this.currentTarget.object,
-            ra: this.currentTarget.ra,
-            dec: this.currentTarget.dec,
-            common: this.currentTarget.common || ''
-        });
-
-        if (success) {
-            UIManager.showToast(`Target "${this.currentTarget.object}" pinned`, 'success');
-            UIManager.markDataChanged();
-            this.updatePinnedDisplay();
-        } else {
-            UIManager.showToast(`Target "${this.currentTarget.object}" is already pinned`, 'warning');
-        }
     },
 
     /**
@@ -437,17 +244,15 @@ const VisibilityTargets = {
             }
         }
 
-        const currentView = window.location.hash.slice(1).split('?')[0];
-        if (currentView === 'target-select') {
-            this.select(targetToSelect);
-            if (limited) {
-                UIManager.showToast('Limited target data available', 'warning');
-            }
+        // Views that show the current target switch to it at once, for
+        // comparing pinned targets; elsewhere it opens in the detail modal
+        if (App.currentView?.followsCurrentTarget) {
+            this.changeCurrentTarget(targetToSelect);
         } else {
-            // Navigate to Target Selection view; select() runs after render
-            this.pendingSelectTarget = targetToSelect;
-            this.pendingSelectLimited = limited;
-            window.location.hash = '#target-select';
+            this.select(targetToSelect);
+        }
+        if (limited) {
+            UIManager.showToast('Limited target data available', 'warning');
         }
     },
 

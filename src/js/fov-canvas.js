@@ -39,12 +39,11 @@ const FOVCanvas = {
     },
 
     /**
-     * Draw DSS background image on canvas
+     * Draw the Wider mode sky image over the whole canvas
      * @param {HTMLImageElement} img - Image to draw as background
      */
     renderBackground(img) {
         if (!this.ctx || !img) return;
-        this.dssImage = img;
         this.ctx.drawImage(img, 0, 0, this.canvas.width, this.canvas.height);
     },
 
@@ -58,52 +57,74 @@ const FOVCanvas = {
     },
 
     /**
-     * Render complete FOV visualization
+     * Size the canvas to the sensor's shape: as wide as its container
+     * allows, no taller than FOV_VIEW_MAX_HEIGHT_VH. A drag box keeps its
+     * place relative to the canvas.
      * @param {object} fovData - FOV calculation results
-     * @param {object} target - Target object with size_max and size_min
+     */
+    sizeToFrame(fovData) {
+        if (!this.canvas) return;
+        const aspect = fovData.fovWidth / fovData.fovHeight;
+        const maxWidth = this.canvas.parentElement.clientWidth;
+        const maxHeight = window.innerHeight * APP_CONFIG.FOV_VIEW_MAX_HEIGHT_VH / 100;
+        const width = Math.round(Math.min(maxWidth, maxHeight * aspect));
+        const height = Math.round(width / aspect);
+        if (width === this.canvas.width && height === this.canvas.height) return;
+
+        if (this.dragBox) {
+            const sx = width / this.canvas.width;
+            const sy = height / this.canvas.height;
+            this.dragBox = {
+                x: this.dragBox.x * sx,
+                y: this.dragBox.y * sy,
+                width: this.dragBox.width * sx,
+                height: this.dragBox.height * sy
+            };
+        }
+        this.canvas.width = width;
+        this.canvas.height = height;
+    },
+
+    /**
+     * Render the Actual view. The canvas is the sensor frame; turning the
+     * camera turns the sky (image, target, moon, N marker) inside it.
+     * @param {object} fovData - FOV calculation results
+     * @param {object} target - Target object with size_max and size_min, or null
      */
     render(fovData, target) {
         if (!this.ctx) return;
 
         this.clear();
 
-        // Redraw DSS background if available
-        if (this.dssImage) {
-            this.ctx.drawImage(this.dssImage, 0, 0, this.canvas.width, this.canvas.height);
-        }
-
         const width = this.canvas.width;
         const height = this.canvas.height;
+        const skyAngle = -(this.dragBoxAngle || 0) * Math.PI / 180;
+        const scale = width / fovData.fovWidthArcmin;     // pixels per arcminute
 
-        // Calculate scale: pixels per arcminute
-        const scaleX = width / fovData.fovWidthArcmin;
-        const scaleY = height / fovData.fovHeightArcmin;
+        this.ctx.save();
+        this.ctx.translate(width / 2, height / 2);
+        this.ctx.rotate(skyAngle);
 
-        // Draw FOV border (white rectangle)
-        this.drawFOVBorder(width, height);
+        // The sky image is a square covering the frame's diagonal, so it
+        // fills the frame at any angle
+        if (this.dssImage) {
+            const side = Math.hypot(fovData.fovWidthArcmin, fovData.fovHeightArcmin) * scale;
+            this.ctx.drawImage(this.dssImage, -side / 2, -side / 2, side, side);
+        }
 
-        // Draw target if it exists
         if (target && target.size_max && target.size_min) {
-            this.drawTarget(
-                width / 2,
-                height / 2,
-                target.size_max * scaleX,
-                target.size_min * scaleY
-            );
+            this.drawTarget(0, 0, target.size_max * scale, target.size_min * scale);
         }
 
-        // Draw moon if enabled
         if (this.showMoon) {
-            const moonDiameter = FOVCalculations.getFullMoonDiameter();
-            const moonRadiusX = (moonDiameter * scaleX) / 2;
-            const moonRadiusY = (moonDiameter * scaleY) / 2;
-
-            // Position in center
-            const moonX = width / 2;
-            const moonY = height / 2;
-
-            this.drawMoon(moonX, moonY, moonRadiusX, moonRadiusY);
+            const moonRadius = FOVCalculations.getFullMoonDiameter() * scale / 2;
+            this.drawMoon(0, 0, moonRadius, moonRadius);
         }
+        this.ctx.restore();
+
+        this.drawFOVBorder(width, height);
+        if (this.showCrosshair) this.drawCenterCrosshair();
+        this.drawNorthMarker(skyAngle);
     },
 
     /**
@@ -202,17 +223,26 @@ const FOVCanvas = {
     },
 
     /**
-     * Draw fixed N marker at top center, always unrotated
+     * Draw the N marker just inside the frame edge, in the direction of north
+     * @param {number} skyAngle - Sky rotation in radians, 0 = north up
      */
-    drawFixedNorthMarker() {
-        const cx = this.canvas.width / 2;
+    drawNorthMarker(skyAngle) {
+        const inset = 12;                 // pixels from the frame edge to the marker's center
+        const ux = Math.sin(skyAngle);
+        const uy = -Math.cos(skyAngle);
+        const halfW = this.canvas.width / 2 - inset;
+        const halfH = this.canvas.height / 2 - inset;
+        const reach = Math.min(
+            Math.abs(ux) > 1e-9 ? halfW / Math.abs(ux) : Infinity,
+            Math.abs(uy) > 1e-9 ? halfH / Math.abs(uy) : Infinity
+        );
         this.ctx.save();
         this.ctx.globalCompositeOperation = 'difference';
         this.ctx.fillStyle = '#ffffff';
         this.ctx.font = 'bold 13px sans-serif';
         this.ctx.textAlign = 'center';
-        this.ctx.textBaseline = 'top';
-        this.ctx.fillText('N', cx, 6);
+        this.ctx.textBaseline = 'middle';
+        this.ctx.fillText('N', this.canvas.width / 2 + ux * reach, this.canvas.height / 2 + uy * reach);
         this.ctx.restore();
     },
 
@@ -352,25 +382,20 @@ const FOVCanvas = {
     },
 
     /**
-     * Initialize drag box, centered on canvas by default or at a given
-     * pixel center when restoring a previously-set custom center.
-     * @param {number} fovWidthArcmin
-     * @param {number} fovHeightArcmin
-     * @param {{x:number,y:number}|null} centerOffsetPx - box center in canvas pixels
+     * Initialize the drag box at the canvas center. The box is the sensor
+     * frame, a third of the Wider image each way.
      */
-    initDragBox(fovWidthArcmin, fovHeightArcmin, centerOffsetPx = null) {
-        const largeArcmin = fovWidthArcmin * 3;
+    initDragBox() {
         const boxW = Math.round(this.canvas.width / 3);
         const boxH = Math.round(this.canvas.height / 3);
-        const cx = centerOffsetPx ? centerOffsetPx.x : this.canvas.width / 2;
-        const cy = centerOffsetPx ? centerOffsetPx.y : this.canvas.height / 2;
+        const cx = this.canvas.width / 2;
+        const cy = this.canvas.height / 2;
         this.dragBox = {
             x: Math.round(cx - boxW / 2),
             y: Math.round(cy - boxH / 2),
             width: boxW,
             height: boxH
         };
-        this.clampDragBox();
     },
 
     /**

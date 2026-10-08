@@ -5,6 +5,7 @@
  */
 
 const YearlyObservabilityView = {
+    followsCurrentTarget: true,     // redraws on current-target-changed
     _resizeObserver: null,
     currentTarget: null,
     lastGraphData: null,
@@ -58,6 +59,10 @@ const YearlyObservabilityView = {
             this._locationChangedHandler = () => this.calculateYearly();
             document.addEventListener('selected-location-changed', this._locationChangedHandler);
         }
+        if (!this._targetChangedHandler) {
+            this._targetChangedHandler = () => this.calculateYearly();
+            document.addEventListener('current-target-changed', this._targetChangedHandler);
+        }
     },
 
     /**
@@ -71,6 +76,10 @@ const YearlyObservabilityView = {
         if (this._locationChangedHandler) {
             document.removeEventListener('selected-location-changed', this._locationChangedHandler);
             this._locationChangedHandler = null;
+        }
+        if (this._targetChangedHandler) {
+            document.removeEventListener('current-target-changed', this._targetChangedHandler);
+            this._targetChangedHandler = null;
         }
     },
 

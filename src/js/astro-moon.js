@@ -236,6 +236,82 @@ function getMinMoonSeparation(startJD, endJD, raHours, decDeg, latitude, longitu
 }
 
 /**
+ * How much fainter the moon is than at full, in magnitudes, from its
+ * illuminated fraction. Phase law of Krisciunas & Schaefer (1991).
+ * @param {number} illuminationPercent - Illuminated fraction, 0-100
+ * @returns {number} Magnitudes fainter than full (0 at full, ~8.9 at new)
+ */
+function getMoonPhaseDimming(illuminationPercent) {
+    const fraction = illuminationPercent / 100;
+    const phaseAngle = radiansToDegrees(Math.acos(Math.max(-1, Math.min(1, 2 * fraction - 1))));
+    return 0.026 * phaseAngle + 4e-9 * Math.pow(phaseAngle, 4);
+}
+
+/**
+ * Whether the moon is above the horizon at any moment in a window.
+ * Uses the same horizon threshold as calculateMoonRiseSet.
+ * @param {number} startJD - Window start (normally astronomical dusk)
+ * @param {number} endJD - Window end (normally astronomical dawn)
+ * @param {number} latitude - Observer latitude (degrees)
+ * @param {number} longitude - Observer longitude (degrees, West is negative)
+ * @param {number} elevation - Observer elevation (meters)
+ * @returns {boolean}
+ */
+function isMoonUpDuring(startJD, endJD, latitude, longitude, elevation) {
+    const horizonDepression = calculateHorizonDepression(elevation);
+    const stepSize = APP_CONFIG.TARGET_SEARCH_STEP_SIZE;
+    const steps = Math.ceil((endJD - startJD) / stepSize);
+
+    for (let i = 0; i <= steps; i++) {
+        const jd = Math.min(startJD + i * stepSize, endJD);
+        const moonPos = getMoonPosition(jd);
+        if (getAltitude(jd, moonPos.ra, moonPos.dec, latitude, longitude) >= horizonDepression) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/**
+ * Ecliptic coordinates of an equatorial position (J2000 obliquity).
+ * @param {number} raHours - Right ascension (hours)
+ * @param {number} decDeg - Declination (degrees)
+ * @returns {Object} { longitude: degrees 0-360, latitude: degrees }
+ */
+function getEclipticCoordinates(raHours, decDeg) {
+    const obliquity = degreesToRadians(23.4393);
+    const ra = hoursToRadians(raHours);
+    const dec = degreesToRadians(decDeg);
+    const lambda = Math.atan2(
+        Math.sin(ra) * Math.cos(obliquity) + Math.tan(dec) * Math.sin(obliquity),
+        Math.cos(ra)
+    );
+    const beta = Math.asin(
+        Math.sin(dec) * Math.cos(obliquity) - Math.cos(dec) * Math.sin(obliquity) * Math.sin(ra)
+    );
+    return {
+        longitude: (radiansToDegrees(lambda) + 360) % 360,
+        latitude: radiansToDegrees(beta)
+    };
+}
+
+/**
+ * How far the moon is east of a target in ecliptic longitude. Negative while
+ * the moon is approaching (it moves east about 13° a day), positive once it
+ * has passed; it runs smoothly through 0 and ±180 over a lunar month.
+ * @param {number} jd - Julian Date
+ * @param {number} raHours - Target right ascension (hours)
+ * @param {number} decDeg - Target declination (degrees)
+ * @returns {number} Degrees, -180 to 180
+ */
+function getMoonLongitudeOffset(jd, raHours, decDeg) {
+    const moonPos = getMoonPosition(jd);
+    const offset = getEclipticCoordinates(moonPos.ra, moonPos.dec).longitude -
+        getEclipticCoordinates(raHours, decDeg).longitude;
+    return ((offset + 540) % 360) - 180;
+}
+
+/**
  * Calculate horizon depression due to elevation
  * @param {number} elevationMeters - Observer elevation in meters
  * @returns {number} Horizon depression in degrees

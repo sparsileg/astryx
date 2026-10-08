@@ -80,7 +80,6 @@ const TOOLTIPS = {
     to_findTargets: 'Generate optimal targets and target\ncombinations from source data',
     to_source:      'Source of data to use',
     to_startTime:   'Start of the imaging session',
-    ts_PIN:         'Add current target to the Pinned\nTargets list',
     ts_catalog:     'Include objects from the selected\ncatalog(s)',
     ts_createIP:    'Create Imaging Program from\nthe results',
     ts_limitMag:    'Show objects brighter than this\nvalue (lower number = brighter).\nLeave blank to disable filtering',

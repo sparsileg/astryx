@@ -100,7 +100,7 @@ const TUTORIAL_TARGET_FILTERING = {
             id: 'filtered-results',
             type: 'callout',
             title: 'Filtered Results',
-            body: 'Look in the <strong>Results</strong> card to view the filtered results. The count above the list shows how many unique targets match; you can scroll through the entire set and more are loaded as you go. Filtered results are shown in random order, so the order may change as you reapply the filters. Each row also has Pinned, To Do, and imaging-status badges, as described in the Target Search tutorial.<br><br>Click on one of the displayed objects to make it the <strong>Current Target</strong> and open its detail panel.',
+            body: 'Look in the <strong>Results</strong> card to view the filtered results. The count above the list shows how many unique targets match; you can scroll through the entire set and more are loaded as you go. Filtered results are shown in random order, so the order may change as you reapply the filters. Each row also has Pinned, To Do, and imaging-status badges, as described in the Target Search tutorial.<br><br>Click on one of the displayed objects to make it the <strong>Current Target</strong> and open its Target Details.',
             target: '#target-filter-results',
             position: 'left',
             scrollTo: true,

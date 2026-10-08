@@ -4,6 +4,7 @@
  */
 
 const DailyVisibilityView = {
+    followsCurrentTarget: true,     // redraws on current-target-changed
     container: null,
     currentData: null,
     TIMELINE_HEIGHT: 300,
@@ -63,6 +64,10 @@ const DailyVisibilityView = {
             this._locationChangedHandler = () => this.recalculate();
             document.addEventListener('selected-location-changed', this._locationChangedHandler);
         }
+        if (!this._targetChangedHandler) {
+            this._targetChangedHandler = () => this.recalculate();
+            document.addEventListener('current-target-changed', this._targetChangedHandler);
+        }
     },
 
     /**
@@ -78,6 +83,10 @@ const DailyVisibilityView = {
         if (this._locationChangedHandler) {
             document.removeEventListener('selected-location-changed', this._locationChangedHandler);
             this._locationChangedHandler = null;
+        }
+        if (this._targetChangedHandler) {
+            document.removeEventListener('current-target-changed', this._targetChangedHandler);
+            this._targetChangedHandler = null;
         }
     },
 
@@ -486,130 +495,84 @@ const DailyVisibilityView = {
     },
 
     /**
+     * Fill an info card with label/value rows. A row with a null label
+     * is a note spanning both columns.
+     */
+    renderCardRows(containerId, rows) {
+        const container = document.getElementById(containerId);
+        container.replaceChildren();
+        for (const [label, value] of rows) {
+            const valueEl = document.createElement('span');
+            valueEl.className = 'dv-card-value';
+            valueEl.textContent = value;
+            if (label === null) {
+                valueEl.classList.add('dv-card-note');
+            } else {
+                const labelEl = document.createElement('span');
+                labelEl.className = 'dv-card-label';
+                labelEl.textContent = `${label}:`;
+                container.appendChild(labelEl);
+            }
+            container.appendChild(valueEl);
+        }
+    },
+
+    /**
      * Populate Moon Details card
      */
     populateMoonDetails(data) {
         const moonPhase = getNightMoonPhase(data.duskJD, data.dawnJD);
-
-        document.getElementById('moon-phase-name').textContent = moonPhase.phaseName;
-        document.getElementById('moon-illumination').textContent =
-            `${Math.round(moonPhase.illumination)}% illuminated`;
         const moonCard = document.getElementById('dv-moon-details');
         if (moonCard) moonCard.dataset.emoji = moonPhase.phaseEmoji;
 
-        // Moon rise/set times
-        let riseSetHTML = '';
+        const rows = [
+            ['Phase', moonPhase.phaseName],
+            ['Illuminated', `${Math.round(moonPhase.illumination)}%`]
+        ];
         if (data.moonRiseSet.moonrise) {
-            const riseDate = TimeUtils.jdToDate(data.moonRiseSet.moonrise);
-            const riseStr = TimeUtils.formatLocalTimeWithDate(riseDate, data);
-            riseSetHTML += `Rise: ${riseStr}<br>`;
+            rows.push(['Rise', TimeUtils.formatLocalTimeWithDate(TimeUtils.jdToDate(data.moonRiseSet.moonrise), data)]);
         }
         if (data.moonRiseSet.moonset) {
-            const setDate = TimeUtils.jdToDate(data.moonRiseSet.moonset);
-            const setStr = TimeUtils.formatLocalTimeWithDate(setDate, data);
-            riseSetHTML += `Set: ${setStr}`;
+            rows.push(['Set', TimeUtils.formatLocalTimeWithDate(TimeUtils.jdToDate(data.moonRiseSet.moonset), data)]);
         }
-        document.getElementById('moon-rise-set').innerHTML = riseSetHTML || 'No rise/set during observation';
+        if (!data.moonRiseSet.moonrise && !data.moonRiseSet.moonset) {
+            rows.push([null, 'No rise/set during observation']);
+        }
+        this.renderCardRows('dv-moon-rows', rows);
     },
 
     /**
      * Populate Target Details card
      */
     populateTargetDetails(data) {
-        // Calculate peak altitude at meridian crossing
         const targetRA = data.ra;
         const targetDEC = data.dec;
         const latitude = data.latitude;
         const longitude = data.longitude;
+        const hasCoords = !isNaN(targetRA) && !isNaN(targetDEC);
 
-        let peakAltitudeHTML = '';
-        if (!isNaN(targetRA) && !isNaN(targetDEC)) {
-            let maxAltitude = -999;
-            let maxAltitudeJD = null;
-
-            // Sample at 1-minute intervals within the observation window
-            const oneMinute = 1 / 1440;
-            let currentJD = data.duskJD;
-
-            while (currentJD <= data.dawnJD) {
-                const altitude = getAltitude(currentJD, targetRA, targetDEC, latitude, longitude);
-
-                if (altitude > maxAltitude) {
-                    maxAltitude = altitude;
-                    maxAltitudeJD = currentJD;
-                }
-
-                currentJD += oneMinute;
-            }
-
-            if (maxAltitudeJD) {
-                const peakTime = TimeUtils.jdToDate(maxAltitudeJD);
-                const isDST = SettingsManager.isDSTActive(peakTime, data);
-                const offsetHours = isDST ? data.timezone + 1 : data.timezone;
-                const adjustedTime = new Date(peakTime.getTime() + offsetHours * 3600000);
-                const peakTimeStr = adjustedTime.toLocaleTimeString('en-US', {
-                    hour12: false,
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    timeZone: 'UTC'
-                });
-
-                // Calculate azimuth at peak altitude
-                let peakAzimuth = getAzimuth(maxAltitudeJD, targetRA, targetDEC, latitude, longitude);
-                // Normalize 360° to 0° (both represent north)
-                if (peakAzimuth >= 359.5) peakAzimuth = 0; // Round 360 to 0
-                peakAltitudeHTML = `Peak Altitude: ${maxAltitude.toFixed(1)}° at ${peakTimeStr}<br>Peak Azimuth: ${peakAzimuth.toFixed(1)}°`;
-            }
-        }
-
-        document.getElementById('target-peak-altitude').innerHTML = peakAltitudeHTML || 'N/A';
-
-        document.getElementById('target-altitude').textContent =
-            `Minimum altitude: ${data.minAltitude}°`;
-
-        // Target rise/set times
-        let riseSetHTML = '';
+        const rows = [['Min altitude', `${data.minAltitude}°`]];
 
         // Rise time
         if (data.riseJD) {
-            const riseDate = TimeUtils.jdToDate(data.riseJD);
-            const riseStr = TimeUtils.formatLocalTimeWithDate(riseDate, data);
-
-            // Check if rise is before dusk
-            if (data.riseJD < data.duskJD) {
-                riseSetHTML += `Rise: ${riseStr}*<br>`;
-            } else {
-                riseSetHTML += `Rise: ${riseStr}<br>`;
-            }
+            rows.push(['Rise', TimeUtils.formatLocalTimeWithDate(TimeUtils.jdToDate(data.riseJD), data)]);
         } else {
-            riseSetHTML += `Rise: Before dusk<br>`;
+            rows.push(['Rise', 'Before dusk']);
         }
 
-        // Set time
-        if (data.setJD) {
-            const setDate = TimeUtils.jdToDate(data.setJD);
-            const setStr = TimeUtils.formatLocalTimeWithDate(setDate, data);
-
-            // Check if set is after dawn
-            if (data.setJD > data.dawnJD) {
-                riseSetHTML += `Set: ${setStr}*`;
-            } else {
-                riseSetHTML += `Set: ${setStr}`;
-            }
-        } else if (data.actualSetJD) {
-            // Extended search found set time after dawn
-            const actualSetDate = TimeUtils.jdToDate(data.actualSetJD);
-            const actualSetStr = TimeUtils.formatLocalTimeWithDate(actualSetDate, data);
-            riseSetHTML += `Set: ${actualSetStr}*`;
+        // Set time; actualSetJD is an extended search's set time after dawn
+        const setJD = data.setJD ?? data.actualSetJD;
+        if (setJD) {
+            rows.push(['Set', TimeUtils.formatLocalTimeWithDate(TimeUtils.jdToDate(setJD), data)]);
         } else {
-            riseSetHTML += `Set: After dawn`;
+            rows.push(['Set', 'After dawn']);
         }
 
         // Below-min-alt dip between two visible segments (Issue #251) —
         // findTargetRise/findTargetSet only represent a single window and
         // silently drop the earlier segment in this case. Detected
         // separately here without altering their return values.
-        if (!isNaN(targetRA) && !isNaN(targetDEC)) {
+        if (hasCoords) {
             const location = data.useHorizon ? DataManager.getLocation(data.locationName) : null;
             const horizonArray = (data.useHorizon && location && location.horizon) ? location.horizon : null;
             const dip = findVisibilityDip(data.duskJD, data.dawnJD, targetRA, targetDEC,
@@ -617,82 +580,84 @@ const DailyVisibilityView = {
             if (dip) {
                 const dipStartStr = TimeUtils.formatLocalTimeWithDate(TimeUtils.jdToDate(dip.dipStartJD), data);
                 const dipEndStr = TimeUtils.formatLocalTimeWithDate(TimeUtils.jdToDate(dip.dipEndJD), data);
-                riseSetHTML += `<br>Dips below min altitude ${dipStartStr}–${dipEndStr}`;
+                rows.push(['Dips below min', `${dipStartStr}–${dipEndStr}`]);
             }
         }
 
-        document.getElementById('target-rise-set').innerHTML = riseSetHTML;
-
-        // Display blocked time
-        const blockedElement = document.getElementById('target-blocked');
-        if (blockedElement) {
-            if (data.blockedMinutes !== undefined && data.blockedMinutes > 0) {
-                blockedElement.textContent = `Blocked: ${data.blockedMinutes} min`;
-            } else {
-                blockedElement.textContent = 'Blocked: -';
+        // Peak altitude, sampled at 1-minute intervals within the observation window
+        let maxAltitude = -999;
+        let maxAltitudeJD = null;
+        if (hasCoords) {
+            const oneMinute = 1 / 1440;
+            for (let currentJD = data.duskJD; currentJD <= data.dawnJD; currentJD += oneMinute) {
+                const altitude = getAltitude(currentJD, targetRA, targetDEC, latitude, longitude);
+                if (altitude > maxAltitude) {
+                    maxAltitude = altitude;
+                    maxAltitudeJD = currentJD;
+                }
             }
         }
+
+        if (maxAltitudeJD) {
+            const peakTime = TimeUtils.jdToDate(maxAltitudeJD);
+            const isDST = SettingsManager.isDSTActive(peakTime, data);
+            const offsetHours = isDST ? data.timezone + 1 : data.timezone;
+            const adjustedTime = new Date(peakTime.getTime() + offsetHours * 3600000);
+            const peakTimeStr = adjustedTime.toLocaleTimeString('en-US', {
+                hour12: false,
+                hour: '2-digit',
+                minute: '2-digit',
+                timeZone: 'UTC'
+            });
+
+            rows.push(['Peak altitude', `${maxAltitude.toFixed(1)}° at ${peakTimeStr}`]);
+        } else {
+            rows.push(['Peak altitude', 'N/A']);
+        }
+
+        rows.push(['Blocked', data.blockedMinutes > 0 ? `${data.blockedMinutes} min` : '—']);
+
+        this.renderCardRows('dv-target-rows', rows);
     },
 
     /**
-     * Populate Target-Moon Separation card
+     * Populate Target-Moon Separation card: the moon dial at the closer of
+     * the separations at the start and end of the target's night
      */
     populateSeparationDetails(data) {
-        // For rise: use target rise if it's after dusk, otherwise use dusk
-        let riseTime, riseLabel;
-        if (data.riseJD && data.riseJD >= data.duskJD) {
-            riseTime = data.riseJD;
-            riseLabel = 'Target rise:';
-        } else {
-            riseTime = data.duskJD;
-            riseLabel = 'Dusk:';
-        }
-        const moonPosRise = getMoonPosition(riseTime);
-        const separationRise = getAngularSeparation(moonPosRise.ra, moonPosRise.dec, data.ra, data.dec);
+        // Start: target rise if it's after dusk, otherwise dusk
+        const riseTime = (data.riseJD && data.riseJD >= data.duskJD) ? data.riseJD : data.duskJD;
 
-        // For set: use target set if it's before dawn, otherwise use dawn
-        let setTime, setLabel;
+        // End: target set if it's before dawn, otherwise dawn
+        let setTime;
         if (data.setJD && data.setJD <= data.dawnJD) {
             setTime = data.setJD;
-            setLabel = 'Target set:';
         } else if (data.actualSetJD && data.actualSetJD <= data.dawnJD) {
             setTime = data.actualSetJD;
-            setLabel = 'Target set:';
         } else {
             setTime = data.dawnJD;
-            setLabel = 'Dawn:';
         }
-        const moonPosSet = getMoonPosition(setTime);
-        const separationSet = getAngularSeparation(moonPosSet.ra, moonPosSet.dec, data.ra, data.dec);
 
-        // Display rise separation
-        document.getElementById('separation-dusk').innerHTML =
-            `<span class="info-label" style="display: inline;">${riseLabel}</span> ${separationRise.toFixed(1)}°`;
-        document.getElementById('separation-dusk-desc').textContent =
-            this.getSeparationDescription(separationRise);
+        const separationAt = (jd) => {
+            const moonPos = getMoonPosition(jd);
+            return getAngularSeparation(moonPos.ra, moonPos.dec, data.ra, data.dec);
+        };
+        const separationRise = separationAt(riseTime);
+        const separationSet = separationAt(setTime);
 
-        // Display set separation
-        document.getElementById('separation-dawn').innerHTML =
-            `<span class="info-label" style="display: inline;">${setLabel}</span> ${separationSet.toFixed(1)}°`;
-        document.getElementById('separation-dawn-desc').textContent =
-            this.getSeparationDescription(separationSet);
-    },
-
-    /**
-     * Get description of separation impact
-     */
-    getSeparationDescription(separation) {
-        if (separation < 20) {
-            return 'Very close - severe interference';
-        } else if (separation < 40) {
-            return 'Close - significant interference';
-        } else if (separation < 60) {
-            return 'Moderate distance - some interference';
-        } else if (separation < 90) {
-            return 'Good distance - minimal interference';
-        } else {
-            return 'Excellent distance - negligible interference';
-        }
+        const moonPhase = getNightMoonPhase(data.duskJD, data.dawnJD);
+        const night = {
+            moonUp: data.moonUp,
+            separation: Math.min(separationRise, separationSet),
+            // Sampled at the same point of every night so the dial steps evenly
+            longitudeOffset: getMoonLongitudeOffset((riseTime + setTime) / 2, data.ra, data.dec),
+            eclipticLatitude: getEclipticCoordinates(data.ra, data.dec).latitude,
+            illumination: moonPhase.illumination,
+            waxing: moonPhase.phase < 180,
+            latitude: data.latitude
+        };
+        DVMoonDial.update(document.getElementById('dv-moon-dial'), night);
+        document.getElementById('dv-moon-interference').textContent = DVMoonDial.interferenceLevel(night);
     },
 
     /**

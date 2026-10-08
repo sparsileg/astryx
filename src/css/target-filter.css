@@ -22,12 +22,6 @@
     text-align: center;
 }
 
-#filter-results-card {
-    position: relative;
-    overflow: hidden;
-    transition: min-height 0.22s ease;
-}
-
 #filter-results-card .card-header {
     margin-bottom: 0.25rem;
 }

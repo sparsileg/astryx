@@ -769,6 +769,21 @@ const TargetFilter = {
      * Requires ToDoView._imagingProjects to be loaded for an accurate imaging badge;
      * falls back to 'none' until that cache is populated.
      */
+    /**
+     * Redraw the badges on the results already shown, in place, so the list
+     * keeps its order and scroll position after a Pin or To Do change
+     */
+    refreshResultBadges() {
+        const resultsDiv = document.getElementById('target-filter-results');
+        if (!resultsDiv) return;
+
+        resultsDiv.querySelectorAll('.target-result').forEach((row, i) => {
+            const target = this.allResults[i];
+            const badges = row.querySelector('.target-result-badges');
+            if (target && badges) badges.innerHTML = this.buildBadgesHtml(target);
+        });
+    },
+
     buildBadgesHtml(target) {
         const designators = this.getTargetDesignators(target);
 
@@ -1080,10 +1095,6 @@ const TargetFilter = {
      */
     resetFiltersUI() {
         this._doResetFiltersUI(false);
-        // Reset should bring the results list back into view
-        if (typeof VisibilityTargets !== 'undefined') {
-            VisibilityTargets.hideDetailPanel();
-        }
         UIManager.showToast('Filters reset', 'success');
     },
 

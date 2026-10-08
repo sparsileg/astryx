@@ -4,12 +4,12 @@
  */
 
 const FOVView = {
+    followsCurrentTarget: true,     // redraws on current-target-changed
     currentTarget: null,
     showDSS: false,
     showTarget: true,
     largerMode: false,
     actualModeState: null,
-    dssLockedSize: null,
     lastToastKey: null,
     dssRenderGeneration: 0,
     lastDSSFailureToastKey: null,
@@ -32,6 +32,12 @@ const FOVView = {
         appDiv.appendChild(content);
         this.init();
 
+        // Rebuild for a new current target, as on a fresh visit
+        if (!this._targetChangedHandler) {
+            this._targetChangedHandler = () => this.render();
+            document.addEventListener('current-target-changed', this._targetChangedHandler);
+        }
+
         // Dispatch view loaded event
         document.dispatchEvent(new CustomEvent('fov-view-loaded'));
     },
@@ -43,12 +49,13 @@ const FOVView = {
         // Reset DSS state on each view load
         this.showDSS = false;
         this.showTarget = true;
-        this.dssLockedSize = null;
         this.lastToastKey = null;
         this.largerMode = false;
         this.dssRenderGeneration = 0;
         this.actualModeState = null;
         this._offsetCenter = null;
+        this._widerCenter = null;
+        this._boxDragged = false;
         this.lastDSSFailureToastKey = null;
         // _lastPurgeCheck intentionally NOT reset here — purge cadence (Issue #221)
         // tracks across view loads within the app session, not per-visit.
@@ -74,6 +81,26 @@ const FOVView = {
 
         // Setup event listeners
         this.setupEventListeners();
+
+        // Refit the view to its space when the window or the card resizes
+        if (this._resizeObserver) this._resizeObserver.disconnect();
+        if (this._windowResizeHandler) window.removeEventListener('resize', this._windowResizeHandler);
+        let resizeTimer = null;
+        this._windowResizeHandler = () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => this.refit(), 200);
+        };
+        window.addEventListener('resize', this._windowResizeHandler);
+        const canvasWrap = document.querySelector('.fov-canvas-wrap');
+        if (canvasWrap && typeof ResizeObserver !== 'undefined') {
+            let lastWidth = canvasWrap.clientWidth;
+            this._resizeObserver = new ResizeObserver(() => {
+                if (canvasWrap.clientWidth === lastWidth) return;
+                lastWidth = canvasWrap.clientWidth;
+                this._windowResizeHandler();
+            });
+            this._resizeObserver.observe(canvasWrap);
+        }
 
         // Moon defaults to off
         const showMoonCheckbox = document.getElementById('fov-show-moon');
@@ -111,9 +138,6 @@ const FOVView = {
             });
         }
 
-        // Always show rotation control
-        const rc = document.getElementById('fov-rotation-control');
-        if (rc) rc.style.display = 'block';
         const rotInput = document.getElementById('fov-rotation-input');
         if (rotInput) rotInput.value = 0;
 
@@ -200,9 +224,6 @@ const FOVView = {
 
         // Calculate if both are selected
         if (savedTelescope && savedSensor) {
-            if (this.showDSS) {
-                this.lockCanvasSize();
-            }
             this.calculate();
         }
     },
@@ -292,14 +313,8 @@ const FOVView = {
         if (showDSSCheckbox) {
             showDSSCheckbox.addEventListener('change', async (e) => {
                 this.showDSS = e.target.checked;
-                if (this.showDSS) {
-                    this.lockCanvasSize();
-                    await this.calculate();
-                } else {
-                    FOVCanvas.dssImage = null;
-                    this.unlockCanvasSize();
-                    this.calculate();
-                }
+                if (!this.showDSS) FOVCanvas.dssImage = null;
+                await this.calculate();
             });
         }
 
@@ -313,7 +328,7 @@ const FOVView = {
                 option.classList.add('active');
                 this.largerMode = option.dataset.mode === 'larger';
                 if (this.largerMode) {
-                    // Offset center (if any) is preserved on re-entry — Issue #223
+                    // Wider centers on the current center, dragged-to or target — Issue #223
                     // Save current checkbox states before switching to wider
                     this.actualModeState = {
                         showTarget: document.getElementById('fov-show-target')?.checked,
@@ -333,48 +348,11 @@ const FOVView = {
                         if (showMoon) { showMoon.checked = this.actualModeState.showMoon; FOVCanvas.setShowMoon(this.actualModeState.showMoon); }
                     }
 
-                    // Capture new center from drag box position — Issue #96
-                    const coordsEl = document.getElementById('fov-center-coords');
-                    if (FOVCanvas.dragBox && this.largeFOVData) {
-                        const canvasCX = FOVCanvas.canvas.width / 2;
-                        const canvasCY = FOVCanvas.canvas.height / 2;
-                        const boxCX = FOVCanvas.dragBox.x + FOVCanvas.dragBox.width / 2;
-                        const boxCY = FOVCanvas.dragBox.y + FOVCanvas.dragBox.height / 2;
-
-                        const arcSecPerPixelX = (this.largeFOVData.fovWidthArcmin * 60 * 3) / FOVCanvas.canvas.width;
-                        const arcSecPerPixelY = (this.largeFOVData.fovHeightArcmin * 60 * 3) / FOVCanvas.canvas.height;
-
-                        const offsetX = (canvasCX - boxCX) * arcSecPerPixelX;
-                        const offsetY = (canvasCY - boxCY) * arcSecPerPixelY;
-
-                        const targetRA  = this.currentTarget.ra * 15;
-                        const targetDec = this.currentTarget.dec;
-
-                        const centerRA  = targetRA + (offsetX / 3600) / Math.cos(targetDec * Math.PI / 180);
-                        const centerDec = targetDec + (offsetY / 3600);
-
-                        this._offsetCenter = { raDeg: centerRA, decDeg: centerDec };
-
-                        // Update center coords display — Issue #96
-                        if (coordsEl) {
-                            const raNorm = ((centerRA % 360) + 360) % 360;
-                            const raHours = raNorm / 15;
-                            const raH = Math.floor(raHours);
-                            const raM = Math.floor((raHours - raH) * 60);
-                            const raS = ((raHours - raH) * 60 - raM) * 60;
-                            const decSign = centerDec >= 0 ? '+' : '-';
-                            const decAbs = Math.abs(centerDec);
-                            const decD = Math.floor(decAbs);
-                            const decM = Math.floor((decAbs - decD) * 60);
-                            const decS = ((decAbs - decD) * 60 - decM) * 60;
-                            const raStr = `${String(raH).padStart(2,'0')}h ${String(raM).padStart(2,'0')}m ${raS.toFixed(1).padStart(4,'0')}s`;
-                            const decStr = `${decSign}${String(decD).padStart(2,'0')}° ${String(decM).padStart(2,'0')}′ ${decS.toFixed(1).padStart(4,'0')}″`;
-                            coordsEl.textContent = `Center: ${raStr} / ${decStr}`;
-                            coordsEl.style.display = 'block';
-                        }
-                    } else {
-                        this._offsetCenter = null;
-                        if (coordsEl) coordsEl.style.display = 'none';
+                    // A dragged frame becomes the new center, and the original
+                    // target stops being the reference — Issue #96
+                    if (FOVCanvas.dragBox && this.largeFOVData && this._boxDragged) {
+                        this._offsetCenter = this.dragBoxCenter(this.largeFOVData);
+                        this.applyOffTargetState();
                     }
 
                     FOVCanvas.removeDragListeners();
@@ -389,7 +367,7 @@ const FOVView = {
             rotInput.addEventListener('input', () => {
                 FOVCanvas.dragBoxAngle = parseFloat(rotInput.value) || 0;
                 if (this.largerMode) this.redrawLargeMode(this.largeFOVData);
-                else if (this.showDSS && this.currentTarget) this.fetchAndRenderDSS(this.lastFOVData);
+                else this.drawActual(this.lastFOVData);
             });
         }
 
@@ -401,7 +379,7 @@ const FOVView = {
                 FOVCanvas.dragBoxAngle = ((FOVCanvas.dragBoxAngle - 1) % 360);
                 if (rotInput) rotInput.value = FOVCanvas.dragBoxAngle;
                 if (this.largerMode) this.redrawLargeMode(this.largeFOVData);
-                else if (this.showDSS && this.currentTarget) this.fetchAndRenderDSS(this.lastFOVData);
+                else this.drawActual(this.lastFOVData);
             };
             const stopCCW = () => {
                 clearTimeout(ccwTimeout);
@@ -427,7 +405,7 @@ const FOVView = {
                 FOVCanvas.dragBoxAngle = ((FOVCanvas.dragBoxAngle + 1) % 360);
                 if (rotInput) rotInput.value = FOVCanvas.dragBoxAngle;
                 if (this.largerMode) this.redrawLargeMode(this.largeFOVData);
-                else if (this.showDSS && this.currentTarget) this.fetchAndRenderDSS(this.lastFOVData);
+                else this.drawActual(this.lastFOVData);
             };
             const stopCW = () => {
                 clearTimeout(cwTimeout);
@@ -476,28 +454,51 @@ const FOVView = {
         if (!targetInfoDiv) return;
 
         if (!this.currentTarget) {
-            targetInfoDiv.innerHTML = '<p style="color: var(--text-secondary);">No target selected. Please select a target from Target Selection.</p>';
+            targetInfoDiv.innerHTML = '<p class="fov-placeholder">No target selected. Please select a target from Target Selection.</p>';
             return;
         }
 
-        const commonName = this.currentTarget.common || '';
+        // Off target: the same rows, blank, so the card keeps its height
+        if (this._offsetCenter) {
+            const grid = document.createElement('div');
+            grid.className = 'fov-target-rows';
+            for (const label of ['Object:', 'Size:']) {
+                const labelEl = document.createElement('strong');
+                labelEl.textContent = label;
+                const valueEl = document.createElement('span');
+                valueEl.className = 'fov-target-value';
+                valueEl.textContent = '—';
+                grid.append(labelEl, valueEl);
+            }
+            targetInfoDiv.replaceChildren(grid);
+            return;
+        }
+
+        const commonName = this.currentTarget.common ?? '';
         const sizeMax = parseFloat(this.currentTarget.size_max) || 0;
         const sizeMin = parseFloat(this.currentTarget.size_min) || 0;
 
-        targetInfoDiv.innerHTML = `
-            <div style="display: grid; grid-template-columns: auto 1fr; gap: 0.5rem 1rem; align-items: center;">
-                <strong>Object:</strong>
-                <span>${this.currentTarget.object}</span>
-
-                ${commonName ? `
-                    <strong>Name:</strong>
-                    <span>${commonName}</span>
-                ` : ''}
-
-                <strong>Size:</strong>
-                <span>${sizeMax > 0 ? `${sizeMax.toFixed(1)} × ${sizeMin.toFixed(1)} arcmin` : 'Unknown'}</span>
-            </div>
-        `;
+        // The common name shares the Object line, so the card is the same
+        // height for every target; a name too long for it ends in an ellipsis
+        const objectText = commonName
+            ? `${this.currentTarget.object} (${commonName})`
+            : this.currentTarget.object;
+        const rows = [
+            ['Object:', objectText],
+            ['Size:', sizeMax > 0 ? `${sizeMax.toFixed(1)} × ${sizeMin.toFixed(1)} arcmin` : 'Unknown']
+        ];
+        const grid = document.createElement('div');
+        grid.className = 'fov-target-rows';
+        for (const [label, value] of rows) {
+            const labelEl = document.createElement('strong');
+            labelEl.textContent = label;
+            const valueEl = document.createElement('span');
+            valueEl.className = 'fov-target-value';
+            valueEl.textContent = value;
+            valueEl.title = value;
+            grid.append(labelEl, valueEl);
+        }
+        targetInfoDiv.replaceChildren(grid);
     },
 
     /**
@@ -534,7 +535,7 @@ const FOVView = {
 
         // Calculate field coverage if target exists
         let fieldCoverage = null;
-        if (this.currentTarget && this.currentTarget.size_max && this.currentTarget.size_min) {
+        if (this.currentTarget && this.currentTarget.size_max && this.currentTarget.size_min && !this._offsetCenter) {
             const targetSizeMax = parseFloat(this.currentTarget.size_max);
             const targetSizeMin = parseFloat(this.currentTarget.size_min);
 
@@ -582,21 +583,8 @@ const FOVView = {
         this.lastFOVData = fovData;
         this.displayResults(fovData, fieldCoverage);
 
-        // Prepare target data with numeric sizes for canvas rendering
-        const targetForCanvas = this.currentTarget && this.showTarget ? {
-            ...this.currentTarget,
-            size_max: parseFloat(this.currentTarget.size_max) || 0,
-            size_min: parseFloat(this.currentTarget.size_min) || 0
-        } : null;
-
-        // Render canvas
-        FOVCanvas.render(fovData, targetForCanvas);
-
-        // Render canvas
-        const moonNote = document.getElementById('fov-moon-note');
-        if (moonNote) {
-            moonNote.style.display = FOVCanvas.showMoon ? 'block' : 'none';
-        }
+        FOVCanvas.sizeToFrame(fovData);
+        this.drawActual(fovData);
 
         // Fetch and render DSS background if enabled
         if (this.showDSS && this.currentTarget) {
@@ -610,14 +598,46 @@ const FOVView = {
     },
 
     /**
+     * Resize the view to its space and redraw it
+     */
+    refit() {
+        if (!this.lastFOVData) return;
+        FOVCanvas.sizeToFrame(this.lastFOVData);
+        if (this.largerMode && this.largeFOVData) this.redrawLargeMode(this.largeFOVData);
+        else this.drawActual(this.lastFOVData);
+    },
+
+    /**
+     * Draw the Actual view: the frame with the sky turned by the camera angle
+     */
+    drawActual(fovData) {
+        if (!fovData) return;
+        const targetForCanvas = this.currentTarget && this.showTarget ? {
+            ...this.currentTarget,
+            size_max: parseFloat(this.currentTarget.size_max) || 0,
+            size_min: parseFloat(this.currentTarget.size_min) || 0
+        } : null;
+        FOVCanvas.render(fovData, targetForCanvas);
+
+        const moonNote = document.getElementById('fov-moon-note');
+        if (moonNote) {
+            moonNote.style.display = FOVCanvas.showMoon ? 'block' : 'none';
+        }
+        this.showActualModeCoords();
+    },
+
+    /**
      * Display calculation results
      */
     displayResults(fovData, fieldCoverage) {
         const resultsDiv = document.getElementById('fov-results');
         if (!resultsDiv) return;
 
-        const tgtHeight = Math.round((this.currentTarget.size_max*60)/fovData.resolution);
-        const tgtWidth = Math.round((this.currentTarget.size_min*60)/fovData.resolution);
+        // Target rows only while the frame is centered on a target with a size
+        const targetRows = fieldCoverage !== null ? `
+                <strong>Target Size:</strong>
+                <span>${Math.round((this.currentTarget.size_max*60)/fovData.resolution)} x ${Math.round((this.currentTarget.size_min*60)/fovData.resolution)} pixels</span>
+` : '';
 
         resultsDiv.innerHTML = `
             <div style="display: grid; grid-template-columns: auto 1fr; gap: 0.5rem 1rem; align-items: center;">
@@ -630,9 +650,7 @@ const FOVView = {
                 <strong>Resolution:</strong>
                 <span>${fovData.resolution.toFixed(2)} arcsec/pixel</span>
 
-                <strong>Target Size:</strong>
-                <span>${tgtHeight} x ${tgtWidth} pixels</span>
-
+${targetRows}
                 <strong>Dawes Limit:</strong>
                 <span>${fovData.dawesLimit.toFixed(2)} arcsec</span>
 
@@ -647,15 +665,15 @@ const FOVView = {
     /**
      * Get cache key for DSS image
      */
-    getDSSCacheKey(ra, dec, fovDeg) {
-        return `dss_${ra.toFixed(4)}_${dec.toFixed(4)}_${fovDeg.toFixed(4)}`;
+    getDSSCacheKey(ra, dec, fovDeg, widthPx, heightPx) {
+        return `dss_${ra.toFixed(4)}_${dec.toFixed(4)}_${fovDeg.toFixed(4)}_${widthPx}x${heightPx}`;
     },
 
     /**
      * Get cache key for larger DSS image (3x FOV)
      */
-    getDSSLargeCacheKey(ra, dec, fovDeg) {
-        return `dss_${ra.toFixed(4)}_${dec.toFixed(4)}_${fovDeg.toFixed(4)}_3x`;
+    getDSSLargeCacheKey(ra, dec, fovDeg, widthPx, heightPx) {
+        return `dss_${ra.toFixed(4)}_${dec.toFixed(4)}_${fovDeg.toFixed(4)}_${widthPx}x${heightPx}_3x`;
     },
 
     /**
@@ -736,16 +754,12 @@ const FOVView = {
         // the wrong telescope's image.
         const myGeneration = ++this.dssRenderGeneration;
 
-        // Use offset center from Wider mode drag box if available — Issue #96
-        const raDeg = this._offsetCenter ? this._offsetCenter.raDeg : this.currentTarget.ra * 15;
-        const decDeg = this._offsetCenter ? this._offsetCenter.decDeg : this.currentTarget.dec;
-        const canvas = FOVCanvas.canvas;
-        const width = canvas.width;
-        const height = canvas.height;
-
-        // Use the larger FOV dimension for the query
-        const fovDeg = Math.max(fovData.fovWidth, fovData.fovHeight);
-        const cacheKey = this.getDSSCacheKey(raDeg, decDeg, fovDeg);
+        const { raDeg, decDeg } = this.frameCenter();
+        // A square covering the frame's diagonal, so the sky can turn inside
+        // the frame without bare corners
+        const fovDeg = Math.hypot(fovData.fovWidth, fovData.fovHeight);
+        const sizePx = Math.round(APP_CONFIG.FOV_DSS_FRAME_PIXELS * fovDeg / Math.max(fovData.fovWidth, fovData.fovHeight));
+        const cacheKey = this.getDSSCacheKey(raDeg, decDeg, fovDeg, sizePx, sizePx);
 
         // Check cache first
         let dataUrl = await this.getDSSFromCache(cacheKey);
@@ -755,7 +769,7 @@ const FOVView = {
         if (!dataUrl) {
             const url = `${APP_CONFIG.APIS.DSS}` +
                 `&ra=${raDeg.toFixed(6)}&dec=${decDeg.toFixed(6)}` +
-                `&fov=${fovDeg.toFixed(6)}&width=600&height=600` +
+                `&fov=${fovDeg.toFixed(6)}&width=${sizePx}&height=${sizePx}` +
                 `&projection=TAN&format=jpg`;
 
             try {
@@ -786,54 +800,8 @@ const FOVView = {
         const img = new Image();
         img.onload = () => {
             if (myGeneration !== this.dssRenderGeneration) return;
-
-            FOVCanvas.clear();
-
-            const width = FOVCanvas.canvas.width;
-            const height = FOVCanvas.canvas.height;
-            const angle = (FOVCanvas.dragBoxAngle || 0) * Math.PI / 180;
-            const scaleX = width / fovData.fovWidthArcmin;
-            const scaleY = height / fovData.fovHeightArcmin;
-
-            // Draw image unrotated (north always up)
-            FOVCanvas.renderBackground(img);
-
-            // Rotate overlays around center to show camera orientation
-            FOVCanvas.ctx.save();
-            FOVCanvas.ctx.translate(width / 2, height / 2);
-            FOVCanvas.ctx.rotate(angle);
-            FOVCanvas.ctx.translate(-width / 2, -height / 2);
-
-            FOVCanvas.drawFOVBorder(width, height);
-
-            const targetForCanvas = this.currentTarget && this.showTarget ? {
-                ...this.currentTarget,
-                size_max: parseFloat(this.currentTarget.size_max) || 0,
-                size_min: parseFloat(this.currentTarget.size_min) || 0
-            } : null;
-
-            if (targetForCanvas && targetForCanvas.size_max && targetForCanvas.size_min) {
-                FOVCanvas.drawTarget(
-                    width / 2, height / 2,
-                    targetForCanvas.size_max * scaleX,
-                    targetForCanvas.size_min * scaleY
-                );
-            }
-
-            if (FOVCanvas.showMoon) {
-                const moonDiameter = FOVCalculations.getFullMoonDiameter();
-                FOVCanvas.drawMoon(width / 2, height / 2,
-                    (moonDiameter * scaleX) / 2,
-                    (moonDiameter * scaleY) / 2);
-            }
-
-            if (FOVCanvas.showCrosshair) FOVCanvas.drawCenterCrosshair();
-            FOVCanvas.ctx.restore();
-
-            // Draw fixed N marker always pointing up
-            FOVCanvas.drawFixedNorthMarker();
-
-            this.showActualModeCoords();
+            FOVCanvas.dssImage = img;
+            this.drawActual(fovData);
         };
         img.src = dataUrl;
     },
@@ -850,13 +818,18 @@ const FOVView = {
         // Generation guard (Issue #221) — see fetchAndRenderDSS for rationale.
         const myGeneration = ++this.dssRenderGeneration;
 
-        const raDeg = this.currentTarget.ra * 15;
-        const decDeg = this.currentTarget.dec;
+        // Centered on the current center, not the target, so each Wider →
+        // drag → Actual moves one step across the sky
+        const { raDeg, decDeg } = this.frameCenter();
 
-        // 3x the FOV
-        const fovDeg = Math.max(fovData.fovWidth, fovData.fovHeight) * 3;
+        // The sensor's shape, 3x the FOV each way; the service applies the
+        // fov to the longer side
+        const longSide = Math.max(fovData.fovWidth, fovData.fovHeight);
+        const fovDeg = longSide * 3;
+        const widthPx = Math.round(APP_CONFIG.FOV_DSS_FRAME_PIXELS * fovData.fovWidth / longSide);
+        const heightPx = Math.round(APP_CONFIG.FOV_DSS_FRAME_PIXELS * fovData.fovHeight / longSide);
 
-        const cacheKey = this.getDSSLargeCacheKey(raDeg, decDeg, fovDeg);
+        const cacheKey = this.getDSSLargeCacheKey(raDeg, decDeg, fovDeg, widthPx, heightPx);
 
         let dataUrl = await this.getDSSLargeFromCache(cacheKey);
 
@@ -865,7 +838,7 @@ const FOVView = {
         if (!dataUrl) {
             const url = `${APP_CONFIG.APIS.DSS}` +
                 `&ra=${raDeg.toFixed(6)}&dec=${decDeg.toFixed(6)}` +
-                `&fov=${fovDeg.toFixed(6)}&width=600&height=600` +
+                `&fov=${fovDeg.toFixed(6)}&width=${widthPx}&height=${heightPx}` +
                 `&projection=TAN&format=jpg`;
 
             try {
@@ -901,28 +874,13 @@ const FOVView = {
 
             FOVCanvas.largeImage = img;
 
-            // Restore drag box to previously-set custom center, if any — Issue #223
-            let centerOffsetPx = null;
-            if (this._offsetCenter && this.currentTarget) {
-                const canvas = FOVCanvas.canvas;
-                const targetRA = this.currentTarget.ra * 15;
-                const targetDec = this.currentTarget.dec;
-                const arcSecPerPixelX = (fovData.fovWidthArcmin * 60 * 3) / canvas.width;
-                const arcSecPerPixelY = (fovData.fovHeightArcmin * 60 * 3) / canvas.height;
-                const offsetX = (this._offsetCenter.raDeg - targetRA) * Math.cos(targetDec * Math.PI / 180) * 3600;
-                const offsetY = (this._offsetCenter.decDeg - targetDec) * 3600;
-                centerOffsetPx = {
-                    x: canvas.width / 2 - offsetX / arcSecPerPixelX,
-                    y: canvas.height / 2 - offsetY / arcSecPerPixelY
-                };
-            }
-
-            FOVCanvas.initDragBox(fovData.fovWidthArcmin, fovData.fovHeightArcmin, centerOffsetPx);
+            this._widerCenter = { raDeg, decDeg };
+            this._boxDragged = false;
+            FOVCanvas.initDragBox();
             FOVCanvas.setupDragListeners(() => {
+                this._boxDragged = true;
                 this.redrawLargeMode(fovData);
             });
-            const rc = document.getElementById('fov-rotation-control');
-            if (rc) rc.style.display = 'block';
             this.redrawLargeMode(fovData);
         };
         img.src = dataUrl;
@@ -937,73 +895,62 @@ const FOVView = {
             FOVCanvas.renderBackground(FOVCanvas.largeImage);
         }
         FOVCanvas.drawDragBox();
-        FOVCanvas.drawFixedNorthMarker();
-        if (typeof this.updateCenterCoords === 'function') {
-            this.updateCenterCoords(fovData);
+        FOVCanvas.drawNorthMarker(0);
+        if (FOVCanvas.dragBox && this._widerCenter) {
+            this.showCenterCoords(this.dragBoxCenter(fovData));
         }
     },
 
     /**
-     * Calculate and display RA/Dec of drag box center
+     * The center of the Actual frame: the dragged-to center once the frame
+     * has moved, otherwise the target
+     * @returns {{raDeg: number, decDeg: number}}
      */
-    updateCenterCoords(fovData) {
-        const el = document.getElementById('fov-center-coords');
-        if (!el || !FOVCanvas.dragBox) return;
-
-        // Pixel offset of box center from canvas center
-        const canvasCX = FOVCanvas.canvas.width / 2;
-        const canvasCY = FOVCanvas.canvas.height / 2;
-        const boxCX = FOVCanvas.dragBox.x + FOVCanvas.dragBox.width / 2;
-        const boxCY = FOVCanvas.dragBox.y + FOVCanvas.dragBox.height / 2;
-
-        // The large image is 3x the FOV, so arcsec per pixel = 3x normal
-        const arcSecPerPixelX = (fovData.fovWidthArcmin * 60 * 3) / FOVCanvas.canvas.width;
-        const arcSecPerPixelY = (fovData.fovHeightArcmin * 60 * 3) / FOVCanvas.canvas.height;
-
-        // Offset in arcseconds (positive X = east = increasing RA, positive Y = north = increasing Dec)
-        const offsetX = (canvasCX - boxCX) * arcSecPerPixelX;
-        const offsetY = (canvasCY - boxCY) * arcSecPerPixelY; // Y flipped
-
-        // Target RA/Dec in degrees
-        const targetRA = this.currentTarget.ra * 15; // hours to degrees
-        const targetDec = this.currentTarget.dec;
-
-        // Apply offset (convert arcsec to degrees)
-        const centerRA = targetRA + (offsetX / 3600) / Math.cos(targetDec * Math.PI / 180);
-        const centerDec = targetDec + (offsetY / 3600);
-
-        // Format RA as HH:MM:SS
-        const raNorm = ((centerRA % 360) + 360) % 360;
-        const raHours = raNorm / 15;
-        const raH = Math.floor(raHours);
-        const raM = Math.floor((raHours - raH) * 60);
-        const raS = ((raHours - raH) * 60 - raM) * 60;
-
-        // Format Dec as +DD:MM:SS
-        const decSign = centerDec >= 0 ? '+' : '-';
-        const decAbs = Math.abs(centerDec);
-        const decD = Math.floor(decAbs);
-        const decM = Math.floor((decAbs - decD) * 60);
-        const decS = ((decAbs - decD) * 60 - decM) * 60;
-
-        const raStr = `${String(raH).padStart(2,'0')}h ${String(raM).padStart(2,'0')}m ${raS.toFixed(1).padStart(4,'0')}s`;
-        const decStr = `${decSign}${String(decD).padStart(2,'0')}° ${String(decM).padStart(2,'0')}′ ${decS.toFixed(1).padStart(4,'0')}″`;
-
-        el.textContent = `Center: ${raStr}  /  ${decStr}`;
-        el.style.display = 'block';
+    frameCenter() {
+        return this._offsetCenter ?? { raDeg: this.currentTarget.ra * 15, decDeg: this.currentTarget.dec };
     },
 
     /**
-     * Display target RA/Dec below canvas in Actual mode
+     * RA/Dec of the drag box center, from its offset from the center of the
+     * Wider image (3x the FOV, so 3x the arcsec per pixel). Flat
+     * approximation; each step starts from the new center, so errors don't
+     * build up.
+     * @returns {{raDeg: number, decDeg: number}}
+     */
+    dragBoxCenter(fovData) {
+        const canvas = FOVCanvas.canvas;
+        const box = FOVCanvas.dragBox;
+        const arcSecPerPixelX = (fovData.fovWidthArcmin * 60 * 3) / canvas.width;
+        const arcSecPerPixelY = (fovData.fovHeightArcmin * 60 * 3) / canvas.height;
+
+        // Offset in arcseconds (positive X = east = increasing RA, positive Y = north = increasing Dec)
+        const offsetX = (canvas.width / 2 - (box.x + box.width / 2)) * arcSecPerPixelX;
+        const offsetY = (canvas.height / 2 - (box.y + box.height / 2)) * arcSecPerPixelY;
+
+        const { raDeg, decDeg } = this._widerCenter;
+        const ra = raDeg + (offsetX / 3600) / Math.cos(decDeg * Math.PI / 180);
+        return {
+            raDeg: ((ra % 360) + 360) % 360,
+            decDeg: Math.max(-90, Math.min(90, decDeg + offsetY / 3600))
+        };
+    },
+
+    /**
+     * Show the Actual frame's center
      */
     showActualModeCoords() {
+        if (!this.currentTarget) return;
+        this.showCenterCoords(this.frameCenter());
+    },
+
+    /**
+     * Show RA/Dec in the Center coordinates box
+     */
+    showCenterCoords({ raDeg, decDeg }) {
         const el = document.getElementById('fov-center-coords');
-        if (!el || !this.currentTarget) return;
+        if (!el) return;
 
-        // Use offset center if available, otherwise use target center — Issue #96
-        const raHours = this._offsetCenter ? this._offsetCenter.raDeg / 15 : this.currentTarget.ra;
-        const decDeg = this._offsetCenter ? this._offsetCenter.decDeg : this.currentTarget.dec;
-
+        const raHours = raDeg / 15;
         const raH = Math.floor(raHours);
         const raM = Math.floor((raHours - raH) * 60);
         const raS = ((raHours - raH) * 60 - raM) * 60;
@@ -1017,8 +964,23 @@ const FOVView = {
         const raStr = `${String(raH).padStart(2,'0')}h ${String(raM).padStart(2,'0')}m ${raS.toFixed(1).padStart(4,'0')}s`;
         const decStr = `${decSign}${String(decD).padStart(2,'0')}° ${String(decM).padStart(2,'0')}′ ${decS.toFixed(1).padStart(4,'0')}″`;
 
-        el.textContent = `Center: ${raStr}  /  ${decStr}`;
+        el.textContent = `Center:\nRA:  ${raStr}\nDec: ${decStr}`;
         el.style.display = 'block';
+    },
+
+    /**
+     * Once the frame has moved off the target, the target no longer
+     * describes what's in it: blank the Current Target card and turn off
+     * Target size
+     */
+    applyOffTargetState() {
+        this.displayTargetInfo();
+        const showTarget = document.getElementById('fov-show-target');
+        if (showTarget) {
+            showTarget.checked = false;
+            showTarget.disabled = true;
+        }
+        this.showTarget = false;
     },
 
     /**
@@ -1052,19 +1014,10 @@ const FOVView = {
             snapCtx.drawImage(srcCanvas, -cx, -cy);
             snapCtx.restore();
         } else {
-            // Actual mode — extract content inside rotated FOV border
+            // Actual mode — the canvas is the frame, already turned
             snapCanvas.width = w;
             snapCanvas.height = h;
-            const snapCtx = snapCanvas.getContext('2d');
-
-            snapCtx.fillStyle = '#000000';
-            snapCtx.fillRect(0, 0, w, h);
-
-            snapCtx.save();
-            snapCtx.translate(w / 2, h / 2);
-            snapCtx.rotate(-angle);
-            snapCtx.drawImage(srcCanvas, -w / 2, -h / 2);
-            snapCtx.restore();
+            snapCanvas.getContext('2d').drawImage(srcCanvas, 0, 0);
         }
 
         // Show in modal overlay
@@ -1093,38 +1046,12 @@ const FOVView = {
     },
 
     /**
-     * Lock canvas to current pixel size
-     */
-    lockCanvasSize() {
-        const canvas = FOVCanvas.canvas;
-        const w = canvas.offsetWidth;
-        const h = canvas.offsetHeight;
-        canvas.width = w;
-        canvas.height = h;
-        canvas.style.width = w + 'px';
-        canvas.style.height = h + 'px';
-        canvas.style.maxWidth = w + 'px';
-        this.dssLockedSize = { width: w, height: h };
-    },
-
-    /**
-     * Unlock canvas size
-     */
-    unlockCanvasSize() {
-        const canvas = FOVCanvas.canvas;
-        canvas.style.width = '';
-        canvas.style.height = '';
-        canvas.style.maxWidth = '100%';
-        this.dssLockedSize = null;
-    },
-
-    /**
      * Clear results and canvas
      */
     clearResults() {
         const resultsDiv = document.getElementById('fov-results');
         if (resultsDiv) {
-            resultsDiv.innerHTML = '<p style="color: var(--text-secondary);">Select telescope and sensor to calculate field of view.</p>';
+            resultsDiv.innerHTML = '<p class="fov-placeholder">Select telescope and sensor to calculate field of view.</p>';
         }
         FOVCanvas.clear();
     },
@@ -1140,6 +1067,18 @@ const FOVView = {
         if (this._sensorsHandler) {
             document.removeEventListener('sensors-updated', this._sensorsHandler);
             this._sensorsHandler = null;
+        }
+        if (this._targetChangedHandler) {
+            document.removeEventListener('current-target-changed', this._targetChangedHandler);
+            this._targetChangedHandler = null;
+        }
+        if (this._resizeObserver) {
+            this._resizeObserver.disconnect();
+            this._resizeObserver = null;
+        }
+        if (this._windowResizeHandler) {
+            window.removeEventListener('resize', this._windowResizeHandler);
+            this._windowResizeHandler = null;
         }
     }
 };
