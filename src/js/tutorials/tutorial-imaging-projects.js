@@ -85,27 +85,6 @@ const TUTORIAL_IMAGING_PROJECTS = {
             highlight: 'flash'
         },
         {
-            id: 'integration-time',
-            type: 'callout',
-            title: 'Integration Time',
-            body: 'The integration time shown on each project card is the total accumulated imaging time across all sessions, broken down by filter. For example, a project might show <em>L: 4.2h &nbsp; R: 1.5h &nbsp; G: 1.5h &nbsp; B: 1.5h</em>.<br><br>Integration time is calculated automatically from the session data — specifically from the number of used exposures and sub length recorded in each session. Only filters with recorded time are shown.',
-            target: '.imaging-session-integration',
-            position: 'right',
-            waitFor: 'next',
-            highlight: true
-        },
-        {
-            id: 'status-badge',
-            type: 'callout',
-            title: 'Project Status',
-            body: 'Each project carries a status that reflects where it is in your imaging workflow:<br><br><strong>Planning</strong> — you have identified the target but not yet started imaging.<br><br><strong>Acquiring Data</strong> — you are actively collecting frames across one or more sessions.<br><br><strong>Acquisition Complete</strong> — you have collected enough data and are done imaging.<br><br><strong>Processing</strong> — the data is being stacked, calibrated, and processed.<br><br><strong>Completed</strong> — the project is finished. Completed projects are hidden by default in the project list.',
-            target: '.project-status-badge',
-            position: 'bottom',
-            width: '550px',
-            waitFor: 'next',
-            highlight: true
-        },
-        {
             id: 'new-project',
             type: 'callout',
             title: 'Creating a Project',
@@ -227,6 +206,28 @@ const TUTORIAL_IMAGING_PROJECTS = {
             position: 'left',
             width: '450px',
             waitFor: 'click',
+            highlight: true
+        },
+        // --- Reading the finished card ---
+        {
+            id: 'integration-time',
+            type: 'callout',
+            title: 'Integration Time',
+            body: 'Now that you have saved a session, your project card shows its integration time. The integration time shown on each project card is the total accumulated imaging time across all sessions, broken down by filter. For example, a project might show <em>L: 4.2h &nbsp; R: 1.5h &nbsp; G: 1.5h &nbsp; B: 1.5h</em>.<br><br>Integration time is calculated automatically from the session data — specifically from the number of used exposures and sub length recorded in each session. Only filters with recorded time are shown.',
+            target: '.imaging-session-integration',
+            position: 'right',
+            waitFor: 'next',
+            highlight: true
+        },
+        {
+            id: 'status-badge',
+            type: 'callout',
+            title: 'Project Status',
+            body: 'The badge on your project card is its status. Each project carries a status that reflects where it is in your imaging workflow:<br><br><strong>Planning</strong> — you have identified the target but not yet started imaging.<br><br><strong>Acquiring Data</strong> — you are actively collecting frames across one or more sessions.<br><br><strong>Acquisition Complete</strong> — you have collected enough data and are done imaging.<br><br><strong>Processing</strong> — the data is being stacked, calibrated, and processed.<br><br><strong>Completed</strong> — the project is finished. Completed projects are hidden by default in the project list.',
+            target: '.project-status-badge',
+            position: 'bottom',
+            width: '550px',
+            waitFor: 'next',
             highlight: true
         },
         {
