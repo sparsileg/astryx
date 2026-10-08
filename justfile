@@ -53,3 +53,7 @@ ui-test:
 # Step through every tutorial in headless Chromium (optionally one: just ui-tutorials sidebar)
 ui-tutorials id="":
     PLAYWRIGHT_DIR=$HOME/.local/share/astryx-playwright node tests/ui/tutorials.mjs {{id}}
+
+# Capture the Guide's screenshots into guide/images (optionally some: just ui-guide-shots todo-list-chart)
+ui-guide-shots *ids:
+    PLAYWRIGHT_DIR=$HOME/.local/share/astryx-playwright node tests/ui/guide-shots.mjs {{ids}}
