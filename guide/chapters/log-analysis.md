@@ -10,38 +10,42 @@ exposures.
 
 ## What You'll See
 
-Open **Log Analysis** in the sidebar. The **Session Log Analysis** card has
-two file pickers:
+Open **Log Analysis** in the sidebar. The **Session Log Analysis** card
+has one drop box and a **Browse…** button for the night's two logs:
 
 - **Session Log**: the ASIAir's Autorun log for the night, a .txt file.
 - **PHD2 Guide Log**: the PHD2 guide log for the same night, also a .txt
   file, with a name like PHD2_GuideLog_2026-10-07_201500.txt.
 
-Each log you load adds a report below them. Click a report's title to open
-or close it:
+Astryx tells the two apart by their contents. The name of each loaded log
+appears beside the button.
 
-| Report | Appears when | Title |
-|:--------------------|:-----------------------|:----------------------------------------|
-| Session Report | The Session Log is loaded | Session Report — *target* — *date* |
-| PHD2 Guide Report | The PHD2 Guide Log is loaded | PHD2 Guide Report — *date* |
-| Combined Report | Both are loaded | Combined Report — *targets* — *date* |
+Below are **Guide Stability** and **Settle Time**: your ASIAir's
+settle settings (after a dither, guiding must stay under this many
+arcseconds for this many seconds). Neither log records them, so enter them
+here. Astryx remembers them, so you only change them when you change them
+on the ASIAir.
 
-The Combined Report is the one to read. The other two are the separate
-views of each log that it brings together.
+Loading the Session Log adds the **Combined Report** below them, titled
+Combined Report — *targets* — *date*. Click its title to open or close it.
+The PHD2 Guide Log adds the guiding analysis; without it, the report
+leaves out every guide figure and says so. A PHD2 Guide Log on its own
+shows only a note asking for the Session Log.
 
 ::: {.shot id="log-analysis-overview"}
-Log Analysis with both logs loaded: the two file pickers and the three
-report titles, with the Combined Report open at its Verdict.
+Log Analysis with both logs loaded: the drop box, the two file names,
+and the Combined Report open at its Verdict.
 :::
 
 ## Loading a Night
 
 1. Copy the night's logs from your ASIAir to your computer.
-2. In **Session Log**, choose the Autorun log.
-3. In **PHD2 Guide Log**, choose the guide log from the same night.
+2. Drag both logs onto the box, or click **Browse…** and select them.
 
-The order doesn't matter. Loading another log in either picker replaces
-that report and rebuilds the Combined Report.
+You can load them together or one at a time, in either order. Loading
+another log of the same kind replaces the one loaded, and rebuilds the
+Combined Report. If the guide log doesn't overlap the Session Log in time,
+Astryx warns you that they may be from different nights.
 
 If you recorded the night in the Imaging Log (a session with the same
 date), the Combined Report uses that session's telescope, sensor, and
@@ -60,11 +64,11 @@ Planner needs:
   exposure and the start of the next, and
 - the **dither duration**: how long a dither takes to settle.
 
-It moves its stored figures a fifth of the way toward each night's
+It moves its stored figures halfway toward each night's
 measurements, so a single unusual night doesn't throw them off. A night
 with too few clean samples leaves them alone. The **Behavior** table in the
 Combined Report's Recommendations shows each night's measurement and the
-stored figure.
+stored figure, with what this log added to it, or why it added nothing.
 
 ::: note
 Load each night's Session Log once. Loading the same log again counts the
@@ -102,8 +106,8 @@ image number. Then up to three tables:
 | Table | What it covers |
 |:------------------------|:--------------------------------------------------------|
 | Behavior | The sub gap and dither duration: tonight's measurement and the running average the Sequence Planner uses. |
-| Sequence Planning | AF Duration, Guide Calibration Duration, and Flip Duration, measured tonight, with the value to set in the Sequence Planner. |
-| Guiding Configuration | PHD2 settings: Search Region, Star Mass Tolerance, RA / Dec Minimum Move, RA / Dec Aggression, Guide Star Selection, and Calibration Timing. |
+| Sequence Planning | AF Duration, Guide Calibration Duration, and Flip Duration, measured tonight, with the value to set in the Sequence Planner. A note says what each duration includes. |
+| Guiding Configuration | PHD2 settings: Search Region, Star Mass Tolerance, Guide Star Selection, and Calibration Timing. Star Mass Tolerance is flagged when PHD2 lost the guide star to a change in its brightness in more than one guide session. |
 
 Each row gives what was **Observed**, what's **Recommended**, and the
 **Confidence**. A row that needs a change is highlighted, with the evidence
@@ -118,6 +122,27 @@ The confidence tells you how far to trust a row:
 | Derived | Calculated from the log and checked another way. |
 | Inferred | A pattern that matches known behavior, not a direct measurement. |
 | Copied | Your setting, shown for reference; nothing in the logs could check it. |
+
+### Guiding Settings
+
+Each guide setting, with what tonight's logs showed and what that means.
+It opens with a short summary: whether RA and Dec errors were balanced,
+whether the guide camera's resolution is the real limit, and which
+settings are worth a look.
+
+| Setting | What tonight showed | What the assessment tells you |
+|:----------------------------|:---------------------------------|:------------------------------------------|
+| Calibration Step | RA steps in each calibration, and its Dec | PHD2 aims for about 12. Far fewer gives a less accurate calibration; far more only takes longer. Extra steps are normal above Dec 60°. |
+| Max RA / Dec Duration | Pulses that hit the limit | Many hits mean corrections are being cut short. |
+| Corrected Trigger Accuracy | Frames that needed no correction, and the jitter from seeing | Whether small errors go uncorrected or guiding chases the seeing. |
+| RA Aggression, Dec Aggression | Error persistence: how much each frame's error carries into the next | Errors that linger suggest corrections lag; errors that flip suggest they overshoot. |
+| RA / Dec Balance | Settled RMS on each axis | RA much worse than Dec points to periodic error or RA balance; Dec much worse points to Dec backlash or balance. |
+| Guide Stability | Dither settle times and timeouts | Timeouts mean your stability setting is too tight for the night's guiding. |
+| Guide Exposure | — | Shown for reference. |
+
+A row worth changing is highlighted and says what to try. The aggression
+rows are marked inferred: try a suggestion for a few nights and compare
+the reports before keeping it.
 
 ### Session Timeline
 
@@ -134,7 +159,9 @@ hidden. Tick **Show all events** to see them.
 
 Where the night's time went: imaging, autofocus, guide calibration,
 meridian flip, and the rest, with each one's **Total Time** and **% of
-Session**. Time Astryx can't account for is listed, not hidden.
+Session**. Time Astryx can't account for is listed, not hidden. Dither
+time is part of imaging time. Dithers that didn't settle are counted by
+how they ended, with the images they affected.
 
 ### Per-Sub Frame Quality
 
@@ -146,10 +173,12 @@ dither settled. Marginal and Reject rows are highlighted.
 ### Guiding Analysis
 
 The guide camera and mount, overall guiding statistics, and the results
-for each side of the pier and for dithering. Below them are the **Guide
-Sessions** table (each stretch of guiding between interruptions) and the
-**Calibrations** table (each PHD2 calibration: **West Rate**, **North
-Rate**, **Orthogonality**, and any **Star Lost**).
+for each side of the pier (counting only guide sessions while imaging) and
+for dithering. Below them are the **Guide Sessions** table (each stretch
+of guiding between interruptions, with its RMS, **Peak RA**, **Peak Dec**,
+and SNR; short sessions and locks near the frame edge are noted below it)
+and the **Calibrations** table (each PHD2 calibration: **West Rate**,
+**North Rate**, **Orthogonality**, and any **Star Lost**).
 
 ### Findings
 
@@ -171,6 +200,8 @@ How far to trust everything above:
 - how many internal checks passed and failed,
 - how many log lines Astryx didn't recognize,
 - how many subs have no guide data,
+- any settle scans that never ended in the log (left out of the
+  durations rather than estimated),
 - **Meridian Flip Verification**, and
 - **Stated Limits**: what log analysis can never see.
 
@@ -178,7 +209,8 @@ How far to trust everything above:
 the meridian flip with the **Flip Pause** and **Flip Offset** set in the
 Sequence Planner. A large **Delta** means the two have drifted apart; set
 the Sequence Planner to match your ASIAir. The table needs the night's
-location, so it appears only when the night is in the Imaging Log.
+location, so it appears only when the night is in the Imaging Log;
+otherwise a note says what's missing.
 
 ### Saving the Report
 

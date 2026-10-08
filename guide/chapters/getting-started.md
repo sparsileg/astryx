@@ -170,7 +170,7 @@ until you have a reason to change it. Open the system menu (≡), choose
 | Max Magnitude | 14.5 | The starting faintest magnitude for the Target Selection filters. |
 | Automatic backups on change | On | Saves a backup a while after you change your data. |
 | Minutes before backup | 60 | How long after your last change the automatic backup waits. Each new change restarts the wait. |
-| Backup Folder | Downloads | Where automatic backups go. The web version always uses your browser's downloads folder; the desktop app lets you choose. |
+| Backup Folder | Downloads | Where automatic backups go. The web version always uses your browser's downloads folder; the desktop app lets you choose, and uses your Downloads folder until you do. |
 | Backup reminder every | 7 days | How long after your last backup Astryx reminds you to make one. |
 
 ::: why

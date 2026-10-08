@@ -235,8 +235,9 @@ const BackupManagerWeb = {
         const remaining = delayMs - elapsed;
 
         if (remaining <= 0) {
-            // Delay already elapsed — don't fire on cold start
-            return;
+            // The wait ran out while Astryx was closed, so those changes
+            // were never backed up: back them up now
+            await this.executeAutoBackup(true);
         } else {
             // Resume the countdown from where it left off
             this._autoBackupTimer = setTimeout(() => {
@@ -245,7 +246,7 @@ const BackupManagerWeb = {
         }
     },
 
-    async executeAutoBackup() {
+    async executeAutoBackup(fromLastSession = false) {
         if (!SettingsManager.getAutoBackupEnabled()) return;
 
         try {
@@ -275,7 +276,7 @@ const BackupManagerWeb = {
 
             await SettingsManager.saveSetting('lastBackupTimestamp', TimeUtils.nowDTG());
             BackupReminder.onBackupComplete();
-            UIManager.showToast('Auto-backup saved', 'success');
+            UIManager.showToast(fromLastSession ? 'Auto-backup saved: changes from your last session' : 'Auto-backup saved', 'success');
         } catch (error) {
             console.error('Auto-backup failed:', error);
             UIManager.showToast('Auto-backup failed: ' + error.message, 'error');

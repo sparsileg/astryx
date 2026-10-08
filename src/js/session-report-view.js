@@ -1,10 +1,9 @@
 /**
  * session-report-view.js
  * Renders a FusedSession (session-fusion.js) as the combined ASIAir+PHD2
- * report described in session-analysis-design.md §7. Added alongside the
- * existing AsiairLogView/Phd2LogView reports for side-by-side comparison
- * (ELR.p5-1) — retiring those is its own later issue, gated on confirming
- * nothing useful was lost here first.
+ * report described in session-analysis-design.md §7. It replaced the
+ * separate ASIAir Session Report and PHD2 Guide Report once it covered
+ * everything they showed (ELR.p5-3).
  *
  * Layout below reflects a synthesis pass against a real two-target night
  * (2025-11-17) comparing this report to the two originals it's meant to
@@ -45,10 +44,13 @@ const SessionReportView = {
         const container = document.getElementById('session-analysis-accordions');
         if (!container) return;
         const existing = document.getElementById('accordion-combined');
+        // A redraw (e.g. after a Guide Stability change) keeps the report open
+        const wasOpen = existing != null && existing.classList.contains('open');
         if (existing) existing.remove();
+        document.getElementById('combined-report-actions')?.remove();
         const accordion = document.createElement('div');
         accordion.id = 'accordion-combined';
-        accordion.className = 'analysis-accordion';
+        accordion.className = wasOpen ? 'analysis-accordion open' : 'analysis-accordion';
         if (fusedSession.kind === 'calibrationOnly') {
             accordion.innerHTML = `
                 <div class="analysis-accordion-header">
@@ -76,12 +78,15 @@ const SessionReportView = {
             </div>
             <div class="analysis-accordion-body">
                 ${reportHtml}
-                <div style="margin-top: 1rem;">
-                    <button class="btn btn-primary btn-sm" id="combined-csv-btn">Download Per-Sub CSV</button>
-                    <button class="btn btn-primary btn-sm" id="combined-pdf-btn">Download PDF Report</button>
-                </div>
             </div>
         `;
+        // The downloads sit above the report, so they work without opening it
+        container.insertAdjacentHTML('beforeend', `
+            <div id="combined-report-actions" class="analysis-report-actions">
+                <button class="btn btn-primary btn-sm" id="combined-csv-btn">Download Per-Sub CSV</button>
+                <button class="btn btn-primary btn-sm" id="combined-pdf-btn">Download PDF Report</button>
+            </div>
+        `);
         container.appendChild(accordion);
         accordion.querySelector('.analysis-accordion-header').addEventListener('click', () => {
             accordion.classList.toggle('open');
@@ -119,6 +124,7 @@ const SessionReportView = {
         html += this._buildHeaderHtml(fs);
         html += this._buildVerdictHtml(fs, context);                  // §1
         html += this._buildRecommendedSettingsHtml(fs, context);       // moved directly after Verdict
+        html += this._buildGuidingSettingsHtml(context);
         html += this._buildTimelineHtml(fs, context);                  // §2
         html += this._buildTimeAccountingHtml(context);                 // Summary — directly under the timeline, matching the original ASIAir report's layout
         html += this._buildPerSubHtml(fs);                             // §3
@@ -162,8 +168,7 @@ const SessionReportView = {
 
     _buildVerdictHtml(fs, context) {
         const m = fs.metrics;
-        const bySeverity = { critical: 0, warning: 0, info: 0 };
-        fs.findings.forEach(f => { bySeverity[f.severity] = (bySeverity[f.severity] || 0) + 1; });
+        const bySeverity = this._findingCounts(fs, context);
         const rms = m.guideRmsSettled != null ? Phd2LogParser.fmtArcsec(m.guideRmsSettled) : '—';
         const mismatchNote = m.ditherCountMismatch ? ' <span style="color:var(--text-secondary)">(dither count mismatch — see §9)</span>' : '';
         const rmsUnreliableNote = m.guideRmsUnreliable ? ' <span style="color:var(--text-secondary)">(frame/duration mismatch — see §9)</span>' : '';
@@ -512,8 +517,40 @@ const SessionReportView = {
                       : 'fully accounted for';
                 html += `<p class="session-report-note-small">Wall clock: ${AsiairLogParser.fmtMinutes(summary.wallClockS)} &nbsp;•&nbsp; Tracked: ${AsiairLogParser.fmtMinutes(summary.totalTrackedS)} &nbsp;•&nbsp; ${unaccountedNote}</p>`;
             }
+            for (const note of this._ditherSummaryNotes(context)) {
+                html += `<p class="session-report-note-small">${HtmlUtils.escapeHtml(note)}</p>`;
+            }
 
             return html;
+        },
+
+        // Notes under the Summary table: how dithers ended, and that dither
+        // time sits inside imaging time. Shared with the PDF.
+        _ditherSummaryNotes(context) {
+            const asiair = context && context.asiairParsed;
+            if (!asiair || !asiair.summary || asiair.summary.ditherCount === 0) return [];
+            const notes = ['Dither time is part of imaging time, not a separate slice of the total.'];
+            const unsettled = (asiair.events || []).filter(e => e.type === 'dither' && e.outcome && e.outcome !== 'done');
+            if (unsettled.length > 0) {
+                const byOutcome = {};
+                for (const d of unsettled) byOutcome[d.outcome] = (byOutcome[d.outcome] ?? 0) + 1;
+                const outcomeText = Object.entries(byOutcome).map(([o, n]) => `${n} ${o}`).join(', ');
+                const images = unsettled.map(d => d.affectedImg).filter(n => n != null);
+                let text = `${unsettled.length} dither(s) did not settle cleanly (${outcomeText})`;
+                if (images.length > 0) text += `; affected image(s): ${images.join(', ')}`;
+                const unattributed = unsettled.length - images.length;
+                if (unattributed > 0) text += `; ${unattributed} could not be tied to a specific image, likely absorbed into the next autofocus`;
+                notes.push(text + '.');
+            }
+            return notes;
+        },
+
+        // Settle scans that never found their end line. Their time is left
+        // out of the durations rather than estimated. Shared with the PDF.
+        _settleScanFailureText(context) {
+            const failures = (context && context.asiairParsed && context.asiairParsed.parseFailures) || [];
+            if (failures.length === 0) return '';
+            return `${failures.length} settle scan(s) had no end in the log and were left out of the durations rather than estimated.`;
         },
 
         // -------------------------------------------------------------------------
@@ -610,7 +647,9 @@ const SessionReportView = {
         // One evidence-based list rather than two overlapping ones.)
         // -------------------------------------------------------------------------
 
-        _buildFindingsHtml(fs, context) {
+        // The list Findings shows, shared with the Verdict count (screen and PDF)
+        // so the counts always match what's listed.
+        _findingItems(fs, context) {
             const order = { critical: 0, warning: 1, info: 2 };
             const items = [];
 
@@ -646,11 +685,22 @@ const SessionReportView = {
                 });
             }
 
+            items.sort((a, b) => order[a.severity] - order[b.severity]);
+            return items;
+        },
+
+        _findingCounts(fs, context) {
+            const bySeverity = { critical: 0, warning: 0, info: 0 };
+            this._findingItems(fs, context).forEach(f => { bySeverity[f.severity] += 1; });
+            return bySeverity;
+        },
+
+        _buildFindingsHtml(fs, context) {
+            const items = this._findingItems(fs, context);
+
             if (items.length === 0) {
                 return `<h4 class="session-report-section">Findings</h4><p style="color:var(--text-secondary)">No findings raised for this night.</p>`;
             }
-
-            items.sort((a, b) => order[a.severity] - order[b.severity]);
 
             let html = `<h4 class="session-report-section">Findings</h4><ul class="session-report-notes">`;
             for (const item of items) {
@@ -721,15 +771,8 @@ const SessionReportView = {
             }
 
             // Pier-side breakdown (added in this report — not in either original)
-            const byPier = { East: [], West: [] };
-            for (const s of phd2.sessions) {
-                const side = s.geometry && s.geometry.pierSide;
-                if (side && byPier[side] && s.stats && s.stats.totRms != null) byPier[side].push(s.stats.totRms);
-            }
-            if (byPier.East.length > 0 || byPier.West.length > 0) {
-                const avg = (arr) => arr.length ? Phd2LogParser.fmtArcsec(arr.reduce((a, b) => a + b, 0) / arr.length) : '—';
-                html += `<p class="session-report-note-small">Pier side: East ${avg(byPier.East)} (n=${byPier.East.length}) &nbsp;•&nbsp; West ${avg(byPier.West)} (n=${byPier.West.length})</p>`;
-            }
+            const pierText = this._pierSideText(fs, phd2);
+            if (pierText) html += `<p class="session-report-note-small">${pierText}</p>`;
 
             // Dither amplitude (added in this report) — now also converted
             // to imaging-sensor pixels when a matched telescope/sensor is
@@ -772,13 +815,13 @@ const SessionReportView = {
             // session narrative list is dropped, this table already covers it)
             if (phd2.sessions.length > 0) {
                 html += `<h5 style="margin-top:0.75rem">Guide Sessions (${phd2.sessions.length})</h5>`;
-                html += `<table class="session-table"><thead><tr><th>#</th><th>Time Range</th><th>Frames</th><th>RMS RA</th><th>RMS Dec</th><th>RMS Total</th><th>Avg SNR</th></tr></thead><tbody>`;
+                html += `<table class="session-table"><thead><tr><th>#</th><th>Time Range</th><th>Frames</th><th>RMS RA</th><th>RMS Dec</th><th>RMS Total</th><th>Peak RA</th><th>Peak Dec</th><th>Avg SNR</th></tr></thead><tbody>`;
                 for (const s of phd2.sessions) {
                     if (!s.stats) {
-                        html += `<tr><td>${s.num}</td><td colspan="6" style="color:var(--text-secondary)">No frames recorded</td></tr>`;
+                        html += `<tr><td>${s.num}</td><td colspan="8" style="color:var(--text-secondary)">No frames recorded</td></tr>`;
                         continue;
                     }
-                    const { raRms, decRms, totRms, totRmsAll, avgSnr } = s.stats;
+                    const { raRms, decRms, totRms, totRmsAll, raPeak, decPeak, avgSnr } = s.stats;
                     const totalCell = totRms != null
                           ? `${Phd2LogParser.fmtArcsec(totRms)} <span style="color:var(--text-secondary)">(all: ${Phd2LogParser.fmtArcsec(totRmsAll)})</span>`
                           : `— <span style="color:var(--text-secondary)">(all: ${Phd2LogParser.fmtArcsec(totRmsAll)})</span>`;
@@ -790,12 +833,14 @@ const SessionReportView = {
                     <td>${raRms != null ? Phd2LogParser.fmtArcsec(raRms) : '—'}</td>
                     <td>${decRms != null ? Phd2LogParser.fmtArcsec(decRms) : '—'}</td>
                     <td>${totalCell}</td>
+                    <td>${raPeak != null ? Phd2LogParser.fmtArcsec(raPeak) : '—'}</td>
+                    <td>${decPeak != null ? Phd2LogParser.fmtArcsec(decPeak) : '—'}</td>
                     <td>${Phd2LogParser.fmtSnr(avgSnr)}</td>
                 </tr>`;
                     // Short session (likely pre-imaging acquisition/calibration)
                     // — inline annotation, not a separate Finding (Issue #255).
                     if (s.frames.length < Phd2LogParser.THRESHOLDS.SHORT_SESSION && !s.incomplete) {
-                        html += `<tr><td></td><td colspan="6" style="color:var(--text-secondary)">Short session (${s.frames.length} frames) — likely an autofocus interruption or guider restart; excluded from SNR/darkness trend below.</td></tr>`;
+                        html += `<tr><td></td><td colspan="8" style="color:var(--text-secondary)">Short session (${s.frames.length} frame${s.frames.length === 1 ? '' : 's'}) — likely an autofocus interruption or guider restart; excluded from SNR/darkness trend below.</td></tr>`;
                     }
                 }
                 html += `</tbody></table>`;
@@ -821,6 +866,33 @@ const SessionReportView = {
             }
 
             return html;
+        },
+
+        // Mean settled RMS per pier side, over guide sessions that overlap a
+        // light sub. The night's first session usually guides wherever the
+        // mount was before the slew to the target, so it doesn't count.
+        // Critical-RMS sessions are left out, as in the headline RMS, so one
+        // runaway session can't swamp a side's average. Shared with the PDF.
+        _pierSideText(fs, phd2) {
+            const byPier = { East: [], West: [] };
+            let excluded = 0;
+            for (const s of phd2.sessions) {
+                const side = s.geometry && s.geometry.pierSide;
+                if (!side || !byPier[side] || !s.stats || s.stats.totRms == null) continue;
+                const start = Phd2LogParser._parsePhd2Time(s.startTime);
+                const end = Phd2LogParser._parsePhd2Time(s.endTime);
+                const imaging = fs.subs.some(sub => sub.startedAt && start && sub.startedAt >= start && (!end || sub.startedAt < end));
+                if (!imaging) continue;
+                if (s.stats.totRms >= Phd2LogParser.THRESHOLDS.RMS_CRITICAL) {
+                    excluded++;
+                } else {
+                    byPier[side].push(s.stats.totRms);
+                }
+            }
+            if (byPier.East.length === 0 && byPier.West.length === 0) return '';
+            const avg = (arr) => arr.length ? Phd2LogParser.fmtArcsec(arr.reduce((a, b) => a + b, 0) / arr.length) : '—';
+            const excludedNote = excluded > 0 ? ` (${excluded} session${excluded > 1 ? 's' : ''} with critical RMS excluded)` : '';
+            return `Pier side (guide sessions while imaging): East ${avg(byPier.East)} (n=${byPier.East.length}) • West ${avg(byPier.West)} (n=${byPier.West.length})${excludedNote}`;
         },
 
         // Guide-camera arcsec -> imaging-sensor pixels needs the imaging
@@ -905,6 +977,11 @@ const SessionReportView = {
         // defensively; falls back to a plain count if the format doesn't
         // match on any item rather than showing a wrong range.
         _buildD15ConsolidatedNote(fs) {
+            const text = this._d15ConsolidatedText(fs);
+            return text ? `<p class="session-report-note-small session-report-tier-warning">${text}</p>` : '';
+        },
+
+        _d15ConsolidatedText(fs) {
             if (!fs || !fs.findings) return '';
             const d15 = fs.findings.filter(f => f.code === 'D15_LOCK_POSITION_EDGE');
             if (d15.length === 0) return '';
@@ -921,7 +998,7 @@ const SessionReportView = {
                 rangeText = min === max ? ` (${min}px)` : ` (${min}–${max}px)`;
             }
 
-            return `<p class="session-report-note-small session-report-tier-warning">${d15.length} guide session(s) locked near the frame edge${rangeText} this night, below the corpus's typical range — a cluster like this across most of a night's sessions is worth checking against PHD2's search region / star selection settings, since edge-hugging locks are the same signature associated with guide-star-swap risk elsewhere in the corpus.</p>`;
+            return `${d15.length} guide session(s) locked near the frame edge${rangeText} this night, below the corpus's typical range — a cluster like this across most of a night's sessions is worth checking against PHD2's search region / star selection settings, since edge-hugging locks are the same signature associated with guide-star-swap risk elsewhere in the corpus.`;
         },
 
         // SNR vs. darkness: SNR should track how dark the sky is, rising
@@ -1120,6 +1197,20 @@ const SessionReportView = {
         // recommendations it's most relevant to.
         // -------------------------------------------------------------------------
 
+        // Group keys must match the `group` tags in session-recommendations.js.
+        // Shared with SessionReportPdf so the PDF can't drop a group the
+        // screen shows.
+        _recommendationGroups() {
+            return [
+                { key: 'behavior', title: 'Behavior', columns: ['Measurement', 'Observed', 'Moving Average', 'Confidence'],
+                  note: `These values accumulate across every analyzed session as a moving average, weighted toward recent nights but never fully reset by any single one — a single unusual session nudges the average, it doesn't replace it. A log updates the average only when it has at least ${APP_CONFIG.ASIAIR_MIN_CLEAN_SAMPLES} clean samples; otherwise the stored value is left as it was.` },
+                { key: 'sequencePlanning', title: 'Sequence Planning', columns: ['Setting', 'Observed', 'Recommended', 'Confidence'],
+                  note: 'AF Duration covers autofocus, re-selecting the guide star and settling, but not calibration. Guide Calibration Duration includes settling. Flip Duration runs from the start of the flip to its end and leaves out the pause before it.' },
+                { key: 'asiair', title: 'ASIAir Configuration', columns: ['Setting', 'Observed', 'Recommended', 'Confidence'] },
+                { key: 'phd2', title: 'Guiding Configuration', columns: ['Setting', 'Observed', 'Recommended', 'Confidence'] },
+            ];
+        },
+
         _buildRecommendedSettingsHtml(fs, context) {
         let html = `<h4 class="session-report-section">Recommendations</h4>`;
 
@@ -1150,15 +1241,7 @@ const SessionReportView = {
                 return html;
             }
 
-            const groups = [
-                { key: 'behavior', title: 'Behavior', columns: ['Measurement', 'Observed', 'Moving Average', 'Confidence'],
-                  note: 'These values accumulate across every analyzed session as a moving average, weighted toward recent nights but never fully reset by any single one — a single unusual session nudges the average, it doesn\'t replace it.' },
-                { key: 'sequencePlanning', title: 'Sequence Planning', columns: ['Setting', 'Observed', 'Recommended', 'Confidence'] },
-                { key: 'asiair', title: 'ASIAir Configuration', columns: ['Setting', 'Observed', 'Recommended', 'Confidence'] },
-                { key: 'phd2', title: 'Guiding Configuration', columns: ['Setting', 'Observed', 'Recommended', 'Confidence'] },
-            ];
-
-            for (const g of groups) {
+            for (const g of this._recommendationGroups()) {
                 const groupRecs = recs.filter(r => r.group === g.key);
                 if (groupRecs.length === 0) continue;
                 html += `<h5 style="margin-top:0.75rem">${g.title}</h5>`;
@@ -1182,6 +1265,30 @@ const SessionReportView = {
             return html;
         },
 
+        // Guiding Settings: each guide setting with what tonight's logs
+        // showed and what it means (SessionRecommendations.buildGuidingSettings).
+        _buildGuidingSettingsHtml(context) {
+            if (typeof SessionRecommendations === 'undefined') return '';
+            const result = SessionRecommendations.buildGuidingSettings(context);
+            if (!result) return '';
+
+            let html = `<h4 class="session-report-section">Guiding Settings</h4>`;
+            html += `<p class="session-report-note-small">${result.summary.map(t => HtmlUtils.escapeHtml(t)).join(' ')}</p>`;
+            html += `<table class="session-table"><thead><tr><th>Setting</th><th>Yours</th><th>Tonight</th><th>Assessment</th></tr></thead><tbody>`;
+            for (const r of result.rows) {
+                const rowAttr = r.changeNeeded ? ` class="session-report-tier-warning"` : '';
+                const inferred = r.confidence === 'inferred' ? ' (inferred)' : '';
+                html += `<tr${rowAttr}>
+                    <td>${HtmlUtils.escapeHtml(r.setting)}</td>
+                    <td>${HtmlUtils.escapeHtml(r.yours)}</td>
+                    <td>${HtmlUtils.escapeHtml(r.tonight)}</td>
+                    <td>${HtmlUtils.escapeHtml(r.assessment + inferred)}</td>
+                </tr>`;
+            }
+            html += `</tbody></table>`;
+            return html;
+        },
+
         // #245: Flip Pause/Offset are fixed ASIAir dial settings, not
         // conditions the logs could recommend a change to — the only
         // thing worth reporting is whether ASIAir actually executed what
@@ -1194,7 +1301,10 @@ const SessionReportView = {
         _buildMeridianVerificationHtml(context) {
             if (typeof SessionRecommendations === 'undefined' || !SessionRecommendations.buildMeridianVerification) return '';
             const rows = SessionRecommendations.buildMeridianVerification(context);
-            if (rows.length === 0) return '';
+            if (rows.length === 0) {
+                const missing = SessionRecommendations.meridianVerificationMissingText(context);
+                return missing ? `<p class="session-report-note-small">${HtmlUtils.escapeHtml(missing)}</p>` : '';
+            }
 
             let html = `<h5 style="margin-top:0.75rem">Meridian Flip Verification</h5>`;
             html += `<table class="session-table"><thead><tr><th>Setting</th><th>Observed</th><th>Astryx Setting</th><th>Delta</th></tr></thead><tbody>`;
@@ -1238,6 +1348,8 @@ const SessionReportView = {
             html += `</p>`;
 
             html += `<p class="session-report-note-small">Subs without guide data: ${fs.coverage.subsWithoutGuideData ?? '—'}</p>`;
+            const settleScanText = this._settleScanFailureText(context);
+            if (settleScanText) html += `<p class="session-report-note-small">${settleScanText}</p>`;
 
             html += this._buildMeridianVerificationHtml(context);
 

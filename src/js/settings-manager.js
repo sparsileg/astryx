@@ -431,6 +431,26 @@ async setBackupReminderDays(days) {
         await this.saveSettings();
     },
 
+    // ASIAir's Guide Stability and settle time aren't in either log, so the
+    // Log Analysis screen asks for them and remembers the last values.
+    getGuideStabilityArcsec() {
+        return this.settings.guideStabilityArcsec ?? APP_CONFIG.DEFAULT_GUIDE_STABILITY_ARCSEC;
+    },
+
+    async setGuideStabilityArcsec(value) {
+        this.settings.guideStabilityArcsec = value;
+        await this.saveSettings();
+    },
+
+    getGuideSettleTimeS() {
+        return this.settings.guideSettleTimeS ?? APP_CONFIG.DEFAULT_GUIDE_SETTLE_TIME_S;
+    },
+
+    async setGuideSettleTimeS(value) {
+        this.settings.guideSettleTimeS = value;
+        await this.saveSettings();
+    },
+
     getFramesPerDither() {
         return this.settings.framesPerDither ?? APP_CONFIG.DEFAULT_FRAMES_PER_DITHER;
     },

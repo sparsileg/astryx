@@ -5,6 +5,11 @@
 
 const AsiairLogParser = {
 
+    // An Autorun log's first line, which tells it apart from a PHD2 guide log
+    isAutorunLog(text) {
+        return /^\uFEFF?Log enabled at \d{4}\/\d{2}\/\d{2} /.test(text);
+    },
+
     /**
      * Parse an ASIAir Autorun log text into structured session data.
      * Performs no writes — see updateLearnedValues() for the deliberate,
@@ -15,9 +20,9 @@ const AsiairLogParser = {
     parse(text) {
         const allLines = text.trim().split('\n').map(l => l.trim()).filter(l => l);
 
-        // --- Legacy single-target pipeline — unchanged, kept for the
-        // existing report view, which isn't updated to consume runs[] yet
-        // (that's the report-rework phase, not this issue's scope).
+        // --- Legacy single-target pipeline. The Combined Report still reads
+        // its summary, events and parse failures, and updateLearnedValues
+        // applies its recommendations.
         const lines = this._extractLightFrameLines(allLines);
         const target = this._extractTarget(lines);
         const date = this._extractDate(lines);
@@ -1083,8 +1088,9 @@ const AsiairLogParser = {
             // --- Meridian flip (merged pause+flip, configuredWaitS/flipNumber — item 9) ---
             if (line.includes('[Meridian Flip|Begin]')) {
                 const pauseStart = this._parseTimestamp(line);
-                const waitMatch = line.match(/Wait (\d+)min(\d+)s to Meridian Flip/);
-                const configuredWaitS = waitMatch ? parseInt(waitMatch[1]) * 60 + parseInt(waitMatch[2]) : null;
+                // The seconds are left off when they're zero ("Wait 8min to Meridian Flip")
+                const waitMatch = line.match(/Wait (\d+)min(?:(\d+)s)? to Meridian Flip/);
+                const configuredWaitS = waitMatch ? parseInt(waitMatch[1]) * 60 + parseInt(waitMatch[2] ?? '0') : null;
                 let flipStart = null;
                 let flipEnd = null;
                 let flipNumber = null;
@@ -1717,8 +1723,6 @@ const AsiairLogParser = {
         const derivationDate = new Date().toISOString().slice(0, 10);
 
         return {
-            afDurationS: summary.afAvgS,
-            calDurationS: summary.calAvgS,
             observedSubGapS: Math.round(observedSubGapS),
             observedDitherDurationS: Math.round(observedDitherDurationS),
 
@@ -1739,8 +1743,8 @@ const AsiairLogParser = {
      * Public and explicit (ELR.p1-4) — parse() no longer calls this itself;
      * callers must invoke it deliberately after a parse succeeds and await
      * it, so viewing a log is a pure read unless the caller specifically
-     * asks to also refresh planning values. See utilities-view.js's
-     * initAsiairLogAnalyzer for the one existing call site.
+     * asks to also refresh planning values. See
+     * LogAnalysisView._loadAsiairLog for the one existing call site.
      *
      * ELR.p1-3 Change 3: skips the update entirely when a night doesn't have
      * enough clean samples, rather than let noise or a single dirty night

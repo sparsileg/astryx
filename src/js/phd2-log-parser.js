@@ -7,7 +7,7 @@ const Phd2LogParser = {
 
     // Anomaly thresholds — sourced from APP_CONFIG, not literals here.
     // Kept as Phd2LogParser.THRESHOLDS so existing consumers (e.g.
-    // phd2-log-view.js) don't need to know about APP_CONFIG directly.
+    // session-report-view.js) don't need to know about APP_CONFIG directly.
     // A getter, not a plain property — APP_CONFIG.PHD2_GUIDE_THRESHOLDS must
     // only be read once config.js has actually loaded, and this file's own
     // script-tag order relative to config.js isn't guaranteed. A plain
@@ -35,6 +35,11 @@ const Phd2LogParser = {
         7: 'No star found',
     },
 
+    // A PHD2 guide log's first line, which tells it apart from an Autorun log
+    isGuideLog(text) {
+        return /^\uFEFF?PHD2 version, Log version /.test(text);
+    },
+
     /**
      * Parse a PHD2 guide log text into structured data.
      * @param {string} text - Raw log file contents
@@ -59,7 +64,6 @@ const Phd2LogParser = {
 
         const overall = this._computeOverall(sessions, equipment);
         const anomalies = this._detectAnomalies(sessions, asiairParsed);
-        const recommendations = this._buildRecommendations(sessions, anomalies, equipment, overall);
         const date = this._extractDate(lines);
 
         // #233 item 2 / design doc I13: the only mechanism that surfaces a
@@ -71,7 +75,7 @@ const Phd2LogParser = {
             unmatchedLines: this._findUnmatchedLines(lines),
         };
 
-        return { equipment, sessions, calibrations, overall, anomalies, recommendations, date, source };
+        return { equipment, sessions, calibrations, overall, anomalies, date, source };
     },
 
     // -------------------------------------------------------------------------
@@ -206,6 +210,8 @@ const Phd2LogParser = {
             decAggression: null,
             decMinMove: null,
             backlashComp: null,
+            maxRaDurationMs: null,
+            maxDecDurationMs: null,
         };
         const geometry = {
             decDeg: null,
@@ -339,6 +345,17 @@ const Phd2LogParser = {
                     enabled: !line.includes('disabled'),
                     pulseMs: pulseMatch ? parseInt(pulseMatch[1]) : null,
                 };
+            }
+
+            // --- Max pulse lengths ("Calibration step = ..., Max RA
+            // duration = 1800, Max DEC duration = 1800, ..."). The
+            // calibration step on this line is a placeholder in ASIAir's
+            // logs; the real one is in each Calibration Begins block.
+            if (eq.maxRaDurationMs === null && line.startsWith('Calibration step = ')) {
+                const raMax = line.match(/Max RA duration = (\d+)/);
+                if (raMax) eq.maxRaDurationMs = parseInt(raMax[1]);
+                const decMax = line.match(/Max DEC duration = (\d+)/);
+                if (decMax) eq.maxDecDurationMs = parseInt(decMax[1]);
             }
 
             // --- Geometry: Dec/hour angle/pier side ---
@@ -581,6 +598,8 @@ const Phd2LogParser = {
                     completedAt: null, // PHD2 doesn't timestamp the completion line itself
                     endLine: null,
                     mount: null,
+                    stepMs: null,
+                    decDeg: null,
                     outcome: null,
                     steps: [],
                     west: { angleDeg: null, ratePxPerSec: null, parity: null },
@@ -608,6 +627,13 @@ const Phd2LogParser = {
                 // Calibration Step = 1800 ms, Assume orthogonal axes = no".
                 const m = line.match(/^Mount = ([^,]+)/);
                 if (m) current.mount = m[1].trim();
+                const calStepMatch = line.match(/Calibration Step = (\d+) ms/);
+                if (calStepMatch) current.stepMs = parseInt(calStepMatch[1]);
+            }
+
+            if (current.decDeg === null && line.startsWith('Dec = ')) {
+                const decMatch = line.match(/^Dec = (-?[\d.]+)/);
+                if (decMatch) current.decDeg = parseFloat(decMatch[1]);
             }
 
             const stepMatch = line.match(/^(West|East|North|South|Backlash),(\d+),(-?[\d.]+),(-?[\d.]+),(-?[\d.]+),(-?[\d.]+),(-?[\d.]+)$/);
@@ -1096,94 +1122,6 @@ const Phd2LogParser = {
         }
 
         return [...new Set(matchedSubs)].sort((a, b) => a - b);
-    },
-
-    // -------------------------------------------------------------------------
-    // Recommendations
-    // -------------------------------------------------------------------------
-
-    _buildRecommendations(sessions, anomalies, equipment, overall) {
-        const recs = [];
-        const T = this.THRESHOLDS;
-
-        // Subs to inspect — from critical anomalies with sub correlation
-        const subsToInspect = [];
-        for (const a of anomalies) {
-            if (a.severity === 'critical') {
-                const m = a.message.match(/subs (\d+)–(\d+)/);
-                if (m) {
-                    for (let n = parseInt(m[1]); n <= parseInt(m[2]); n++) {
-                        subsToInspect.push(n);
-                    }
-                }
-            }
-        }
-        if (subsToInspect.length > 0) {
-            const unique = [...new Set(subsToInspect)].sort((a, b) => a - b);
-            recs.push({
-                priority: 'high',
-                message: `Carefully inspect subs ${unique[0]}–${unique[unique.length - 1]} for star trailing or elongation due to guiding anomalies`,
-            });
-        }
-
-        // Critical RMS sessions without sub correlation (this used to check
-        // type === 'high_rms', but that name now means the new, less severe
-        // 2.0"–4.0" band — the >=4.0" tier this recommendation always meant
-        // is now named critical_rms)
-        const criticalRmsSessions = anomalies.filter(a => a.type === 'critical_rms' && !a.message.includes('subs'));
-        for (const a of criticalRmsSessions) {
-            recs.push({
-                priority: 'high',
-                message: `Session ${a.session} (${a.timeRange}) had critical RMS — inspect subs taken during this period`,
-            });
-        }
-
-        // RA bias
-        if (overall && overall.raRms !== null) {
-            const raBias = overall.raRms / overall.decRms;
-            if (raBias > 1.5) {
-                recs.push({
-                    priority: 'medium',
-                    message: `RA error (${overall.raRms.toFixed(2)}") is consistently larger than Dec (${overall.decRms.toFixed(2)}") — consider reducing RA aggressiveness or checking for periodic error`,
-                });
-            } else if (raBias < 0.67) {
-                recs.push({
-                    priority: 'medium',
-                    message: `Dec error (${overall.decRms.toFixed(2)}") is consistently larger than RA (${overall.raRms.toFixed(2)}") — check Dec backlash compensation settings`,
-                });
-            }
-        }
-
-        // Pixel scale
-        if (equipment.pixelScale && equipment.pixelScale > 5.0) {
-            recs.push({
-                priority: 'low',
-                message: `Pixel scale of ${equipment.pixelScale}"/px is coarse — a longer focal length guidescope would improve guiding resolution`,
-            });
-        }
-
-        // Short sessions indicating frequent restarts
-        const shortCount = anomalies.filter(a => a.type === 'short_session').length;
-        if (shortCount > 3) {
-            recs.push({
-                priority: 'low',
-                message: `${shortCount} short guide sessions detected — these are expected from autofocus interruptions`,
-            });
-        }
-
-        // Star mass change (code 6) repeated — this used to key on code 7, which
-        // under the corrected ERROR_CODES map is "No star found", not a mass
-        // change; also switched from message substring matching to the
-        // structured anomaly.code field so this can't drift out of sync again.
-        const starMassErrors = anomalies.filter(a => a.type === 'error_code' && a.code === 6);
-        if (starMassErrors.length > 1) {
-            recs.push({
-                priority: 'medium',
-                message: `Star mass change errors (code 6) occurred in ${starMassErrors.length} sessions — consider increasing star mass tolerance in PHD2`,
-            });
-        }
-
-        return recs;
     },
 
     // -------------------------------------------------------------------------
