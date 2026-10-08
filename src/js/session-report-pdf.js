@@ -10,7 +10,7 @@
  * _perSubRow, _groupSubsByTarget) rather than re-deriving that logic here,
  * since none of them have any DOM dependency.
  *
- * Style matches the existing AsiairLogView/Phd2LogView downloadPDF
+ * Style matches the earlier ASIAir/PHD2 report downloadPDF
  * precedent exactly (headerBg #2c3e50, zebra rows, 0.5pt gray hairlines,
  * Roboto 9pt), extended with a page footer (page numbers) since this
  * report can run much longer than either original. Severity/tier is
@@ -137,8 +137,7 @@ const SessionReportPdf = {
     _headerVerdictRecommendations(fs, context, colors, tableLayout) {
         const content = [];
         const m = fs.metrics;
-        const bySeverity = { critical: 0, warning: 0, info: 0 };
-        fs.findings.forEach(f => { bySeverity[f.severity] = (bySeverity[f.severity] || 0) + 1; });
+        const bySeverity = SessionReportView._findingCounts(fs, context);
         const rms = m.guideRmsSettled != null ? Phd2LogParser.fmtArcsec(m.guideRmsSettled) : '—';
         const mismatchNote = m.ditherCountMismatch ? ' (dither count mismatch — see Data Quality)' : '';
         const rmsUnreliableNote = m.guideRmsUnreliable ? ' (frame/duration mismatch — see Data Quality)' : '';
@@ -195,20 +194,12 @@ const SessionReportPdf = {
             if (recs.length === 0) {
                 content.push({ text: 'No recommendations available for this night.', style: 'sectionNote' });
             } else {
-                const groups = [
-                    { key: 'astryx', title: 'Astryx Settings' },
-                    { key: 'asiair', title: 'ASIAir Configuration' },
-                    { key: 'phd2', title: 'PHD2 Configuration' },
-                    { key: 'process', title: 'Process / Hardware' },
-                ];
-                for (const g of groups) {
+                for (const g of SessionReportView._recommendationGroups()) {
                     const groupRecs = recs.filter(r => r.group === g.key);
                     if (groupRecs.length === 0) continue;
                     content.push({ text: g.title, style: 'subHeading' });
-                    const body = [[
-                        { text: 'Setting', style: 'tableHeader' }, { text: 'Observed', style: 'tableHeader' },
-                        { text: 'Recommended', style: 'tableHeader' }, { text: 'Confidence', style: 'tableHeader' },
-                    ]];
+                    if (g.note) content.push({ text: g.note, style: 'sectionNote' });
+                    const body = [g.columns.map(c => ({ text: c, style: 'tableHeader' }))];
                     for (const r of groupRecs) {
                         const textColor = r.changeNeeded ? colors.warning : undefined;
                         body.push([
@@ -223,6 +214,30 @@ const SessionReportPdf = {
                     }
                     content.push({ table: { headerRows: 1, widths: [130, 110, 110, 70], body }, layout: tableLayout, margin: [0, 0, 0, 6] });
                 }
+            }
+
+            const guiding = SessionRecommendations.buildGuidingSettings(context);
+            if (guiding) {
+                const body = [['Setting', 'Yours', 'Tonight', 'Assessment'].map(c => ({ text: c, style: 'tableHeader' }))];
+                for (const r of guiding.rows) {
+                    const textColor = r.changeNeeded ? colors.warning : undefined;
+                    const inferred = r.confidence === 'inferred' ? ' (inferred)' : '';
+                    body.push([
+                        { text: r.setting, color: textColor },
+                        { text: r.yours, color: textColor },
+                        { text: r.tonight, color: textColor },
+                        { text: r.assessment + inferred, color: textColor },
+                    ]);
+                }
+                // Unbreakable keeps the heading with its table: the whole section moves to the next page when it doesn't fit.
+                content.push({
+                    unbreakable: true,
+                    stack: [
+                        { text: 'Guiding Settings', style: 'sectionHeading' },
+                        { text: guiding.summary.join(' '), style: 'sectionNote' },
+                        { table: { headerRows: 1, widths: [85, 60, 140, '*'], body }, layout: tableLayout, margin: [0, 0, 0, 6] },
+                    ],
+                });
             }
         }
 
@@ -267,7 +282,8 @@ const SessionReportPdf = {
 
         if (context && context.asiairParsed && context.asiairParsed.summary) {
             const summary = context.asiairParsed.summary;
-            content.push({ text: 'Summary', style: 'sectionHeading' });
+            // Collected into one unbreakable block so the notes stay with the table
+            const block = [{ text: 'Summary', style: 'sectionHeading' }];
             const body = [[
                 { text: 'Event Type', style: 'tableHeader' }, { text: 'Total Time', style: 'tableHeader' }, { text: '% of Session', style: 'tableHeader' },
             ]];
@@ -284,14 +300,18 @@ const SessionReportPdf = {
                 { text: `~${AsiairLogParser.fmtMinutes(summary.totalTrackedS)}`, fillColor: colors.totalRowBg },
                 { text: '100%', fillColor: colors.totalRowBg },
             ]);
-            content.push({ table: { headerRows: 1, widths: [220, 90, 90], body }, layout: tableLayout, margin: [0, 0, 0, 4] });
+            block.push({ table: { headerRows: 1, widths: [220, 90, 90], body }, layout: tableLayout, margin: [0, 0, 0, 4] });
 
             if (summary.wallClockS != null) {
                 const unaccountedNote = summary.unaccountedS > 0
                     ? `${AsiairLogParser.fmtMinutes(summary.unaccountedS)} unaccounted (${AsiairLogParser.fmtPct(summary.unaccountedS / summary.wallClockS * 100)} of wall clock)`
                     : 'fully accounted for';
-                content.push({ text: `Wall clock: ${AsiairLogParser.fmtMinutes(summary.wallClockS)}   •   Tracked: ${AsiairLogParser.fmtMinutes(summary.totalTrackedS)}   •   ${unaccountedNote}`, style: 'sectionNote' });
+                block.push({ text: `Wall clock: ${AsiairLogParser.fmtMinutes(summary.wallClockS)}   •   Tracked: ${AsiairLogParser.fmtMinutes(summary.totalTrackedS)}   •   ${unaccountedNote}`, style: 'sectionNote' });
             }
+            for (const note of SessionReportView._ditherSummaryNotes(context)) {
+                block.push({ text: note, style: 'sectionNote' });
+            }
+            content.push({ unbreakable: true, stack: block });
         }
 
         return content;
@@ -378,15 +398,8 @@ const SessionReportPdf = {
                 });
             }
 
-            const byPier = { East: [], West: [] };
-            for (const s of phd2.sessions) {
-                const side = s.geometry && s.geometry.pierSide;
-                if (side && byPier[side] && s.stats && s.stats.totRms != null) byPier[side].push(s.stats.totRms);
-            }
-            if (byPier.East.length > 0 || byPier.West.length > 0) {
-                const avg = (arr) => arr.length ? Phd2LogParser.fmtArcsec(arr.reduce((a, b) => a + b, 0) / arr.length) : '—';
-                content.push({ text: `Pier side: East ${avg(byPier.East)} (n=${byPier.East.length})   •   West ${avg(byPier.West)} (n=${byPier.West.length})`, style: 'sectionNote' });
-            }
+            const pierText = SessionReportView._pierSideText(fs, phd2);
+            if (pierText) content.push({ text: pierText, style: 'sectionNote' });
 
             const allDithers = phd2.sessions.flatMap(s => s.ditherEvents).filter(d => d.dxPx !== null);
             if (allDithers.length > 0) {
@@ -408,14 +421,15 @@ const SessionReportPdf = {
                 content.push({ text: `Guide Sessions (${phd2.sessions.length})`, style: 'subHeading' });
                 const body = [[
                     { text: '#', style: 'tableHeader' }, { text: 'Time Range', style: 'tableHeader' }, { text: 'Frames', style: 'tableHeader' },
-                    { text: 'RMS RA', style: 'tableHeader' }, { text: 'RMS Dec', style: 'tableHeader' }, { text: 'RMS Total', style: 'tableHeader' }, { text: 'Avg SNR', style: 'tableHeader' },
+                    { text: 'RMS RA', style: 'tableHeader' }, { text: 'RMS Dec', style: 'tableHeader' }, { text: 'RMS Total', style: 'tableHeader' },
+                    { text: 'Peak RA', style: 'tableHeader' }, { text: 'Peak Dec', style: 'tableHeader' }, { text: 'Avg SNR', style: 'tableHeader' },
                 ]];
                 for (const s of phd2.sessions) {
                     if (!s.stats) {
-                        body.push([String(s.num), { text: 'No frames recorded', colSpan: 6, color: colors.subtitleText }, {}, {}, {}, {}, {}]);
+                        body.push([String(s.num), { text: 'No frames recorded', colSpan: 8, color: colors.subtitleText }, {}, {}, {}, {}, {}, {}, {}]);
                         continue;
                     }
-                    const { raRms, decRms, totRms, totRmsAll, avgSnr } = s.stats;
+                    const { raRms, decRms, totRms, totRmsAll, raPeak, decPeak, avgSnr } = s.stats;
                     const totalCell = totRms != null
                         ? `${Phd2LogParser.fmtArcsec(totRms)} (all: ${Phd2LogParser.fmtArcsec(totRmsAll)})`
                         : `— (all: ${Phd2LogParser.fmtArcsec(totRmsAll)})`;
@@ -427,10 +441,18 @@ const SessionReportPdf = {
                         raRms != null ? Phd2LogParser.fmtArcsec(raRms) : '—',
                         decRms != null ? Phd2LogParser.fmtArcsec(decRms) : '—',
                         totalCell,
+                        raPeak != null ? Phd2LogParser.fmtArcsec(raPeak) : '—',
+                        decPeak != null ? Phd2LogParser.fmtArcsec(decPeak) : '—',
                         Phd2LogParser.fmtSnr(avgSnr),
                     ]);
+                    // Same inline annotation as the screen (Issue #255)
+                    if (s.frames.length < Phd2LogParser.THRESHOLDS.SHORT_SESSION && !s.incomplete) {
+                        body.push(['', { text: `Short session (${s.frames.length} frame${s.frames.length === 1 ? '' : 's'}) — likely an autofocus interruption or guider restart.`, colSpan: 8, color: colors.subtitleText, fontSize: 7.5 }, {}, {}, {}, {}, {}, {}, {}]);
+                    }
                 }
-                content.push({ table: { headerRows: 1, widths: [20, 130, 45, 50, 50, 95, 45], body }, layout: tableLayout, margin: [0, 0, 0, 8] });
+                content.push({ table: { headerRows: 1, widths: [18, 95, 35, 40, 40, 82, 40, 40, 38], body }, layout: tableLayout, margin: [0, 0, 0, 8] });
+                const d15Text = SessionReportView._d15ConsolidatedText(fs);
+                if (d15Text) content.push({ text: d15Text, style: 'sectionNote', color: colors.warning });
             }
 
             if (phd2.calibrations.length > 0) {
@@ -454,24 +476,10 @@ const SessionReportPdf = {
 
         // Findings — no forced break, stays with Guiding Analysis unless it overflows
         content.push({ text: 'Findings', style: 'sectionHeading' });
-        const order = { critical: 0, warning: 1, info: 2 };
-        const items = [];
-        for (const f of fs.findings) {
-            items.push({ severity: f.severity, title: f.title, detail: f.detail, confidence: f.confidence, affectedSubs: f.affectedSubs, ruledOut: f.ruledOut });
-        }
-        const phd2Anomalies = (context && context.phd2Parsed && context.phd2Parsed.anomalies) || [];
-        for (const a of phd2Anomalies) {
-            items.push({
-                severity: a.severity,
-                title: `Guide session ${a.session}: ${a.message}`,
-                detail: a.timeRange ? `Time range: ${a.timeRange}` : (a.startLine ? `Line ${a.startLine}` : ''),
-                confidence: 'measured', affectedSubs: [], ruledOut: [],
-            });
-        }
+        const items = SessionReportView._findingItems(fs, context);
         if (items.length === 0) {
             content.push({ text: 'No findings raised for this night.', style: 'sectionNote' });
         } else {
-            items.sort((a, b) => order[a.severity] - order[b.severity]);
             const ul = [];
             for (const item of items) {
                 const severityColor = item.severity === 'critical' ? colors.critical : item.severity === 'warning' ? colors.warning : colors.info;
@@ -545,6 +553,8 @@ const SessionReportPdf = {
         }
         content.push({ text: unmatchedText, style: 'sectionNote' });
         content.push({ text: `Subs without guide data: ${fs.coverage.subsWithoutGuideData ?? '—'}`, style: 'sectionNote' });
+        const settleScanText = SessionReportView._settleScanFailureText(context);
+        if (settleScanText) content.push({ text: settleScanText, style: 'sectionNote' });
 
         if (typeof SessionRecommendations !== 'undefined' && SessionRecommendations.buildMeridianVerification) {
             const rows = SessionRecommendations.buildMeridianVerification(context);
@@ -557,6 +567,8 @@ const SessionReportPdf = {
                 for (const r of rows) body.push([r.setting, r.observed, r.astryxSetting, r.delta]);
                 content.push({ table: { headerRows: 1, widths: [90, 110, 110, 90], body }, layout: tableLayout, margin: [0, 0, 0, 8] });
             }
+            const flipMissing = SessionRecommendations.meridianVerificationMissingText(context);
+            if (flipMissing) content.push({ text: flipMissing, style: 'sectionNote' });
         }
 
         content.push({ text: 'Stated Limits', style: 'subHeading' });

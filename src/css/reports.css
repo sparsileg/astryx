@@ -1,4 +1,81 @@
 /* ============================================================================
+   Log Analysis inputs
+   ============================================================================ */
+
+/* One drop box for both logs, with a Browse button and each loaded file's name below */
+.log-drop-zone {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 6.5rem;
+    padding: 1rem;
+    border: 2px dashed var(--border-color);
+    border-radius: 6px;
+    text-align: center;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.log-drop-zone.log-drop-active {
+    border-style: solid;
+    border-color: var(--primary-color);
+    background: var(--hover-bg);
+}
+
+.log-file-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+}
+
+.log-file-names {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: 0.75rem;
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+    font-size: 0.85rem;
+}
+
+.log-file-names dt {
+    color: var(--text-secondary);
+}
+
+.log-file-names dd {
+    margin: 0;
+}
+
+.log-file-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Guide Stability and Settle Time: labels beside short inputs, one row */
+.log-guide-settings {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.log-guide-settings label {
+    display: inline;
+    margin-bottom: 0;
+}
+
+.log-guide-settings label:not(:first-child) {
+    margin-left: 1rem;
+}
+
+/* Four characters, plus padding and the number spinner */
+.log-guide-settings input {
+    width: calc(4ch + 2.25rem);
+    padding: 0.4rem 0.5rem;
+}
+
+/* ============================================================================
    Session Analysis Accordions
    ============================================================================ */
 
@@ -7,6 +84,12 @@
     border: 1px solid var(--border-color);
     border-radius: 4px;
     overflow: hidden;
+}
+
+.analysis-report-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
 }
 
 .analysis-accordion-header {
@@ -60,10 +143,3 @@
 .guide-flag-critical { background: #fadbd8; color: #c0392b; }
 .guide-flag-warning  { background: #fdebd0; color: #e67e22; }
 .guide-flag-info     { background: #d6eaf8; color: #2980b9; }
-
-/* Guide narrative */
-.guide-narrative p {
-    margin: 0.4rem 0;
-    font-size: 0.9rem;
-    line-height: 1.5;
-}

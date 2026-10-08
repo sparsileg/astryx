@@ -115,9 +115,11 @@ Clearing the browser's data, using a private window, or using a different
 browser or computer shows an empty Astryx. Restore your latest backup (see
 [Backup and Restore](backup-restore.md)).
 
-**Automatic backups aren't happening.** If the wait after your last change
-ran out while Astryx was closed, that backup is skipped. On the desktop
-app, automatic backups also need a **Backup Folder** in Settings.
+**Automatic backups aren't happening.** Check that **Automatic backups on
+change** is on in Settings. A backup is made only after you change your
+data, once **Minutes before backup** has passed. On the desktop app,
+backups go to the **Backup Folder** in Settings, or to your Downloads
+folder if it's empty.
 
 **A backup won't restore: "Version Mismatch".** The backup was made by a
 version of Astryx with a different database version.

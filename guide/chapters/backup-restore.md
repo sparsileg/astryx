@@ -59,10 +59,11 @@ doesn't count as a change.
 
 - The wait is timed from your last change by the clock. If you close
   Astryx and open it again before the time is up, the countdown carries on
-  where it left off. If the time ran out while Astryx was closed, no backup
-  is made; the next change starts a new countdown.
-- On the desktop app, automatic backups need a **Backup Folder** in
-  Settings; without one, they're skipped.
+  where it left off. If the time ran out while Astryx was closed, the
+  backup is made as soon as Astryx starts.
+- Automatic backups go to your browser's downloads folder on the web
+  version. On the desktop app they go to the **Backup Folder** from
+  Settings, or to your Downloads folder if you haven't set one.
 
 See [Getting Started](getting-started.md) for these settings.
 

@@ -1258,6 +1258,8 @@ const UIManager = {
         if (backupFolderInput) {
             if (isTauriBuild) {
                 backupFolderInput.value = SettingsManager.getBackupFolder();
+                // Automatic backups go to Downloads until a folder is chosen
+                backupFolderInput.placeholder = 'Your Downloads folder';
                 if (backupFolderBrowseBtn) backupFolderBrowseBtn.style.display = '';
                 if (backupFolderClearBtn) backupFolderClearBtn.style.display = '';
 

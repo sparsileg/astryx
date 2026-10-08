@@ -4,7 +4,8 @@
     "corpus_dir": "Point --corpus-dir at the flat folder these filenames live in (e.g. ~/Documents/TestLogs) -- all paths below are bare filenames, no subfolders.",
     "expected_values_source": "subs / settled_guide_rms / drops are copied directly from corpus-index.md's Imaging sessions table. rms_tolerance defaults to 0.02\" if not given.",
     "invariants_caveat": "expected_failed_invariants is empty for every night below -- run the harness once, review which invariant failures show up, and populate these once you've decided which are known/acceptable (e.g. 2026-06-05's mixed exposure lengths) vs. real regressions.",
-    "meridian_verification_caveat": "buildMeridianVerification now runs (astro-core.js/astro-target.js are loaded), but still needs a context.location -- not wired into this manifest/harness yet, so it'll return [] for every night regardless. Flagged separately, not fixed here."
+    "meridian_verification_caveat": "buildMeridianVerification now runs (astro-core.js/astro-target.js are loaded), but still needs a context.location -- not wired into this manifest/harness yet, so it'll return [] for every night regardless. Flagged separately, not fixed here.",
+    "new_nights_2026_10_08": "2026-08-09 to 2026-10-06 were added 2026-10-08 with expected values recorded from the analysis code's own output that day (not from corpus-index.md), as a regression baseline."
   },
   "2025-10-23_calibration": {
     "asiair_file": "Autorun_Log_2025-10-23_194936.txt",
@@ -260,6 +261,76 @@
       "expected_failed_invariants": [
         "I1"
       ]
+    }
+  },
+  "2026-08-09": {
+    "_targets": "Sh2-101, C 4",
+    "asiair_file": "Autorun_Log_2026-08-09_215450.txt",
+    "phd2_file": "PHD2_GuideLog_2026-08-09_214427.txt",
+    "expected": {
+      "subs": 149,
+      "settled_guide_rms": 0.92,
+      "drops": 10,
+      "expected_failed_invariants": [
+        "I6"
+      ]
+    }
+  },
+  "2026-08-18": {
+    "_targets": "Sh2-101 -- first night at 1 s guide exposure; flip wait logged without seconds",
+    "asiair_file": "Autorun_Log_2026-08-18_212237.txt",
+    "phd2_file": "PHD2_GuideLog_2026-08-18_214532.txt",
+    "expected": {
+      "subs": 66,
+      "settled_guide_rms": 0.75,
+      "drops": 0,
+      "expected_failed_invariants": []
+    }
+  },
+  "2026-08-23": {
+    "_targets": "C 4",
+    "asiair_file": "Autorun_Log_2026-08-23_213219.txt",
+    "phd2_file": "PHD2_GuideLog_2026-08-23_212714.txt",
+    "expected": {
+      "subs": 55,
+      "settled_guide_rms": 1.13,
+      "drops": 499,
+      "expected_failed_invariants": [
+        "I3"
+      ]
+    }
+  },
+  "2026-09-06": {
+    "_targets": "C 4 -- critical guide session 7, 69-minute ASIAir log gap",
+    "asiair_file": "Autorun_Log_2026-09-06_194855.txt",
+    "phd2_file": "PHD2_GuideLog_2026-09-06_204425.txt",
+    "expected": {
+      "subs": 72,
+      "settled_guide_rms": 0.83,
+      "drops": 0,
+      "expected_failed_invariants": []
+    }
+  },
+  "2026-10-05": {
+    "_targets": "SH2-115, IC 417",
+    "asiair_file": "Autorun_Log_2026-10-05_201602.txt",
+    "phd2_file": "PHD2_GuideLog_2026-10-05_200232.txt",
+    "expected": {
+      "subs": 100,
+      "settled_guide_rms": 1.07,
+      "drops": 0,
+      "expected_failed_invariants": []
+    }
+  },
+  "2026-10-06": {
+    "_targets": "Sh2-115, IC 417",
+    "asiair_file": "Autorun_Log_2026-10-06_201425.txt",
+    "phd2_file": "PHD2_GuideLog_2026-10-06_200950.txt",
+    "expected": {
+      "subs": 100,
+      "settled_guide_rms": 1.37,
+      "drops": 3,
+      "expected_failed_invariants": []
     }
   }
 }

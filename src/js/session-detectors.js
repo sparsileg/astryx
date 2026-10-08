@@ -472,7 +472,7 @@ const SessionDetectors = {
                     severity: 'info',
                     confidence: 'measured',
                     title: `${event.kind === 'manualStop' ? 'Manual autorun stop' : 'Autofocus cancelled manually'} — run ${run.index} (${run.target})`,
-                    detail: `At ${event.at ? event.at.toISOString() : 'unknown time'}.`,
+                    detail: `At ${event.at ? AsiairLogParser.fmtTime(event.at) : 'unknown time'}.`,
                     evidence: [{ source: 'asiair', timestamp: event.at }],
                     timeRange: event.at ? { from: event.at, to: event.at } : null,
                 }));
@@ -486,7 +486,7 @@ const SessionDetectors = {
                     severity: 'info',
                     confidence: 'measured',
                     title: 'Plan Tonight paused',
-                    detail: `Paused at ${plan.endedAt ? plan.endedAt.toISOString() : 'unknown time'}.`,
+                    detail: `Paused at ${plan.endedAt ? AsiairLogParser.fmtTime(plan.endedAt) : 'unknown time'}.`,
                     evidence: [{ source: 'asiair', timestamp: plan.endedAt }],
                     timeRange: { from: plan.startedAt, to: plan.endedAt },
                 }));
@@ -498,8 +498,9 @@ const SessionDetectors = {
                 code: 'D5_MANUAL_INTERVENTION',
                 severity: 'info',
                 confidence: 'measured',
-                title: `Log gap (${gap.durationS.toFixed(0)}s)`,
-                detail: `Log disabled ${gap.startedAt.toISOString()} to ${gap.endedAt.toISOString()}.`,
+                title: `Log gap (${AsiairLogParser.fmtMinutes(gap.durationS)})`,
+                // Log times are local to the ASIAir, as everywhere else in the report
+                detail: `Log disabled ${AsiairLogParser.fmtTime(gap.startedAt)} to ${AsiairLogParser.fmtTime(gap.endedAt)}.`,
                 evidence: [{ source: 'asiair', value: gap.durationS }],
                 timeRange: { from: gap.startedAt, to: gap.endedAt },
             }));

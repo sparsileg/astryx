@@ -15,7 +15,7 @@
 const APP_CONFIG = {
     APP_NAME: 'Astryx',
     APP_TITLE: 'Astryx - Astrophotography Planning Tool',
-    APP_VERSION: '1.15.9',
+    APP_VERSION: '1.16.0',
     DB_NAME: 'astryx-db',
     DB_VERSION: 8,
     TARGET_DATA_PATH: './data/',
@@ -133,6 +133,28 @@ const APP_CONFIG = {
     TODO_ALTITUDE_GRAPH_STYLE: 'fill',   // 'fill' or 'line'
     TODO_ALTITUDE_GRAPH_ALPHA: 0.65,     // opacity of fill or line
     TODO_ALTITUDE_GRAPH_LINE_WIDTH: 4.0, // line width (used for both 'line' mode and fill outline)
+
+    // Guiding Settings section of the combined log report: one night's
+    // judgement of each guide setting from what the logs show. Persistence
+    // is the frame-to-frame correlation of the settled guide error.
+    GUIDE_SETTINGS_ANALYSIS: {
+        CAL_TARGET_STEPS:        12,    // PHD2 calibration aims for about this many RA steps
+        CAL_MIN_STEPS:           8,     // fewer RA steps gives a less accurate calibration
+        CAL_MAX_STEPS:           20,    // more RA steps only makes calibration slower
+        CAL_HIGH_DEC_DEG:        60,    // above this Dec, extra RA steps are expected (RA moves slowly near the pole)
+        CAL_STEP_ROUND_MS:       100,   // suggested calibration steps are rounded to this
+        MAX_DURATION_HIT_PCT:    0.5,   // % of frames at the Max RA/Dec duration cap before it's limiting corrections
+        PERSISTENCE_HIGH:        0.5,   // above this, errors linger: corrections may lag
+        PERSISTENCE_LOW:         -0.1,  // below this, errors flip each frame: corrections overshoot
+        AGGRESSION_STEP_PCT:     10,    // suggested aggression change to test
+        MIN_MOVE_OPTIONS_PX:     [0.1, 0.2],  // ASIAir's Corrected Trigger Accuracy choices
+        SEEING_CHASE_FACTOR:     2,     // seeing jitter above this × min move means guiding chases seeing
+        STABILITY_RMS_RATIO_MIN: 2,     // Guide Stability under this × settled RMS makes settles run long
+        RA_DEC_BIAS_RATIO:       1.5,   // RA/Dec RMS ratio (or its inverse) beyond this is unbalanced
+        STAR_MASS_CHANGE_SESSIONS: 2,   // sessions with "mass changed" star losses (code 6) before suggesting a higher tolerance
+    },
+    DEFAULT_GUIDE_STABILITY_ARCSEC: 2,  // ASIAir Guide Stability, entered on the Log Analysis screen
+    DEFAULT_GUIDE_SETTLE_TIME_S:    5,  // ASIAir settle time that Guide Stability must hold for
 
     // PHD2 guide log analysis thresholds (ELR.p1-2). RMS bands are calibrated
     // against the settled-frame RMS of the 19-log corpus (see

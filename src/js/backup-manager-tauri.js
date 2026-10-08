@@ -187,7 +187,6 @@ const BackupManagerTauri = {
      */
     async initAutoBackup() {
         if (!SettingsManager.getAutoBackupEnabled()) return;
-        if (!SettingsManager.getBackupFolder()) return;
 
         const lastChange = SettingsManager.getLastChangeTimestamp();
         if (!lastChange) return;
@@ -202,8 +201,9 @@ const BackupManagerTauri = {
         const remaining = delayMs - elapsed;
 
         if (remaining <= 0) {
-            // Delay already elapsed — don't fire on cold start
-            return;
+            // The wait ran out while Astryx was closed, so those changes
+            // were never backed up: back them up now
+            await this.executeAutoBackup(true);
         } else {
             // Resume the countdown from where it left off
             this._autoBackupTimer = setTimeout(() => {
@@ -212,13 +212,17 @@ const BackupManagerTauri = {
         }
     },
 
-    async executeAutoBackup() {
+    // The Backup Folder from Settings, or the system Downloads folder
+    async _autoBackupFolder() {
+        const backupFolder = SettingsManager.getBackupFolder();
+        return backupFolder !== '' ? backupFolder : await window.__TAURI__.path.downloadDir();
+    },
+
+    async executeAutoBackup(fromLastSession = false) {
         if (!SettingsManager.getAutoBackupEnabled()) return;
 
-        const backupFolder = SettingsManager.getBackupFolder();
-        if (!backupFolder) return; // No destination configured — skip silently
-
         try {
+            const backupFolder = await this._autoBackupFolder();
             const selectedStores = [
                 'settings', 'locations', 'telescopes', 'sensors', 'filters',
                 'pinnedTargets', 'toDoTargets', 'imagingProjects', 'imagingSessions', 'imagingPrograms'
@@ -237,7 +241,7 @@ const BackupManagerTauri = {
 
             await SettingsManager.saveSetting('lastBackupTimestamp', TimeUtils.nowDTG());
             BackupReminder.onBackupComplete();
-            UIManager.showToast('Auto-backup saved', 'success');
+            UIManager.showToast(fromLastSession ? 'Auto-backup saved: changes from your last session' : 'Auto-backup saved', 'success');
         } catch (error) {
             console.error('Auto-backup failed:', error);
             UIManager.showToast('Auto-backup failed: ' + error.message, 'error');

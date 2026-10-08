@@ -2192,15 +2192,25 @@
               ASIAir session and PHD2 guide logs
             </div>
             <div class="card-body">
-              <div class="form-row">
-                <div class="form-group">
-                  <label for="session-log-file">Session Log</label>
-                  <input type="file" id="session-log-file" accept=".txt">
+              <div class="form-group">
+                <label for="log-browse">Session Log and PHD2 Guide Log</label>
+                <div class="log-drop-zone" id="log-drop">Drop the ASIAir Autorun log and the PHD2 guide log here, together or one at a time</div>
+                <div class="log-file-row">
+                  <button type="button" class="btn btn-secondary btn-sm" id="log-browse">Browse…</button>
+                  <dl class="log-file-names">
+                    <dt>Session Log</dt>
+                    <dd class="log-file-name" id="session-log-name">No file loaded</dd>
+                    <dt>PHD2 Guide Log</dt>
+                    <dd class="log-file-name" id="phd2-log-name">No file loaded</dd>
+                  </dl>
                 </div>
-                <div class="form-group">
-                  <label for="phd2-log-file">PHD2 Guide Log</label>
-                  <input type="file" id="phd2-log-file" accept=".txt">
-                </div>
+                <input type="file" id="log-file" accept=".txt" multiple hidden>
+              </div>
+              <div class="form-group log-guide-settings">
+                <label for="log-guide-stability">Guide Stability (")<span class="tooltip-icon tooltip-host" data-tooltip-key="log_guideStability">?</span></label>
+                <input type="number" id="log-guide-stability" min="0.1" step="0.1">
+                <label for="log-guide-settle-time">Settle Time (s)</label>
+                <input type="number" id="log-guide-settle-time" min="1" step="1">
               </div>
               <div id="session-analysis-accordions"></div>
             </div>
@@ -2584,9 +2594,7 @@
       <script src="include/vfs_fonts.js"></script>
       <script src="js/utils-html.js"></script>
       <script src="js/asiair-log-parser.js"></script>
-      <script src="js/asiair-log-view.js"></script>
       <script src="js/phd2-log-parser.js"></script>
-      <script src="js/phd2-log-view.js"></script>
       <script src="js/backup-manager-web.js"></script>
       <script src="js/backup-manager-tauri.js"></script>
       <script src="js/backup-manager.js"></script>

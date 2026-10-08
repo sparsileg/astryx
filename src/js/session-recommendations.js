@@ -125,7 +125,7 @@ const SessionRecommendations = {
         } else {
             return this._makeRec({
                 group: 'behavior', setting: 'Sub Gap',
-                observed: 'no clean-block samples this session', recommended: 'no change', changeNeeded: false,
+                observed: 'no clean-block samples this session', recommended: this._learnedValueText(asiairParsed, 'subGap'), changeNeeded: false,
                 evidence: 'Every consecutive sub pair this session involved at least one non-clean sub.',
                 confidence: 'measured', expectedImpact: 'none',
             });
@@ -135,7 +135,7 @@ const SessionRecommendations = {
         return this._makeRec({
             group: 'behavior', setting: 'Sub Gap',
             observed: `${mean.toFixed(1)}s (n=${n}, ${note})`,
-            recommended: stored != null ? `${stored}s` : `${mean.toFixed(1)}s`,
+            recommended: this._learnedValueText(asiairParsed, 'subGap'),
             changeNeeded,
             evidence: `Mean sub-to-sub gap from clean blocks only, ${n} sample(s) (${note}).`,
             confidence: 'measured',
@@ -160,7 +160,7 @@ const SessionRecommendations = {
         if (samples.length === 0) {
             return this._makeRec({
                 group: 'behavior', setting: 'Dither Duration',
-                observed: 'no clean-block samples this session', recommended: 'no change', changeNeeded: false,
+                observed: 'no clean-block samples this session', recommended: this._learnedValueText(asiairParsed, 'dither'), changeNeeded: false,
                 evidence: 'No dither this session both settled cleanly and was immediately followed by a clean sub.',
                 confidence: 'measured', expectedImpact: 'none',
             });
@@ -171,12 +171,28 @@ const SessionRecommendations = {
         return this._makeRec({
             group: 'behavior', setting: 'Dither Duration',
             observed: `${mean.toFixed(1)}s (n=${samples.length}, clean blocks only)`,
-            recommended: stored != null ? `${stored}s` : `${mean.toFixed(1)}s`,
+            recommended: this._learnedValueText(asiairParsed, 'dither'),
             changeNeeded,
             evidence: `Mean settle duration of dithers that both completed 'done' and were followed by a clean sub, ${samples.length} sample(s).`,
             confidence: 'measured',
             expectedImpact: changeNeeded ? 'Sequence-plan time estimates drift by roughly the difference per dither.' : 'none — stored value already tracks this session\'s behavior',
         });
+    },
+
+    // The stored moving average, and what this log fed into it. The value
+    // averaged in comes from AsiairLogParser._computeRecommendations (what
+    // updateLearnedValues applies), which can differ slightly from the
+    // clean-block figure in the Observed column.
+    _learnedValueText(asiairParsed, which) {
+        const r = asiairParsed.recommendations;
+        const subGap = which === 'subGap';
+        const stored = subGap ? SettingsManager.getLearnedSubGapS() : SettingsManager.getLearnedDitherDurationS();
+        const applied = subGap ? r.observedSubGapS : r.observedDitherDurationS;
+        const count = subGap ? r.subGapSampleCount : r.ditherSampleCount;
+        const met = subGap ? r.subGapMeetsMinSamples : r.ditherMeetsMinSamples;
+        return met
+            ? `${stored}s (this log added ${applied}s, n=${count})`
+            : `${stored}s (not updated: ${count} clean sample${count === 1 ? '' : 's'}, minimum ${APP_CONFIG.ASIAIR_MIN_CLEAN_SAMPLES})`;
     },
 
     _afDurationRec(asiairParsed) {
@@ -327,6 +343,17 @@ const SessionRecommendations = {
         return rows;
     },
 
+    // Why a night with a flip has no verification table, or '' when the
+    // table is shown or there was no flip.
+    meridianVerificationMissingText(context) {
+        if (!context || !context.asiairParsed) return '';
+        if (this._meridianFlipsWithRuns(context.asiairParsed).length === 0) return '';
+        if (this.buildMeridianVerification(context).length > 0) return '';
+        return context.location
+            ? 'Meridian Flip Verification: the target\'s transit time could not be worked out for this flip.'
+            : 'Meridian Flip Verification needs the night\'s location: add this night to the Imaging Log with its location.';
+    },
+
     // #246: informational only, not a Recommendation — Stan's explicit
     // call ("not ready to use as a recommendation, but good information to
     // know"). Every observed `Settle Timeout` in the corpus landed at
@@ -396,6 +423,295 @@ const SessionRecommendations = {
         };
     },
 
+    // -------------------------------------------------------------------------
+    // Guiding Settings — each guide setting judged against what one night's
+    // logs show. Rendered as its own section, not through build()'s groups,
+    // because each row carries "what tonight showed" alongside the setting.
+    // Guide Stability and settle time come from context (entered on the Log
+    // Analysis screen); neither log records them.
+    // -------------------------------------------------------------------------
+
+    buildGuidingSettings(context) {
+        if (!context || !context.phd2Parsed) return null;
+        const phd2 = context.phd2Parsed;
+        const eq = phd2.equipment || {};
+        const C = APP_CONFIG.GUIDE_SETTINGS_ANALYSIS;
+        const stats = this._guideFrameStats(phd2);
+        const rows = [];
+        const summary = [];
+
+        const calRow = this._calibrationStepRow(phd2.calibrations || [], C);
+        if (calRow) rows.push(calRow);
+        if (stats) {
+            rows.push(this._maxDurationRow(stats, C));
+            rows.push(this._minMoveRow(eq, stats, C));
+            rows.push(this._aggressionRow('RA Aggression', eq.raAggression, stats.persistRa, C));
+            rows.push(this._aggressionRow('Dec Aggression', eq.decAggression, stats.persistDec, C));
+        }
+        const balance = this._balanceRow(phd2.overall, C);
+        if (balance) rows.push(balance.row);
+        const stabilityRow = this._guideStabilityRow(context, phd2.overall, C);
+        if (stabilityRow) rows.push(stabilityRow);
+        if (eq.exposureMs != null) {
+            rows.push({ setting: 'Guide Exposure', yours: `${(eq.exposureMs / 1000).toFixed(1)} s`,
+                tonight: '—', assessment: '—', changeNeeded: false, confidence: 'copied' });
+        }
+        const valid = rows.filter(Boolean);
+        if (valid.length === 0) return null;
+
+        if (balance) summary.push(balance.sentence);
+        if (stats && stats.resolutionLimited) {
+            summary.push('Most of tonight\'s guide error was smaller than the correction threshold, so the guide camera\'s resolution, not the settings, is the main limit on guiding.');
+        }
+        const changes = valid.filter(r => r.changeNeeded);
+        summary.push(changes.length > 0
+            ? `Worth a look: ${changes.map(r => r.setting).join(', ')}.`
+            : 'No setting changes suggested for tonight.');
+        if (changes.some(r => r.confidence === 'inferred')) {
+            summary.push('Inferred suggestions are tests: try one for a few nights and compare the reports.');
+        }
+
+        return { rows: valid, summary };
+    },
+
+    // Settled, error-free frames of every full guide session, per axis:
+    // persistence (lag-1 correlation of the error), seeing jitter (frame-to-
+    // frame change ÷ √2, in px), share of frames with no pulse, and pulses at
+    // the Max RA/Dec duration cap (counted over all frames).
+    _guideFrameStats(phd2) {
+        const T = APP_CONFIG.PHD2_GUIDE_THRESHOLDS;
+        const C = APP_CONFIG.GUIDE_SETTINGS_ANALYSIS;
+        const acc = { n: 0, persistRa: 0, persistDec: 0, jitterRa: 0, jitterDec: 0, zeroRa: 0, zeroDec: 0, capHits: 0, allFrames: 0 };
+        let maxRaMs = null, maxDecMs = null;
+
+        for (const s of phd2.sessions || []) {
+            if (s.frames.length < T.SHORT_SESSION) continue;
+            const sEq = s.equipment || {};
+            maxRaMs = maxRaMs ?? sEq.maxRaDurationMs;
+            maxDecMs = maxDecMs ?? sEq.maxDecDurationMs;
+            for (const f of s.frames) {
+                acc.allFrames++;
+                if ((sEq.maxRaDurationMs != null && f.raDurationMs >= sEq.maxRaDurationMs) ||
+                    (sEq.maxDecDurationMs != null && f.decDurationMs >= sEq.maxDecDurationMs)) acc.capHits++;
+            }
+            const fr = s.frames.filter(f => f.settled && f.error === 0 && Number.isFinite(f.raRaw) && Number.isFinite(f.decRaw));
+            if (fr.length < T.SHORT_SESSION) continue;
+            const pRa = this._lag1(fr.map(f => f.raRaw));
+            const pDec = this._lag1(fr.map(f => f.decRaw));
+            if (pRa == null || pDec == null) continue;
+            const n = fr.length;
+            acc.n += n;
+            acc.persistRa += pRa * n;
+            acc.persistDec += pDec * n;
+            acc.jitterRa += this._jitter(fr.map(f => f.raRaw)) * n;
+            acc.jitterDec += this._jitter(fr.map(f => f.decRaw)) * n;
+            acc.zeroRa += fr.filter(f => !f.raDurationMs).length;
+            acc.zeroDec += fr.filter(f => !f.decDurationMs).length;
+        }
+        if (acc.n === 0) return null;
+
+        const jitterPx = (acc.jitterRa + acc.jitterDec) / (2 * acc.n);
+        const minMove = phd2.equipment && phd2.equipment.raMinMove;
+        return {
+            frames: acc.n,
+            allFrames: acc.allFrames,
+            persistRa: acc.persistRa / acc.n,
+            persistDec: acc.persistDec / acc.n,
+            jitterPx,
+            zeroRaPct: 100 * acc.zeroRa / acc.n,
+            zeroDecPct: 100 * acc.zeroDec / acc.n,
+            capHits: acc.capHits,
+            maxRaMs,
+            maxDecMs,
+            resolutionLimited: minMove != null && jitterPx < minMove && minMove <= Math.min(...C.MIN_MOVE_OPTIONS_PX),
+        };
+    },
+
+    _lag1(values) {
+        if (values.length < 3) return null;
+        const mean = values.reduce((a, b) => a + b, 0) / values.length;
+        let num = 0, den = 0;
+        for (let i = 0; i < values.length; i++) {
+            const d = values[i] - mean;
+            den += d * d;
+            if (i < values.length - 1) num += d * (values[i + 1] - mean);
+        }
+        return den > 0 ? num / den : null;
+    },
+
+    _jitter(values) {
+        let sum = 0;
+        for (let i = 1; i < values.length; i++) sum += (values[i] - values[i - 1]) ** 2;
+        return Math.sqrt(sum / (values.length - 1) / 2);
+    },
+
+    _calibrationStepRow(calibrations, C) {
+        const cals = calibrations
+            .filter(c => c.outcome === 'complete' && c.stepMs != null)
+            .map(c => ({
+                stepMs: c.stepMs,
+                decDeg: c.decDeg,
+                raSteps: Math.max(0, ...c.steps.filter(s => s.direction === 'West').map(s => s.step)),
+            }))
+            .filter(c => c.raSteps > 0);
+        if (cals.length === 0) return null;
+
+        const stepMs = cals[0].stepMs;
+        const decText = (c) => c.decDeg != null ? ` at Dec ${Math.round(c.decDeg)}°` : '';
+        const nearPole = (c) => c.decDeg != null && Math.abs(c.decDeg) >= C.CAL_HIGH_DEC_DEG;
+        const suggest = (c) => Math.round(c.stepMs * C.CAL_TARGET_STEPS / c.raSteps / C.CAL_STEP_ROUND_MS) * C.CAL_STEP_ROUND_MS;
+        const tooFew = cals.find(c => c.raSteps < C.CAL_MIN_STEPS && !nearPole(c));
+        const tooMany = cals.find(c => c.raSteps > C.CAL_MAX_STEPS && !nearPole(c));
+        const poleExtra = cals.find(c => c.raSteps > C.CAL_MAX_STEPS && nearPole(c));
+
+        let assessment, changeNeeded = false;
+        if (tooFew) {
+            assessment = `Too few steps for an accurate calibration; try about ${suggest(tooFew)} ms`;
+            changeNeeded = true;
+        } else if (tooMany) {
+            assessment = `More steps than needed; about ${suggest(tooMany)} ms would calibrate faster`;
+            changeNeeded = true;
+        } else if (poleExtra) {
+            assessment = `Good: the extra steps${decText(poleExtra)} are normal near the pole`;
+        } else {
+            assessment = `Good: close to PHD2's ~${C.CAL_TARGET_STEPS}-step target`;
+        }
+        return {
+            setting: 'Calibration Step',
+            yours: [...new Set(cals.map(c => `${c.stepMs} ms`))].join(', '),
+            tonight: `RA steps: ${cals.map(c => `${c.raSteps}${decText(c)}`).join(', ')}`,
+            assessment, changeNeeded, confidence: 'measured',
+        };
+    },
+
+    _maxDurationRow(stats, C) {
+        if (stats.maxRaMs == null && stats.maxDecMs == null) return null;
+        const yours = stats.maxRaMs === stats.maxDecMs
+            ? `${stats.maxRaMs} ms`
+            : `RA ${stats.maxRaMs ?? '—'} / Dec ${stats.maxDecMs ?? '—'} ms`;
+        const hitPct = 100 * stats.capHits / stats.allFrames;
+        const changeNeeded = hitPct > C.MAX_DURATION_HIT_PCT;
+        return {
+            setting: 'Max RA / Dec Duration', yours,
+            tonight: `${stats.capHits} of ${stats.allFrames.toLocaleString()} pulses hit the limit`,
+            assessment: changeNeeded
+                ? 'Corrections are being cut short; raise it, or check the mount if the hits come in bursts'
+                : 'Good: not limiting corrections',
+            changeNeeded, confidence: 'measured',
+        };
+    },
+
+    _minMoveRow(eq, stats, C) {
+        const minMove = eq.raMinMove;
+        if (minMove == null) return null;
+        const lowest = Math.min(...C.MIN_MOVE_OPTIONS_PX);
+        const highest = Math.max(...C.MIN_MOVE_OPTIONS_PX);
+        const scaleText = eq.pixelScale != null ? ` (${(minMove * eq.pixelScale).toFixed(2)}")` : '';
+        const yours = eq.decMinMove != null && eq.decMinMove !== minMove
+            ? `RA ${minMove} / Dec ${eq.decMinMove} px`
+            : `${minMove} px${scaleText}`;
+
+        let assessment, changeNeeded = false, confidence = 'measured';
+        if (stats.jitterPx < minMove && minMove > lowest) {
+            assessment = `Small errors go uncorrected; try ${lowest} px`;
+            changeNeeded = true;
+            confidence = 'inferred';
+        } else if (stats.jitterPx < minMove) {
+            assessment = 'Good: already ASIAir\'s lowest setting';
+        } else if (stats.jitterPx > C.SEEING_CHASE_FACTOR * minMove && minMove < highest) {
+            assessment = `Guiding is chasing seeing; try ${highest} px`;
+            changeNeeded = true;
+            confidence = 'inferred';
+        } else {
+            assessment = 'Good';
+        }
+        return {
+            setting: 'Corrected Trigger Accuracy', yours,
+            tonight: `${Math.round(stats.zeroRaPct)}% of RA and ${Math.round(stats.zeroDecPct)}% of Dec frames needed no correction; seeing jitter ${stats.jitterPx.toFixed(2)} px`,
+            assessment, changeNeeded, confidence,
+        };
+    },
+
+    _aggressionRow(setting, aggressionPct, persistence, C) {
+        if (aggressionPct == null) return null;
+        let assessment, changeNeeded = false;
+        if (persistence > C.PERSISTENCE_HIGH) {
+            assessment = `Errors linger from frame to frame, so corrections may lag; try ${Math.min(100, aggressionPct + C.AGGRESSION_STEP_PCT)}%`;
+            changeNeeded = true;
+        } else if (persistence < C.PERSISTENCE_LOW) {
+            assessment = `Errors flip from frame to frame, so corrections overshoot; try ${Math.max(0, aggressionPct - C.AGGRESSION_STEP_PCT)}%`;
+            changeNeeded = true;
+        } else {
+            assessment = 'Good';
+        }
+        return {
+            setting, yours: `${Math.round(aggressionPct)}%`,
+            tonight: `Error persistence ${persistence.toFixed(2)}`,
+            assessment, changeNeeded, confidence: 'inferred',
+        };
+    },
+
+    // Settled RA vs Dec RMS for the night. Returns the row plus the summary
+    // sentence, so the two can't disagree.
+    _balanceRow(overall, C) {
+        if (!overall || overall.raRms == null || !overall.decRms) return null;
+        const ratio = overall.raRms / overall.decRms;
+        const tonight = `RA ${overall.raRms.toFixed(2)}", Dec ${overall.decRms.toFixed(2)}"`;
+        const row = { setting: 'RA / Dec Balance', yours: '—', tonight, changeNeeded: false, confidence: 'measured' };
+        let sentence;
+        if (ratio > C.RA_DEC_BIAS_RATIO) {
+            row.assessment = 'RA error is notably larger; check periodic error and RA balance, and see the RA Aggression row';
+            row.changeNeeded = true;
+            row.confidence = 'inferred';
+            sentence = 'RA error was notably larger than Dec, which points to periodic error, RA balance or RA aggression.';
+        } else if (ratio < 1 / C.RA_DEC_BIAS_RATIO) {
+            row.assessment = 'Dec error is notably larger; check Dec backlash and Dec balance';
+            row.changeNeeded = true;
+            row.confidence = 'inferred';
+            sentence = 'Dec error was notably larger than RA, which usually means Dec backlash or Dec balance.';
+        } else {
+            row.assessment = 'Good: well balanced';
+            sentence = 'RA and Dec errors were well balanced.';
+        }
+        return { row, sentence };
+    },
+
+    _guideStabilityRow(context, overall, C) {
+        const arcsec = context.guideStabilityArcsec;
+        const holdS = context.guideSettleTimeS;
+        if (arcsec == null || !context.asiairParsed) return null;
+        const dithers = context.asiairParsed.runs
+            .filter(r => r.kind === 'light')
+            .flatMap(r => r.events)
+            .filter(e => e.type === 'dither' && e.durationS != null);
+        const yours = `${arcsec}" for ${holdS} s`;
+        if (dithers.length === 0) {
+            return { setting: 'Guide Stability', yours, tonight: 'No dithers this session', assessment: '—', changeNeeded: false, confidence: 'measured' };
+        }
+        const settled = dithers.filter(e => e.outcome === 'done').map(e => e.durationS).sort((a, b) => a - b);
+        const timeouts = dithers.filter(e => e.outcome === 'timeout').length;
+        const pick = (q) => settled[Math.max(0, Math.ceil(q * settled.length) - 1)];
+        const timesText = settled.length > 0
+            ? `Dither settle ${Math.round(pick(0.5))} s median, ${Math.round(pick(0.9))} s for 90%; `
+            : '';
+        const rms = overall && overall.totRms;
+
+        let assessment, changeNeeded = false;
+        if (timeouts > 0) {
+            assessment = `Settling timed out ${timeouts} time${timeouts > 1 ? 's' : ''}; ${arcsec}" may be too tight${rms != null ? ` for tonight's ${rms.toFixed(2)}" guiding` : ''}`;
+            changeNeeded = true;
+        } else if (rms != null && arcsec < C.STABILITY_RMS_RATIO_MIN * rms) {
+            assessment = `Tight for tonight's ${rms.toFixed(2)}" guiding; settles may run long`;
+        } else {
+            assessment = 'Good';
+        }
+        return {
+            setting: 'Guide Stability', yours,
+            tonight: `${timesText}${timeouts} of ${dithers.length} timed out`,
+            assessment, changeNeeded, confidence: 'measured',
+        };
+    },
+
     _subTierByImageNo(fs, imageNo) {
         const sub = fs.subs.find(s => s.imageNo === imageNo);
         return sub ? sub.tier : null;
@@ -423,6 +739,8 @@ const SessionRecommendations = {
     // #244: reads phd2Parsed.equipment directly now that _extractEquipment
     // captures searchRegionPx/starMassTolerancePct/aggression/minMove at
     // the top level — the sessions[0] workaround is no longer needed.
+    // Minimum move and aggression are judged in buildGuidingSettings
+    // rather than echoed here.
     _buildPhd2Config(fs, context) {
         if (!context || !context.phd2Parsed) return [];
         const eq = context.phd2Parsed.equipment || {};
@@ -449,38 +767,24 @@ const SessionRecommendations = {
         }
 
         if (eq.starMassTolerancePct != null) {
+            // Star lost because its mass changed (PHD2 error code 6), counted
+            // per guide session.
+            const massSessions = new Set((context.phd2Parsed.anomalies || [])
+                .filter(a => a.type === 'error_code' && a.code === 6)
+                .map(a => a.session)).size;
+            const changeNeeded = massSessions >= APP_CONFIG.GUIDE_SETTINGS_ANALYSIS.STAR_MASS_CHANGE_SESSIONS;
             recs.push(this._makeRec({
                 group: 'phd2', setting: 'Star Mass Tolerance',
-                observed: `${eq.starMassTolerancePct}%`,
-                recommended: `${eq.starMassTolerancePct}% (as configured)`,
-                changeNeeded: false,
-                evidence: 'Read directly from the PHD2 log header.',
-                confidence: 'copied',
-                expectedImpact: 'none — informational',
-            }));
-        }
-
-        if (eq.raMinMove != null || eq.decMinMove != null) {
-            recs.push(this._makeRec({
-                group: 'phd2', setting: 'RA / Dec Minimum Move',
-                observed: `RA ${eq.raMinMove ?? '—'} / Dec ${eq.decMinMove ?? '—'}`,
-                recommended: 'as configured',
-                changeNeeded: false,
-                evidence: 'Read directly from the PHD2 log header.',
-                confidence: 'copied',
-                expectedImpact: 'none — informational',
-            }));
-        }
-
-        if (eq.raAggression != null || eq.decAggression != null) {
-            recs.push(this._makeRec({
-                group: 'phd2', setting: 'RA / Dec Aggression',
-                observed: `RA ${eq.raAggression != null ? eq.raAggression + '%' : '—'} / Dec ${eq.decAggression != null ? eq.decAggression + '%' : '—'}`,
-                recommended: 'as configured',
-                changeNeeded: false,
-                evidence: 'Read directly from the PHD2 log header.',
-                confidence: 'copied',
-                expectedImpact: 'none — informational',
+                observed: massSessions > 0
+                    ? `${eq.starMassTolerancePct}%; star lost to a mass change in ${massSessions} session(s)`
+                    : `${eq.starMassTolerancePct}%`,
+                recommended: changeNeeded ? `higher than ${eq.starMassTolerancePct}%` : `${eq.starMassTolerancePct}% (as configured)`,
+                changeNeeded,
+                evidence: changeNeeded
+                    ? `PHD2 dropped the guide star because its brightness changed (code 6) in ${massSessions} sessions; a higher tolerance lets it ride through thin cloud or seeing swings.`
+                    : 'Read directly from the PHD2 log header.',
+                confidence: changeNeeded ? 'inferred' : 'copied',
+                expectedImpact: changeNeeded ? 'Fewer lost-star interruptions.' : 'none — informational',
             }));
         }
 
