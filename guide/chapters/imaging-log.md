@@ -108,8 +108,9 @@ To change a session later, click its row in the project's table. To
 delete it, click **Delete** in its row.
 
 ::: note
-A session needs a **Date**, a **Sub Length**, and at least one **Original
-Exposure** before it can be saved, and its date can't be in the future. If
+A session needs a **Date**, a **Location**, a **Telescope**, a **Sensor**, a
+**Filter**, a **Sub Length**, and at least one **Original Exposure** before
+it can be saved, and its date can't be in the future. If
 you record the session before you start imaging, enter the number of
 exposures you plan, for example from the Sequence Planner, and correct it
 in the morning.
@@ -122,7 +123,7 @@ in the morning.
 | Equipment | **Date**, **Location**, **Telescope**, **Sensor**, **Filter**, plus **Rotation (°)** (the camera angle your plate solver reported), **Temp Setpoint (°C)**, **Bin**, **Gain**, and **Offset**. |
 | Moon & Conditions | **Moon Set**, **Moon Rise**, **Illumination (%)**, **Angle from Moon (°)**, and the four condition lists. |
 | Acquisition | **Sub Length (seconds)**, **Original Exposures**, **Used**, and **Integration Time**, which Astryx works out. |
-| Notes | Anything about the night. |
+| Notes | Anything about the night. Notes are kept as plain text; if you write them in Markdown, they render when you paste them into a Markdown document. |
 
 The equipment lists hold what you saved in Admin Tools (see [Getting
 Started](getting-started.md)). The condition lists start at **Unknown**:
@@ -218,7 +219,8 @@ Catalog Coverage and Program Progress count only **Completed** projects.
 The **Activity** tab is a calendar of one year, a square for each day,
 like the contribution calendar on GitHub. A day you imaged is colored; the
 darker the color, the more integration you collected that night, compared
-with your other nights that year. Hold the pointer over a day to see what
+with your other nights that year. Like the rest of the Imaging Log, it counts
+only **Used** exposures. Hold the pointer over a day to see what
 you imaged. Drag the slider above the calendar to choose the year.
 
 ::: {.shot id="imaging-log-activity"}

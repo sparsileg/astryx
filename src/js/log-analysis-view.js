@@ -71,7 +71,9 @@ const LogAnalysisView = {
                 // Deliberate, explicit update — parse() itself performs no
                 // writes (ELR.p1-4). Opening a log via this picker is treated
                 // as a deliberate refresh of planning values, not a pure read.
-                await AsiairLogParser.updateLearnedValues(parsed);
+                if (!await AsiairLogParser.updateLearnedValues(parsed)) {
+                    UIManager.showToast('This Session Log has already updated the stored sub gap and dither values, so they were not changed again', 'warning', APP_CONFIG.TOAST_LONG_DURATION_MS);
+                }
             } else if (Phd2LogParser.isGuideLog(text)) {
                 this._phd2Parsed = Phd2LogParser.parse(text);
                 document.getElementById('phd2-log-name').textContent = fileName;

@@ -119,6 +119,12 @@ const BackupReminder = {
                 UIManager.openNewBackupModal();
             }
         });
+
+        // Keep the wording that matches where this copy of Astryx keeps its data
+        const keep = window.__TAURI__ ? 'desktop' : 'web';
+        document.querySelectorAll('[data-storage]').forEach(el => {
+            if (el.dataset.storage !== keep) el.remove();
+        });
     }
 
 };

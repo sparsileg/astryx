@@ -920,10 +920,6 @@ input[type="number"] {
                  0 0 32px var(--primary-color);
 }
 
-.card-header:has(#seq-plan-af-note) {
-    display: flex;
-    align-items: center;
-}
 
 .card-header {
     display: flex;

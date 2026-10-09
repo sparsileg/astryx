@@ -70,7 +70,7 @@ const TUTORIAL_TARGET_FILTERING = {
             id: 'filter-visibility',
             type: 'callout',
             title: 'Filter by Visibility',
-            body: 'The Visibility filter includes only objects that are visible from your location during the specified month(s) and are higher than a minimum altitude based on the object type. You can select <em>Any month</em> or a single month.<br><br>Note that when <em>Any Month</em> is selected, targets may appear in the results list that are not visible from your currently selected location because they are too low in the sky.',
+            body: 'The Visibility filter includes only objects that spend at least two unbroken hours above your Min Altitude (set in Settings) in full darkness, from your location, during the specified month(s). You can select <em>Any month</em> or a single month.<br><br>Note that when <em>Any Month</em> is selected, targets may appear in the results list that are not visible from your currently selected location because they are too low in the sky.',
             target: '#target-filter-month-trigger',
             position: 'right',
             waitFor: 'next',

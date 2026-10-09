@@ -433,16 +433,9 @@ const SeqPlanView = {
             }
         );
 
-        // Autofocus checkbox listener to show/hide note
         const afCheckbox = document.getElementById('seq-plan-af-enabled');
-        const afNote = document.getElementById('seq-plan-af-note');
-        if (afCheckbox && afNote) {
-            afCheckbox.addEventListener('change', (e) => {
-                afNote.style.display = e.target.checked ? 'inline' : 'none';
-                this.debouncedRecalculate();
-            });
-            // Set initial state based on current checkbox value
-            afNote.style.display = afCheckbox.checked ? 'inline' : 'none';
+        if (afCheckbox) {
+            afCheckbox.addEventListener('change', () => this.debouncedRecalculate());
         }
 
         // Reset & Optimize button
@@ -623,7 +616,7 @@ const SeqPlanView = {
         this._modalTargetId = target.targetId;
 
         // Open modal and inject content directly
-        UIManager.openModal(null, `${target.name}   Session Detail`, null);
+        UIManager.openModal(null, `${target.name} — Session Detail`, null);
         const modalBody = document.getElementById('modal-body');
         if (modalBody) {
             modalBody.innerHTML = html + `
@@ -668,14 +661,14 @@ const SeqPlanView = {
         this.calculatedResults.forEach((target, index) => {
             const targetStartTime = jdToDate(target.imagingStartJD);
             const targetEndTime = jdToDate(target.imagingEndJD);
-            const flipWarning = target.meridianFlipJD ? '     Includes meridian flip' : '';
+            const flipWarning = target.meridianFlipJD ? ' • ⚠ Includes meridian flip' : '';
 
             // Main imaging entry (full window)
             html += `
             <p style="margin-bottom: 0.5rem;">
-                <strong>${index + 1}. <a href="#" class="block-link" data-action="show-target-detail" data-target-id="${target.targetId}">${target.name}</a></strong>
-                Start: ${targetStartTime.toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false})}
-                End: ${targetEndTime.toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false})} (${target.imagingMinutes.toFixed(0)}m)
+                <strong>${index + 1}. <a href="#" class="block-link" data-action="show-target-detail" data-target-id="${target.targetId}">${target.name}</a></strong> •
+                Start: ${targetStartTime.toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false})} •
+                End: ${targetEndTime.toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false})} (${target.imagingMinutes.toFixed(0)}m) •
                 ${target.exposureCount} × ${target.exposureTime}s${flipWarning}
             </p>
             `;
@@ -702,8 +695,8 @@ const SeqPlanView = {
 
                         html += `
             <p style="margin-bottom: 0.5rem; margin-left: 0rem;">
-                <span style="color: var(--error-color);">  ${target.name}   Altitude constraint</span>
-                Start: ${violationStart.toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false})}
+                <span style="color: var(--error-color);">⚠ ${target.name} • Altitude constraint</span> •
+                Start: ${violationStart.toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false})} •
                 End: ${violationEnd.toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false})} (${violationMinutes.toFixed(0)}m)
             </p>
                         `;
@@ -718,8 +711,8 @@ const SeqPlanView = {
 
                         html += `
             <p style="margin-bottom: 0.5rem; margin-left: 0rem;">
-                <span style="color: var(--error-color);">  ${target.name}   Altitude constraint</span>
-                Start: ${violationStart.toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false})}
+                <span style="color: var(--error-color);">⚠ ${target.name} • Altitude constraint</span> •
+                Start: ${violationStart.toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false})} •
                 End: ${violationEnd.toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false})} (${violationMinutes.toFixed(0)}m)
             </p>
                         `;
@@ -738,8 +731,8 @@ const SeqPlanView = {
 
                     html += `
             <p style="margin-bottom: 0.5rem; margin-left: 0rem;">
-                <span style="color: var(--error-color);">  ${target.name}   Horizon constraint</span>
-                Start: ${violationStart.toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false})}
+                <span style="color: var(--error-color);">⚠ ${target.name} • Horizon constraint</span> •
+                Start: ${violationStart.toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false})} •
                 End: ${violationEnd.toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false})} (${violationMinutes.toFixed(0)}m)
             </p>
                     `;
@@ -815,7 +808,7 @@ const SeqPlanView = {
                            style="width: 200px;">
                 </div>
                 <div class="seq-plan-allocation-value" id="value-${target.targetId}">
-                    ${target.allocatedPercent.toFixed(0)}%   ${target.exposureCount} × ${target.exposureTime}s
+                    ${target.allocatedPercent.toFixed(0)}% • ${target.exposureCount} × ${target.exposureTime}s
                 </div>
             `;
 
@@ -1006,7 +999,7 @@ const SeqPlanView = {
                 slider.value = target.allocatedPercent.toFixed(0);
             }
             if (valueDisplay) {
-                valueDisplay.textContent = `${target.allocatedPercent.toFixed(0)}%   ${target.exposureCount} × ${target.exposureTime}s`;
+                valueDisplay.textContent = `${target.allocatedPercent.toFixed(0)}% • ${target.exposureCount} × ${target.exposureTime}s`;
             }
         });
 
@@ -1179,8 +1172,8 @@ const SeqPlanView = {
                 tableHeader: { fontSize: 9, bold: true, color: colors.headerText, fillColor: colors.headerBg },
             },
             content: [
-                { text: `${target.name}   Sequence Plan`, style: 'title' },
-                { text: `${session.date}     ${session.location.name || ''}`, style: 'subtitle' },
+                { text: `${target.name} — Sequence Plan`, style: 'title' },
+                { text: `${session.date}  •  ${session.location.name || ''}`, style: 'subtitle' },
                 {
                     table: {
                         headerRows: 1,

@@ -253,8 +253,8 @@ const ImagingLogView = {
                     ${HtmlUtils.escapeHtml(project.name)}
                     ${project.publishedLink
                         ? `<a href="${HtmlUtils.escapeHtml(project.publishedLink)}" target="_blank" rel="noopener noreferrer"
-                              title="View published image" class="project-published-link" data-action="noop"> </a>`
-                        : `<span title="Edit project to add published image link" class="project-published-link-inactive"> </span>`
+                              title="View published image" class="project-published-link" data-action="noop">🔗</a>`
+                        : `<span title="Edit project to add published image link" class="project-published-link-inactive">🔗</span>`
                     }
                 </div>
                     </div>
@@ -280,7 +280,7 @@ const ImagingLogView = {
 
                 <!-- Sessions Toggle Row -->
                 <div class="project-sessions-toggle" data-action="toggle-project-sessions" data-project-id="${project.id}">
-                    <span class="sessions-chevron" id="chevron-${project.id}"> </span>
+                    <span class="sessions-chevron" id="chevron-${project.id}">▶</span>
                     <span class="sessions-label">Imaging Sessions</span>
                     <button class="btn-primary btn-sm add-session-btn"
                             id="add-session-btn-${project.id}"
@@ -792,9 +792,9 @@ const ImagingLogView = {
             document.getElementById('session-project-id').value = session.projectId;
             document.getElementById('session-date').value = session.date;
             document.getElementById('session-rotation').value = session.rotation || '';
-            document.getElementById('session-temp-setpoint').value = session.tempSetpoint !== undefined ? session.tempSetpoint : -20;
-            document.getElementById('session-gain').value = session.gain !== undefined ? session.gain : 101;
-            document.getElementById('session-offset').value = session.offset !== undefined ? session.offset : 70;
+            document.getElementById('session-temp-setpoint').value = session.tempSetpoint ?? '';
+            document.getElementById('session-gain').value = session.gain ?? '';
+            document.getElementById('session-offset').value = session.offset ?? '';
             document.getElementById('session-moon-illumination').value = session.moonIllumination ?? '';
 
             if (session.moonSet) {
@@ -824,7 +824,7 @@ const ImagingLogView = {
             this.updateSessionIntegrationTime();
         } else {
             document.getElementById('session-project-id').value = projectId;
-            document.getElementById('session-date').value = new Date().toISOString().split('T')[0];
+            document.getElementById('session-date').value = TimeUtils.getTodayString();
         }
     },
 
@@ -1274,253 +1274,6 @@ const ImagingLogView = {
         await this.deleteProgramConfirm(programId);
     },
 
-    /**
-     * Show program modal (create or edit)
-     */
-    async showProgramModal(programId = null) {
-        const modal = document.getElementById('program-modal');
-
-        modal.innerHTML = `
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2>${programId ? 'Edit Program' : 'New Program'}</h2>
-                    <button class="modal-close" data-action="close-program-modal">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <div class="form-group">
-                        <label for="program-name">Program Name</label>
-                        <input type="text" id="program-name" placeholder="e.g., Messier Marathon">
-                    </div>
-
-                    <div class="form-group">
-                        <label>Program Type</label>
-                        <div style="display: flex; gap: 1.5rem; margin-top: 0.5rem;">
-                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                                <input type="radio" name="program-type" value="pattern" id="program-type-pattern">
-                                <span>Catalog Pattern</span>
-                            </label>
-                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                                <input type="radio" name="program-type" value="manual" id="program-type-manual" checked>
-                                <span>Manual List</span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <div id="manual-fields">
-                        <div class="form-group">
-                            <label for="program-targets">
-                                Target List
-                                <button type="button" class="btn-sm" id="import-targets-btn">Import from Database</button>
-                            </label>
-                            <textarea id="program-targets" rows="10"
-                                placeholder="Enter (or paste) target designations (one per line)&#10;M 31&#10;M 42&#10;NGC 7000"></textarea>
-
-                            <div id="import-results" style="display: none; margin-top: 1rem; padding: 1rem; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 4px;">
-                                <div id="import-results-summary" style="margin-bottom: 1rem;"></div>
-                                <div id="import-results-matched" style="margin-bottom: 1rem;"></div>
-                                <div id="import-results-failed"></div>
-                            </div>
-                        </div>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="program-status">Status</label>
-                        <select id="program-status">
-                            <option value="Not Started">Not Started</option>
-                            <option value="Started">Started</option>
-                            <option value="Complete">Complete</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn-secondary" data-action="close-program-modal">Cancel</button>
-                    <button class="btn-primary" id="save-program-btn">Save Program</button>
-                </div>
-            </div>
-        `;
-
-        modal.style.display = 'flex';
-
-        if (!modal._listenerAttached) {
-            modal._listenerAttached = true;
-            modal.addEventListener('click', (e) => {
-                const actionEl = e.target.closest('[data-action="close-program-modal"]');
-                if (!actionEl) return;
-                this.closeProgramModal();
-            });
-        }
-
-        setTimeout(async () => {
-            await this.initializeProgramModal(programId);
-        }, 0);
-    },
-
-    async initializeProgramModal(programId) {
-        const nameField = document.getElementById('program-name');
-        const patternRadio = document.getElementById('program-type-pattern');
-        const manualRadio = document.getElementById('program-type-manual');
-        const patternFields = document.getElementById('pattern-fields');
-        const manualFields = document.getElementById('manual-fields');
-
-        const catalogPrefixMenu = document.getElementById('program-catalog-prefix-menu');
-        const catalogPrefixTrigger = document.getElementById('program-catalog-prefix-trigger');
-        const catalogPrefixDropdown = document.getElementById('program-catalog-prefix-dropdown');
-        const catalogPrefixLabel = document.getElementById('program-catalog-prefix-label');
-        if (catalogPrefixMenu) {
-            catalogPrefixMenu.innerHTML = '';
-            const placeholder = document.createElement('div');
-            placeholder.className = 'astryx-dropdown-item';
-            placeholder.dataset.value = '';
-            placeholder.textContent = 'Select catalog...';
-            catalogPrefixMenu.appendChild(placeholder);
-
-            const prefixSet = new Set();
-            DataManager.targetDatabase.forEach(target => {
-                if (target.object) {
-                    const m = target.object.match(/^([A-Za-z]+)/);
-                    if (m) prefixSet.add(m[1].toUpperCase());
-                }
-            });
-            Array.from(prefixSet).sort().forEach(prefix => {
-                const item = document.createElement('div');
-                item.className = 'astryx-dropdown-item';
-                item.dataset.value = prefix;
-                item.textContent = prefix;
-                catalogPrefixMenu.appendChild(item);
-            });
-
-            if (catalogPrefixTrigger && !catalogPrefixTrigger._listenerAttached) {
-                catalogPrefixTrigger._listenerAttached = true;
-                catalogPrefixTrigger.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    catalogPrefixDropdown.classList.toggle('open');
-                });
-                catalogPrefixMenu.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    const item = e.target.closest('.astryx-dropdown-item');
-                    if (!item) return;
-                    catalogPrefixMenu.querySelectorAll('.astryx-dropdown-item').forEach(i => i.classList.remove('selected'));
-                    item.classList.add('selected');
-                    if (catalogPrefixLabel) catalogPrefixLabel.textContent = item.textContent;
-                    catalogPrefixDropdown.classList.remove('open');
-                });
-            }
-        }
-
-        const maxNumberField = document.getElementById('program-max-number');
-        const targetsField = document.getElementById('program-targets');
-        const statusField = document.getElementById('program-status');
-        const importBtn = document.getElementById('import-targets-btn');
-        const saveBtn = document.getElementById('save-program-btn');
-
-        const toggleFields = () => {
-            if (patternRadio.checked) {
-                patternFields.style.display = 'block';
-                manualFields.style.display = 'none';
-            } else {
-                patternFields.style.display = 'none';
-                manualFields.style.display = 'block';
-            }
-        };
-
-        patternRadio.addEventListener('change', toggleFields);
-        manualRadio.addEventListener('change', toggleFields);
-
-        if (programId) {
-            const program = await ImagingLogManager.getProgram(programId);
-            if (program) {
-                nameField.value = program.name;
-                statusField.value = program.status;
-
-                if (ImagingLogManager.isProgramPatternBased(program)) {
-                    patternRadio.checked = true;
-                    maxNumberField.value = program.maxNumber;
-                    const prefixMenu = document.getElementById('program-catalog-prefix-menu');
-                    const prefixLabel = document.getElementById('program-catalog-prefix-label');
-                    if (prefixMenu) {
-                        prefixMenu.querySelectorAll('.astryx-dropdown-item').forEach(i => {
-                            i.classList.toggle('selected', i.dataset.value === program.catalogPrefix);
-                        });
-                        const selected = prefixMenu.querySelector('.astryx-dropdown-item.selected');
-                        if (prefixLabel && selected) prefixLabel.textContent = selected.textContent;
-                    }
-                } else {
-                    manualRadio.checked = true;
-                    targetsField.value = program.targetDesignations.join('\n');
-                }
-
-                toggleFields();
-            }
-        }
-
-        importBtn.addEventListener('click', () => {
-            this.showTargetImportModal(programId);
-        });
-
-        saveBtn.addEventListener('click', async () => {
-            const name = nameField.value.trim();
-            if (!name) {
-                UIManager.showToast('Program name is required', 'error');
-                return;
-            }
-
-            const programData = {
-                name: name,
-                status: statusField.value
-            };
-
-            if (patternRadio.checked) {
-                const prefix = document.getElementById('program-catalog-prefix-menu')?.querySelector('.astryx-dropdown-item.selected')?.dataset.value?.trim() ?? '';
-                const maxNum = parseInt(maxNumberField.value);
-
-                if (!prefix) {
-                    UIManager.showToast('Catalog prefix is required', 'error');
-                    return;
-                }
-
-                if (!maxNum || maxNum < 1) {
-                    UIManager.showToast('Maximum number must be at least 1', 'error');
-                    return;
-                }
-
-                programData.catalogPrefix = prefix;
-                programData.maxNumber = maxNum;
-            } else {
-                const targetList = targetsField.value
-                    .split('\n')
-                    .map(line => line.trim())
-                    .filter(line => line.length > 0);
-
-                if (targetList.length === 0) {
-                    UIManager.showToast('At least one target is required', 'error');
-                    return;
-                }
-
-                programData.targetDesignations = targetList;
-            }
-
-            try {
-                if (programId) {
-                    await ImagingLogManager.updateProgram(programId, programData);
-                    UIManager.showToast('Program updated', 'success');
-                    UIManager.markDataChanged();
-                } else {
-                    await ImagingLogManager.createProgram(programData);
-                    UIManager.showToast('Program created', 'success');
-                    UIManager.markDataChanged();
-                }
-
-                this.closeProgramModal();
-                await this.renderProgramsList();
-                await this.renderReports();
-            } catch (error) {
-                console.error('Error saving program:', error);
-                UIManager.showToast('Error saving program: ' + error.message, 'error');
-            }
-        });
-    },
-
     showImportProgramModal(programId = null) {
         this.currentProgramId = programId;
         const title = programId ? 'Edit Program' : 'New Program';
@@ -1729,7 +1482,7 @@ const ImagingLogView = {
                     </summary>
                     <div style="max-height: 200px; overflow-y: auto; padding: 0.5rem; background: var(--hover-bg); border-radius: 4px;">
                         ${results.matched.map(m =>
-                            `<div>${HtmlUtils.escapeHtml(m.input)}   ${HtmlUtils.escapeHtml(m.target.object)}</div>`
+                            `<div>${HtmlUtils.escapeHtml(m.input)} → ${HtmlUtils.escapeHtml(m.target.object)}</div>`
                         ).join('')}
                     </div>
                 </details>
@@ -1970,7 +1723,7 @@ const ImagingLogView = {
                         </details>
                     `;
                 } else {
-                    missingSection = '<div style="color: var(--success-color); font-weight: 600;">  Program Complete!</div>';
+                    missingSection = '<div style="color: var(--success-color); font-weight: 600;">✓ Program Complete!</div>';
                 }
             }
 

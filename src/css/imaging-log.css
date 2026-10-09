@@ -375,6 +375,13 @@
     padding: 0.4rem 0.5rem !important;
 }
 
+/* Read-only fields (a saved location's name) look inert */
+.modal input[type="text"]:read-only {
+    background: transparent !important;
+    color: var(--text-secondary) !important;
+    cursor: default;
+}
+
 /* Textarea can be taller */
 .modal textarea {
     height: auto !important;

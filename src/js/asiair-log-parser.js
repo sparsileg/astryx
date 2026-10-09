@@ -1748,15 +1748,19 @@ const AsiairLogParser = {
      *
      * ELR.p1-3 Change 3: skips the update entirely when a night doesn't have
      * enough clean samples, rather than let noise or a single dirty night
-     * pull the stored value around. Calling this twice on the same parsed
-     * result applies the EMA twice — that's the caller's responsibility to
-     * avoid, not guarded here (see ELR.p1-4 Problem #2).
+     * pull the stored value around. A log that has already updated the
+     * values (recognized by its start time) is skipped, so loading the same
+     * log twice doesn't apply the EMA twice.
      *
      * @param {object} parsed - Full result from parse()
+     * @returns {Promise<boolean>} false when this log had already been learned from
      */
     async updateLearnedValues(parsed) {
         const { recommendations } = parsed;
         const EMA_WEIGHT = APP_CONFIG.ASIAIR_LEARNED_VALUE_WEIGHT;
+        const logStart = parsed.wallClock.start?.toISOString();
+
+        if (logStart && SettingsManager.hasLearnedFromLog(logStart)) return false;
 
         if (recommendations.subGapMeetsMinSamples) {
             const storedSubGap = SettingsManager.getLearnedSubGapS();
@@ -1779,6 +1783,10 @@ const AsiairLogParser = {
                 derivedDate: recommendations.derivationDate,
             });
         }
+
+        const updated = recommendations.subGapMeetsMinSamples || recommendations.ditherMeetsMinSamples;
+        if (logStart && updated) await SettingsManager.addLearnedFromLog(logStart);
+        return true;
     },
 
 

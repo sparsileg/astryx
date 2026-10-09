@@ -299,7 +299,7 @@ const TUTORIAL_ADMIN_TOOLS = {
             id: 'admin-submenu-2',
             type: 'callout',
             title: 'Database Operations',
-            body: 'Open the system menu (☰) and expand <strong>Admin Tools</strong> again. The bottom three items — <strong>Clear All Targets</strong>, <strong>Check for Target Updates</strong>, and <strong>Merge New Targets</strong> — manage the target database.',
+            body: 'Open the system menu (≡) and expand <strong>Admin Tools</strong> again. The bottom three items — <strong>Clear All Targets</strong>, <strong>Check for Target Updates</strong>, and <strong>Merge New Targets</strong> — manage the target database.',
             target: null,
             position: 'center',
             width: '450px',

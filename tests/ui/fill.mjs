@@ -23,6 +23,8 @@ async function openAdminItem(page, action) {
 // to open something first.
 export const PREP = {
     'admin-tools/admin-submenu': page => openAdminItem(page),
+    // A session needs a filter, which no tutorial adds; it must exist before the form opens
+    'imaging-projects/add-session': page => page.evaluate(() => DataManager.saveFilter('Test Luminance')),
 };
 
 async function chooseLocationAndToDoTargets(page) {
@@ -71,6 +73,7 @@ export const FILL = {
         await pickDropdown(page, 'session-location', 'Test Site');
         await pickDropdown(page, 'session-telescope', 'Test Refractor');
         await pickDropdown(page, 'session-sensor', 'Test Sensor');
+        await pickDropdown(page, 'session-filter', 'Test Luminance');
         await page.fill('#session-sub-length', '180');
         await page.fill('#session-num-exposures', '40');
         await page.fill('#session-used-exposures', '38');

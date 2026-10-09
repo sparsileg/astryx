@@ -148,10 +148,11 @@ Best Combinations looks at the night as a whole.
 ## Coming Back to the Results
 
 The results stay while Astryx is open, so you can look at a target in Daily
-Visibility or the Viewfinder and come back to them. The settings, though,
-go back to today, **Dusk**, and **To Do List**. Before you click **Daily
-Visibility** on a card, set the **Date** again if the results are for
-another night.
+Visibility or the Viewfinder and come back to them. The **Date**,
+**Start**, and **Source** come back too, as they were when you ran the
+Optimizer, and the card's **Daily Visibility** button always opens the
+night the results are for. Change them and click **Find Targets** for new
+results.
 
 ## Tips
 

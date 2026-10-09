@@ -101,7 +101,9 @@ target that's behind your neighbor's oak tree.
 ### Changing or removing a location
 
 Click **Edit** next to a location in the Existing Locations list to load it
-into the form, change what you need, and click **Save Location**. Click
+into the form, change what you need, and click **Save Location**. A
+location's name can't be changed once it's saved; to use a different name,
+add a new location and delete the old one. Click
 **Delete** to remove it. A location that's recorded in an Imaging Log session
 can't be deleted.
 
@@ -141,8 +143,8 @@ numbers. Click **Save Sensor**.
 ### Filters
 
 Filters only need a name, such as L-eXtreme, Ha, or OIII. You select them
-when you record a session in the Imaging Log, so add them when you start
-using the log.
+when you record a session in the Imaging Log, and every session needs one,
+so add at least one before your first session.
 
 ### Changing or removing equipment
 

@@ -673,7 +673,7 @@ ${targetRows}
      * Get cache key for larger DSS image (3x FOV)
      */
     getDSSLargeCacheKey(ra, dec, fovDeg, widthPx, heightPx) {
-        return `dss_${ra.toFixed(4)}_${dec.toFixed(4)}_${fovDeg.toFixed(4)}_${widthPx}x${heightPx}_3x`;
+        return `dss_${ra.toFixed(4)}_${dec.toFixed(4)}_${fovDeg.toFixed(4)}_${widthPx}x${heightPx}${APP_CONFIG.DSS_LARGE_KEY_SUFFIX}`;
     },
 
     /**
@@ -705,14 +705,7 @@ ${targetRows}
     },
 
     /**
-     * Purge expired DSS cache entries
-     */
-    async purgeDSSCache() {
-        return DSSCache.purge(APP_CONFIG.DSS_CACHE_DURATION);
-    },
-
-    /**
-     * Purge both DSS cache tiers, but only if DSS_PURGE_CHECK_INTERVAL has
+     * Purge expired DSS cache entries (each tier on its own duration), but only if DSS_PURGE_CHECK_INTERVAL has
      * elapsed since the last check (Issue #221). Previously both purges ran
      * synchronously on every single cache miss — a full cache scan on nearly
      * every telescope switch. Now purge runs at most once per that interval,
@@ -722,8 +715,7 @@ ${targetRows}
         const now = Date.now();
         if (now - this._lastPurgeCheck < APP_CONFIG.DSS_PURGE_CHECK_INTERVAL) return;
         this._lastPurgeCheck = now;
-        await this.purgeDSSCache();
-        await DSSCache.purge(APP_CONFIG.DSS_LARGE_CACHE_DURATION);
+        await DSSCache.purge();
     },
 
     /**

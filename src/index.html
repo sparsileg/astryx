@@ -935,70 +935,6 @@
       <!-- end of Import Targets Template -->
 
 
-      <!-- Location Management Modal Template -->
-      <template id="location-modal-template">
-        <div class="form-group">
-          <h4>Add New Location</h4>
-        </div>
-
-        <div class="form-group">
-          <label for="location-name">Location Name</label>
-          <input type="text" id="location-name" placeholder="e.g., Home Observatory">
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label for="location-lat">Latitude (°)</label>
-            <input type="number" id="location-lat" step="0.0001" placeholder="e.g., 40.7128">
-          </div>
-          <div class="form-group">
-            <label for="location-lng">Longitude (°)</label>
-            <input type="number" id="location-lng" step="0.0001" placeholder="e.g., -74.0060">
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label for="location-elev">Elevation (m)</label>
-            <input type="number" id="location-elev" step="1" placeholder="e.g., 100">
-          </div>
-          <div class="form-group">
-            <label for="location-tz">Timezone (UTC offset)</label>
-            <input type="number" id="location-tz" step="0.5" placeholder="e.g., -5">
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label for="location-bortle">Bortle Scale (Dark Sky Quality)</label>
-          <select id="location-bortle" class="full-width">
-            <option value="">Select Bortle value...</option>
-            <option value="1">1 - Excellent dark sky</option>
-            <option value="2">2 - Typical dark sky</option>
-            <option value="3">3 - Rural sky</option>
-            <option value="4">4 - Rural/suburban transition</option>
-            <option value="5">5 - Suburban sky</option>
-            <option value="6">6 - Bright suburban</option>
-            <option value="7">7 - Suburban/urban transition</option>
-            <option value="8">8 - City sky</option>
-            <option value="9">9 - Inner city</option>
-          </select>
-        </div>
-
-        <div class="form-actions">
-          <button class="btn-primary" data-action="save">Save Location</button>
-        </div>
-
-        <hr style="margin: 2rem 0; border: none; border-top: 1px solid var(--border-color);">
-
-        <div class="form-group">
-          <h4>Saved Locations</h4>
-        </div>
-
-        <div id="location-list">
-          <!-- Saved locations will be populated here -->
-        </div>
-      </template> <!-- end of location-modal-templates -->
-
 
       <!-- Field of View Template -->
       <template id="fov-template">
@@ -1081,7 +1017,7 @@
               <div class="fov-canvas-wrap">
                 <canvas id="fov-canvas" width="600" height="600"></canvas>
                 <div id="fov-moon-note" class="fov-moon-note">
-                  Full moon outlined displayed
+                  Full moon outlined
                 </div>
               </div>
             </div>
@@ -1170,7 +1106,7 @@
           </div>
           <textarea id="project-notes"
                     rows="6"
-                    placeholder="Project notes (supports Markdown)..."></textarea>
+                    placeholder="Project notes (plain text; Markdown is fine)..."></textarea>
         </div>
       </template>
       <!-- END OF Manage Project Modal Template -->
@@ -1524,45 +1460,11 @@
           <div class="form-group">
             <textarea id="session-notes"
                       rows="6"
-                      placeholder="Session notes (Markdown)"></textarea>
+                      placeholder="Session notes (plain text; Markdown is fine)"></textarea>
           </div>
         </div>
       </template>
       <!-- END OF Manage Session Modal Template -->
-
-      <!-- Manage Program Modal Template -->
-      <template id="manage-program-template">
-        <div class="form-group">
-          <label for="program-name">Program Name *</label>
-          <input type="text"
-                 id="program-name"
-                 maxlength="100"
-                 placeholder="e.g., Messier Observing Program">
-        </div>
-
-        <div class="form-group">
-          <label for="program-status">Status</label>
-          <select id="program-status">
-            <option value="Started">Started</option>
-            <option value="Completed">Completed</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label>Target Count</label>
-          <div id="program-target-count"
-               style="padding: 0.5rem;
-                      background: var(--hover-bg);
-                      border-radius: 4px;
-                      font-weight: 600;">
-            0 targets
-          </div>
-        </div>
-
-        <div class="form-actions">
-          <button class="btn-primary" data-action="save">Save Program</button>
-        </div>
-      </template>
 
       <!-- Imaging Log View Template -->
       <template id="imaging-log-view-template">
@@ -1822,7 +1724,7 @@
               <span class="seqplan-ss-note">
                 Autofocus is assumed for new targets and after meridian flip
               </span>
-              <span class="collapse-icon"> </span>
+              <span class="collapse-icon">▼</span>
             </div>
             <div class="card-body" id="session-settings-body">
               <!-- Row 1: Date and Start -->
@@ -1932,7 +1834,6 @@
                     </div>
                     <span>min</span>
                   </div>
-                  <span id="seq-plan-af-note" style="display: none; color: var(--text-secondary); font-size: 0.85rem;"></span>
                 </div>
 
                 <!-- Row 2: Flip -->
@@ -2161,14 +2062,8 @@
                 <table class="session-table">
                   <tbody>
                     <tr>
-                      <td>Dust Size (mm)</td>
-                      <td>0.5</td>
-                      <td>1.5</td>
-                    </tr>
-                    <tr>
                       <td>Distance from<br>Sensor (mm)</td>
-                      <td id="dust-result-05">—</td>
-                      <td id="dust-result-15">—</td>
+                      <td id="dust-result">—</td>
                     </tr>
                   </tbody>
                 </table>
@@ -2224,10 +2119,16 @@
       <template id="backup-reminder-modal-template">
         <div style="line-height: 1.6;">
           <p style="margin-bottom: 1rem;">
-            All your Astryx data — locations, equipment, imaging projects, sessions, programs, your To Do List, and pinned targets — is stored exclusively in your browser's local IndexedDB storage. <strong>Nothing is stored on any server.</strong>
+            All your Astryx data — locations, equipment, imaging projects, sessions, programs, your To Do List, and pinned targets — is stored exclusively
+            <span data-storage="web">in your browser's local IndexedDB storage.</span>
+            <span data-storage="desktop">in a database on this computer, in Astryx's application data folder.</span>
+            <strong>Nothing is stored on any server.</strong>
           </p>
           <p style="margin-bottom: 1rem;">
-            This means if your browser data is cleared, your device is lost or fails, or you switch browsers, your data is gone. Regular backups to redundant or cloud storage are essential.
+            This means if
+            <span data-storage="web">your browser data is cleared, your device is lost or fails, or you switch browsers,</span>
+            <span data-storage="desktop">this computer is lost or fails, or Astryx's application data folder is deleted,</span>
+            your data is gone. Regular backups to redundant or cloud storage are essential.
           </p>
           <p style="margin-bottom: 0.5rem;"><strong>Recommended backup strategy:</strong></p>
           <p style="margin-bottom: 0.25rem;">1. Back up the <strong>Target Database</strong> once — it rarely changes and is large. Store it somewhere safe.</p>
@@ -2491,7 +2392,7 @@
         <div class="backup-success-message">
           <p style="font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem;">Backup completed successfully</p>
           <p style="color: var(--text-secondary);">
-            Saved to downloads folder: <span class="backup-success-filename" id="backup-success-filename">filename.zip</span>
+            Saved as: <span class="backup-success-filename" id="backup-success-filename">filename.zip</span>
           </p>
         </div>
 
