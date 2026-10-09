@@ -450,21 +450,6 @@ const DailyVisibilityView = {
     },
 
     /**
-     * Show data entry form if no data available
-     */
-    showDataEntryForm() {
-        const messageDiv = document.getElementById('daily-visibility-message');
-        if (messageDiv) {
-            messageDiv.innerHTML = `
-                <p style="color: var(--text-secondary); text-align: center; padding: 2rem;">
-                    Please use the Visibility Calculator to generate observation data,
-                    then click "Analyze Skyglow" to view the timeline.
-                </p>
-            `;
-        }
-    },
-
-    /**
      * Perform daily visibility analysis - main entry point
      */
     performAnalysis(data) {
@@ -1187,38 +1172,5 @@ const DailyVisibilityView = {
         svg.appendChild(path);
         timeline.appendChild(svg);
     },
-
-
-    /**
-     * Find when target crosses meridian (maximum altitude)
-     */
-    findMeridianCrossing(timelineData, data) {
-        const targetRA = data.ra;
-        const targetDEC = data.dec;
-        const latitude = data.latitude;
-        const longitude = data.longitude;
-
-        if (isNaN(targetRA) || isNaN(targetDEC)) return null;
-
-        let maxAltitude = -999;
-        let maxAltitudeJD = null;
-
-        // Sample at 1-minute intervals to find maximum altitude
-        const oneMinute = 1 / 1440;
-        let currentJD = timelineData.timelineStartJD;
-
-        while (currentJD <= timelineData.timelineEndJD) {
-            const altitude = getAltitude(currentJD, targetRA, targetDEC, latitude, longitude);
-
-            if (altitude > maxAltitude) {
-                maxAltitude = altitude;
-                maxAltitudeJD = currentJD;
-            }
-
-            currentJD += oneMinute;
-        }
-
-        return maxAltitudeJD;
-    }
 
 };

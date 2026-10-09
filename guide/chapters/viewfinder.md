@@ -79,9 +79,9 @@ north: at the top until you turn the camera.
 
 Images are kept on your computer for a while, so a target you've looked at
 recently appears at once and works offline. An image you don't use again
-within about two weeks is deleted, and a Wider image within two days; the
-next time you need it, Astryx downloads it again. Fetching a new one needs an internet
-connection; if it fails, Astryx says "Could not load DSS background image —
+within 15 days is deleted, and a Wider image within 7 days; the
+next time you need it, Astryx downloads it again. Fetching a new one needs an
+internet connection; if it fails, Astryx says "Could not load DSS background image —
 check your internet connection."
 
 Without the image, the canvas is black and shows only the frame and the
@@ -93,7 +93,7 @@ the image.
 | Checkbox | What it draws |
 |:---------------|:--------------------------------------------|
 | Target size | A yellow dashed ellipse the target's catalog size. It's always drawn tilted at 45°; only its size is meaningful, not its angle. |
-| Full moon | A circle the size of the full Moon (31′), for a sense of scale. The note "Full moon outlined displayed" appears at the bottom of the image. |
+| Full moon | A circle the size of the full Moon (31′), for a sense of scale. The note "Full moon outlined" appears at the bottom of the image. |
 | Crosshair | A small cross at the center of the frame. |
 
 The view starts with **DSS image** ticked and the other three unticked.
@@ -161,7 +161,8 @@ and plate solving centers the mount on it.
 
 **Snapshot** shows the framing on its own, as the camera would record it.
 In Actual, it's the whole canvas. In Wider, it's just what's inside the
-frame, turned upright. Click **Close**, or click outside the image, to put it away.
+frame, turned upright. To keep it, right-click the image and choose the save
+image option. Click **Close**, or click outside the image, to put it away.
 
 ## Tips
 

@@ -411,6 +411,17 @@ async setBackupReminderDays(days) {
         await this.saveSettings();
     },
 
+    // Start times of the Session Logs already used to update the learned
+    // values, so loading a log again doesn't apply its figures a second time
+    hasLearnedFromLog(logStart) {
+        return (this.settings.learnedFromLogs ?? []).includes(logStart);
+    },
+
+    async addLearnedFromLog(logStart) {
+        this.settings.learnedFromLogs = [...(this.settings.learnedFromLogs ?? []), logStart];
+        await this.saveSettings();
+    },
+
     getLearnedDitherDurationS() {
         return this.settings.learnedDitherDurationS ?? APP_CONFIG.DEFAULT_DITHER_DURATION_S;
     },

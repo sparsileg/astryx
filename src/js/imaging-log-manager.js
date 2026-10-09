@@ -381,10 +381,8 @@ const ImagingLogManager = {
             const project = projectsById.get(session.projectId);
             const projectName = project ? project.name : 'Unknown Project';
 
-            // Use usedExposures if available, otherwise fall back to numExposures (original)
-            const exposureCount = session.usedExposures !== undefined && session.usedExposures !== '' && session.usedExposures !== 0
-                  ? session.usedExposures
-                  : (session.numExposures || 0);
+            // Used exposures only, as in the project cards and sessions table
+            const exposureCount = Number(session.usedExposures) || 0;
             const subLength = session.subLength || 0;
             const seconds = subLength * exposureCount;
 
@@ -504,6 +502,18 @@ const ImagingLogManager = {
         today.setHours(23, 59, 59, 999); // End of today
         if (sessionDate > today) {
             return { valid: false, error: 'Session date cannot be in the future' };
+        }
+
+        const equipmentFields = [
+            ['location', 'Location'],
+            ['telescope', 'Telescope'],
+            ['sensor', 'Sensor'],
+            ['filter', 'Filter']
+        ];
+        for (const [field, label] of equipmentFields) {
+            if (!sessionData[field]) {
+                return { valid: false, error: `${label} is required` };
+            }
         }
 
         if (!sessionData.subLength || sessionData.subLength <= 0) {

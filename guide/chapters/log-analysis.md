@@ -71,8 +71,10 @@ Combined Report's Recommendations shows each night's measurement and the
 stored figure, with what this log added to it, or why it added nothing.
 
 ::: note
-Load each night's Session Log once. Loading the same log again counts the
-night twice.
+Each night's Session Log updates the stored figures once. Astryx
+remembers which logs it has used, by their start times, so loading the same
+log again leaves the figures alone and tells you so. The report itself
+appears as usual.
 :::
 
 ## The Combined Report

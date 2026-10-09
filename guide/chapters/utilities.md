@@ -42,21 +42,30 @@ within driving distance.
 ## Dust Mote Distance Estimator
 
 Dust on a filter or sensor window shows in your flats and lights as a soft
-ring, a "dust donut". The farther the speck is from the sensor, the larger
-the ring. Knowing the distance tells you which surface to clean.
+disc, or a ring (a "dust donut") on a telescope with a central obstruction.
+The farther the speck is from the sensor, the larger the spot. Knowing the distance tells you which surface to clean.
 
 1. In **Dust Mote Distance Estimator**, choose your **Telescope** and
    **Sensor**. Astryx fills in **Focal Ratio
-   (f/)** and **Pixel Size (µm)**; you can also type them.
-2. Measure the ring's diameter in pixels in your imaging software, and type
-   it in **Spot Diameter (px)**.
+   (f/)**, including the telescope's reducer or Barlow, and **Pixel Size
+   (µm)**; you can also type them.
+2. Measure the spot's diameter in pixels in your imaging software, and type
+   it in **Spot Diameter (px)**. The edge is soft: measure across the spot
+   where the edge has faded halfway.
 
-The table shows the estimated **Distance from Sensor (mm)** for two sizes
-of dust, 0.5 mm and 1.5 mm. The line below it gives the ring's diameter in
-millimeters and the focal ratio used.
+The result is the estimated **Distance from Sensor (mm)**: the spot's
+diameter in millimeters times the focal ratio. The line below it gives the
+spot's diameter in millimeters and the focal ratio used. If you imaged with
+binning, enter the binned pixel size, or measure on an unbinned frame.
+
+The distance is approximate. Glass makes things look closer than they are,
+so dust seen through a filter or window is a little farther away than the
+estimate.
 
 Compare the distance with your imaging train: a few millimeters usually
-means the sensor window, and farther away a filter or the flattener.
+means the sensor window, and farther away a filter or the rear lens of the
+flattener or reducer. Dust further up the train is too far out of focus to
+show as a spot.
 
 ## Related
 

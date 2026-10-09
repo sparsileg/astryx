@@ -29,15 +29,21 @@ const DSSCache = {
     },
 
     /**
-     * Purge expired entries. Pass duration so each caller
-     * can purge with its own expiry window.
+     * Purge expired entries. Each entry expires on its own tier's duration:
+     * Wider (3x) images on the short one, the rest on the long one.
      */
-    async purge(duration) {
+    async purge() {
         if (window.__TAURI__) {
-            return this._purgeFiles(duration);
+            return this._purgeFiles();
         } else {
-            return this._purgeDB(duration);
+            return this._purgeDB();
         }
+    },
+
+    _durationFor(key) {
+        return key.endsWith(APP_CONFIG.DSS_LARGE_KEY_SUFFIX)
+            ? APP_CONFIG.DSS_LARGE_CACHE_DURATION
+            : APP_CONFIG.DSS_CACHE_DURATION;
     },
 
     // ─── IndexedDB backend ───────────────────────────────────────────────────
@@ -71,13 +77,13 @@ const DSSCache = {
         }
     },
 
-    async _purgeDB(duration) {
+    async _purgeDB() {
         try {
             const all = await DBManager.getAll(APP_CONFIG.STORES.DSS_CACHE);
-            const cutoff = Date.now() - duration;
+            const now = Date.now();
             for (const entry of all) {
                 const lastAccessed = entry.lastAccessed ?? entry.timestamp;
-                if (lastAccessed < cutoff) {
+                if (lastAccessed < now - this._durationFor(entry.id)) {
                     await DBManager.delete(APP_CONFIG.STORES.DSS_CACHE, entry.id);
                 }
             }
@@ -103,7 +109,7 @@ const DSSCache = {
         try {
             await this._ensureInit();
             const { join } = window.__TAURI__.path;
-            const { readFile, stat } = window.__TAURI__.fs;
+            const { readFile, writeFile, stat } = window.__TAURI__.fs;
             const filePath = await join(this._cacheDir, key + '.jpg');
             const info = await stat(filePath);
             const age = Date.now() - info.mtime.getTime();
@@ -112,6 +118,9 @@ const DSSCache = {
                 return null;
             }
             const bytes = await readFile(filePath);
+            // Rewriting the file moves its modified time to now, so expiry
+            // counts from last use (as on the web), not from download
+            await writeFile(filePath, bytes).catch(() => {});
             const base64 = this._bytesToBase64(bytes);
             return 'data:image/jpeg;base64,' + base64;
         } catch (e) {
@@ -159,27 +168,28 @@ const DSSCache = {
     async _deleteFile(key) {
         try {
             const { join } = window.__TAURI__.path;
-            const { removeFile } = window.__TAURI__.fs;
+            const { remove } = window.__TAURI__.fs;
             const filePath = await join(this._cacheDir, key + '.jpg');
-            await removeFile(filePath).catch(() => {});
+            await remove(filePath).catch(() => {});
         } catch (e) {
             console.warn('DSSCache: failed to delete file:', e);
         }
     },
 
-    async _purgeFiles(duration) {
+    async _purgeFiles() {
         try {
             await this._ensureInit();
             const { join } = window.__TAURI__.path;
-            const { readDir, stat, removeFile } = window.__TAURI__.fs;
+            const { readDir, stat, remove } = window.__TAURI__.fs;
             const entries = await readDir(this._cacheDir);
-            const cutoff = Date.now() - duration;
+            const now = Date.now();
             for (const entry of entries) {
                 if (!entry.name || !entry.name.endsWith('.jpg')) continue;
+                const key = entry.name.slice(0, -'.jpg'.length);
                 const filePath = await join(this._cacheDir, entry.name);
                 const info = await stat(filePath);
-                if (info.mtime.getTime() < cutoff) {
-                    await removeFile(filePath).catch(() => {});
+                if (info.mtime.getTime() < now - this._durationFor(key)) {
+                    await remove(filePath).catch(() => {});
                 }
             }
         } catch (e) {

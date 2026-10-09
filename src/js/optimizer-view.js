@@ -21,6 +21,9 @@ const OptimizerView = {
     currentResults: null,
     totalEvaluated: 0,
 
+    // The Date, Start, and Source that produced currentResults, restored with them
+    resultsInputs: null,
+
     /**
      * Initialize Target Optimizer view
      */
@@ -37,8 +40,11 @@ const OptimizerView = {
         this.updateFilterSourceOption();
         this.attachEventHandlers();
 
-        // Re-render results if we have them from a previous run
+        // Re-render results if we have them from a previous run, with the
+        // inputs that produced them (so the card's Daily Visibility button
+        // uses the results' date)
         if (this.currentResults && this.currentResults.length > 0) {
+            this.restoreResultsInputs();
             if (this.displayMode === 'combinations' && this.currentCombos) {
                 this.renderCombinations(this.currentCombos);
             } else {
@@ -47,6 +53,26 @@ const OptimizerView = {
         }
 
         console.log('Target Optimizer initialized');
+    },
+
+    /**
+     * Put the Date, Start, and Source that produced the current results back in the controls
+     */
+    restoreResultsInputs() {
+        const inputs = this.resultsInputs;
+        if (!inputs) return;
+        document.getElementById('optimizer-date').value = inputs.date;
+        document.getElementById('optimizer-start-label').textContent = inputs.startLabel;
+        document.getElementById('optimizer-custom-time').value = inputs.customStartTime;
+        this.showCustomTime(inputs.startLabel === 'Custom');
+        document.getElementById('optimizer-source-label').textContent = inputs.sourceLabel;
+    },
+
+    showCustomTime(show) {
+        const customTimeInput = document.getElementById('optimizer-custom-time');
+        if (!customTimeInput) return;
+        customTimeInput.style.opacity = show ? '1' : '0';
+        customTimeInput.style.pointerEvents = show ? 'auto' : 'none';
     },
 
     /**
@@ -75,7 +101,6 @@ const OptimizerView = {
         const startTrigger = document.getElementById('optimizer-start-trigger');
         const startDropdown = document.getElementById('optimizer-start-dropdown');
         const startMenu = document.getElementById('optimizer-start-menu');
-        const customTimeInput = document.getElementById('optimizer-custom-time');
 
         if (startTrigger && startDropdown && startMenu) {
             startTrigger.addEventListener('click', (e) => {
@@ -91,15 +116,7 @@ const OptimizerView = {
                 const label = document.getElementById('optimizer-start-label');
                 if (label) label.textContent = item.textContent;
                 startDropdown.classList.remove('open');
-                if (customTimeInput) {
-                    if (value === 'custom') {
-                        customTimeInput.style.opacity = '1';
-                        customTimeInput.style.pointerEvents = 'auto';
-                    } else {
-                        customTimeInput.style.opacity = '0';
-                        customTimeInput.style.pointerEvents = 'none';
-                    }
-                }
+                this.showCustomTime(value === 'custom');
             });
         }
 
@@ -209,6 +226,12 @@ const OptimizerView = {
 
         // Store session for combination coverage calculation
         this.currentSession = session;
+        this.resultsInputs = {
+            date,
+            startLabel,
+            customStartTime,
+            sourceLabel
+        };
 
         // Render results
         this.renderResults(results, this.totalEvaluated);
@@ -476,41 +499,6 @@ const OptimizerView = {
     },
 
     /**
-     * Placeholder for combinations view - Phase 2/3
-     */
-    renderCombinationsPlaceholder() {
-        const container = document.getElementById('optimizer-results');
-        if (!container) return;
-
-        container.innerHTML = `
-            <div class="card" style="margin-top: 1rem;">
-                <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
-                    <h3>Suggested Targets</h3>
-                    <div class="optimizer-mode-toggle">
-                        <button class="btn-sm optimizer-mode-btn btn-secondary" data-mode="individual">Individual Targets</button>
-                        <button class="btn-sm optimizer-mode-btn btn-primary" data-mode="combinations">Best Combinations</button>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <p style="color: var(--text-secondary); text-align: center; padding: 2rem;">
-                        Best Combinations coming in next phase.
-                    </p>
-                </div>
-            </div>
-        `;
-
-        container.querySelectorAll('.optimizer-mode-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const mode = e.currentTarget.dataset.mode;
-                this.displayMode = mode;
-                if (mode === 'individual') {
-                    this.renderResults(this.currentResults, this.totalEvaluated);
-                }
-            });
-        });
-    },
-
-    /**
      * Replace all pinned targets with the targets from a combo
      * @param {number} index - Index in this.currentCombos
      */
@@ -604,7 +592,7 @@ const OptimizerView = {
         const loc = DataManager.getLocations()[locationName];
 
         // Build skyglowData directly using assembleSkyglowData
-        const dateStr = document.getElementById('optimizer-date').value;
+        const dateStr = this.resultsInputs.date;
         const minAltitude = SettingsManager.getGlobalMinAltitude();
         const useHorizon = true;
 

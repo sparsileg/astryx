@@ -409,30 +409,6 @@ const UIManager = {
                 saveBtn.addEventListener('click', () => {
                     this.saveLocationFromForm();
                 });
-            } else if (templateId === 'manage-telescopes-template') {
-                saveBtn = document.createElement('button');
-                saveBtn.id = 'modal-save-btn';
-                saveBtn.className = 'btn-primary btn-sm';
-                saveBtn.textContent = 'Save Telescope';
-                saveBtn.addEventListener('click', () => {
-                    this.handleSaveTelescope();
-                });
-            } else if (templateId === 'manage-sensors-template') {
-                saveBtn = document.createElement('button');
-                saveBtn.id = 'modal-save-btn';
-                saveBtn.className = 'btn-primary btn-sm';
-                saveBtn.textContent = 'Save Sensor';
-                saveBtn.addEventListener('click', () => {
-                    this.handleSaveSensor();
-                });
-            } else if (templateId === 'manage-filters-template') {
-                saveBtn = document.createElement('button');
-                saveBtn.id = 'modal-save-btn';
-                saveBtn.className = 'btn-primary btn-sm';
-                saveBtn.textContent = 'Save Filter';
-                saveBtn.addEventListener('click', () => {
-                    this.handleSaveFilter();
-                });
             } else if (templateId === 'backup-modal-template') {
                 saveBtn = document.createElement('button');
                 saveBtn.id = 'modal-save-btn';
@@ -642,7 +618,10 @@ const UIManager = {
         if (!location) return;
 
         // Populate form
-        document.getElementById('manage-location-name').value = locationName;
+        // The name keys the location's data (sessions, best months), so it can't change here
+        const nameInput = document.getElementById('manage-location-name');
+        nameInput.value = locationName;
+        nameInput.readOnly = true;
         document.getElementById('manage-latitude').value = location.latitude;
         document.getElementById('manage-longitude').value = location.longitude;
         document.getElementById('manage-elevation').value = location.elevation;
@@ -669,12 +648,6 @@ const UIManager = {
 
         // Update form title
         document.getElementById('location-form-title').textContent = `Edit Location: ${locationName}`;
-
-        // Store original name for editing in header button
-        const saveBtn = document.getElementById('modal-save-btn');
-        if (saveBtn) {
-            saveBtn.dataset.editingLocation = locationName;
-        }
     },
 
     /**
@@ -791,10 +764,6 @@ const UIManager = {
                 horizon.push({ azimuth, elevation });
             }
         }
-
-        // Check if editing
-        const saveBtn = document.getElementById('modal-save-btn');
-        const editingLocation = saveBtn?.dataset.editingLocation;
 
         // Save location
         await DataManager.saveLocation(name, {

@@ -159,7 +159,9 @@ const UtilitiesView = {
             const tel = telescopes[item.dataset.value];
             const focalRatioInput = document.getElementById('dust-focal-ratio');
             if (tel && focalRatioInput) {
-                focalRatioInput.value = (tel.focalLength / tel.aperture).toFixed(1);
+                // The filters and sensor window sit in the reduced (or Barlowed) beam
+                const effectiveFocalLength = FOVCalculations.getEffectiveFocalLength(tel.focalLength, tel.multiplier);
+                focalRatioInput.value = (effectiveFocalLength / tel.aperture).toFixed(1);
             } else if (focalRatioInput) {
                 focalRatioInput.value = '';
             }
@@ -209,11 +211,9 @@ const UtilitiesView = {
 
         if (isNaN(fRatio) || isNaN(pixelSize) || isNaN(spotPixels) ||
             fRatio <= 0 || pixelSize <= 0 || spotPixels <= 0) {
-            const r05 = document.getElementById('dust-result-05');
-            const r15 = document.getElementById('dust-result-15');
+            const result = document.getElementById('dust-result');
             const sum = document.getElementById('dust-mote-summary');
-            if (r05) r05.textContent = '—';
-            if (r15) r15.textContent = '—';
+            if (result) result.textContent = '—';
             if (sum)  sum.textContent = '—';
             return;
         }
@@ -221,19 +221,16 @@ const UtilitiesView = {
         // Convert spot diameter from pixels to mm
         const spotDiameterMm = (spotPixels * pixelSize) / 1000;
 
-        // Calculate distance for dust sizes (mm)
-        // Formula: distance = spot_diameter_mm * f_ratio / dust_diameter_mm
-        const dustSizes = [0.5, 1.5];
-        const distances = dustSizes.map(dust => ({
-            dustMm: dust,
-            distanceMm: (spotDiameterMm * fRatio / dust).toFixed(1)
-        }));
+        // The beam from an f/N telescope narrows by 1 mm of width per N mm of
+        // travel, so a speck d mm from the sensor casts a shadow whose edge
+        // fades from d/N - s to d/N + s across (s = speck size). Measured
+        // where the edge has faded halfway, the diameter is d/N.
+        // Hence distance = spot_diameter_mm * f_ratio.
+        const distanceMm = spotDiameterMm * fRatio;
 
-        const result05 = document.getElementById('dust-result-05');
-        const result15 = document.getElementById('dust-result-15');
-        const summary  = document.getElementById('dust-mote-summary');
-        if (result05) result05.textContent = distances[0].distanceMm;
-        if (result15) result15.textContent = distances[1].distanceMm;
+        const result  = document.getElementById('dust-result');
+        const summary = document.getElementById('dust-mote-summary');
+        if (result)  result.textContent  = distanceMm.toFixed(1);
         if (summary)  summary.textContent  = `Spot diameter: ${spotDiameterMm.toFixed(3)} mm  •  f/${fRatio}`;
     },
 
