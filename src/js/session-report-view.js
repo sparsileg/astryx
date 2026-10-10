@@ -69,7 +69,7 @@ const SessionReportView = {
             });
             return;
         }
-        const title = `Combined Report — ${fusedSession.targets.map(t => HtmlUtils.escapeHtml(t)).join(', ')} — ${this._formatNight(fusedSession)}`;
+        const title = `Combined Report — ${fusedSession.targets.map(t => HtmlUtils.escapeHtml(t)).join(', ')} — ${this._displayNight(fusedSession)}`;
         const reportHtml = this._buildReportHtml(fusedSession, this._context);
         accordion.innerHTML = `
             <div class="analysis-accordion-header">
@@ -146,9 +146,17 @@ const SessionReportView = {
               : `<p class="session-report-note-small" style="color:var(--text-secondary)">No PHD2 guide log for this night — guide-derived figures below are unavailable, not zero.</p>`;
         return `
             <h3 class="session-report-title">${fs.targets.map(t => HtmlUtils.escapeHtml(t)).join(', ')} — Combined Report</h3>
-            <p class="session-report-subtitle">${this._formatNight(fs)}</p>
+            <p class="session-report-subtitle">${this._displayNight(fs)}</p>
             ${coverageNote}
         `;
+    },
+
+    /**
+     * The night's date(s) in the chosen Date Format (issue #274). File names
+     * use _formatNight's YYYY-MM-DD.
+     */
+    _displayNight(fs) {
+        return this._formatNight(fs).split(' / ').filter(Boolean).map(d => TimeUtils.formatDisplayDate(d)).join(' / ');
     },
 
     _formatNight(fs) {

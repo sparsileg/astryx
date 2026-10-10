@@ -61,7 +61,8 @@
 /* Target Optimizer settings rows (optimizer-view-template) */
 .seq-plan-session-row-1 {
     display: grid;
-    grid-template-columns: 35px 150px 40px 150px 80px;
+    grid-template-columns: repeat(5, auto);
+    justify-content: start;
     gap: 0.5rem 1rem;
     align-items: center;
     margin-top: 0.5rem;
@@ -73,14 +74,6 @@
     width: var(--ss-time-width);
     opacity: 0;
     pointer-events: none;
-}
-
-#seq-plan-date {
-    background: var(--bg-color);
-    color: var(--text-color);
-    border: 1px solid var(--border-color);
-    padding: 0.4rem;
-    border-radius: 4px;
 }
 
 

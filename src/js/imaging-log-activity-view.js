@@ -169,7 +169,8 @@ const ImagingLogActivityView = {
                     const day = activity.get(dateStr);
                     const level = day ? levelFor(day.totalSeconds) : 0;
                     const tooltip = this.buildTooltip(dateStr, day);
-                    cellsHtml += `<div class="activity-cell activity-level-${level}" style="grid-column:${week + 1};grid-row:${dow + 1};" data-tooltip="${HtmlUtils.escapeHtml(tooltip)}"></div>`;
+                    const unused = day?.hasUnusedSession ? ' activity-cell-unused' : '';
+                    cellsHtml += `<div class="activity-cell activity-level-${level}${unused}" style="grid-column:${week + 1};grid-row:${dow + 1};" data-tooltip="${HtmlUtils.escapeHtml(tooltip)}"></div>`;
                 }
 
                 cursor.setUTCDate(cursor.getUTCDate() + 1);
@@ -194,6 +195,8 @@ const ImagingLogActivityView = {
                 <div class="activity-cell activity-level-3"></div>
                 <div class="activity-cell activity-level-4"></div>
                 <span>More</span>
+                <div class="activity-cell activity-level-0 activity-cell-unused activity-legend-unused"></div>
+                <span>Imaged, none used</span>
             </div>
         `;
     },
@@ -206,11 +209,11 @@ const ImagingLogActivityView = {
      */
     buildTooltip(dateStr, day) {
         if (!day || day.projects.length === 0) {
-            return dateStr;
+            return TimeUtils.formatDisplayDate(dateStr);
         }
-        const lines = [dateStr];
+        const lines = [TimeUtils.formatDisplayDate(dateStr)];
         day.projects.forEach(p => {
-            lines.push(`${p.name} \u2014 ${p.subs} x ${p.subLength}s`);
+            lines.push(`${p.name} \u2014 ${p.subs} used of ${p.taken} x ${p.subLength}s`);
         });
         return lines.join('\n');
     },

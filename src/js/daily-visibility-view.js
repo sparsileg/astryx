@@ -348,7 +348,8 @@ const DailyVisibilityView = {
         this._addRepeatButton('dv-prev-day',  -1);
         this._addRepeatButton('dv-next-day',   1);
         this._addRepeatButton('dv-next-week',  7);
-        document.getElementById('dv-date')?.addEventListener('change', () => this.recalculate());
+        const dateInput = document.getElementById('dv-date');
+        if (dateInput) DateInput.attach(dateInput, () => this.recalculate());
         const dvMinAltTrigger = document.getElementById('dv-min-alt-trigger');
         const dvMinAltDropdown = document.getElementById('dv-min-alt-dropdown');
         const dvMinAltMenu = document.getElementById('dv-min-alt-menu');
@@ -397,7 +398,7 @@ const DailyVisibilityView = {
                 defaultDate.setDate(defaultDate.getDate() - 1);
             }
             const dateStr = this.currentData?.date || TimeUtils.formatDateForInput(defaultDate);
-            dateInput.value = dateStr;
+            DateInput.set(dateInput, dateStr);
         }
         const altValue = this.currentData?.minAltitude ?? SettingsManager.getGlobalMinAltitude();
         const dvMinAltLabel = document.getElementById('dv-min-alt-label');
@@ -410,16 +411,18 @@ const DailyVisibilityView = {
 
     shiftDate(days) {
         const dateInput = document.getElementById('dv-date');
-        if (!dateInput) return;
-        const parts = dateInput.value.split('-');
+        const date = dateInput && DateInput.value(dateInput);
+        if (!date) return;
+        const parts = date.split('-');
         const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
         d.setDate(d.getDate() + days);
-        dateInput.value = TimeUtils.formatDateForInput(d);
+        DateInput.set(dateInput, TimeUtils.formatDateForInput(d));
         this.recalculate();
     },
 
     recalculate() {
-        const dateStr = document.getElementById('dv-date')?.value;
+        const dateInput = document.getElementById('dv-date');
+        const dateStr = dateInput ? DateInput.value(dateInput) : '';
         const dvMinAltLabel = document.getElementById('dv-min-alt-label');
         const minAltitude = dvMinAltLabel ? parseFloat(dvMinAltLabel.textContent) : SettingsManager.getGlobalMinAltitude();
         const useHorizon = document.getElementById('dv-use-horizon')?.checked ?? true;
@@ -861,7 +864,7 @@ const DailyVisibilityView = {
         labelsContainer.style.display = 'flex';
         labelsContainer.style.justifyContent = 'space-between';
         labelsContainer.style.margin = '17px 0 10px 0';
-        labelsContainer.style.fontSize = '12px';
+        labelsContainer.style.fontSize = '0.75rem';
         labelsContainer.style.color = '#b0b0b0';
         labelsContainer.style.position = 'relative';
 

@@ -36,7 +36,7 @@ Allocation with three rows, the Timeline, and the Imaging Plan.
 | Setting | What it does |
 |:--------------|:--------------------------------------------------------|
 | Date | The night to plan: the evening of this date and the morning after. It starts at today. |
-| Start | **Dusk** starts at astronomical dusk. **Custom** shows a field for your own start; type the time as HH:MM, in the location's local time. |
+| Start | **Dusk** starts at astronomical dusk. **Custom** shows a field for your own start, filled in with dusk; type the time as 24-hour HH:MM (2300 works too), in the location's local time. |
 | Location | Where you'll image. It starts at the location chosen in the sidebar, and can be set to any of your locations. |
 | Min Alt | The lowest altitude you'll image at. It starts at the Min Altitude in Settings; a different value is highlighted. Targets must also be above the location's horizon profile. |
 

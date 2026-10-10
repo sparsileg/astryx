@@ -24,12 +24,7 @@ const SeqPlanView = {
         // Populate dropdowns
         this.populateLocationDropdown();
         // Set default date to today (using local date, not UTC)
-        const today = new Date();
-        const year = today.getFullYear();
-        const month = (today.getMonth() + 1).toString().padStart(2, '0');
-        const day = today.getDate().toString().padStart(2, '0');
-        const dateStr = `${year}-${month}-${day}`;
-        document.getElementById('seq-plan-date').value = dateStr;
+        DateInput.set(document.getElementById('seq-plan-date'), TimeUtils.getTodayString());
 
         this.loadSettings();
         this.attachEventHandlers();
@@ -94,15 +89,15 @@ const SeqPlanView = {
             return;
         }
 
-        // Convert pinned targets to planning format
-        // Exposure time will be set from input when generating plan
+        // Convert pinned targets to planning format; each starts with the
+        // exposure last typed for it (issue #264)
         this.currentTargets = pinned.map(target => ({
             targetId: target.name,
             name: target.name,
             ra: target.ra,
             dec: target.dec,
             common: target.common || '',
-            exposureTime: 300, // Will be set from input
+            exposureTime: SettingsManager.getSeqPlanExposure(target.name),
             allocatedPercent: 0, // Will be set to equal division
             userOrder: 0,
             suggestedOrder: 0,
@@ -114,6 +109,13 @@ const SeqPlanView = {
         this.currentTargets.forEach(target => {
             target.allocatedPercent = equalPercent;
         });
+    },
+
+    /**
+     * A plan time as HH:MM in the plan location's time zone (issue #263)
+     */
+    _localTime(jd) {
+        return TimeUtils.formatLocalTime(jdToDate(jd), this.currentSession.location);
     },
 
     /**
@@ -293,9 +295,6 @@ const SeqPlanView = {
      * Save settings to SettingsManager
      */
     async saveSettings() {
-        await SettingsManager.saveSetting('seqPlanMinAltitude',
-            parseFloat(this._getDropdownValue('seq-plan-min-altitude-menu', '35')));
-
         await SettingsManager.saveSetting('seqPlanAutofocusEnabled',
             document.getElementById('seq-plan-af-enabled').checked);
         await SettingsManager.saveSetting('seqPlanAutofocusInterval',
@@ -323,7 +322,7 @@ const SeqPlanView = {
         // Date input triggers full regeneration
         const dateEl = document.getElementById('seq-plan-date');
         if (dateEl) {
-            dateEl.addEventListener('input', () => this.debouncedGenerate());
+            DateInput.attach(dateEl, () => this.debouncedGenerate());
         }
 
         // Start time dropdown
@@ -340,6 +339,9 @@ const SeqPlanView = {
                 if (value === 'custom') {
                     customTimeInput.style.opacity = '1';
                     customTimeInput.style.pointerEvents = 'auto';
+                    const date = DateInput.value(document.getElementById('seq-plan-date'));
+                    const location = DataManager.getLocations()[this._getDropdownValue('seq-plan-location-menu')];
+                    TimeInput.prefillDusk(customTimeInput, date, location);
                 } else {
                     customTimeInput.style.opacity = '0';
                     customTimeInput.style.pointerEvents = 'none';
@@ -349,12 +351,7 @@ const SeqPlanView = {
         );
 
         if (customTimeInput) {
-            customTimeInput.addEventListener('input', () => {
-                const val = customTimeInput.value;
-                const valid = /^\d{2}:\d{2}$/.test(val) && parseInt(val.slice(0, 2)) < 24 && parseInt(val.slice(3)) < 60;
-                customTimeInput.classList.toggle('input-invalid', val.length > 0 && !valid);
-                if (valid) this.debouncedGenerate();
-            });
+            TimeInput.attach(customTimeInput, () => this.debouncedGenerate());
         }
 
         // Min altitude dropdown — triggers full regeneration + override styling
@@ -491,9 +488,12 @@ const SeqPlanView = {
             const customStartJD = SeqPlanCalculations.customStartJD(session);
             if (customStartJD === null) {
                 UIManager.showToast(`Start time ${session.customStartTime} is more than ${APP_CONFIG.SEQ_PLAN_MAX_EARLY_START_MINUTES} min before dusk or after dawn; the plan starts at dusk`, 'warning', APP_CONFIG.TOAST_LONG_DURATION_MS);
-            } else if (customStartJD < session.duskJD) {
-                const minutes = Math.round((session.duskJD - customStartJD) * 1440);
-                UIManager.showToast(`Start time ${session.customStartTime} is ${minutes} min before astronomical dusk`, 'warning', APP_CONFIG.TOAST_LONG_DURATION_MS);
+            } else {
+                // Whole minutes, so typing dusk's own minute doesn't warn
+                const minutes = Math.floor((session.duskJD - customStartJD) * 1440);
+                if (minutes >= 1) {
+                    UIManager.showToast(`Start time ${session.customStartTime} is ${minutes} min before astronomical dusk`, 'warning', APP_CONFIG.TOAST_LONG_DURATION_MS);
+                }
             }
         }
 
@@ -540,7 +540,7 @@ const SeqPlanView = {
      * @returns {Object} Session configuration
      */
     buildSessionConfig() {
-        const date = document.getElementById('seq-plan-date').value;
+        const date = DateInput.value(document.getElementById('seq-plan-date'));
         const locationName = this._getDropdownValue('seq-plan-location-menu');
         const location = DataManager.getLocations()[locationName];
 
@@ -549,7 +549,7 @@ const SeqPlanView = {
             location: location,
             minAltitude: parseInt(this._getDropdownValue('seq-plan-min-altitude-menu', '35')),
             startTimeMode: this._getDropdownValue('seq-plan-start-time-menu', 'dusk'),
-            customStartTime: document.getElementById('seq-plan-custom-time').value,
+            customStartTime: TimeInput.value(document.getElementById('seq-plan-custom-time')),
             autofocusEnabled: document.getElementById('seq-plan-af-enabled').checked,
             autofocusInterval: parseInt(this._getDropdownValue('seq-plan-af-interval-menu', '60')),
             autofocusDuration: parseInt(this._getDropdownValue('seq-plan-af-duration-menu', '2')),
@@ -573,15 +573,14 @@ const SeqPlanView = {
         // Build table rows
         let rows = '';
         events.forEach(event => {
-            const startTime = jdToDate(event.startJD).toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false});
-            const endTime = jdToDate(event.endJD).toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false});
+            const startTime = this._localTime(event.startJD);
+            const endTime = this._localTime(event.endJD);
             const durationMin = ((event.endJD - event.startJD) * 24 * 60).toFixed(1);
 
             const typeLabel = {
                 'autofocus':  'Autofocus',
                 'calibration': 'Calibration',
                 'imaging':    'Imaging',
-                'flip-pause': 'Flip Pause',
                 'flip':       'Meridian Flip'
             }[event.type] || event.type;
 
@@ -640,8 +639,8 @@ const SeqPlanView = {
         if (!resultsDiv) return;
 
         // Format session times
-        const startTime = jdToDate(this.currentSession.sessionStartJD);
-        const endTime = jdToDate(this.currentSession.sessionEndJD);
+        const startTime = this.currentSession.sessionStartJD;
+        const endTime = this.currentSession.sessionEndJD;
         const duration = (this.currentSession.sessionEndJD - this.currentSession.sessionStartJD) * 24;
 
         let html = `
@@ -651,24 +650,24 @@ const SeqPlanView = {
         </div>
         <div class="card-body">
             <p style="display: flex; gap: 2rem; flex-wrap: wrap;">
-                <span><strong>Date:</strong> ${this.currentSession.date}</span>
+                <span><strong>Date:</strong> ${TimeUtils.formatDisplayDate(this.currentSession.date)}</span>
                 <span><strong>Location:</strong> ${HtmlUtils.escapeHtml(this._getDropdownValue('seq-plan-location-menu'))}</span>
-                <span><strong>Session:</strong> ${startTime.toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false})} - ${endTime.toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false})} (${duration.toFixed(1)}h)</span>
+                <span><strong>Session:</strong> ${this._localTime(startTime)} - ${this._localTime(endTime)} (${duration.toFixed(1)}h)</span>
             </p>
             <h4 style="margin-top: 1.5rem;">Target Sequence:</h4>
     `;
 
         this.calculatedResults.forEach((target, index) => {
-            const targetStartTime = jdToDate(target.imagingStartJD);
-            const targetEndTime = jdToDate(target.imagingEndJD);
+            const targetStartTime = target.imagingStartJD;
+            const targetEndTime = target.imagingEndJD;
             const flipWarning = target.meridianFlipJD ? ' • ⚠ Includes meridian flip' : '';
 
             // Main imaging entry (full window)
             html += `
             <p style="margin-bottom: 0.5rem;">
                 <strong>${index + 1}. <a href="#" class="block-link" data-action="show-target-detail" data-target-id="${target.targetId}">${target.name}</a></strong> •
-                Start: ${targetStartTime.toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false})} •
-                End: ${targetEndTime.toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false})} (${target.imagingMinutes.toFixed(0)}m) •
+                Start: ${this._localTime(targetStartTime)} •
+                End: ${this._localTime(targetEndTime)} (${target.imagingMinutes.toFixed(0)}m) •
                 ${target.exposureCount} × ${target.exposureTime}s${flipWarning}
             </p>
             `;
@@ -690,14 +689,14 @@ const SeqPlanView = {
                 if (constraint.violationType === 'starts_early' || constraint.violationType === 'both') {
                     const violationMinutes = (constraint.validStartJD - target.imagingStartJD) * 1440;
                     if (violationMinutes >= 1 && !overlapsHorizonViolation(target.imagingStartJD, constraint.validStartJD)) {
-                        const violationStart = jdToDate(target.imagingStartJD);
-                        const violationEnd = jdToDate(constraint.validStartJD);
+                        const violationStart = target.imagingStartJD;
+                        const violationEnd = constraint.validStartJD;
 
                         html += `
             <p style="margin-bottom: 0.5rem; margin-left: 0rem;">
                 <span style="color: var(--error-color);">⚠ ${target.name} • Altitude constraint</span> •
-                Start: ${violationStart.toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false})} •
-                End: ${violationEnd.toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false})} (${violationMinutes.toFixed(0)}m)
+                Start: ${this._localTime(violationStart)} •
+                End: ${this._localTime(violationEnd)} (${violationMinutes.toFixed(0)}m)
             </p>
                         `;
                     }
@@ -706,14 +705,14 @@ const SeqPlanView = {
                 if (constraint.violationType === 'ends_late' || constraint.violationType === 'both') {
                     const violationMinutes = (target.imagingEndJD - constraint.validEndJD) * 1440;
                     if (violationMinutes >= 1 && !overlapsHorizonViolation(constraint.validEndJD, target.imagingEndJD)) {
-                        const violationStart = jdToDate(constraint.validEndJD);
-                        const violationEnd = jdToDate(target.imagingEndJD);
+                        const violationStart = constraint.validEndJD;
+                        const violationEnd = target.imagingEndJD;
 
                         html += `
             <p style="margin-bottom: 0.5rem; margin-left: 0rem;">
                 <span style="color: var(--error-color);">⚠ ${target.name} • Altitude constraint</span> •
-                Start: ${violationStart.toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false})} •
-                End: ${violationEnd.toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false})} (${violationMinutes.toFixed(0)}m)
+                Start: ${this._localTime(violationStart)} •
+                End: ${this._localTime(violationEnd)} (${violationMinutes.toFixed(0)}m)
             </p>
                         `;
                     }
@@ -726,14 +725,14 @@ const SeqPlanView = {
                     const violationMinutes = (violation.endJD - violation.startJD) * 1440;
                     if (violationMinutes < 1) return;
 
-                    const violationStart = jdToDate(violation.startJD);
-                    const violationEnd = jdToDate(violation.endJD);
+                    const violationStart = violation.startJD;
+                    const violationEnd = violation.endJD;
 
                     html += `
             <p style="margin-bottom: 0.5rem; margin-left: 0rem;">
                 <span style="color: var(--error-color);">⚠ ${target.name} • Horizon constraint</span> •
-                Start: ${violationStart.toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false})} •
-                End: ${violationEnd.toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false})} (${violationMinutes.toFixed(0)}m)
+                Start: ${this._localTime(violationStart)} •
+                End: ${this._localTime(violationEnd)} (${violationMinutes.toFixed(0)}m)
             </p>
                     `;
                 });
@@ -973,7 +972,7 @@ const SeqPlanView = {
     /**
      * Handle exposure time change
      */
-    handleExposureChange(targetId, newExposure) {
+    async handleExposureChange(targetId, newExposure) {
         const target = this.calculatedResults.find(t => t.targetId === targetId);
         if (target && newExposure > 0) {
             target.exposureTime = newExposure;
@@ -981,6 +980,11 @@ const SeqPlanView = {
             const source = this.currentTargets.find(t => t.targetId === targetId);
             if (source) source.exposureTime = newExposure;
             this.recalculateAndUpdate();
+            // Remembered across restarts, and counts as a data change (issue #264)
+            if (newExposure !== SettingsManager.getSeqPlanExposure(targetId)) {
+                await SettingsManager.setSeqPlanExposure(targetId, newExposure);
+                await UIManager.markDataChanged();
+            }
         }
     },
 
@@ -1143,13 +1147,12 @@ const SeqPlanView = {
             'autofocus':   'Autofocus',
             'calibration': 'Guide Calibration',
             'imaging':     'Imaging',
-            'flip-pause':  'Flip Pause',
             'flip':        'Meridian Flip'
         };
 
         const detailRows = events.map((e, idx) => {
-            const startTime = jdToDate(e.startJD).toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false});
-            const endTime = jdToDate(e.endJD).toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false});
+            const startTime = TimeUtils.formatLocalTime(jdToDate(e.startJD), session.location);
+            const endTime = TimeUtils.formatLocalTime(jdToDate(e.endJD), session.location);
             const durationMin = ((e.endJD - e.startJD) * 24 * 60).toFixed(1);
             const bg = idx % 2 === 0 ? colors.rowWhite : colors.rowAlt;
 
@@ -1173,7 +1176,7 @@ const SeqPlanView = {
             },
             content: [
                 { text: `${target.name} — Sequence Plan`, style: 'title' },
-                { text: `${session.date}  •  ${session.location.name || ''}`, style: 'subtitle' },
+                { text: `${TimeUtils.formatDisplayDate(session.date)}  •  ${session.location.name || ''}`, style: 'subtitle' },
                 {
                     table: {
                         headerRows: 1,

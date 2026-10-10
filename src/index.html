@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="css/base.css">
     <link rel="stylesheet" href="css/daily-visibility.css">
     <link rel="stylesheet" href="css/dropdown.css">
+    <link rel="stylesheet" href="css/date-input.css">
     <link rel="stylesheet" href="css/fov.css">
     <link rel="stylesheet" href="css/imaging-log.css">
     <link rel="stylesheet" href="css/misc.css">
@@ -62,6 +63,13 @@
                 <div class="astryx-dropdown-item"
                      data-value="night">Night</div>
               </div>
+            </div>
+            <div class="astryx-dropdown" id="font-size-dropdown">
+              <div class="astryx-dropdown-trigger tooltip-host" id="font-size-dropdown-trigger" data-tooltip-key="sb_fontSize">
+                <span id="font-size-dropdown-label"></span>
+                <span class="astryx-dropdown-arrow"> </span>
+              </div>
+              <div class="astryx-dropdown-menu" id="font-size-dropdown-menu"></div>
             </div>
           </div>
           <div class="theme-selector" style="margin-top: 0.5rem;">
@@ -125,8 +133,10 @@
           </div>
         </div>
 
-        <div id="backup-reminder-indicator">Last backup: —</div>
-        <div id="app-version">
+        <div class="sidebar-footer">
+          <div id="backup-reminder-indicator"><span id="backup-reminder-text">Last backup: —</span><span class="backup-reminder-help" aria-label="About your data storage">?</span></div>
+          <div id="app-version"></div>
+        </div>
       </nav>
       <!-- end of Sidebar Navigation -->
 
@@ -364,7 +374,6 @@
               <button id="mode-daily-btn"></button>
               <button id="mode-yearly-btn"></button>
               <div id="daily-options">
-                <input type="date" id="start-date">
                 <select id="search-window">
                   <option value="1w-daily" selected>1 week (daily)</option>
                   <option value="2w-daily">2 weeks (daily)</option>
@@ -458,7 +467,7 @@
             <label class="dv-label">Date</label>
             <button id="dv-prev-week" class="btn-secondary btn-sm">◀◀</button>
             <button id="dv-prev-day" class="btn-secondary btn-sm">◀</button>
-            <input type="date" id="dv-date" class="dv-date-input">
+            <input type="text" id="dv-date" class="date-entry" maxlength="10">
             <button id="dv-next-day" class="btn-secondary btn-sm">▶</button>
             <button id="dv-next-week" class="btn-secondary btn-sm">▶▶</button>
             <label class="dv-label">Min Alt</label>
@@ -591,6 +600,23 @@
               </div>
             </div>
           </div>
+          <!-- Row 2: Date Format (issue #274) -->
+          <div class="settings-two-col">
+            <div class="form-group form-inline">
+              <label class="tooltip-host" data-tooltip-key="set_dateFormat">Date Format</label>
+              <div class="astryx-dropdown" id="date-format-dropdown">
+                <div class="astryx-dropdown-trigger" id="date-format-trigger">
+                  <span id="date-format-label">mm/dd/yyyy</span>
+                  <span class="astryx-dropdown-arrow"> </span>
+                </div>
+                <div class="astryx-dropdown-menu" id="date-format-menu">
+                  <div class="astryx-dropdown-item" data-value="mdy">mm/dd/yyyy</div>
+                  <div class="astryx-dropdown-item" data-value="dmy">dd/mm/yyyy</div>
+                  <div class="astryx-dropdown-item" data-value="ymd">yyyy-mm-dd</div>
+                </div>
+              </div>
+            </div>
+          </div>
           <!-- Row 3: Filter defaults - Min Size | Max Magnitude -->
           <div class="settings-two-col">
             <div class="form-group form-inline">
@@ -701,7 +727,7 @@
               </div>
               <div class="form-group">
                 <label for="manage-elevation">Elevation (m)*</label>
-                <input type="number" id="manage-elevation" step="1" placeholder="e.g., 233" min="0" max="9000">
+                <input type="number" id="manage-elevation" step="1" placeholder="e.g., 233">
               </div>
             </div>
             <!-- Horizon Profile -->
@@ -1187,7 +1213,7 @@
             <div class="form-row" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 1rem;">
               <div class="form-group">
                 <label for="session-date">Date *</label>
-                <input type="date" id="session-date">
+                <input type="text" id="session-date" class="date-entry" maxlength="10">
               </div>
 
               <div class="form-group">
@@ -1309,12 +1335,12 @@
             <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 1rem;">
               <div class="form-group">
                 <label for="session-moon-set">Moon Set</label>
-                <input type="time" id="session-moon-set">
+                <input type="text" id="session-moon-set" placeholder="HH:MM" maxlength="5">
               </div>
 
               <div class="form-group">
                 <label for="session-moon-rise">Moon Rise</label>
-                <input type="time" id="session-moon-rise">
+                <input type="text" id="session-moon-rise" placeholder="HH:MM" maxlength="5">
               </div>
 
               <div class="form-group">
@@ -1731,7 +1757,7 @@
               <div class="seq-plan-ss-row">
                 <div class="seq-plan-ss-field">
                   <label for="seq-plan-date" class="tooltip-host" data-tooltip-key="sp_startDate">Date:</label>
-                  <input type="date" id="seq-plan-date">
+                  <input type="text" id="seq-plan-date" class="date-entry" maxlength="10">
                 </div>
                 <div class="seq-plan-ss-field">
                   <label class="tooltip-host" data-tooltip-key="sp_startTime">Start:</label>
@@ -1745,7 +1771,7 @@
                       <div class="astryx-dropdown-item" data-value="custom">Custom</div>
                     </div>
                   </div>
-                  <input type="text" id="seq-plan-custom-time" placeholder="HH:MM" maxlength="5">
+                  <input type="text" id="seq-plan-custom-time" class="time-entry" placeholder="HH:MM" maxlength="5">
                 </div>
               </div>
 
@@ -2159,7 +2185,7 @@
               <!-- Row 1: Date and Session Start -->
               <div class="seq-plan-session-row-1">
                 <label for="optimizer-date" class="tooltip-host" data-tooltip-key="to_date">Date:</label>
-                <input type="date" id="optimizer-date">
+                <input type="text" id="optimizer-date" class="date-entry" maxlength="10">
 
                 <label class="tooltip-host" data-tooltip-key="to_startTime">Start:</label>
                 <div class="astryx-dropdown" id="optimizer-start-dropdown">
@@ -2172,7 +2198,7 @@
                     <div class="astryx-dropdown-item" data-value="custom">Custom</div>
                   </div>
                 </div>
-                <input type="time" id="optimizer-custom-time" style="opacity:0; pointer-events:none;">
+                <input type="text" id="optimizer-custom-time" class="time-entry" placeholder="HH:MM" maxlength="5" style="opacity:0; pointer-events:none;">
               </div>
 
               <!-- Row 2: Source and Execute -->
@@ -2513,6 +2539,8 @@
       <script src="js/todo-manager.js"></script>
       <script src="js/best-months.js"></script>
       <script src="js/utils-time.js"></script>
+      <script src="js/time-input.js"></script>
+      <script src="js/date-input.js"></script>
       <script src="js/utils-csv.js"></script>
       <script src="js/astro-core.js"></script>
       <script src="js/astro-moon.js"></script>

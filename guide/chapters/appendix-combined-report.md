@@ -1,4 +1,4 @@
-# Session Report Details
+# Combined Report Details
 
 This appendix gives the rules behind the Combined Report in Log Analysis.
 See [Log Analysis](log-analysis.md) for how to read it.

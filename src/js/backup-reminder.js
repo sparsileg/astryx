@@ -75,12 +75,13 @@ const BackupReminder = {
      */
     updateIndicator() {
         const indicator = document.getElementById('backup-reminder-indicator');
-        if (!indicator) return;
+        const text = document.getElementById('backup-reminder-text');
+        if (!indicator || !text) return;
 
         const days = this.daysSinceBackup();
 
         if (days === null) {
-            indicator.textContent = 'Last backup: never';
+            text.textContent = 'Last backup: never';
             indicator.style.color = 'var(--warning-color, #f59e0b)';
             return;
         }
@@ -90,7 +91,7 @@ const BackupReminder = {
             ? 'Last backup: today'
             : `Last backup: ${daysRounded} day${daysRounded !== 1 ? 's' : ''} ago`;
 
-        indicator.textContent = label;
+        text.textContent = label;
 
         // Color based on thresholds — amber and orange avoid red/green confusion
         if (daysRounded >= APP_CONFIG.BACKUP_REMINDER_RED_DAYS) {

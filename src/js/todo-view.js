@@ -585,7 +585,7 @@ const ToDoView = {
         ctx.fillStyle = textColor;
 
         // Line 1: Dusk/Dawn labels at edges
-        ctx.font = 'bold 14px sans-serif';
+        ctx.font = `bold ${SettingsManager.scaledPx(14)}px sans-serif`;
         ctx.textAlign = 'left';
         ctx.fillText('Dusk', chartLeft + 5, padding + 15);
         ctx.textAlign = 'right';
@@ -650,7 +650,7 @@ const ToDoView = {
 
                 // Draw rise/set times and target label INSIDE the bar
                 ctx.fillStyle = '#ffffff';
-                ctx.font = '12px sans-serif';  // Increased from 10px
+                ctx.font = `${SettingsManager.scaledPx(12)}px sans-serif`;  // Increased from 10px
 
                 let labelX = barX + 5; // Default: 5px from left edge
 
@@ -696,7 +696,7 @@ const ToDoView = {
                 const statusWidth = circleR * 2 + 6;
 
                 // Draw target label with dark backing for contrast
-                ctx.font = 'bold 13px sans-serif';
+                ctx.font = `bold ${SettingsManager.scaledPx(13)}px sans-serif`;
                 ctx.textAlign = 'left';
                 const chartTypeDisplay = OBJECT_TYPES[info.target.type] || info.target.type || '';
                 const chartLabel = chartTypeDisplay
@@ -713,7 +713,7 @@ const ToDoView = {
 
                 // Show set time if it's before dawn (right-aligned)
                 if (info.setJD <= dawnJD) {
-                    ctx.font = '12px sans-serif';  // Increased from 10px
+                    ctx.font = `${SettingsManager.scaledPx(12)}px sans-serif`;  // Increased from 10px
                     ctx.textAlign = 'right';
                     ctx.fillText(info.setTime, barX + barWidth - 5, barY + 20);  // Adjusted Y position
                 }
@@ -845,7 +845,7 @@ const ToDoView = {
 
         // Header
         ctx.fillStyle = textColor;
-        ctx.font = 'bold 14px sans-serif';
+        ctx.font = `bold ${SettingsManager.scaledPx(14)}px sans-serif`;
         ctx.textAlign = 'left';
         ctx.fillText('Dusk', chartLeft + 5, padding + 15);
         ctx.textAlign = 'right';
@@ -870,7 +870,7 @@ const ToDoView = {
             if (row.isLabel) {
                 // Label row — just text, no bar
                 ctx.fillStyle = textSecondary;
-                ctx.font = 'bold 14px sans-serif';
+                ctx.font = `bold ${SettingsManager.scaledPx(14)}px sans-serif`;
                 ctx.textAlign = 'left';
                 ctx.fillText(row.label.toUpperCase(), chartLeft + 5, currentY + 18);
                 currentY += labelRowHeight;
@@ -912,7 +912,7 @@ const ToDoView = {
                 this.drawAltitudeGraph(ctx, info.target, barX, barY, barWidth, barHeight, duskJD, dawnJD, location, isDST);
 
                 ctx.fillStyle = '#ffffff';
-                ctx.font = '12px sans-serif';
+                ctx.font = `${SettingsManager.scaledPx(12)}px sans-serif`;
 
                 let labelX = barX + 5;
                 if (info.riseJD >= duskJD) {
@@ -952,7 +952,7 @@ const ToDoView = {
                 const statusWidth = circleR * 2 + 6;
 
                 // Draw target label with dark backing for contrast
-                ctx.font = 'bold 13px sans-serif';
+                ctx.font = `bold ${SettingsManager.scaledPx(13)}px sans-serif`;
                 ctx.textAlign = 'left';
                 const chartTypeDisplay = OBJECT_TYPES[info.target.type] || info.target.type || '';
                 const chartLabel = chartTypeDisplay
@@ -968,7 +968,7 @@ const ToDoView = {
                 ctx.fillText(chartLabel, labelTextX, labelTextY);
 
                 if (info.setJD <= dawnJD) {
-                    ctx.font = '12px sans-serif';
+                    ctx.font = `${SettingsManager.scaledPx(12)}px sans-serif`;
                     ctx.textAlign = 'right';
                     ctx.fillText(info.setTime, barX + barWidth - 5, barY + 20);
                 }

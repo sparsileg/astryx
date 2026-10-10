@@ -110,12 +110,9 @@
     color: var(--text-secondary);
 }
 
-.dv-date-input {
+.dv-controls-row .date-entry {
     font-size: 0.85rem;
     padding: 2px 4px;
-    background: var(--input-bg);
-    color: var(--text-color);
-    border: 1px solid var(--border-color);
     border-radius: 4px;
 }
 
@@ -301,7 +298,7 @@
 
 .dv-dial-angle {
     fill: var(--text-color);
-    font-size: 14px;
+    font-size: 0.875rem;
     text-anchor: middle;
 }
 
@@ -548,7 +545,7 @@
     left: 4px;
     bottom: 2px;
     font-family: monospace;
-    font-size: 9px;
+    font-size: 0.5625rem;
     font-weight: 600;
     color: rgba(255, 255, 255, 0.6);
     z-index: 6;
@@ -560,7 +557,7 @@
 }
 
 .cloud-band-label-title {
-    font-size: 15px;
+    font-size: 0.9375rem;
 }
 
 .cloud-band-desc {

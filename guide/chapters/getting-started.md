@@ -168,6 +168,7 @@ until you have a reason to change it. Open the system menu (≡), choose
 |:------|:---|:--------------|
 | DST Mode | Automatic | Automatic follows each location's time zone. **Always Active** and **Never Active** override it for every location; you shouldn't need them. |
 | Min Altitude | 35° | The lowest a target can be and still count as up. It's the starting value in Daily Visibility, Yearly Observability, and the Sequence Planner, and the value the Target Optimizer, To Do List, and Visibility filter use. Changing it means recalculating Best Months; Astryx offers to. |
+| Date Format | Your computer's region | How dates are shown and typed: **mm/dd/yyyy**, **dd/mm/yyyy**, or **yyyy-mm-dd**. Astryx always stores dates as yyyy-mm-dd, so changing it changes only what you see. |
 | Min Target Size | 4.0′ | The starting minimum size, in arcminutes, for the Target Selection filters. |
 | Max Magnitude | 14.5 | The starting faintest magnitude for the Target Selection filters. |
 | Automatic backups on change | On | Saves a backup a while after you change your data. |
@@ -194,6 +195,9 @@ The theme list at the top of the sidebar changes Astryx's colors. **Dark**
 is the default. **Night** turns everything red to protect your night vision
 at the telescope. **Light** is easier to read indoors, and **Matrix** and
 **Flat** are there for anyone who likes them.
+
+The list beside it sets the text size, from 8 to 26 pixels. 16 is the
+default; pick a larger size if the text is hard to read on your screen.
 
 ## Related
 

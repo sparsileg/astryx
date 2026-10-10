@@ -60,3 +60,15 @@ test('a location without a time zone gets no daylight saving', () => {
     const { timeZone, ...noZone } = SITES.home;
     assert.strictEqual(SettingsManager.isDSTOnDate(new Date(2026, 6, 15), noZone), false);
 });
+
+test('plan times show the location\'s clock, whatever the computer\'s zone (issue #263)', () => {
+    // 2026-07-15 03:30 UTC: 23:30 EDT at home (the evening before), 17:30 HST
+    // on Mauna Kea, 04:30 BST in London, 09:00 IST for a half-hour zone
+    const instant = new Date(Date.UTC(2026, 6, 15, 3, 30));
+    assert.strictEqual(TimeUtils.formatLocalTime(instant, SITES.home), '23:30');
+    assert.strictEqual(TimeUtils.formatLocalTime(instant, SITES.maunaKea), '17:30');
+    assert.strictEqual(TimeUtils.formatLocalTime(instant, SITES.london), '04:30');
+    assert.strictEqual(TimeUtils.formatLocalTime(instant, { timezone: 5.5, timeZone: 'Asia/Kolkata' }), '09:00');
+    // Agrees with the time Daily Visibility shows for the same instant
+    assert.ok(TimeUtils.formatLocalTimeWithDate(instant, SITES.home).startsWith('23:30 '));
+});

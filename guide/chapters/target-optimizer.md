@@ -24,7 +24,7 @@ summary line, and the first three result cards.
 | Control | What it does |
 |:------------|:--------------------------------------------------------|
 | Date | The night to plan: the evening of this date and the morning after. It starts at today. |
-| Start | **Dusk** starts the night at astronomical dusk. **Custom** shows a time field for your own start, for example if you can't be at the telescope until 23:00. |
+| Start | **Dusk** starts the night at astronomical dusk. **Custom** shows a time field for your own start, for example if you can't be at the telescope until 23:00. It starts out at dusk; type the time as 24-hour HH:MM (2300 works too). |
 | Source | The targets to rank: **To Do List**, or **Filter Targets**, the targets you sent from Target Selection. |
 | Find Targets | Ranks the targets and shows the results. |
 

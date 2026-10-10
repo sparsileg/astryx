@@ -97,7 +97,7 @@ const TUTORIAL_GETTING_STARTED = {
             id: 'interstitial',
             type: 'modal',
             title: "Now let's add your equipment",
-            body: "Next we'll add a telescope and sensor so Astryx can calculate your field of view.",
+            body: "Next we'll add a telescope, sensor, and filter.",
             target: null,
             position: 'center',
             waitFor: 'next',
@@ -140,7 +140,7 @@ const TUTORIAL_GETTING_STARTED = {
             id: 'equipment-tabs-intro',
             type: 'modal',
             title: 'Equipment Tabs',
-            body: 'The Manage Equipment dialog has three tabs: <strong>Telescopes</strong>, <strong>Sensors</strong>, and <strong>Filters</strong>. The Telescopes tab is shown by default. We\'ll add a telescope first.<br><br>You\'ll add your filters later in the <strong>Filters</strong> tab, the same way you add telescopes and sensors. You can update the filter list there at any time.',
+            body: 'The Manage Equipment dialog has three tabs: <strong>Telescopes</strong>, <strong>Sensors</strong>, and <strong>Filters</strong>. The Telescopes tab is shown by default. We\'ll add a telescope first.',
             target: null,
             position: 'center',
             waitFor: 'next',
@@ -227,6 +227,26 @@ const TUTORIAL_GETTING_STARTED = {
             highlight: true
         },
         {
+            id: 'add-filter-intro',
+            type: 'callout',
+            title: 'Now Add a Filter',
+            body: 'Click the <strong>Filters</strong> tab.',
+            target: '[data-tab="filters"]',
+            position: 'bottom',
+            waitFor: 'click',
+            highlight: true
+        },
+        {
+            id: 'filter-save',
+            type: 'callout',
+            title: 'Save a Filter',
+            body: 'Enter a filter name, such as L, Ha, or UV/IR Cut, then click <strong>Save Filter</strong>. Every Imaging Log session needs a filter; add the rest of yours here any time.',
+            target: '#equipment-save-filter-btn',
+            position: 'bottom',
+            waitFor: 'click',
+            highlight: true
+        },
+        {
             id: 'equipment-close',
             type: 'callout',
             title: 'Close Manage Equipment',
@@ -240,7 +260,7 @@ const TUTORIAL_GETTING_STARTED = {
             id: 'complete',
             type: 'modal',
             title: "You're all set!",
-            body: "Astryx now knows your location, telescope, and sensor. You\'re ready to start planning your imaging sessions! With this information you can start searching for your next astrophotography target and planning your imaging sessions. We encourage you to view all the tutorials to understand everything that Astryx can do for you.",
+            body: "Astryx now knows your location, telescope, sensor, and filter. You\'re ready to start planning your imaging sessions! With this information you can start searching for your next astrophotography target and planning your imaging sessions. We encourage you to view all the tutorials to understand everything that Astryx can do for you.",
             target: null,
             position: 'center',
             waitFor: 'next',

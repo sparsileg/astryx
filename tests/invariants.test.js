@@ -20,7 +20,7 @@ const context = loadApp([
 ]);
 const A = get(context, `({
     dateToJD, jdToDate, getLST, getAltitude, getAzimuth, getAngularSeparation,
-    getHorizonElevationAtAzimuth, getSunPosition, getMoonPhase, getNightMoonPhase,
+    getHorizonElevationAtAzimuth, getSunPosition, getMoonPhase, getNightMoonPhase, calculateMoonRiseSet,
     findAstronomicalDusk, findNextAstronomicalDawn, findTargetRise, findTargetSet,
     findTargetTransit, isTargetVisibleDuringWindow, findSolarMidnight, getTransitHour, getNightSamples, getHoursAboveAltitude,
     STEP: APP_CONFIG.TARGET_SEARCH_STEP_SIZE, DARK_STEP_MINUTES: APP_CONFIG.DARK_HOURS_STEP_MINUTES
@@ -266,6 +266,20 @@ test('horizon interpolation hits each profile point and wraps through north', ()
 });
 
 // ── Moon ──────────────────────────────────────────────────────────────────────
+
+test('moon rise/set below sea level matches sea level (issue #267)', () => {
+    const DEAD_SEA_ELEVATION_M = -430;
+    let crossings = 0;
+    for (const [name, site] of Object.entries(SITES)) {
+        for (const start of range(YEAR_START_JD, YEAR_START_JD + 360, 29.7)) {
+            const below = A.calculateMoonRiseSet(start, start + 1, site.latitude, site.longitude, DEAD_SEA_ELEVATION_M);
+            const atSea = A.calculateMoonRiseSet(start, start + 1, site.latitude, site.longitude, 0);
+            assert.deepStrictEqual(below, atSea, `${name} at ${start}`);
+            if (below.moonrise !== null) crossings++;
+        }
+    }
+    assert.ok(crossings > 0, 'some moonrises were found');
+});
 
 test('moon illumination stays within 0–100% and the night value is sampled at the dusk–dawn midpoint', () => {
     for (const jd of range(YEAR_START_JD, YEAR_START_JD + 365, 0.37)) {

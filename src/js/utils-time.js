@@ -144,14 +144,32 @@ const TimeUtils = {
     },
 
     /**
+     * A location's offset from UTC in hours at an instant: its standard offset, plus DST
+     * @param {Date} utcTime
+     * @param {Object} location - { timezone, timeZone } (see SettingsManager.isDSTActive)
+     */
+    locationOffsetHours(utcTime, location) {
+        return SettingsManager.isDSTActive(utcTime, location) ? location.timezone + 1 : location.timezone;
+    },
+
+    /**
+     * Format an instant as local time (HH:MM) at a location, whatever the
+     * computer's time zone (issue #263)
+     * @param {Date} utcTime
+     * @param {Object} location - { timezone, timeZone } (see SettingsManager.isDSTActive)
+     */
+    formatLocalTime(utcTime, location) {
+        const localTime = new Date(utcTime.getTime() + this.locationOffsetHours(utcTime, location) * 3600000);
+        return `${String(localTime.getUTCHours()).padStart(2, '0')}:${String(localTime.getUTCMinutes()).padStart(2, '0')}`;
+    },
+
+    /**
      * Format an instant as local time and date at a location
      * @param {Date} utcTime
      * @param {Object} location - { timezone, timeZone } (see SettingsManager.isDSTActive)
      */
     formatLocalTimeWithDate(utcTime, location) {
-        const isDST = SettingsManager.isDSTActive(utcTime, location);
-        const offsetHours = isDST ? location.timezone + 1 : location.timezone;
-        const localTime = new Date(utcTime.getTime() + offsetHours * 3600000);
+        const localTime = new Date(utcTime.getTime() + this.locationOffsetHours(utcTime, location) * 3600000);
 
         const timeStr = localTime.toLocaleTimeString('en-US', {
             hour12: false,
@@ -178,6 +196,20 @@ const TimeUtils = {
         const month = String(date.getMonth() + 1).padStart(2, '0');
         const day = String(date.getDate()).padStart(2, '0');
         return `${year}-${month}-${day}`;
+    },
+
+    /**
+     * A stored YYYY-MM-DD date in the chosen Date Format (issue #274)
+     * @param {string} dateStr - YYYY-MM-DD
+     * @returns {string}
+     */
+    formatDisplayDate(dateStr) {
+        const [year, month, day] = dateStr.split('-');
+        switch (SettingsManager.getDateFormat()) {
+            case 'mdy': return `${month}/${day}/${year}`;
+            case 'dmy': return `${day}/${month}/${year}`;
+            default:    return dateStr;
+        }
     },
 
     /**

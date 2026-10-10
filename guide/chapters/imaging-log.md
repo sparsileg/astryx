@@ -218,10 +218,11 @@ Catalog Coverage and Program Progress count only **Completed** projects.
 
 The **Activity** tab is a calendar of one year, a square for each day,
 like the contribution calendar on GitHub. A day you imaged is colored; the
-darker the color, the more integration you collected that night, compared
+brighter the color, the more integration you collected that night, compared
 with your other nights that year. Like the rest of the Imaging Log, it counts
-only **Used** exposures. Hold the pointer over a day to see what
-you imaged. Drag the slider above the calendar to choose the year.
+only **Used** exposures. A dot marks a night with a session where you kept
+none of the subs, so the night still shows even when nothing was used. Hold
+the pointer over a day to see each session's used and taken subs. Drag the slider above the calendar to choose the year.
 
 ::: {.shot id="imaging-log-activity"}
 The Activity tab for a year with several dozen imaging nights.

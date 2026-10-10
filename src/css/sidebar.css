@@ -89,8 +89,7 @@
 }
 
 /* When collapsing: fast fade out */
-.sidebar.collapsed #app-version,
-.sidebar.collapsed #backup-reminder-indicator,
+.sidebar.collapsed .sidebar-footer,
 .sidebar.collapsed .sidebar-content,
 .sidebar.collapsed .sidebar-header {
     opacity: 0;
@@ -154,6 +153,21 @@
     top: -20px;
 }
 
+/* Theme and font size share the first row (issue #272) */
+.theme-selector:has(#font-size-dropdown) {
+    display: flex;
+    gap: 0.5rem;
+}
+
+#theme-dropdown {
+    flex: 1;
+}
+
+#font-size-dropdown {
+    width: 5.5rem;
+    white-space: nowrap;
+}
+
 .theme-selector select {
     width: 100%;
     padding: 0.5rem;
@@ -169,15 +183,21 @@
     width: 100%;
 }
 
-#app-version {
-    font-family: "Lucida Console", "Courier", monospace;
-    position: absolute;
-    bottom: 0.25rem;
-    left: 0.5rem;
-    font-size: 0.9rem;
-    color: var(--text-secondary);
+/* Backup line and version below the scrolling content, so they never cover
+   its last items (pinned targets, Utilities) in a short window */
+.sidebar-footer {
+    flex-shrink: 0;
+    padding: 0.25rem 0.5rem;
+    white-space: nowrap;
+    overflow: hidden;
     opacity: 1;
     transition: opacity var(--sb-out) ease-in-out;
+}
+
+#app-version {
+    font-family: "Lucida Console", "Courier", monospace;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
 }
 
 /* logo stuff - others in the theme css files */

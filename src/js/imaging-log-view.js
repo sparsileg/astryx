@@ -241,7 +241,7 @@ const ImagingLogView = {
         sessions.sort((a, b) => new Date(a.date) - new Date(b.date));
 
         const statusClass = this.getStatusClass(project.status);
-        const lastModified = new Date(project.modified).toLocaleDateString();
+        const lastModified = TimeUtils.formatDisplayDate(TimeUtils.formatDateForInput(new Date(project.modified)));
 
         const sessionsId = `project-sessions-${project.id}`;
 
@@ -312,7 +312,7 @@ const ImagingLogView = {
                 const integrationSeconds = session.subLength * exposureCount;
                 return `
                                         <tr data-action="show-session" data-session-id="${session.id}" data-project-id="${project.id}">
-                                            <td>${this.formatSessionDate(session.date)}</td>
+                                            <td>${TimeUtils.formatDisplayDate(session.date)}</td>
                                             <td>${HtmlUtils.escapeHtml(session.filter)}</td>
                                             <td>${exposureCount} × ${session.subLength}s</td>
                                             <td>${this.formatIntegrationTime(integrationSeconds)}</td>
@@ -781,6 +781,11 @@ const ImagingLogView = {
         if (numExposures) numExposures.addEventListener('input', () => this.updateSessionIntegrationTime());
         if (usedExposures) usedExposures.addEventListener('input', () => this.updateSessionIntegrationTime());
 
+        // 24-hour HH:MM entry for the moon times (issue #273)
+        TimeInput.attach(document.getElementById('session-moon-set'));
+        TimeInput.attach(document.getElementById('session-moon-rise'));
+        DateInput.attach(document.getElementById('session-date'));
+
         // Set up moon calculation button
         const calcMoonBtn = document.getElementById('session-calc-moon-btn');
         if (calcMoonBtn) {
@@ -790,7 +795,7 @@ const ImagingLogView = {
         if (sessionId) {
             const session = await ImagingLogManager.getSession(sessionId);
             document.getElementById('session-project-id').value = session.projectId;
-            document.getElementById('session-date').value = session.date;
+            DateInput.set(document.getElementById('session-date'), session.date);
             document.getElementById('session-rotation').value = session.rotation || '';
             document.getElementById('session-temp-setpoint').value = session.tempSetpoint ?? '';
             document.getElementById('session-gain').value = session.gain ?? '';
@@ -824,7 +829,7 @@ const ImagingLogView = {
             this.updateSessionIntegrationTime();
         } else {
             document.getElementById('session-project-id').value = projectId;
-            document.getElementById('session-date').value = TimeUtils.getTodayString();
+            DateInput.set(document.getElementById('session-date'), TimeUtils.getTodayString());
         }
     },
 
@@ -873,7 +878,7 @@ const ImagingLogView = {
      * Calculate moon data
      */
     async calculateMoonData() {
-        const dateStr = document.getElementById('session-date').value;
+        const dateStr = DateInput.value(document.getElementById('session-date'));
         const locationName = this._getSessionDropdownValue('session-location-menu');
         const projectId = parseInt(document.getElementById('session-project-id').value);
 
@@ -919,19 +924,11 @@ const ImagingLogView = {
             const moonRiseSet = calculateMoonRiseSet(noonWindow.startJD, noonWindow.endJD, location.latitude, location.longitude, location.elevation);
 
             if (moonRiseSet.moonrise) {
-                const riseDate = TimeUtils.jdToDate(moonRiseSet.moonrise);
-                const isDSTRise = SettingsManager.isDSTActive(riseDate, location);
-                const riseOffset = isDSTRise ? location.timezone + 1 : location.timezone;
-                const riseLocal = new Date(riseDate.getTime() + riseOffset * 3600000);
-                document.getElementById('session-moon-rise').value = riseLocal.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', timeZone: 'UTC' });
+                document.getElementById('session-moon-rise').value = TimeUtils.formatLocalTime(TimeUtils.jdToDate(moonRiseSet.moonrise), location);
             }
 
             if (moonRiseSet.moonset) {
-                const setDate = TimeUtils.jdToDate(moonRiseSet.moonset);
-                const isDSTSet = SettingsManager.isDSTActive(setDate, location);
-                const setOffset = isDSTSet ? location.timezone + 1 : location.timezone;
-                const setLocal = new Date(setDate.getTime() + setOffset * 3600000);
-                document.getElementById('session-moon-set').value = setLocal.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', timeZone: 'UTC' });
+                document.getElementById('session-moon-set').value = TimeUtils.formatLocalTime(TimeUtils.jdToDate(moonRiseSet.moonset), location);
             }
 
             // Closest approach while the target is above the global minimum
@@ -954,7 +951,7 @@ const ImagingLogView = {
      */
     async handleSaveSession(modalBody) {
         const projectId = parseInt(document.getElementById('session-project-id').value);
-        const date = document.getElementById('session-date').value;
+        const date = DateInput.value(document.getElementById('session-date'));
         const location = this._getSessionDropdownValue('session-location-menu');
         const telescope = this._getSessionDropdownValue('session-telescope-menu');
         const sensor = this._getSessionDropdownValue('session-sensor-menu');
@@ -970,10 +967,14 @@ const ImagingLogView = {
         const offset = offsetValue === '' ? '' : parseInt(offsetValue);
         const moonIllumination = parseInt(document.getElementById('session-moon-illumination').value) || 0;
 
-        const moonSetTime = document.getElementById('session-moon-set').value;
-        const moonRiseTime = document.getElementById('session-moon-rise').value;
-        const moonSet = moonSetTime || null;
-        const moonRise = moonRiseTime || null;
+        const moonSetInput = document.getElementById('session-moon-set');
+        const moonRiseInput = document.getElementById('session-moon-rise');
+        if (TimeInput.isInvalid(moonSetInput) || TimeInput.isInvalid(moonRiseInput)) {
+            UIManager.showToast('Enter Moon Set and Moon Rise as 24-hour HH:MM, or leave them empty', 'error');
+            return;
+        }
+        const moonSet = TimeInput.value(moonSetInput) || null;
+        const moonRise = TimeInput.value(moonRiseInput) || null;
 
         const angleFromMoon = parseInt(document.getElementById('session-angle-from-moon').value) || 0;
         const clouds = this._getSessionDropdownValue('session-clouds-menu');
@@ -1148,15 +1149,6 @@ const ImagingLogView = {
      */
     getStatusClass(status) {
         return 'status-' + status.toLowerCase().replace(/ /g, '-');
-    },
-
-    /**
-     * Format session date without timezone issues
-     */
-    formatSessionDate(dateStr) {
-        const [year, month, day] = dateStr.split('-').map(Number);
-        const date = new Date(year, month - 1, day);
-        return date.toLocaleDateString();
     },
 
     // ============================================================================
