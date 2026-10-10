@@ -405,12 +405,25 @@
 
 #backup-reminder-indicator {
     font-family: "Lucida Console", "Courier", monospace;
-    position: absolute;
-    bottom: 1.75rem;
-    left: 0.5rem;
     font-size: 0.8rem;
     color: var(--text-secondary);
     cursor: pointer;
-    opacity: 1;
     transition: color 0.5s;
+    display: flex;
+    width: fit-content;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+/* Circled ? after the backup line, so it reads as clickable; the whole line opens About Your Data Storage */
+.backup-reminder-help {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.1em;
+    height: 1.1em;
+    border: 1px solid currentColor;
+    border-radius: 50%;
+    font-size: 0.75rem;
+    line-height: 1;
 }

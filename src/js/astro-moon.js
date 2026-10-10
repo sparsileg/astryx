@@ -327,7 +327,9 @@ function calculateHorizonDepression(elevationMeters) {
     // (Previous code took sqrt(2h) with h in km and treated the raw result
     // as degrees — dimensionally wrong, ~40-50% too large at typical elevations.)
     const EARTH_RADIUS_M = 6371000;
-    const h = elevationMeters ?? 0; // guard: some locations may have no elevation set
+    // Guard: some locations may have no elevation set. Below sea level there is
+    // no dip below the surrounding land, so the dip is that of sea level (issue #267).
+    const h = Math.max(elevationMeters ?? 0, 0);
     const geometricDepression = -radiansToDegrees(Math.sqrt(2 * h / EARTH_RADIUS_M));
 
     // Combined effect

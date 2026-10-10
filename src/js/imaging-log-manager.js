@@ -363,7 +363,8 @@ const ImagingLogManager = {
      * Aggregate imaging activity by date for a given year (Issue #142).
      * Returns a Map keyed by 'YYYY-MM-DD' -> {
      *   totalSeconds,
-     *   projects: [{ name, subs, subLength, seconds }]
+     *   hasUnusedSession (a session that night kept no subs),
+     *   projects: [{ name, subs, taken, subLength, seconds }]
      * }
      * Kept separate from rendering so future PDF/CSV export can reuse it
      * directly.
@@ -387,13 +388,15 @@ const ImagingLogManager = {
             const seconds = subLength * exposureCount;
 
             if (!byDate.has(session.date)) {
-                byDate.set(session.date, { totalSeconds: 0, projects: [] });
+                byDate.set(session.date, { totalSeconds: 0, hasUnusedSession: false, projects: [] });
             }
             const day = byDate.get(session.date);
             day.totalSeconds += seconds;
+            if (exposureCount === 0) day.hasUnusedSession = true;
             day.projects.push({
                 name: projectName,
                 subs: exposureCount,
+                taken: Number(session.numExposures) || 0,
                 subLength: subLength,
                 seconds: seconds
             });

@@ -13,7 +13,6 @@ const FOVView = {
     lastToastKey: null,
     dssRenderGeneration: 0,
     lastDSSFailureToastKey: null,
-    _lastPurgeCheck: 0,
 
     /**
      * Render the FOV view
@@ -57,8 +56,6 @@ const FOVView = {
         this._widerCenter = null;
         this._boxDragged = false;
         this.lastDSSFailureToastKey = null;
-        // _lastPurgeCheck intentionally NOT reset here — purge cadence (Issue #221)
-        // tracks across view loads within the app session, not per-visit.
         FOVCanvas.dssImage = null;
         FOVCanvas.dragBoxAngle = 0;
 
@@ -680,7 +677,7 @@ ${targetRows}
      * Get cached larger DSS image if still valid
      */
     async getDSSLargeFromCache(key) {
-        return DSSCache.get(key, APP_CONFIG.DSS_LARGE_CACHE_DURATION);
+        return DSSCache.get(key);
     },
 
     /**
@@ -694,7 +691,7 @@ ${targetRows}
      * Get cached DSS image if still valid
      */
     async getDSSFromCache(key) {
-        return DSSCache.get(key, APP_CONFIG.DSS_CACHE_DURATION);
+        return DSSCache.get(key);
     },
 
     /**
@@ -702,20 +699,6 @@ ${targetRows}
      */
     async saveDSSToCache(key, dataUrl) {
         return DSSCache.save(key, dataUrl);
-    },
-
-    /**
-     * Purge expired DSS cache entries (each tier on its own duration), but only if DSS_PURGE_CHECK_INTERVAL has
-     * elapsed since the last check (Issue #221). Previously both purges ran
-     * synchronously on every single cache miss — a full cache scan on nearly
-     * every telescope switch. Now purge runs at most once per that interval,
-     * tracked in-memory for the current app session.
-     */
-    async maybePurgeDSSCache() {
-        const now = Date.now();
-        if (now - this._lastPurgeCheck < APP_CONFIG.DSS_PURGE_CHECK_INTERVAL) return;
-        this._lastPurgeCheck = now;
-        await DSSCache.purge();
     },
 
     /**
@@ -778,7 +761,6 @@ ${targetRows}
                     reader.readAsDataURL(blob);
                 });
                 await this.saveDSSToCache(cacheKey, dataUrl);
-                await this.maybePurgeDSSCache();
             } catch (e) {
                 console.warn('DSS fetch error:', e);
                 this.notifyDSSRenderFailure(cacheKey);

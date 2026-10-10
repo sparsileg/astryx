@@ -4,20 +4,20 @@
    ============================================================ */
 
 #optimizer-execute-btn {
-    min-width: 120px;
+    min-width: 7.5rem;
     background-color: var(--primary-color);
     color: var(--primary-text);
     border-color: var(--primary-color);
 }
 
 #optimizer-start-dropdown {
-    min-width: 80px;
-    max-width: 80px;
+    min-width: 5rem;
+    max-width: 5rem;
 }
 
 #optimizer-source-dropdown {
-    min-width: 160px;
-    max-width: 220px;
+    min-width: 10rem;
+    max-width: 14rem;
 }
 
 /* Results summary bar */
@@ -194,4 +194,9 @@
 
 .optimizer-remove-btn:hover {
     color: var(--error-color);
+}
+
+/* 24-hour HH:MM entry, as in the Sequence Planner (issue #273) */
+#optimizer-custom-time {
+    width: 5rem;
 }

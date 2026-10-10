@@ -38,7 +38,12 @@ Builds, installers, and the GitHub Actions release workflow:
   - y — new features
   - z — bug fixes, UI tweaks, tutorial updates
 - The bundle identifier `tools.astryx.astryx` is **permanent**. It keys OS app
-  identity and the app-data directory; changing it orphans users' data.
+  identity and the webview's data directory (localStorage, DSS cache, window
+  state); changing it orphans that data.
+- The SQLite database is not under the identifier: `lib.rs` puts it in the
+  system data folder + `Astryx` (`~/.local/share/Astryx/astryx.db` on Linux).
+  `just dev` and an installed build share that one file, so a dev build's
+  migration also upgrades the installed app's database.
 - `APP_CONFIG.DB_VERSION` is the IndexedDB version (web). The SQLite schema
   version is separate (`PRAGMA user_version`, see below).
 
@@ -100,7 +105,8 @@ Builds, installers, and the GitHub Actions release workflow:
   Island's 30-minute shift is knowingly ignored.
 - **Regression checks:** `just test-js` runs `tests/*.test.js` under Node,
   loading the app's scripts into a vm context, in four timezones. Run it
-  after any change to the astronomy or planner code. Test sites are in
+  before committing any change to the astronomy or planner code, not after
+  each edit (Stan tests changes in the app first). Test sites are in
   `tests/lib/sites.js`.
   - `reference` — values checked against external sources
     (`tests/reference-cases.js`).

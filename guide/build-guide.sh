@@ -29,7 +29,7 @@ chapters=(
     chapters/appendix-yearly.md
     chapters/appendix-optimizer.md
     chapters/appendix-seqplan.md
-    chapters/appendix-session-report.md
+    chapters/appendix-combined-report.md
     chapters/appendix-accuracy.md
     chapters/appendix-glossary.md
 )

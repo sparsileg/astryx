@@ -55,7 +55,7 @@ const TUTORIAL_DAILY_VISIBILITY = {
             id: 'date-control',
             type: 'callout',
             title: 'Observation Date',
-            body: 'This field sets the date for the analysis. Change it to any date you are planning to image. All calculations — twilight times, target rise and set, moon position — update immediately. Note that the default date spans an entire night of imaging until noon on the next day in order to display the correct weather forecast for your current imaging session.',
+            body: 'This field sets the date for the analysis. Type any date you are planning to image, or click the calendar button beside it to pick one. All calculations — twilight times, target rise and set, moon position — update immediately. Note that the default date spans an entire night of imaging until noon on the next day in order to display the correct weather forecast for your current imaging session.',
             target: '#dv-date',
             position: 'bottom',
             waitFor: 'next',

@@ -6,10 +6,11 @@
 const DSSCache = {
 
     /**
-     * Retrieve a cached DSS image by key.
+     * Retrieve a cached DSS image by key, judged on its own tier's duration.
      * Returns dataUrl string or null if not found / expired.
      */
-    async get(key, duration) {
+    async get(key) {
+        const duration = this._durationFor(key);
         if (window.__TAURI__) {
             return this._getFromFile(key, duration);
         } else {
@@ -31,6 +32,7 @@ const DSSCache = {
     /**
      * Purge expired entries. Each entry expires on its own tier's duration:
      * Wider (3x) images on the short one, the rest on the long one.
+     * App runs it once, shortly after startup.
      */
     async purge() {
         if (window.__TAURI__) {

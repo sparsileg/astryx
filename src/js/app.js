@@ -35,6 +35,7 @@ const App = {
 
             // Apply saved theme
             SettingsManager.applyTheme(SettingsManager.getTheme());
+            SettingsManager.applyFontSize(SettingsManager.getFontSize());
 
             // Setup navigation
             this.setupNavigation();
@@ -81,6 +82,9 @@ const App = {
 
             // Initialize backup reminder system
             BackupReminder.init();
+
+            // Clear expired sky images once per start, off the startup path
+            setTimeout(() => DSSCache.purge(), APP_CONFIG.DSS_PURGE_DELAY_MS);
 
             // Resume tutorial if flagged before a reload
             const resumeTutorial = localStorage.getItem('resumeTutorialAfterReload');

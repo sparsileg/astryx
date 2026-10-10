@@ -23,8 +23,6 @@ async function openAdminItem(page, action) {
 // to open something first.
 export const PREP = {
     'admin-tools/admin-submenu': page => openAdminItem(page),
-    // A session needs a filter, which no tutorial adds; it must exist before the form opens
-    'imaging-projects/add-session': page => page.evaluate(() => DataManager.saveFilter('Test Luminance')),
 };
 
 async function chooseLocationAndToDoTargets(page) {
@@ -122,4 +120,5 @@ export const FILL = {
         await page.fill('#sensor-pixel-size-x', '2.4');
         await page.fill('#sensor-pixel-size-y', '2.4');
     },
+    'getting-started/filter-save': page => page.fill('#filter-name', 'Test Luminance'),
 };

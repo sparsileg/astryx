@@ -97,7 +97,7 @@ Every sub is given a tier:
 | Unknown | No guide data for the exposure, so no tier could be given. |
 
 "Usual for the night" means compared with the night's own median guiding,
-not a fixed number. [Session Report Details](appendix-session-report.md)
+not a fixed number. [Combined Report Details](appendix-combined-report.md)
 gives the limits.
 
 ### Recommendations
@@ -186,7 +186,7 @@ and the **Calibrations** table (each PHD2 calibration: **West Rate**,
 
 Every problem the analysis found, most severe first, each with the
 evidence behind it. An Inferred finding also says what other explanations
-it ruled out. [Session Report Details](appendix-session-report.md) lists
+it ruled out. [Combined Report Details](appendix-combined-report.md) lists
 the checks.
 
 ### Focus and Environment
@@ -274,5 +274,5 @@ what tune the Sequence Planner's exposure counts.
   recommendations refer to.
 - [Imaging Log](imaging-log.md): recording the night, so the report knows
   your equipment and location.
-- [Session Report Details](appendix-session-report.md): tiers, confidence,
+- [Combined Report Details](appendix-combined-report.md): tiers, confidence,
   and every check.

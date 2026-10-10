@@ -67,6 +67,16 @@ const TUTORIAL_SETTINGS = {
             highlight: true
         },
         {
+            id: 'date-format',
+            type: 'callout',
+            title: 'Date Format',
+            body: 'How dates are shown and typed: <strong>mm/dd/yyyy</strong>, <strong>dd/mm/yyyy</strong>, or <strong>yyyy-mm-dd</strong>. It starts from your computer\'s region. Astryx always stores dates as yyyy-mm-dd, so this only changes what you see.',
+            target: '#date-format-dropdown',
+            position: 'right',
+            waitFor: 'next',
+            highlight: true
+        },
+        {
             id: 'filter-min-size',
             type: 'callout',
             title: 'Min Target Size',

@@ -31,11 +31,7 @@ const OptimizerView = {
         console.log('Initializing Target Optimizer view');
 
         // Set default date to today
-        const today = new Date();
-        const year = today.getFullYear();
-        const month = (today.getMonth() + 1).toString().padStart(2, '0');
-        const day = today.getDate().toString().padStart(2, '0');
-        document.getElementById('optimizer-date').value = `${year}-${month}-${day}`;
+        DateInput.set(document.getElementById('optimizer-date'), TimeUtils.getTodayString());
 
         this.updateFilterSourceOption();
         this.attachEventHandlers();
@@ -61,7 +57,7 @@ const OptimizerView = {
     restoreResultsInputs() {
         const inputs = this.resultsInputs;
         if (!inputs) return;
-        document.getElementById('optimizer-date').value = inputs.date;
+        DateInput.set(document.getElementById('optimizer-date'), inputs.date);
         document.getElementById('optimizer-start-label').textContent = inputs.startLabel;
         document.getElementById('optimizer-custom-time').value = inputs.customStartTime;
         this.showCustomTime(inputs.startLabel === 'Custom');
@@ -117,8 +113,16 @@ const OptimizerView = {
                 if (label) label.textContent = item.textContent;
                 startDropdown.classList.remove('open');
                 this.showCustomTime(value === 'custom');
+                if (value === 'custom') {
+                    TimeInput.prefillDusk(document.getElementById('optimizer-custom-time'),
+                        DateInput.value(document.getElementById('optimizer-date')),
+                        DataManager.getLocations()[SettingsManager.getSelectedLocation()]);
+                }
             });
         }
+
+        TimeInput.attach(document.getElementById('optimizer-custom-time'));
+        DateInput.attach(document.getElementById('optimizer-date'));
 
         // Source dropdown
         const sourceTrigger = document.getElementById('optimizer-source-trigger');
@@ -154,15 +158,21 @@ const OptimizerView = {
      * Execute optimization
      */
     execute() {
-        const date = document.getElementById('optimizer-date').value;
+        const date = DateInput.value(document.getElementById('optimizer-date'));
         const sourceLabel = document.getElementById('optimizer-source-label')?.textContent;
         const source = sourceLabel === 'Filter Targets' || sourceLabel?.startsWith('Filter Targets') ? 'filter' : 'todo';
         const startLabel = document.getElementById('optimizer-start-label')?.textContent;
         const startTimeMode = startLabel === 'Custom' ? 'custom' : 'dusk';
-        const customStartTime = document.getElementById('optimizer-custom-time').value;
+        const customStartTime = TimeInput.value(document.getElementById('optimizer-custom-time'));
 
         if (!date) {
-            UIManager.showToast('Please select a date', 'error');
+            UIManager.showToast('Enter a date, or pick one from the calendar', 'error');
+            return;
+        }
+
+        // Issues #271, #273: don't quietly start at dusk when the custom time isn't a time
+        if (startTimeMode === 'custom' && !customStartTime) {
+            UIManager.showToast('Enter the custom start time as 24-hour HH:MM, or choose Dusk', 'error');
             return;
         }
 
@@ -191,9 +201,12 @@ const OptimizerView = {
             const customStartJD = SeqPlanCalculations.resolveCustomStartJD(customStartTime, timing.duskJD, timing.dawnJD, location);
             if (customStartJD === null) {
                 UIManager.showToast(`Start time ${customStartTime} is more than ${APP_CONFIG.SEQ_PLAN_MAX_EARLY_START_MINUTES} min before dusk or after dawn; starting at dusk`, 'warning', APP_CONFIG.TOAST_LONG_DURATION_MS);
-            } else if (customStartJD < timing.duskJD) {
-                const minutes = Math.round((timing.duskJD - customStartJD) * 1440);
-                UIManager.showToast(`Start time ${customStartTime} is ${minutes} min before astronomical dusk`, 'warning', APP_CONFIG.TOAST_LONG_DURATION_MS);
+            } else {
+                // Whole minutes, so typing dusk's own minute doesn't warn
+                const minutes = Math.floor((timing.duskJD - customStartJD) * 1440);
+                if (minutes >= 1) {
+                    UIManager.showToast(`Start time ${customStartTime} is ${minutes} min before astronomical dusk`, 'warning', APP_CONFIG.TOAST_LONG_DURATION_MS);
+                }
             }
             sessionStartJD = customStartJD ?? timing.duskJD;
         }
@@ -242,6 +255,13 @@ const OptimizerView = {
      * @param {Array} results - Scored candidate array from scoreCandidates
      * @param {number} totalEvaluated - Total candidates evaluated
      */
+    /**
+     * A time as HH:MM in the session location's time zone (issue #263)
+     */
+    _localTime(jd) {
+        return TimeUtils.formatLocalTime(jdToDate(jd), this.currentSession.location);
+    },
+
     renderResults(results, totalEvaluated) {
         const container = document.getElementById('optimizer-results');
         if (!container) return;
@@ -278,15 +298,15 @@ const OptimizerView = {
         `;
 
         results.forEach((target, index) => {
-            const windowStart = jdToDate(target.windowStartJD).toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false});
-            const windowEnd   = jdToDate(target.windowEndJD).toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false});
-            const peakTime    = jdToDate(target.peakJD).toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false});
+            const windowStart = this._localTime(target.windowStartJD);
+            const windowEnd   = this._localTime(target.windowEndJD);
+            const peakTime    = this._localTime(target.peakJD);
             const typeDisplay = OBJECT_TYPES?.[target.type] || target.type || 'Unknown';
             const sizeDisplay = target.sizeMax ? `${target.sizeMax}'` : '—';
             const commonDisplay = target.common ? target.common.split(',')[0].trim() : '';
             const dipHTML = target.visibilityDip ? (() => {
-                const dipStart = jdToDate(target.visibilityDip.dipStartJD).toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false});
-                const dipEnd   = jdToDate(target.visibilityDip.dipEndJD).toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false});
+                const dipStart = this._localTime(target.visibilityDip.dipStartJD);
+                const dipEnd   = this._localTime(target.visibilityDip.dipEndJD);
                 return `<div class="optimizer-candidate-line1"><span class="opt-meta">Dips below min altitude ${dipStart}–${dipEnd}</span></div>`;
             })() : '';
 
@@ -435,8 +455,8 @@ const OptimizerView = {
 
                 let targetsHtml = '';
                 combo.targets.forEach(t => {
-                    const windowStart = jdToDate(t.windowStartJD).toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false});
-                    const windowEnd   = jdToDate(t.windowEndJD).toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: false});
+                    const windowStart = this._localTime(t.windowStartJD);
+                    const windowEnd   = this._localTime(t.windowEndJD);
                     const commonDisplay = t.common ? t.common.split(',')[0].trim() : '';
                     targetsHtml += `
                         <div class="optimizer-combo-target">

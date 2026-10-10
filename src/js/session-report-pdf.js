@@ -143,7 +143,7 @@ const SessionReportPdf = {
         const rmsUnreliableNote = m.guideRmsUnreliable ? ' (frame/duration mismatch — see Data Quality)' : '';
 
         content.push({ text: `${fs.targets.join(', ')} — Combined Report`, style: 'title' });
-        content.push({ text: SessionReportView._formatNight(fs), style: 'subtitle' });
+        content.push({ text: SessionReportView._displayNight(fs), style: 'subtitle' });
         if (!fs.coverage.phd2Present) {
             content.push({ text: 'No PHD2 guide log for this night — guide-derived figures below are unavailable, not zero.', style: 'sectionNote', italics: true });
         }

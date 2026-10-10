@@ -11,6 +11,7 @@ const UIManager = {
      */
     init() {
         this.setupThemeSelector();
+        this.setupFontSizeSelector();
         this.setupSystemMenu();
         this.setupModalCloseHandlers();
         this.initializeSidebarLocationDropdown();
@@ -50,23 +51,60 @@ const UIManager = {
             // Wait for CSS to load before re-rendering
             const themeLink = document.getElementById('theme-css');
             if (themeLink) {
-                themeLink.addEventListener('load', () => {
-                    // Re-render sequence planner timeline if it's currently displayed
-                    const seqPlanTimeline = document.getElementById('seq-plan-timeline');
-                    if (seqPlanTimeline && SeqPlanView.calculatedResults?.length > 0 && SeqPlanView.currentSession) {
-                        const events = SeqPlanCalculations.generateTimelineEvents(
-                            SeqPlanView.calculatedResults,
-                            SeqPlanView.currentSession
-                        );
-                        SeqPlanTimeline.render(events, SeqPlanView.currentSession.sessionStartJD, SeqPlanView.currentSession.sessionEndJD, SeqPlanView.currentSession);
-                    }
-                    // Re-render To Do rise time chart if it's currently displayed
-                    const todoRiseChart = document.getElementById('todo-rise-chart');
-                    if (todoRiseChart && typeof ToDoView !== 'undefined' && ToDoView.riseTimeData) {
-                        ToDoView.renderRiseTimeChart();
-                    }
-                }, { once: true });
+                themeLink.addEventListener('load', () => this.redrawCanvasCharts(), { once: true });
             }
+        });
+    },
+
+    /**
+     * Redraw the canvas charts on screen, whose colors and text sizes are read at draw time
+     */
+    redrawCanvasCharts() {
+        // Re-render sequence planner timeline if it's currently displayed
+        const seqPlanTimeline = document.getElementById('seq-plan-timeline');
+        if (seqPlanTimeline && SeqPlanView.calculatedResults?.length > 0 && SeqPlanView.currentSession) {
+            const events = SeqPlanCalculations.generateTimelineEvents(
+                SeqPlanView.calculatedResults,
+                SeqPlanView.currentSession
+            );
+            SeqPlanTimeline.render(events, SeqPlanView.currentSession.sessionStartJD, SeqPlanView.currentSession.sessionEndJD, SeqPlanView.currentSession);
+        }
+        // Re-render To Do rise time chart if it's currently displayed
+        const todoRiseChart = document.getElementById('todo-rise-chart');
+        if (todoRiseChart && typeof ToDoView !== 'undefined' && ToDoView.riseTimeData) {
+            ToDoView.renderRiseTimeChart();
+        }
+    },
+
+    /**
+     * Font size dropdown beside the theme; sizes come from APP_CONFIG (issue #272)
+     */
+    setupFontSizeSelector() {
+        const trigger = document.getElementById('font-size-dropdown-trigger');
+        const dropdown = document.getElementById('font-size-dropdown');
+        const menu = document.getElementById('font-size-dropdown-menu');
+        if (!trigger || !dropdown || !menu) return;
+
+        for (let px = APP_CONFIG.FONT_SIZE_MIN_PX; px <= APP_CONFIG.FONT_SIZE_MAX_PX; px++) {
+            const item = document.createElement('div');
+            item.className = 'astryx-dropdown-item';
+            item.dataset.value = px;
+            item.textContent = `${px} px`;
+            menu.appendChild(item);
+        }
+
+        trigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            dropdown.classList.toggle('open');
+            document.getElementById('theme-dropdown')?.classList.remove('open');
+        });
+        menu.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const item = e.target.closest('.astryx-dropdown-item');
+            if (!item) return;
+            dropdown.classList.remove('open');
+            await SettingsManager.updateFontSize(Number(item.dataset.value));
+            this.redrawCanvasCharts();
         });
     },
 
@@ -705,8 +743,10 @@ const UIManager = {
             this.showToast('Longitude must be between -180 and 180', 'error');
             return;
         }
-        if (isNaN(elevation) || elevation < 0) {
-            this.showToast('Elevation must be a positive number', 'error');
+        const minElevation = APP_CONFIG.LOCATION_ELEVATION_MIN_M;
+        const maxElevation = APP_CONFIG.LOCATION_ELEVATION_MAX_M;
+        if (isNaN(elevation) || elevation < minElevation || elevation > maxElevation) {
+            this.showToast(`Elevation must be between ${minElevation} and ${maxElevation} m`, 'error');
             return;
         }
         if (timeZone === '' || !TimeUtils.isValidTimeZone(timeZone)) {
@@ -1177,6 +1217,31 @@ const UIManager = {
             });
         }
 
+        // Date format (issue #274)
+        const dateFormatMenu = document.getElementById('date-format-menu');
+        const dateFormatLabel = document.getElementById('date-format-label');
+        const dateFormatDropdown = document.getElementById('date-format-dropdown');
+        if (dateFormatMenu) {
+            const dateFormat = SettingsManager.getDateFormat();
+            dateFormatMenu.querySelectorAll('.astryx-dropdown-item').forEach(item => {
+                item.classList.toggle('selected', item.dataset.value === dateFormat);
+            });
+            dateFormatLabel.textContent = dateFormatMenu.querySelector('.astryx-dropdown-item.selected').textContent;
+            document.getElementById('date-format-trigger').addEventListener('click', (e) => {
+                e.stopPropagation();
+                dateFormatDropdown.classList.toggle('open');
+            });
+            dateFormatMenu.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const item = e.target.closest('.astryx-dropdown-item');
+                if (!item) return;
+                dateFormatMenu.querySelectorAll('.astryx-dropdown-item').forEach(i => i.classList.remove('selected'));
+                item.classList.add('selected');
+                dateFormatLabel.textContent = item.textContent;
+                dateFormatDropdown.classList.remove('open');
+            });
+        }
+
         // Global minimum altitude
         const minAltMenu = document.getElementById('global-min-altitude-menu');
         const minAltLabel = document.getElementById('global-min-altitude-label');
@@ -1385,6 +1450,14 @@ const UIManager = {
         this.showToast('Settings saved successfully', 'success');
         if (JSON.stringify(SettingsManager.getSettings()) !== settingsBefore) {
             this.markDataChanged();
+        }
+
+        // Saved after the data-change check: like the theme, the date format
+        // is a preference, not data (#249). Redraw the view in the new format.
+        const dateFormat = modalBody.querySelector('#date-format-menu .astryx-dropdown-item.selected')?.dataset.value;
+        if (dateFormat && dateFormat !== SettingsManager.getDateFormat()) {
+            await SettingsManager.updateDateFormat(dateFormat);
+            App.route();
         }
 
         if (minAltChanged) {

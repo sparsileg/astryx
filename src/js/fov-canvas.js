@@ -239,7 +239,7 @@ const FOVCanvas = {
         this.ctx.save();
         this.ctx.globalCompositeOperation = 'difference';
         this.ctx.fillStyle = '#ffffff';
-        this.ctx.font = 'bold 13px sans-serif';
+        this.ctx.font = `bold ${SettingsManager.scaledPx(13)}px sans-serif`;
         this.ctx.textAlign = 'center';
         this.ctx.textBaseline = 'middle';
         this.ctx.fillText('N', this.canvas.width / 2 + ux * reach, this.canvas.height / 2 + uy * reach);

@@ -59,7 +59,7 @@ const TUTORIAL_SIDEBAR = {
             id: 'theme',
             type: 'callout',
             title: 'Theme',
-            body: 'Select the style and colour theme of the interface. Astryx includes Dark, Light, Matrix, Flat, and Night themes. The Night theme is designed to preserve your dark adaptation at the telescope. Try different options and select your favorite. It can be changed at any time.',
+            body: 'Select the style and colour theme of the interface. Astryx includes Dark, Light, Matrix, Flat, and Night themes. The Night theme is designed to preserve your dark adaptation at the telescope. Try different options and select your favorite. It can be changed at any time.<br><br>The list beside it sets the text size for the whole app, from 8 to 26 pixels; 16 is the default.',
             target: '#theme-dropdown',
             position: 'right',
             waitFor: 'next',

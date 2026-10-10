@@ -35,7 +35,7 @@ three cards below.
 
 | Control | What it does |
 |:------------|:--------------------------------------|
-| Date | The night to show: the evening of this date and the morning after. Type a date, or use the arrows: ◀ and ▶ move one day, ◀◀ and ▶▶ move a week. Hold an arrow down to animate back and forth through time. |
+| Date | The night to show: the evening of this date and the morning after. Type a date in your Date Format (see [Getting Started](getting-started.md)), click 📅 to pick one from a calendar, or use the arrows: ◀ and ▶ move one day, ◀◀ and ▶▶ move a week. Hold an arrow down to animate back and forth through time. |
 | Min Alt | The lowest altitude that counts, from 5° to 60°. It starts at the Min Altitude in Settings. |
 | Horizon | When ticked, your location's horizon profile counts too, so the target must clear both. Untick it to see the night as if your horizon were flat. |
 

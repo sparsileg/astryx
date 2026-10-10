@@ -137,7 +137,7 @@ const SeqPlanTimeline = {
         this.drawHorizonViolations(events, sessionStartJD, sessionEndJD);
 
         // Draw time axis and labels
-        this.drawTimeAxis(sessionStartJD, sessionEndJD);
+        this.drawTimeAxis(sessionStartJD, sessionEndJD, currentSession.location);
 
         // Draw legend
         this.drawLegend();
@@ -230,7 +230,7 @@ const SeqPlanTimeline = {
                                              currentSession.location.longitude);
                 const x = this.jdToX(jd, sessionStartJD, sessionEndJD);
 
-                // Scale altitude to fit within block (0° at bottom, 90° at top)
+                // Scale altitude to fit within block (0Â° at bottom, 90Â° at top)
                 const y = yOffset + blockHeight - (altitude / 90) * (blockHeight - 10) - 5;
                 points.push({ x, y });
             }
@@ -356,7 +356,7 @@ const SeqPlanTimeline = {
 
             this.ctx.fillStyle = getComputedStyle(document.documentElement)
                 .getPropertyValue('--text-color').trim();
-            this.ctx.font = 'bold 13px sans-serif';
+            this.ctx.font = `bold ${SettingsManager.scaledPx(13)}px sans-serif`;
             this.ctx.textAlign = 'center';
 
             const textY = blockTop - 5;
@@ -374,7 +374,7 @@ const SeqPlanTimeline = {
      * @param {number} startJD - Start Julian Date
      * @param {number} endJD - End Julian Date
      */
-    drawTimeAxis(startJD, endJD) {
+    drawTimeAxis(startJD, endJD, location) {
         const axisY = this.LABEL_AREA_HEIGHT + this.BLOCK_HEIGHT + 5;
 
         // Draw axis line
@@ -391,19 +391,19 @@ const SeqPlanTimeline = {
         const textColor = getComputedStyle(document.documentElement)
               .getPropertyValue('--text-color').trim();
         this.ctx.fillStyle = textColor;
-        this.ctx.font = '13px monospace';
+        this.ctx.font = `${SettingsManager.scaledPx(13)}px monospace`;
         this.ctx.textAlign = 'center';
 
-        // Calculate first whole hour after start
+        // First whole hour after start on the location's clock, not the
+        // computer's (issue #263). A DST change shifts the clock a whole hour,
+        // so stepping an hour at a time stays on whole hours through the night.
+        const HOUR_MS = 3600000;
         const startDate = jdToDate(startJD);
-        let firstHour = new Date(startDate);
-        firstHour.setMinutes(0, 0, 0);
-        if (firstHour <= startDate) {
-            firstHour.setHours(firstHour.getHours() + 1);
-        }
+        const offsetMs = TimeUtils.locationOffsetHours(startDate, location) * HOUR_MS;
+        const firstHourLocalMs = (Math.floor((startDate.getTime() + offsetMs) / HOUR_MS) + 1) * HOUR_MS;
 
         // Draw tick marks and labels at each whole hour
-        let currentTime = firstHour;
+        let currentTime = new Date(firstHourLocalMs - offsetMs);
         const endDate = jdToDate(endJD);
 
         while (currentTime <= endDate) {
@@ -417,8 +417,7 @@ const SeqPlanTimeline = {
             this.ctx.stroke();
 
             // Draw label
-            const hours = currentTime.getHours().toString().padStart(2, '0');
-            this.ctx.fillText(`${hours}:00`, x, axisY + 23);
+            this.ctx.fillText(TimeUtils.formatLocalTime(currentTime, location), x, axisY + 23);
 
             // Move to next hour
             currentTime = new Date(currentTime.getTime() + 3600000);
@@ -433,7 +432,7 @@ const SeqPlanTimeline = {
         const legendY = this.LABEL_AREA_HEIGHT + this.BLOCK_HEIGHT + 35;
         const legendX = this.LEGEND_MARGIN;
 
-        this.ctx.font = '12px sans-serif';
+        this.ctx.font = `${SettingsManager.scaledPx(12)}px sans-serif`;
         this.ctx.textAlign = 'left';
 
         const textColor = getComputedStyle(document.documentElement)
@@ -566,10 +565,10 @@ const SeqPlanTimeline = {
             const x = this.jdToX(span.startJD, sessionStartJD, sessionEndJD);
 
             // Measure text to get background size
-            this.ctx.font = '20px sans-serif';
+            this.ctx.font = `${SettingsManager.scaledPx(20)}px sans-serif`;
             const textMetrics = this.ctx.measureText(span.name);
             const textWidth = textMetrics.width;
-            const textHeight = 24; // Approximate height for 20px font
+            const textHeight = SettingsManager.scaledPx(24); // Approximate height for the 20px font
 
             const padding = 6;
             const bgX = x + 10 - padding;

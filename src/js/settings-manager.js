@@ -9,6 +9,8 @@ const SettingsManager = {
             mode: 'auto' // 'auto', 'always', 'never'
         },
         theme: APP_CONFIG.DEFAULT_THEME,
+        fontSizePx: APP_CONFIG.FONT_SIZE_DEFAULT_PX, // Base text size, chosen beside the theme (issue #272)
+        dateFormat: null, // 'mdy', 'dmy' or 'ymd' for numeric dates shown; null follows the computer's region (issue #274)
         resultsCount: 'all', // Not in settings UI, but used by visibility calculator
         selectedLocation: null, // Currently selected observer location
         globalMinAltitude: 35, // Global default minimum altitude for all tools
@@ -21,7 +23,8 @@ const SettingsManager = {
         lastChangeTimestamp: null,     // DTG of last data change
         learnedSubGapS: APP_CONFIG.DEFAULT_SUB_GAP_S,             // Learned camera download + overhead (issue #145)
         learnedDitherDurationS: APP_CONFIG.DEFAULT_DITHER_DURATION_S, // Learned dither + settle duration (issue #145)
-        framesPerDither: APP_CONFIG.DEFAULT_FRAMES_PER_DITHER     // User-settable frames between dithers (issue #145)
+        framesPerDither: APP_CONFIG.DEFAULT_FRAMES_PER_DITHER,    // User-settable frames between dithers (issue #145)
+        seqPlanExposures: {}           // Last exposure (s) typed for each target in Sequence Planner (issue #264)
     },
 
     /**
@@ -38,6 +41,13 @@ const SettingsManager = {
             // the lowercase filename convention) so it doesn't keep 404ing.
             if (this.settings.theme && this.settings.theme !== this.settings.theme.toLowerCase()) {
                 this.settings.theme = this.settings.theme.toLowerCase();
+                await this.saveSettings();
+            }
+
+            // Sequence Planner's own Min Alt was saved but never read; the planner
+            // always starts from the global Min Altitude (issue #265)
+            if ('seqPlanMinAltitude' in this.settings) {
+                delete this.settings.seqPlanMinAltitude;
                 await this.saveSettings();
             }
 
@@ -139,6 +149,59 @@ const SettingsManager = {
             const item = themeMenu.querySelector(`[data-value="${theme}"]`);
             if (item) themeLabel.textContent = item.textContent;
         }
+    },
+
+    getFontSize() {
+        return this.settings.fontSizePx;
+    },
+
+    /**
+     * Save and apply the base text size. Like the theme, not a data change (#249)
+     */
+    async updateFontSize(px) {
+        this.settings.fontSizePx = px;
+        await this.saveSettings();
+        this.applyFontSize(px);
+    },
+
+    /**
+     * Set the root font size, which every rem in the app follows (issue #272)
+     */
+    applyFontSize(px) {
+        document.documentElement.style.fontSize = `${px}px`;
+        const label = document.getElementById('font-size-dropdown-label');
+        if (label) label.textContent = `${px} px`;
+    },
+
+    /**
+     * How numeric dates are shown and typed: 'mdy' (mm/dd/yyyy), 'dmy'
+     * (dd/mm/yyyy) or 'ymd' (yyyy-mm-dd). Until one is chosen, the computer's
+     * region decides. Dates are always stored as YYYY-MM-DD (issue #274).
+     */
+    getDateFormat() {
+        return this.settings.dateFormat ?? this._regionDateFormat();
+    },
+
+    _regionDateFormat() {
+        const first = new Intl.DateTimeFormat(undefined, { year: 'numeric', month: '2-digit', day: '2-digit' })
+            .formatToParts(new Date())
+            .find(part => part.type !== 'literal').type;
+        return { month: 'mdy', day: 'dmy' }[first] ?? 'ymd';
+    },
+
+    /**
+     * Save the date format. Like the theme, not a data change (#249)
+     */
+    async updateDateFormat(format) {
+        this.settings.dateFormat = format;
+        await this.saveSettings();
+    },
+
+    /**
+     * Scale a canvas text size drawn for the default base size to the chosen one
+     */
+    scaledPx(px) {
+        return Math.round(px * this.settings.fontSizePx / APP_CONFIG.FONT_SIZE_DEFAULT_PX);
     },
 
     /**
@@ -367,6 +430,15 @@ const SettingsManager = {
 
     async setLastChangeTimestamp(dtg) {
         this.settings.lastChangeTimestamp = dtg;
+        await this.saveSettings();
+    },
+
+    getSeqPlanExposure(targetName) {
+        return this.settings.seqPlanExposures[targetName] ?? APP_CONFIG.SEQ_PLAN_DEFAULT_EXPOSURE_S;
+    },
+
+    async setSeqPlanExposure(targetName, seconds) {
+        this.settings.seqPlanExposures = { ...this.settings.seqPlanExposures, [targetName]: seconds };
         await this.saveSettings();
     },
 
