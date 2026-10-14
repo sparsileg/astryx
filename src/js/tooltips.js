@@ -100,6 +100,7 @@ const TOOLTIPS = {
     dv_clouds:      'Total cloud cover forecast. Black is clear,\nbright amber is fully overcast.',
     dv_wind:        'Wind speed forecast at 10m elevation.\nGround-level or sheltered sites may\nexperience less wind than shown.',
     dv_dew:         'Dew point risk forecast. Black is safe;\nbright blue means conditions are\napproaching dew formation.',
+    dv_moonDial:    'You are at the center and your target is at\n12 o\'clock. The Moon\'s position around the dial\nshows where it is along its monthly path\nacross the sky. On the left it\'s approaching\nyour target, near the top it\'s passing, and on\nthe right it has passed. The number is the\ntrue angular separation between the Moon and\nyour target. Most targets sit north or south\nof the Moon\'s path, so the Moon passes beside\nthem, not over them. The dial shows this by\nlifting the Moon outside the rim as it goes\nby. For the same reason, the Moon at 6 o\'clock\nis rarely a full 180° away. For a target 45°\noff the Moon\'s path, the most it can be is\nabout 135°.',
     xxxxxxx:        ''
 };
 

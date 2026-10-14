@@ -1,8 +1,8 @@
 # The Target Database {.appendix}
 
 This appendix describes where Astryx's targets come from and what the
-database holds. The figures are for the database dated July 3, 2026, which
-holds 14,009 targets.
+database holds. The statistics are based on target database t1783038311,
+generated on July 3, 2026, which holds 14,009 targets.
 
 ## Sources
 
@@ -13,9 +13,13 @@ a supplementary file adds targets the main sources lack and extra details,
 such as common names, that make targets easier to find.
 
 When the sources were merged, duplicate entries were combined so that no
-data was lost. An object that appears in several catalogs, such as M 42 and
-NGC 1976, still has one entry per catalog, and each entry lists the others
-in its Other Info field.
+data was lost. An object that appears in several catalogs still has one
+entry per catalog, and each entry lists the others in its Other Info field.
+The Orion Nebula, for example, is both M 42 and NGC 1976. In all, 2,564
+targets share an object with at least one other entry. Filter results show
+each such object once, under its most familiar catalog, so the same object
+doesn't fill the list twice. A name search still finds every entry (see
+[Finding Targets](target-selection.md)).
 
 Some targets have only one of the two sizes. Where a target had a maximum
 size but no minimum, or the reverse, the value it had was copied to the

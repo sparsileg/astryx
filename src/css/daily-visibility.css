@@ -226,6 +226,17 @@
     font-size: 0.9rem;
 }
 
+.dv-dial-help {
+    position: relative;
+    z-index: 1;
+    width: fit-content;
+    margin-top: 0.25rem;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    text-decoration: underline dotted;
+    cursor: help;
+}
+
 .dv-dial-svg {
     width: 100%;
     max-width: 250px;
