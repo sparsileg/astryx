@@ -181,7 +181,7 @@ const SHOTS = {
         await openView(page, 'sidebar-yearly-observability');
     },
     'daily-visibility-overview': async page => {
-        await chooseTarget(page, 'M 42');
+        await chooseTarget(page, 'NGC 1333');
         await openView(page, 'sidebar-daily-visibility');
     },
     'viewfinder-overview': async page => {
@@ -303,8 +303,15 @@ SHOTS['first-night-optimizer'] = SHOTS['target-optimizer-overview'];
 SHOTS['first-night-daily-visibility'] = SHOTS['daily-visibility-overview'];
 
 // Shots that need a different night than SHOT_TIME
+// The forecast strips cover only the real today through today+4, so the
+// Daily Visibility overview needs a real night: FORECAST_NIGHT=YYYY-MM-DD
+// (default today); 23:00 UTC is early evening in New York.
+const FORECAST_NIGHT = process.env.FORECAST_NIGHT ?? new Date().toLocaleDateString('en-CA', { timeZone: TIME_ZONE });
+const FORECAST_TIME = `${FORECAST_NIGHT}T23:00:00Z`;
 const SHOT_TIMES = {
     'daily-visibility-moon-dial': '2026-12-21T20:00:00-05:00',
+    'daily-visibility-overview': FORECAST_TIME,
+    'first-night-daily-visibility': FORECAST_TIME,
 };
 
 const ids = ONLY.length ? ONLY : Object.keys(SHOTS);

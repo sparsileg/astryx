@@ -26,9 +26,9 @@ From top to bottom, the view has:
   Separation**.
 
 ::: {.shot id="daily-visibility-overview"}
-Daily Visibility for a target on a good night: the controls, the three
-forecast strips, the timeline with its markers and altitude line, and the
-three cards below.
+Daily Visibility for NGC 1333 in mid-October: the controls, the three
+forecast strips, the timeline with its markers and the target's altitude
+line from moonset to dawn, and the three cards below.
 :::
 
 ## The Controls
@@ -143,7 +143,9 @@ The Moon moves about 13° a day against the stars, so as you step through the
 nights with ▶, it travels clockwise round the dial, once a month. Many
 targets lie well away from the Moon's path, and the Moon passes beside them
 rather than over them. For these, it lifts outside the rim as it passes, and
-arcs over the bullseye.
+arcs over the bullseye. For the same reason, the Moon at 6 o'clock is never
+a full 180° from such a target, only 180° less the target's distance from
+the Moon's path: about 150° for M 42, and about 130° for M 51.
 
 ::: {.shot id="daily-visibility-moon-dial"}
 The Target-Moon Separation card on a night with a bright Moon near the

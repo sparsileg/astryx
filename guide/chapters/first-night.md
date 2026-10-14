@@ -95,8 +95,9 @@ so you can image wherever it shows against a dark background. Below the
 timeline, the Moon Details and Target-Moon Separation cards tell you how much the Moon will interfere.
 
 ::: {.shot id="first-night-daily-visibility"}
-Daily Visibility for a target on a good night: a long dark section, the
-target line well above the dashed line, and the forecast strips at the top.
+Daily Visibility for NGC 1333 in mid-October: the target clears the dashed
+line just after the Moon sets and stays well above it until dawn, while the
+Clouds strip shows cloud coming and going through the night.
 :::
 
 ## 4. Frame the Target

@@ -1,6 +1,6 @@
 # Astryx — Development Guide
 
-Astryx is an astrophotography planning app: a ~14,600-object target database,
+Astryx is an astrophotography planning app: a ~14,000-object target database,
 visibility/observability planning, a sequence planner, an imaging log, and
 ASIAir/PHD2 session-log analysis. One plain-JS frontend runs two ways:
 
@@ -65,7 +65,7 @@ Builds, installers, and the GitHub Actions release workflow:
   - `backup-manager.js` → `BackupManagerWeb` or `BackupManagerTauri`.
   - Both sides of each pair expose the same interface. A data change touches
     both, plus the Rust command and the schema.
-- **Targets are held in memory** (all ~14.6K). That's deliberate; keep it.
+- **Targets are held in memory** (all ~14K). That's deliberate; keep it.
 - **Help pages** in `src/help/` are built MkDocs output. Their source is the
   `astryx-data` repo; don't hand-edit the HTML here.
 - **Tutorials:** definitions in `src/js/tutorials/`, registered in
