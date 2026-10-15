@@ -141,7 +141,9 @@ Started](getting-started.md)). The condition lists start at **Unknown**:
 project's first target, and fills in:
 
 - **Moon Rise** and **Moon Set**, in the location's local time, between
-  noon on the date and noon the next day,
+  noon on the date and noon the next day. When only one of them falls in
+  that window, the other is the rise just before it or the set just after
+  it, so both are filled in,
 - **Illumination (%)**, the Moon's illuminated fraction over the night, and
 - **Angle from Moon (°)**, the closest the Moon comes to the target while
   the target is above your Min Altitude.

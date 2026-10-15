@@ -529,11 +529,12 @@ const DailyVisibilityView = {
             ['Phase', moonPhase.phaseName],
             ['Illuminated', `${Math.round(moonPhase.illumination)}%`]
         ];
-        if (data.moonRiseSet.moonrise) {
-            rows.push(['Rise', TimeUtils.formatLocalTimeWithDate(TimeUtils.jdToDate(data.moonRiseSet.moonrise), data)]);
-        }
-        if (data.moonRiseSet.moonset) {
-            rows.push(['Set', TimeUtils.formatLocalTimeWithDate(TimeUtils.jdToDate(data.moonRiseSet.moonset), data)]);
+        // Rise and Set in time order: the moon often sets before it rises
+        const events = [['Rise', data.moonRiseSet.moonrise], ['Set', data.moonRiseSet.moonset]]
+            .filter(([, jd]) => jd)
+            .sort(([, a], [, b]) => a - b);
+        for (const [label, jd] of events) {
+            rows.push([label, TimeUtils.formatLocalTimeWithDate(TimeUtils.jdToDate(jd), data)]);
         }
         if (!data.moonRiseSet.moonrise && !data.moonRiseSet.moonset) {
             rows.push([null, 'No rise/set during observation']);

@@ -15,7 +15,7 @@
 const APP_CONFIG = {
     APP_NAME: 'Astryx',
     APP_TITLE: 'Astryx - Astrophotography Planning Tool',
-    APP_VERSION: '1.17.1',
+    APP_VERSION: '1.18.0',
     DB_NAME: 'astryx-db',
     DB_VERSION: 8,
     TARGET_DATA_PATH: './data/',
@@ -30,6 +30,7 @@ const APP_CONFIG = {
     TIMELINE_EXTENSION_HOURS: 1/24,
     MOON_SEARCH_STEP_SIZE: 1/1440,
     MOON_SEARCH_MAX_STEPS: 2880,
+    MOON_RISE_SET_EXTENSION_DAYS: 1, // search past a noon-to-noon window for the missing rise or set
     TARGET_SEARCH_STEP_SIZE: 1/1440,
     DARK_HOURS_STEP_MINUTES: 10,  // sampling step for hours-above-altitude in darkness
 

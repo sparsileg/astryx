@@ -290,7 +290,7 @@ const SessionReportPdf = {
             body.push(['Imaging', AsiairLogParser.fmtMinutes(summary.imagingTotalS), AsiairLogParser.fmtPct(summary.imagingPct)]);
             body.push(['Autofocus (incl. guide settle)', AsiairLogParser.fmtMinutes(summary.afTotalS), AsiairLogParser.fmtPct(summary.afPct)]);
             if (summary.calCount > 0) body.push(['Guide Calibration (incl. settle)', AsiairLogParser.fmtMinutes(summary.calTotalS), AsiairLogParser.fmtPct(summary.calPct)]);
-            if (summary.meridianTotalS > 0) body.push(['Meridian Flip (pause + flip)', AsiairLogParser.fmtMinutes(summary.meridianTotalS), AsiairLogParser.fmtPct(summary.meridianPct)]);
+            if (summary.meridianTotalS > 0) body.push(['Meridian Flip (waiting + flip)', AsiairLogParser.fmtMinutes(summary.meridianTotalS), AsiairLogParser.fmtPct(summary.meridianPct)]);
             if (summary.ditherCount > 0) {
                 const cleanNote = summary.ditherCleanCount < summary.ditherCount ? ` (${summary.ditherCleanCount} settled cleanly)` : '';
                 body.push([`Dither (${summary.ditherCount} events)${cleanNote}`, AsiairLogParser.fmtMinutes(summary.ditherTotalS), `${AsiairLogParser.fmtPct(summary.ditherShareOfImagingPct)} of imaging`]);
@@ -566,6 +566,8 @@ const SessionReportPdf = {
                 ]];
                 for (const r of rows) body.push([r.setting, r.observed, r.astryxSetting, r.delta]);
                 content.push({ table: { headerRows: 1, widths: [90, 110, 110, 90], body }, layout: tableLayout, margin: [0, 0, 0, 8] });
+                const subFitWait = SessionRecommendations.meridianSubFitWaitText(context);
+                if (subFitWait) content.push({ text: subFitWait, style: 'sectionNote' });
             }
             const flipMissing = SessionRecommendations.meridianVerificationMissingText(context);
             if (flipMissing) content.push({ text: flipMissing, style: 'sectionNote' });

@@ -921,7 +921,7 @@ const ImagingLogView = {
             const moonPhase = getNightMoonPhase(duskJD, dawnJD);
             document.getElementById('session-moon-illumination').value = Math.round(moonPhase.illumination);
 
-            const moonRiseSet = calculateMoonRiseSet(noonWindow.startJD, noonWindow.endJD, location.latitude, location.longitude, location.elevation);
+            const moonRiseSet = calculateMoonRiseSetForNight(noonWindow.startJD, noonWindow.endJD, location.latitude, location.longitude, location.elevation);
 
             if (moonRiseSet.moonrise) {
                 document.getElementById('session-moon-rise').value = TimeUtils.formatLocalTime(TimeUtils.jdToDate(moonRiseSet.moonrise), location);
