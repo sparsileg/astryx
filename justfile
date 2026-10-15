@@ -7,9 +7,24 @@ default:
 test: test-js test-rust
 
 # Astronomy and planner tests under Node, once per timezone: the app must
-# give the same answers wherever the computer running it is
+# give the same answers wherever the computer running it is. The four zones
+# run at once (Issue #275); each zone's output is printed in turn.
 test-js:
-    for tz in America/New_York UTC Australia/Sydney Asia/Kolkata; do echo "TZ=$tz"; TZ=$tz node --test --test-reporter=dot tests/*.test.js || exit 1; done
+    #!/usr/bin/env bash
+    zones=(America/New_York UTC Australia/Sydney Asia/Kolkata)
+    out=$(mktemp -d)
+    trap 'rm -rf "$out"' EXIT
+    for i in "${!zones[@]}"; do
+        TZ=${zones[$i]} node --test --test-reporter=dot tests/*.test.js > "$out/$i" 2>&1 &
+        pids[$i]=$!
+    done
+    failed=0
+    for i in "${!zones[@]}"; do
+        wait "${pids[$i]}" || failed=1
+        echo "TZ=${zones[$i]}"
+        cat "$out/$i"
+    done
+    exit $failed
 
 # Re-record tests/snapshots/ after a deliberate change to a calculation
 update-snapshots:

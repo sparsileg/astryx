@@ -327,15 +327,17 @@ const SessionReportView = {
                     }
 
                     for (const entry of run.events) {
-                        // Meridian flip is two distinct log phases (pre-flip
-                        // pause, then the physical flip) — split into two
-                        // timeline rows instead of one pauseStartedAt->
-                        // flipEndedAt bar (Issue #255).
+                        // Meridian flip is two distinct log phases (the wait
+                        // before the flip, then the physical flip) — split into
+                        // two timeline rows instead of one pauseStartedAt->
+                        // flipEndedAt bar (Issue #255). The wait is ASIAir's
+                        // "Wait Xmin to Meridian Flip": any sub-fit wait, the
+                        // Flip Pause and the Flip Offset together (Issue #276).
                         if (entry.type === 'meridian_flip') {
                             if (entry.pauseStartedAt && entry.flipStartedAt) {
                                 entries.push({
                                     at: entry.pauseStartedAt, end: entry.flipStartedAt,
-                                    label: 'Meridian Flip — Pause', target: run.target,
+                                    label: 'Meridian Flip — Waiting', target: run.target,
                                     guideQuality: null, verbose: this._isVerboseEvent(entry),
                                 });
                             }
@@ -508,7 +510,7 @@ const SessionReportView = {
                 }
                 const pausePct = summary.totalTrackedS > 0 ? (pauseTotalS / summary.totalTrackedS) * 100 : 0;
                 const flipPct = summary.totalTrackedS > 0 ? (flipTotalS / summary.totalTrackedS) * 100 : 0;
-                html += `<tr><td>Meridian Flip — Pause</td><td>${AsiairLogParser.fmtMinutes(pauseTotalS)}</td><td>${AsiairLogParser.fmtPct(pausePct)}</td></tr>`;
+                html += `<tr><td>Meridian Flip — Waiting</td><td>${AsiairLogParser.fmtMinutes(pauseTotalS)}</td><td>${AsiairLogParser.fmtPct(pausePct)}</td></tr>`;
                 html += `<tr><td>Meridian Flip</td><td>${AsiairLogParser.fmtMinutes(flipTotalS)}</td><td>${AsiairLogParser.fmtPct(flipPct)}</td></tr>`;
             }
             if (summary.ditherCount > 0) {
@@ -1325,6 +1327,8 @@ const SessionReportView = {
                 </tr>`;
             }
             html += `</tbody></table>`;
+            const subFitWait = SessionRecommendations.meridianSubFitWaitText(context);
+            if (subFitWait) html += `<p class="session-report-note-small">${HtmlUtils.escapeHtml(subFitWait)}</p>`;
             return html;
         },
 

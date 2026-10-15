@@ -82,8 +82,9 @@ const DailyVisibilityCalculations = {
             }
         }
 
-        // Calculate moon rise and set times - use full day bounds
-        const moonRiseSet = calculateMoonRiseSet(noonWindow.startJD, noonWindow.endJD, latitude, longitude, elevation);
+        // Moon rise and set for the noon-to-noon day; an event just past the
+        // window is still found (the timeline skips it, the Moon Details card shows it)
+        const moonRiseSet = calculateMoonRiseSetForNight(noonWindow.startJD, noonWindow.endJD, latitude, longitude, elevation);
 
         // Calculate blocked time if horizon is being used
         let blockedMinutes = 0;

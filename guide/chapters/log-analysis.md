@@ -154,6 +154,11 @@ meridian flips, and anything flagged as a finding, with each one's
 the target marks each change of target, and repeated identical events are
 shown once with a count.
 
+A meridian flip takes two rows. **Meridian Flip — Waiting** is the time
+from imaging stopping to the flip starting: any wait because the next sub
+wouldn't have finished in time, then the Flip Pause and the Flip Offset.
+**Meridian Flip** is the flip itself.
+
 Dithers, plate solves, and the routine start and stop of tracking are
 hidden. Tick **Show all events** to see them.
 
@@ -210,7 +215,10 @@ How far to trust everything above:
 **Meridian Flip Verification** compares what your ASIAir actually did at
 the meridian flip with the **Flip Pause** and **Flip Offset** set in the
 Sequence Planner. A large **Delta** means the two have drifted apart; set
-the Sequence Planner to match your ASIAir. The table needs the night's
+the Sequence Planner to match your ASIAir. Your ASIAir also stops early
+when the next sub wouldn't finish before the Flip Pause; that time shows
+as its own row, **Wait for a sub**, and changes from flip to flip. The
+table needs the night's
 location, so it appears only when the night is in the Imaging Log;
 otherwise a note says what's missing.
 

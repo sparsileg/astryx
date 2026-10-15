@@ -307,29 +307,34 @@ const SessionRecommendations = {
     // session-report-view.js calls it directly, bypassing build()'s
     // four-group Recommendation shape entirely.
     //
-    // Verified 2025-11-17 raw log: pauseStartedAt lands the same second as
-    // the "Stop Tracking" line, immediately after the prior exposure ends
-    // — confirms it's the true Stop-Tracking moment (T−X), not an earlier
-    // exposure-fit decision point, and that flipStartedAt − pauseStartedAt
-    // reproduces configuredWaitS exactly (353s both ways).
+    // pauseStartedAt is the "Stop Tracking" line, right after the last sub
+    // ends (flipStartedAt − pauseStartedAt reproduces configuredWaitS).
+    // ASIAir stops early when the next sub wouldn't finish before the pause
+    // point (transit − Flip Pause), so T−X can include a sub-fit wait on top
+    // of the Flip Pause: 2026-09-06 stopped 4m44s early with 300 s subs.
+    // That wait gets its own row (_subFitWaitS) instead of showing up as a
+    // Flip Pause delta. Issue #276.
     buildMeridianVerification(context) {
-        if (!context || !context.asiairParsed) return [];
-        const flips = this._meridianFlipsWithRuns(context.asiairParsed);
-        if (flips.length === 0) return [];
-        const { event, run } = flips[0];
-        const derived = this._deriveMeridianTiming(event, run, context.location);
-        if (!derived) return [];
-
+        const timing = this._meridianVerificationTiming(context);
+        if (!timing) return [];
+        const { derived, pauseSettingS, offsetSettingS, subFitWaitS } = timing;
         const rows = [];
-        const pauseSettingS = (SettingsManager.getSetting('seqPlanMeridianFlipPause', 4)) * 60;
-        const offsetSettingS = (SettingsManager.getSetting('seqPlanMeridianFlipOffset', 0)) * 60;
 
         if (Number.isFinite(derived.xS)) {
+            const pauseS = derived.xS - (subFitWaitS ?? 0);
             rows.push({
                 setting: 'Flip Pause',
-                observed: this._fmtMinSec(derived.xS),
+                observed: this._fmtMinSec(pauseS),
                 astryxSetting: this._fmtMinSec(pauseSettingS),
-                delta: this._fmtMinSec(derived.xS - pauseSettingS),
+                delta: this._fmtMinSec(pauseS - pauseSettingS),
+            });
+        }
+        if (subFitWaitS != null) {
+            rows.push({
+                setting: 'Wait for a sub',
+                observed: this._fmtMinSec(subFitWaitS),
+                astryxSetting: '—',
+                delta: '—',
             });
         }
         if (Number.isFinite(derived.yS)) {
@@ -341,6 +346,39 @@ const SessionRecommendations = {
             });
         }
         return rows;
+    },
+
+    // The first flip's derived timing plus the settings it's checked
+    // against, or null when the transit can't be worked out.
+    _meridianVerificationTiming(context) {
+        if (!context || !context.asiairParsed) return null;
+        const flips = this._meridianFlipsWithRuns(context.asiairParsed);
+        if (flips.length === 0) return null;
+        const { event, run } = flips[0];
+        const derived = this._deriveMeridianTiming(event, run, context.location);
+        if (!derived) return null;
+
+        const pauseSettingS = (SettingsManager.getSetting('seqPlanMeridianFlipPause', 4)) * 60;
+        const offsetSettingS = (SettingsManager.getSetting('seqPlanMeridianFlipOffset', 0)) * 60;
+        return { derived, run, pauseSettingS, offsetSettingS, subFitWaitS: this._subFitWaitS(derived, run, pauseSettingS) };
+    },
+
+    // Time between the last sub's end and the Flip Pause starting, when it's
+    // shorter than one sub (the next sub wouldn't have fit); null otherwise,
+    // including when ASIAir's Flip Pause doesn't match the Astryx setting.
+    _subFitWaitS(derived, run, pauseSettingS) {
+        if (!Number.isFinite(derived.xS) || !run.exposureS) return null;
+        const waitS = derived.xS - pauseSettingS;
+        return waitS > 0 && waitS < run.exposureS ? waitS : null;
+    },
+
+    // Explains the 'Wait for a sub' row, or '' when there isn't one.
+    meridianSubFitWaitText(context) {
+        const timing = this._meridianVerificationTiming(context);
+        if (!timing || timing.subFitWaitS == null) return '';
+        return `Wait for a sub: imaging stopped ${this._fmtMinSec(timing.subFitWaitS)} before the Flip Pause began, ` +
+            `because another ${timing.run.exposureS} s sub wouldn't have finished in time. ` +
+            'This wait depends on where the subs happen to end, so it changes from flip to flip.';
     },
 
     // Why a night with a flip has no verification table, or '' when the

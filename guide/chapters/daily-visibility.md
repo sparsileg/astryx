@@ -113,8 +113,12 @@ Hold the pointer over a strip for a reminder of what it shows.
 ### Moon Details
 
 The Moon's **Phase**, how much of it is **Illuminated** during the night,
-and when it will **Rise** and **Set**. If the Moon neither rises nor sets in
-the window, the card says "No rise/set during observation".
+and when it will **Rise** and **Set**. Rise and Set are listed in time
+order, each with its date, so the Moon often sets before it rises. When the
+Moon rises in the noon-to-noon window but sets just after it (or set just
+before it rose), the card still shows that time, but the timeline doesn't.
+If the Moon neither rises nor sets in the window, the card says "No
+rise/set during observation".
 
 ### Target Details
 

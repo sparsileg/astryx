@@ -374,3 +374,29 @@ function calculateMoonRiseSet(searchStart, searchEnd, latitude, longitude, eleva
 
     return { moonrise, moonset };
 }
+
+/**
+ * Moon rise and set for a noon-to-noon night, never leaving just one of them blank.
+ * The moon rises and sets ~50 min later each day, so about once a month the
+ * window holds a rise but no set (or the reverse). The missing event is the
+ * other end of the same moon-up period: the next set after the window, or the
+ * last rise before it. Both missing (moon up or down all night) stays as is.
+ * @param {number} searchStart - Window start Julian Date (noon)
+ * @param {number} searchEnd - Window end Julian Date (next noon)
+ * @param {number} latitude - Observer latitude (degrees)
+ * @param {number} longitude - Observer longitude (degrees)
+ * @param {number} elevation - Observer elevation (meters)
+ * @returns {Object} { moonrise: JD|null, moonset: JD|null }
+ */
+function calculateMoonRiseSetForNight(searchStart, searchEnd, latitude, longitude, elevation) {
+    const extension = APP_CONFIG.MOON_RISE_SET_EXTENSION_DAYS;
+    const result = calculateMoonRiseSet(searchStart, searchEnd, latitude, longitude, elevation);
+
+    if (result.moonrise && !result.moonset) {
+        result.moonset = calculateMoonRiseSet(searchEnd, searchEnd + extension, latitude, longitude, elevation).moonset;
+    } else if (result.moonset && !result.moonrise) {
+        result.moonrise = calculateMoonRiseSet(searchStart - extension, searchStart, latitude, longitude, elevation).moonrise;
+    }
+
+    return result;
+}
