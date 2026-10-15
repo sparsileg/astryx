@@ -608,8 +608,7 @@ const SessionReportView = {
             let html = `<h4 class="session-report-section">Per-Sub Frame Quality</h4>`;
 
             for (const [target, subs] of byTarget) {
-                const exposureS = subs.length > 0 ? subs[0].exposureS : null;
-                const header = `${target} (${subs.length} subs${exposureS != null ? ', ' + exposureS + 's' : ''})`;
+                const header = this._perSubHeader(target, subs);
                 html += `<p class="session-report-note-small"><strong>${HtmlUtils.escapeHtml(header)}</strong></p>`;
                 html += `<table class="session-table"><thead><tr>${cols.map(c => `<th>${c}</th>`).join('')}</tr></thead><tbody>`;
                 for (const s of subs) {
@@ -620,6 +619,14 @@ const SessionReportView = {
                 html += `</tbody></table>`;
             }
             return html;
+        },
+
+        // "M 31 (180 subs, 60s/30s/10s)": every exposure the target was
+        // shot at, in the order first used (issue #281)
+        _perSubHeader(target, subs) {
+            const exposures = [...new Set(subs.map(s => s.exposureS).filter(e => e != null))];
+            const exposureText = exposures.length > 0 ? ', ' + exposures.map(e => e + 's').join('/') : '';
+            return `${target} (${subs.length} subs${exposureText})`;
         },
 
         _groupSubsByTarget(fs) {
@@ -1213,7 +1220,7 @@ const SessionReportView = {
         _recommendationGroups() {
             return [
                 { key: 'behavior', title: 'Behavior', columns: ['Measurement', 'Observed', 'Moving Average', 'Confidence'],
-                  note: `These values accumulate across every analyzed session as a moving average, weighted toward recent nights but never fully reset by any single one — a single unusual session nudges the average, it doesn't replace it. A log updates the average only when it has at least ${APP_CONFIG.ASIAIR_MIN_CLEAN_SAMPLES} clean samples; otherwise the stored value is left as it was.` },
+                  note: `Astryx learns from your session logs to estimate more accurately how many subs fit into a stretch of imaging time. Sub Gap is the dead time between one sub ending and the next starting (download and overhead). Dither Duration is how long a dither takes to settle. The Sequence Planner adds the sub gap after every sub and the dither duration after every dither, so the closer these values match your rig, the better it can estimate the number of subs. Observed is what this log measured. Moving Average is the value Astryx now plans with: this log's measurement blended with earlier sessions, so one unusual night nudges it rather than replacing it. A log updates the average only when it has at least ${APP_CONFIG.ASIAIR_MIN_CLEAN_SAMPLES} clean samples; otherwise the stored value is left as it was.` },
                 { key: 'sequencePlanning', title: 'Sequence Planning', columns: ['Setting', 'Observed', 'Recommended', 'Confidence'],
                   note: 'AF Duration covers autofocus, re-selecting the guide star and settling, but not calibration. Guide Calibration Duration includes settling. Flip Duration runs from the start of the flip to its end and leaves out the pause before it.' },
                 { key: 'asiair', title: 'ASIAir Configuration', columns: ['Setting', 'Observed', 'Recommended', 'Confidence'] },

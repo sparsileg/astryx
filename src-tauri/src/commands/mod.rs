@@ -10,6 +10,7 @@ pub mod locations;
 pub mod pinned_targets;
 pub mod sensors;
 pub mod settings;
+pub mod startup;
 pub mod targets;
 pub mod telescopes;
 pub mod todo_targets;

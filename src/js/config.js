@@ -15,7 +15,7 @@
 const APP_CONFIG = {
     APP_NAME: 'Astryx',
     APP_TITLE: 'Astryx - Astrophotography Planning Tool',
-    APP_VERSION: '1.18.0',
+    APP_VERSION: '1.19.0',
     DB_NAME: 'astryx-db',
     DB_VERSION: 8,
     TARGET_DATA_PATH: './data/',
@@ -165,6 +165,7 @@ const APP_CONFIG = {
         MIN_MOVE_OPTIONS_PX:     [0.1, 0.2],  // ASIAir's Corrected Trigger Accuracy choices
         SEEING_CHASE_FACTOR:     2,     // seeing jitter above this × min move means guiding chases seeing
         STABILITY_RMS_RATIO_MIN: 2,     // Guide Stability under this × settled RMS makes settles run long
+        STABILITY_ROUND_ARCSEC:  0.5,   // suggested Guide Stability is rounded up to this
         RA_DEC_BIAS_RATIO:       1.5,   // RA/Dec RMS ratio (or its inverse) beyond this is unbalanced
         STAR_MASS_CHANGE_SESSIONS: 2,   // sessions with "mass changed" star losses (code 6) before suggesting a higher tolerance
     },
@@ -199,6 +200,11 @@ const APP_CONFIG = {
     // given night's log. Below this, the stored value is left untouched
     // rather than updated from too little/noisy data.
     ASIAIR_MIN_CLEAN_SAMPLES: 5,
+
+    // A gap between two subs this long or longer isn't download overhead
+    // (an unlogged pause, a plan change), so it's left out of the sub gap
+    // measurement.
+    ASIAIR_SUB_GAP_MAX_S: 90,
 
     // Share of the gap between the stored and the observed value that one
     // night's log closes. Values are whole seconds, so a change under half a

@@ -74,7 +74,8 @@ stored figure, with what this log added to it, or why it added nothing.
 Each night's Session Log updates the stored figures once. Astryx
 remembers which logs it has used, by their start times, so loading the same
 log again leaves the figures alone and tells you so. The report itself
-appears as usual.
+appears as usual. To start the figures over, see
+[Command-Line Options](appendix-command-line.md).
 :::
 
 ## The Combined Report

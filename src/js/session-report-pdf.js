@@ -327,8 +327,7 @@ const SessionReportPdf = {
         const cols = SessionReportView._perSubColumns();
 
         for (const [target, subs] of byTarget) {
-            const exposureS = subs.length > 0 ? subs[0].exposureS : null;
-            const header = `${target} (${subs.length} subs${exposureS != null ? ', ' + exposureS + 's' : ''})`;
+            const header = SessionReportView._perSubHeader(target, subs);
             content.push({ text: 'Per-Sub Frame Quality', style: 'sectionHeading', pageBreak: 'before' });
             content.push({ text: header, style: 'subHeading' });
 

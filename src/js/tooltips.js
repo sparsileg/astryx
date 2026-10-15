@@ -92,7 +92,7 @@ const TOOLTIPS = {
     util_weather:   'Opens Astrospheric and Clear Outside forecast\npages for each of your configured locations.\nRequires internet access.',
     util_lightPoll: 'Opens Light Pollution Map centered on each\nof your configured locations.\nRequires internet access.',
     util_sessLogs:  'Drop or select the night\'s ASIAir Autorun log and\nPHD2 guide log, together or one at a time. Astryx\ntells them apart by their contents and combines\nthem into one report with a summary, notable\nevents, findings, and recommendations. PDF and\nCSV output available.',
-    log_guideStability: 'Your ASIAir Guide Stability and settle time:\nafter a dither, guiding must stay below this\nmany arcseconds for this many seconds. Neither\nlog records them, so enter them here. The\nGuiding Settings section of the combined report\nuses them to judge your settle times.',
+    log_guideStability: 'Enter your ASIAir guide stability and settle\ntime to help Astryx explain how dithers\nsettled during the session.',
     util_dustMote:  'Estimates how far a dust particle is from\nyour sensor based on the size of its shadow\nin your calibration frames.',
     util_dustFocalRatio:'The focal ratio (f-number) of your imaging\ntrain, including any reducer or Barlow.\nAuto-filled when you select a telescope above,\nor enter manually.',
     util_dustPixelSize: 'The physical size of one pixel on your sensor\nin micrometres. Auto-filled when you select\na sensor above, or enter manually.',

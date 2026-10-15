@@ -514,6 +514,19 @@ async setBackupReminderDays(days) {
         await this.saveSettings();
     },
 
+    // Back to the defaults, forgetting which logs they were learned from, so
+    // loading those logs again relearns them (--reset-learned, issue #281)
+    async resetLearnedValues() {
+        this.settings.learnedSubGapS = APP_CONFIG.DEFAULT_SUB_GAP_S;
+        this.settings.learnedDitherDurationS = APP_CONFIG.DEFAULT_DITHER_DURATION_S;
+        delete this.settings.learnedSubGapSampleCount;
+        delete this.settings.learnedSubGapDate;
+        delete this.settings.learnedDitherDurationSampleCount;
+        delete this.settings.learnedDitherDurationDate;
+        delete this.settings.learnedFromLogs;
+        await this.saveSettings();
+    },
+
     // ASIAir's Guide Stability and settle time aren't in either log, so the
     // Log Analysis screen asks for them and remembers the last values.
     getGuideStabilityArcsec() {
