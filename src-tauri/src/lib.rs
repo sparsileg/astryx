@@ -118,6 +118,8 @@ pub fn run() {
             commands::tutorial_progress::delete_tutorial_progress,
             // Help
             commands::help::open_user_guide,
+            // Startup
+            commands::startup::get_startup_args,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

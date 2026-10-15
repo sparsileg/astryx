@@ -30,6 +30,7 @@ chapters=(
     chapters/appendix-optimizer.md
     chapters/appendix-seqplan.md
     chapters/appendix-combined-report.md
+    chapters/appendix-command-line.md
     chapters/appendix-accuracy.md
     chapters/appendix-glossary.md
 )

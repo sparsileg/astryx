@@ -21,17 +21,14 @@ const AsiairLogParser = {
         const allLines = text.trim().split('\n').map(l => l.trim()).filter(l => l);
 
         // --- Legacy single-target pipeline. The Combined Report still reads
-        // its summary, events and parse failures, and updateLearnedValues
-        // applies its recommendations.
+        // its summary, events and parse failures.
         const lines = this._extractLightFrameLines(allLines);
         const target = this._extractTarget(lines);
         const date = this._extractDate(lines);
-        const exposure = this._extractExposure(lines);
         const totalSubs = this._extractTotalSubs(lines);
         const { events, parseFailures } = this._extractEvents(lines);
         const wallClock = this._extractWallClock(lines);
         const summary = this._computeSummary(events, wallClock.wallClockS);
-        const recommendations = this._computeRecommendations(events, summary, exposure, parseFailures);
 
         // --- Multi-run structure (#229) — additive. Correctly delimits
         // every [Autorun|Begin]->[Autorun|End] segment instead of merging
@@ -48,6 +45,9 @@ const AsiairLogParser = {
         const gaps = this._extractLogGaps(allLines);
         const plans = this._extractPlanRuns(allLines, runs);
 
+        // updateLearnedValues applies these
+        const recommendations = this._computeRecommendations(summary, this.measureSubGap(runs));
+
         // #233 item 2 / design doc I13: the only mechanism that surfaces a
         // future firmware/log-format change before it silently corrupts a
         // number. Uses the raw, untrimmed line split (not allLines above,
@@ -59,7 +59,7 @@ const AsiairLogParser = {
             unmatchedLines: this._findUnmatchedLines(rawLines),
         };
 
-        return { target, date, exposure, totalSubs, events, parseFailures, wallClock, summary, recommendations, runs, gaps, plans, source };
+        return { target, date, totalSubs, events, parseFailures, wallClock, summary, recommendations, runs, gaps, plans, source };
     },
 
     // -------------------------------------------------------------------------
@@ -272,14 +272,6 @@ const AsiairLogParser = {
         };
     },
 
-    _extractExposure(lines) {
-        for (const line of lines) {
-            const m = line.match(/Shooting \d+ light frames, exposure ([\d.]+)s/);
-            if (m) return parseFloat(m[1]);
-        }
-        return null;
-    },
-
     _extractTotalSubs(lines) {
         for (const line of lines) {
             const m = line.match(/Shooting (\d+) light frames/);
@@ -344,7 +336,6 @@ const AsiairLogParser = {
     _extractEvents(lines) {
         const events = [];
         const parseFailures = [];
-        this._subTimes = [];
         let i = 0;
 
         while (i < lines.length) {
@@ -514,9 +505,11 @@ const AsiairLogParser = {
             if (line.match(/Exposure \d+\.?\d*s image \d+#/)) {
                 const blockStart = this._parseTimestamp(line);
                 const firstImgNum = parseInt(line.match(/image (\d+)#/)[1]);
-                this._subTimes.push(blockStart);
                 let lastImgNum = firstImgNum;
                 let blockEnd = null;
+                // A block can span a plan change, so it ends with its last
+                // sub's own exposure, not its first's (issue #281)
+                let lastExposure = this._extractExposureFromLine(line);
                 let j = i + 1;
 
                 while (j < lines.length) {
@@ -561,7 +554,7 @@ const AsiairLogParser = {
                     if (imgMatch) {
                         lastImgNum = parseInt(imgMatch[1]);
                         blockEnd = this._parseTimestamp(nextLine);
-                        this._subTimes.push(blockEnd);
+                        lastExposure = this._extractExposureFromLine(nextLine);
                         j++;
                         continue;
                     }
@@ -576,10 +569,7 @@ const AsiairLogParser = {
                     j++;
                 }
 
-                const exposure = this._extractExposureFromLine(line);
-                const trueBlockEnd = blockEnd
-                      ? new Date(blockEnd.getTime() + exposure * 1000)
-                      : new Date(blockStart.getTime() + exposure * 1000);
+                const trueBlockEnd = new Date((blockEnd ?? blockStart).getTime() + lastExposure * 1000);
 
                 events.push({
                     type: 'imaging',
@@ -1644,81 +1634,76 @@ const AsiairLogParser = {
     // Recommendations
     // -------------------------------------------------------------------------
 
-    _computeRecommendations(events, summary, exposure, parseFailures = []) {
-        const exp = exposure || 300;
+    /**
+     * The one sub gap measurement (issue #281), shared by the learned value
+     * (parse) and the report's Sub Gap row (SessionRecommendations
+     * ._subGapRec, which keeps only clean-tier subs through includeSub).
+     * Pairs of consecutive light subs in the same block, each gap measured
+     * from the end of the first sub's own exposure. Pairs with different
+     * exposures (a plan change), pairs with any other event between their
+     * starts (guide star lost, recovery, plate solve, mount), and gaps of
+     * ASIAIR_SUB_GAP_MAX_S or more are left out. A gap with a cleanly settled dither counts only when no gap
+     * is dither-free (a rig that dithers every sub); the mean dither
+     * duration is then subtracted. A gap with an unsettled dither never
+     * counts.
+     * @param {Array} runs - parse() runs
+     * @param {Function} includeSub - (sub) => whether the sub may be used
+     * @returns {{meanS: number, n: number, ditherEverySub: boolean}|null} null with no samples
+     */
+    measureSubGap(runs, includeSub = () => true) {
+        const cleanGaps = [];
+        const ditheredGaps = [];
+        const ditherDurations = [];
+        for (const run of runs.filter(r => r.kind === 'light')) {
+            const dithers = run.events.filter(e => e.type === 'dither' && e.start && e.end);
+            const otherEventTimes = run.events.filter(e => e.type !== 'dither')
+                .map(e => e.start ?? e.at ?? e.startedAt).filter(Boolean);
+            for (const block of run.blocks) {
+                for (let i = 0; i < block.subs.length - 1; i++) {
+                    const a = block.subs[i], b = block.subs[i + 1];
+                    if (!a.startedAt || !a.exposureS || !b.startedAt) continue;
+                    if (a.exposureS !== b.exposureS) continue;
+                    if (!includeSub(a) || !includeSub(b)) continue;
+                    if (otherEventTimes.some(t => t >= a.startedAt && t < b.startedAt)) continue;
 
-        // Build interruption list — all non-imaging, non-dither events
-        // Dithers are excluded here so we can detect un-dithered gaps separately
-        const interruptions = events
-            .filter(e => e.type !== 'imaging' && e.type !== 'dither')
-            .map(e => ({ start: e.start, end: e.end }));
+                    const windowStart = new Date(a.startedAt.getTime() + a.exposureS * 1000);
+                    const windowEnd = b.startedAt;
+                    const gapS = (windowEnd.getTime() - windowStart.getTime()) / 1000;
+                    if (gapS < 0 || gapS >= APP_CONFIG.ASIAIR_SUB_GAP_MAX_S) continue;
 
-        const isInterrupted = (t1, t2) => {
-            return interruptions.some(iv => iv.start >= t1 && iv.start < t2);
-        };
-
-        const dithersInWindow = (t1, t2) => {
-            return events.filter(e => e.type === 'dither' && e.start >= t1 && e.start < t2);
-        };
-
-        // A gap containing a parse failure (settle timeout/failed that
-        // couldn't be terminator-matched, or any other scan that had to
-        // abort) is a log gap in the sense Change 3 means — exclude it
-        // from clean-sample consideration rather than risk polluting the
-        // sub-cadence measurement with an unmeasured stretch.
-        const hasParseFailureInWindow = (t1, t2) => {
-            return parseFailures.some(f => f.start && f.start >= t1 && f.start < t2);
-        };
-
-        const subTimesRaw = this._subTimes || [];
-
-        // Separate gaps into dithered and un-dithered — clean samples only
-        // (ELR.p1-3 Change 3): a dithered gap whose dither didn't settle
-        // cleanly, or any gap containing a parse failure, is excluded
-        // entirely rather than folded into either bucket.
-        const ditheredGaps = [];   // gap includes a cleanly-settled dither
-        const cleanGaps = [];      // gap with no dither and no interruption — pure sub gap
-
-        for (let i = 1; i < subTimesRaw.length; i++) {
-            const prev = subTimesRaw[i - 1];
-            const curr = subTimesRaw[i];
-
-            if (isInterrupted(prev, curr)) continue; // skip AF, flip, cal boundaries
-            if (hasParseFailureInWindow(prev, curr)) continue; // settle timeout/failed/log gap
-
-            const delta = (curr - prev) / 1000; // seconds between sub starts
-            const overhead = delta - exp;        // overhead above exposure time
-
-            const dithersHere = dithersInWindow(prev, curr);
-            if (dithersHere.length > 0) {
-                if (dithersHere.every(d => d.outcome === 'done')) {
-                    ditheredGaps.push(overhead); // overhead = dither duration + sub gap
+                    const dithersHere = dithers.filter(d => d.start >= windowStart && d.start < windowEnd);
+                    if (dithersHere.length === 0) {
+                        cleanGaps.push(gapS);
+                    } else if (dithersHere.every(d => d.outcome === 'done')) {
+                        ditheredGaps.push(gapS);
+                        ditherDurations.push(dithersHere.reduce((sum, d) => sum + d.durationS, 0));
+                    }
                 }
-                // a timeout/failed dither in this window — not a clean sample, excluded
-            } else {
-                cleanGaps.push(overhead);        // overhead = sub gap only
             }
         }
 
-        // Pure sub gap: average of un-dithered gaps
-        // Fall back to ditheredGap - ditherAvg if no clean gaps exist (dither-every-frame)
-        let observedSubGapS;
+        const mean = (values) => values.reduce((sum, v) => sum + v, 0) / values.length;
         if (cleanGaps.length > 0) {
-            observedSubGapS = cleanGaps.reduce((s, g) => s + g, 0) / cleanGaps.length;
-        } else if (ditheredGaps.length > 0) {
-            // All gaps are dithered — subtract average dither duration to isolate sub gap
-            const avgDitheredOverhead = ditheredGaps.reduce((s, g) => s + g, 0) / ditheredGaps.length;
-            observedSubGapS = Math.max(0, avgDitheredOverhead - summary.ditherAvgS);
-        } else {
-            observedSubGapS = SettingsManager.getLearnedSubGapS();
+            return { meanS: mean(cleanGaps), n: cleanGaps.length, ditherEverySub: false };
         }
+        if (ditheredGaps.length > 0) {
+            return {
+                meanS: Math.max(0, mean(ditheredGaps) - mean(ditherDurations)),
+                n: ditheredGaps.length,
+                ditherEverySub: true,
+            };
+        }
+        return null;
+    },
 
-        // Observed dither duration: from dithered gaps, subtract the sub gap
+    _computeRecommendations(summary, subGap) {
+        const observedSubGapS = subGap ? subGap.meanS : SettingsManager.getLearnedSubGapS();
+
         const observedDitherDurationS = summary.ditherAvgS > 0
             ? summary.ditherAvgS
             : SettingsManager.getLearnedDitherDurationS();
 
-        const subGapSampleCount = cleanGaps.length + ditheredGaps.length;
+        const subGapSampleCount = subGap ? subGap.n : 0;
         const minSamples = APP_CONFIG.ASIAIR_MIN_CLEAN_SAMPLES;
         const derivationDate = new Date().toISOString().slice(0, 10);
 

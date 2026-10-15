@@ -64,65 +64,13 @@ const SessionRecommendations = {
         return recs.filter(Boolean);
     },
 
-    // Excludes any consecutive-sub pair with a dither between them — a
-    // dithered gap includes the dither's own settle time, and blending
-    // that into "sub gap" inflates the figure (caught in validation: an
-    // earlier version mixed both together and produced ~22s, close to
-    // config.js's SUB_CYCLE_OVERHEAD_S baseline which is itself a dither-
-    // inclusive figure, not pure sub gap — the wrong thing to compare
-    // against the stored per-sub value). Mirrors the legacy pipeline's own
-    // cleanGaps/ditheredGaps separation (asiair-log-parser.js
-    // _computeRecommendations), including its dither-every-frame fallback
-    // (subtract mean dither duration from the dithered-gap samples) — also
-    // caught in validation: without the fallback, a rig configured to
-    // dither on every sub (this one, most nights) produces zero non-
-    // dithered samples and the recommendation goes empty, while legacy
-    // still produces a figure via exactly this subtraction.
+    // Measured by AsiairLogParser.measureSubGap, the same calculation the
+    // learned value uses, kept to pairs of clean-tier subs here (issue #281).
     _subGapRec(fs, asiairParsed) {
-        const cleanGaps = [];
-        const ditheredGaps = [];
-        const ditherDurations = [];
-        for (const run of asiairParsed.runs.filter(r => r.kind === 'light')) {
-            const dithers = run.events.filter(e => e.type === 'dither' && e.start && e.end);
-            for (const block of run.blocks) {
-                for (let i = 0; i < block.subs.length - 1; i++) {
-                    const a = block.subs[i], b = block.subs[i + 1];
-                    if (!a.startedAt || !a.exposureS || !b.startedAt) continue;
-                    const aClean = this._subTierByImageNo(fs, a.imageNo) === 'clean';
-                    const bClean = this._subTierByImageNo(fs, b.imageNo) === 'clean';
-                    if (!aClean || !bClean) continue;
-
-                    const windowStart = new Date(a.startedAt.getTime() + a.exposureS * 1000);
-                    const windowEnd = b.startedAt;
-                    const gapS = (windowEnd.getTime() - windowStart.getTime()) / 1000;
-                    if (gapS < 0 || gapS >= 90) continue;
-
-                    const ditherInWindow = dithers.find(d => d.start >= windowStart && d.start < windowEnd && d.outcome === 'done');
-                    if (ditherInWindow) {
-                        ditheredGaps.push(gapS);
-                        ditherDurations.push(ditherInWindow.durationS);
-                    } else if (!dithers.some(d => d.start >= windowStart && d.start < windowEnd)) {
-                        // no dither at all in this window (clean or otherwise)
-                        cleanGaps.push(gapS);
-                    }
-                    // a non-'done' dither in this window is excluded from both buckets
-                }
-            }
-        }
-
+        const subGap = AsiairLogParser.measureSubGap(asiairParsed.runs,
+            sub => this._subTierByImageNo(fs, sub.imageNo) === 'clean');
         const stored = (typeof SettingsManager !== 'undefined') ? SettingsManager.getLearnedSubGapS() : null;
-        let mean, n, note;
-        if (cleanGaps.length > 0) {
-            mean = cleanGaps.reduce((s, v) => s + v, 0) / cleanGaps.length;
-            n = cleanGaps.length;
-            note = 'clean blocks, no dither between';
-        } else if (ditheredGaps.length > 0) {
-            const avgDitheredGap = ditheredGaps.reduce((s, v) => s + v, 0) / ditheredGaps.length;
-            const avgDither = ditherDurations.reduce((s, v) => s + v, 0) / ditherDurations.length;
-            mean = Math.max(0, avgDitheredGap - avgDither);
-            n = ditheredGaps.length;
-            note = 'clean blocks, dither-every-sub — isolated by subtracting mean dither duration';
-        } else {
+        if (!subGap) {
             return this._makeRec({
                 group: 'behavior', setting: 'Sub Gap',
                 observed: 'no clean-block samples this session', recommended: this._learnedValueText(asiairParsed, 'subGap'), changeNeeded: false,
@@ -131,6 +79,10 @@ const SessionRecommendations = {
             });
         }
 
+        const { meanS: mean, n } = subGap;
+        const note = subGap.ditherEverySub
+            ? 'clean blocks, dither-every-sub — isolated by subtracting mean dither duration'
+            : 'clean blocks, no dither between';
         const changeNeeded = stored != null && Math.abs(mean - stored) > 1;
         return this._makeRec({
             group: 'behavior', setting: 'Sub Gap',
@@ -180,9 +132,9 @@ const SessionRecommendations = {
     },
 
     // The stored moving average, and what this log fed into it. The value
-    // averaged in comes from AsiairLogParser._computeRecommendations (what
-    // updateLearnedValues applies), which can differ slightly from the
-    // clean-block figure in the Observed column.
+    // averaged in is measured over all light subs (AsiairLogParser
+    // .measureSubGap, applied by updateLearnedValues), so it can differ
+    // slightly from the clean-tier figure in the Observed column.
     _learnedValueText(asiairParsed, which) {
         const r = asiairParsed.recommendations;
         const subGap = which === 'subGap';
@@ -360,16 +312,26 @@ const SessionRecommendations = {
 
         const pauseSettingS = (SettingsManager.getSetting('seqPlanMeridianFlipPause', 4)) * 60;
         const offsetSettingS = (SettingsManager.getSetting('seqPlanMeridianFlipOffset', 0)) * 60;
-        return { derived, run, pauseSettingS, offsetSettingS, subFitWaitS: this._subFitWaitS(derived, run, pauseSettingS) };
+        const subExposureS = this._lastSubExposureS(run, event.pauseStartedAt);
+        return { derived, subExposureS, pauseSettingS, offsetSettingS, subFitWaitS: this._subFitWaitS(derived, subExposureS, pauseSettingS) };
+    },
+
+    // Exposure of the run's last sub to start before `at`, or null. A run can
+    // change exposure partway (issue #281), so the run's first exposure
+    // isn't necessarily the one that was being taken.
+    _lastSubExposureS(run, at) {
+        if (!at) return null;
+        const before = run.blocks.flatMap(b => b.subs).filter(s => s.startedAt && s.startedAt < at);
+        return before.length > 0 ? before[before.length - 1].exposureS : null;
     },
 
     // Time between the last sub's end and the Flip Pause starting, when it's
     // shorter than one sub (the next sub wouldn't have fit); null otherwise,
     // including when ASIAir's Flip Pause doesn't match the Astryx setting.
-    _subFitWaitS(derived, run, pauseSettingS) {
-        if (!Number.isFinite(derived.xS) || !run.exposureS) return null;
+    _subFitWaitS(derived, subExposureS, pauseSettingS) {
+        if (!Number.isFinite(derived.xS) || !subExposureS) return null;
         const waitS = derived.xS - pauseSettingS;
-        return waitS > 0 && waitS < run.exposureS ? waitS : null;
+        return waitS > 0 && waitS < subExposureS ? waitS : null;
     },
 
     // Explains the 'Wait for a sub' row, or '' when there isn't one.
@@ -377,7 +339,7 @@ const SessionRecommendations = {
         const timing = this._meridianVerificationTiming(context);
         if (!timing || timing.subFitWaitS == null) return '';
         return `Wait for a sub: imaging stopped ${this._fmtMinSec(timing.subFitWaitS)} before the Flip Pause began, ` +
-            `because another ${timing.run.exposureS} s sub wouldn't have finished in time. ` +
+            `because another ${timing.subExposureS} s sub wouldn't have finished in time. ` +
             'This wait depends on where the subs happen to end, so it changes from flip to flip.';
     },
 
@@ -734,12 +696,21 @@ const SessionRecommendations = {
             : '';
         const rms = overall && overall.totRms;
 
+        // Suggest only what tonight's RMS supports: the ratio × RMS floor,
+        // and only when the setting is under it
+        const floor = rms != null
+            ? Math.ceil(C.STABILITY_RMS_RATIO_MIN * rms / C.STABILITY_ROUND_ARCSEC) * C.STABILITY_ROUND_ARCSEC
+            : null;
+        const tryText = floor != null && arcsec < floor
+            ? `; try at least ${floor}" (about ${C.STABILITY_RMS_RATIO_MIN} × the RMS)`
+            : '';
+
         let assessment, changeNeeded = false;
         if (timeouts > 0) {
-            assessment = `Settling timed out ${timeouts} time${timeouts > 1 ? 's' : ''}; ${arcsec}" may be too tight${rms != null ? ` for tonight's ${rms.toFixed(2)}" guiding` : ''}`;
+            assessment = `Settling timed out ${timeouts} time${timeouts > 1 ? 's' : ''}; ${arcsec}" may be too tight${rms != null ? ` for tonight's ${rms.toFixed(2)}" guiding` : ''}${tryText}`;
             changeNeeded = true;
         } else if (rms != null && arcsec < C.STABILITY_RMS_RATIO_MIN * rms) {
-            assessment = `Tight for tonight's ${rms.toFixed(2)}" guiding; settles may run long`;
+            assessment = `Tight for tonight's ${rms.toFixed(2)}" guiding; settles may run long${tryText}`;
         } else {
             assessment = 'Good';
         }
