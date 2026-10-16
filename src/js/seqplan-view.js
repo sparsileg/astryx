@@ -620,7 +620,7 @@ const SeqPlanView = {
         if (modalBody) {
             modalBody.innerHTML = html + `
                 <div style="margin-top: 1rem;">
-                    <button class="btn btn-primary btn-sm" data-action="download-pdf">Download PDF</button>
+                    <button class="btn btn-secondary btn-sm" data-action="download-pdf">Download PDF</button>
                 </div>`;
             const pdfBtn = modalBody.querySelector('[data-action="download-pdf"]');
             if (pdfBtn) {
@@ -775,6 +775,7 @@ const SeqPlanView = {
         const container = document.getElementById('seq-plan-target-list');
         if (!container || this.calculatedResults.length === 0) return;
         container.innerHTML = '';
+        container.classList.add('seq-plan-target-grid');
 
         this.calculatedResults.forEach((target, index) => {
             const row = document.createElement('div');
@@ -792,8 +793,7 @@ const SeqPlanView = {
                         class="seq-plan-exposure-input"
                         id="exposure-${target.targetId}"
                         value="${target.exposureTime}"
-                        min="1"
-                        style="width: 80px;">
+                        min="1">
                     <span style="font-size: 0.85rem; color: var(--text-secondary);">sec</span>
                 </div>
                 <div>
@@ -803,8 +803,7 @@ const SeqPlanView = {
                            min="0"
                            max="100"
                            step="1"
-                           value="${target.allocatedPercent.toFixed(0)}"
-                           style="width: 200px;">
+                           value="${target.allocatedPercent.toFixed(0)}">
                 </div>
                 <div class="seq-plan-allocation-value" id="value-${target.targetId}">
                     ${target.allocatedPercent.toFixed(0)}% • ${target.exposureCount} × ${target.exposureTime}s
@@ -863,15 +862,6 @@ const SeqPlanView = {
                 slider.addEventListener('touchend', () => {
                     isUserInput = false;
                 });
-
-                // Prevent drag when interacting with slider
-                slider.addEventListener('mousedown', (e) => {
-                    e.stopPropagation();
-                });
-
-                slider.addEventListener('touchstart', (e) => {
-                    e.stopPropagation();
-                }, {passive: false});
             }
 
             // Exposure time: recalculate once typing pauses

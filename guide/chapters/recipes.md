@@ -12,7 +12,7 @@ then switching to a second as the first sinks.
 
 1. Add a handful of candidates to your **To Do List** (see [To Do
    List](todo-list.md)).
-2. Open **To Do List** and set **Sort by:** to **Rise Time (Tonight)**,
+2. Open **To Do List** and set **Sort by:** to **Rise Time**,
    with the chart showing. The chart's left edge is dusk and its right edge
    is dawn.
 3. Choose the evening target: a bar that starts at the left edge and ends
@@ -76,7 +76,8 @@ To work through the Messier catalog, or any numbered list:
 A bright Moon doesn't have to mean a night off:
 
 1. Open **Target Optimizer**.
-2. Under **Source**, choose **To Do List**, and click **Find Targets**.
+2. Under **Source**, choose **To Do List**. The results update as soon as
+   you choose.
 3. Look at each card's **Moon** score. A high score means the Moon is down,
    faint, or far away during the target's window.
 4. Prefer emission nebulae, especially with narrowband filters, and

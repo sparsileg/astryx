@@ -7,8 +7,9 @@
 
 .sidebar {
     position: relative;
-    width: 280px;
-    min-width: 280px;
+    /* Set by dragging the edge (Issue #285); matches APP_CONFIG.SIDEBAR_MIN_WIDTH_REM */
+    width: var(--sidebar-width, 17.5rem);
+    min-width: var(--sidebar-width, 17.5rem);
     display: flex;
     flex-direction: column;
     border-right: 1px solid var(--border-color);
@@ -40,6 +41,32 @@
     overflow-y: auto;
     opacity: 1;
     transition: opacity var(--sb-out) ease-in-out;
+}
+
+/* Drag strip over the right border (Issue #285) */
+.sidebar-resizer {
+    position: absolute;
+    top: 0;
+    right: -0.1875rem;
+    width: 0.375rem;
+    height: 100%;
+    cursor: col-resize;
+    z-index: 999;
+}
+
+.sidebar-resizer:hover,
+.sidebar.resizing .sidebar-resizer {
+    background-color: var(--primary-color);
+}
+
+/* Follow the pointer while dragging */
+.sidebar.resizing {
+    transition: none;
+    user-select: none;
+}
+
+.sidebar.collapsed .sidebar-resizer {
+    display: none;
 }
 
 /* toggle sidebar styles */
@@ -181,6 +208,12 @@
 
 #sidebar-current-target {
     width: 100%;
+}
+
+/* Sidebar dropdowns show their choice centered, arrow at the right */
+.sidebar-header .astryx-dropdown-trigger > span:first-child {
+    flex: 1;
+    text-align: center;
 }
 
 /* Backup line and version below the scrolling content, so they never cover

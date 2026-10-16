@@ -373,13 +373,7 @@ const UIManager = {
         const modalTitle = document.getElementById('modal-title');
         const modalBody = document.getElementById('modal-body');
         const headerButtons = document.getElementById('modal-header-buttons');
-        const modalContent = document.querySelector('.modal-content');
         if (!modal || !modalTitle || !modalBody) return;
-
-        // Remove narrow-modal class from previous modal
-        if (modalContent) {
-            modalContent.classList.remove('narrow-modal');
-        }
 
         // Clear any existing custom header buttons
         document.getElementById('modal-pin-btn')?.remove();
@@ -706,8 +700,8 @@ const UIManager = {
         this.populateManageLocationsModal();
         document.dispatchEvent(new CustomEvent('locations-updated'));
         setTimeout(() => {
-            const mc = document.querySelector('.modal-content');
-            if (mc) mc.scrollTop = 0;
+            const mb = document.getElementById('modal-body');
+            if (mb) mb.scrollTop = 0;
         }, 150);
     },
 
@@ -1292,8 +1286,8 @@ const UIManager = {
         if (backupFolderInput) {
             if (isTauriBuild) {
                 backupFolderInput.value = SettingsManager.getBackupFolder();
-                // Automatic backups go to Downloads until a folder is chosen
-                backupFolderInput.placeholder = 'Your Downloads folder';
+                // Empty: automatic backups go to Downloads, a manual backup asks (Issue #288)
+                backupFolderInput.placeholder = 'Not set';
                 if (backupFolderBrowseBtn) backupFolderBrowseBtn.style.display = '';
                 if (backupFolderClearBtn) backupFolderClearBtn.style.display = '';
 
@@ -1889,8 +1883,8 @@ const UIManager = {
         $('detail-ra').textContent = (target.ra != null && target.dec != null) ? UIManager.formatRA(target.ra, target.dec) : '—';
         $('detail-dec').textContent = (target.ra != null && target.dec != null) ? UIManager.formatDec(target.ra, target.dec) : '—';
         $('detail-const').textContent = target.constellation ? (CONSTELLATIONS[target.constellation] || target.constellation) : '—';
-        $('detail-size-max').textContent = target.size_max ? `${target.size_max}'` : '—';
-        $('detail-size-min').textContent = target.size_min ? `${target.size_min}'` : '—';
+        $('detail-size-max').textContent = target.size_max ? `${target.size_max}′` : '—';
+        $('detail-size-min').textContent = target.size_min ? `${target.size_min}′` : '—';
         $('detail-mag').textContent = target.mag || '—';
         $('detail-subr').textContent = target.subr || '—';
         this.populateObservabilitySection(target, root);
@@ -1942,11 +1936,11 @@ const UIManager = {
         // and merged with the result fields below when observable)
         const criteriaFieldsHTML = `
             <div class="detail-item">
-                <span class="detail-label">Criteria:</span>
+                <span class="detail-label tooltip-host has-tip" data-tooltip-key="td_criteria">Criteria:</span>
                 <span class="detail-value">Min Altitude ${bestMonthsAltitude ?? 'N/A'}°<br>${lastDarkHours || 'N/A'}h darkness${staleAltitudeNote}</span>
             </div>
             <div class="detail-item">
-                <span class="detail-label">Peak Altitude:</span>
+                <span class="detail-label tooltip-host has-tip" data-tooltip-key="td_peakAlt">Peak Altitude:</span>
                 <span class="detail-value">${peakAltitudeDisplay}</span>
             </div>
     `;
@@ -1985,15 +1979,15 @@ const UIManager = {
         <div class="detail-group">
             ${criteriaFieldsHTML}
             <div class="detail-item">
-                <span class="detail-label">Best Month:</span>
+                <span class="detail-label tooltip-host has-tip" data-tooltip-key="td_bestMonth">Best Month:</span>
                 <span class="detail-value">${bestMonthName}</span>
             </div>
             <div class="detail-item">
-                <span class="detail-label">Observable:</span>
+                <span class="detail-label tooltip-host has-tip" data-tooltip-key="td_observable">Observable:</span>
                 <span class="detail-value">${startMonthName} - ${endMonthName}</span>
             </div>
             <div class="detail-item">
-                <span class="detail-label">Calculated:</span>
+                <span class="detail-label tooltip-host has-tip" data-tooltip-key="td_calculated">Calculated:</span>
                 <span class="detail-value">${calculatedDisplay}</span>
             </div>
         </div>
@@ -2082,7 +2076,7 @@ const UIManager = {
     updateSidebarCurrentTarget(targetName) {
         const el = document.getElementById('sidebar-current-target');
         if (el) {
-            el.textContent = `Current Target: ${targetName || 'None'}`;
+            el.textContent = targetName || 'No current target';
 
             // Remove old listener by cloning
             const newEl = el.cloneNode(true);
@@ -2190,8 +2184,8 @@ const UIManager = {
 
         if (telescopeNames.length === 0) {
             listDiv.innerHTML = '<p style="color: var(--text-secondary); font-style: italic;">No telescopes defined yet.</p>';
-            const mc = document.querySelector('.modal-content');
-            if (mc) mc.scrollTop = 0;
+            const mb = document.getElementById('modal-body');
+            if (mb) mb.scrollTop = 0;
             return;
         }
 
@@ -2218,8 +2212,8 @@ const UIManager = {
             btn.addEventListener('click', () => this.deleteTelescope(btn.dataset.name));
         });
 
-        const mc = document.querySelector('.modal-content');
-        if (mc) mc.scrollTop = 0;
+        const mb = document.getElementById('modal-body');
+        if (mb) mb.scrollTop = 0;
     },
 
     /**
@@ -2260,8 +2254,8 @@ const UIManager = {
         this.refreshTelescopeList();
         document.dispatchEvent(new CustomEvent('telescopes-updated'));
         setTimeout(() => {
-            const mc = document.querySelector('.modal-content');
-            if (mc) mc.scrollTop = 0;
+            const mb = document.getElementById('modal-body');
+            if (mb) mb.scrollTop = 0;
         }, 150);
     },
 
@@ -2297,8 +2291,8 @@ const UIManager = {
         const sensorNames = Object.keys(sensors);
         if (sensorNames.length === 0) {
             listDiv.innerHTML = '<p style="color: var(--text-secondary); font-style: italic;">No sensors defined yet.</p>';
-            const mc = document.querySelector('.modal-content');
-            if (mc) mc.scrollTop = 0;
+            const mb = document.getElementById('modal-body');
+            if (mb) mb.scrollTop = 0;
             return;
         }
         listDiv.innerHTML = sensorNames.map(name => {
@@ -2321,8 +2315,8 @@ const UIManager = {
         listDiv.querySelectorAll('[data-action="delete-sensor"]').forEach(btn => {
             btn.addEventListener('click', () => this.deleteSensor(btn.dataset.name));
         });
-        const mc = document.querySelector('.modal-content');
-        if (mc) mc.scrollTop = 0;
+        const mb = document.getElementById('modal-body');
+        if (mb) mb.scrollTop = 0;
     },
 
     /**
@@ -2366,8 +2360,8 @@ const UIManager = {
         this.refreshSensorList();
         document.dispatchEvent(new CustomEvent('sensors-updated'));
         setTimeout(() => {
-            const mc = document.querySelector('.modal-content');
-            if (mc) mc.scrollTop = 0;
+            const mb = document.getElementById('modal-body');
+            if (mb) mb.scrollTop = 0;
         }, 150);
     },
 
@@ -2405,8 +2399,8 @@ const UIManager = {
         const filterNames = Object.keys(filters).sort();
         if (filterNames.length === 0) {
             listDiv.innerHTML = '<p style="color: var(--text-secondary); font-style: italic;">No filters defined yet.</p>';
-            const mc = document.querySelector('.modal-content');
-            if (mc) mc.scrollTop = 0;
+            const mb = document.getElementById('modal-body');
+            if (mb) mb.scrollTop = 0;
             return;
         }
         listDiv.innerHTML = filterNames.map(name => {
@@ -2422,8 +2416,8 @@ const UIManager = {
         listDiv.querySelectorAll('[data-action="delete-filter"]').forEach(btn => {
             btn.addEventListener('click', () => this.deleteFilter(btn.dataset.name));
         });
-        const mc = document.querySelector('.modal-content');
-        if (mc) mc.scrollTop = 0;
+        const mb = document.getElementById('modal-body');
+        if (mb) mb.scrollTop = 0;
     },
 
     /**
@@ -2454,8 +2448,8 @@ const UIManager = {
         this.refreshFilterList();
         document.dispatchEvent(new CustomEvent('filters-updated'));
         setTimeout(() => {
-            const mc = document.querySelector('.modal-content');
-            if (mc) mc.scrollTop = 0;
+            const mb = document.getElementById('modal-body');
+            if (mb) mb.scrollTop = 0;
         }, 150);
     },
 

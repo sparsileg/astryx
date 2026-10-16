@@ -89,7 +89,8 @@ const FOVCanvas = {
      * Render the Actual view. The canvas is the sensor frame; turning the
      * camera turns the sky (image, target, moon, N marker) inside it.
      * @param {object} fovData - FOV calculation results
-     * @param {object} target - Target object with size_max and size_min, or null
+     * @param {object} target - Target object with size_max and size_min, and
+     *   skyX/skyY: its offset from the frame's center in arcminutes, or null
      */
     render(fovData, target) {
         if (!this.ctx) return;
@@ -113,7 +114,7 @@ const FOVCanvas = {
         }
 
         if (target && target.size_max && target.size_min) {
-            this.drawTarget(0, 0, target.size_max * scale, target.size_min * scale);
+            this.drawTarget(target.skyX * scale, target.skyY * scale, target.size_max * scale, target.size_min * scale);
         }
 
         if (this.showMoon) {

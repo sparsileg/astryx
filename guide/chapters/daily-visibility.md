@@ -125,7 +125,7 @@ rise/set during observation".
 | Line | What it means |
 |:-----------------|:--------------------------------------|
 | Min altitude | The Min Alt you chose. |
-| Rise, Set | When the target rises above and sets below your minimum altitude and horizon. "Before dusk" and "After dawn" mean the target is already up at dusk, or still up at dawn. |
+| Rise, Set | When the target rises above and sets below your minimum altitude and horizon. If the target is already up at dusk, Rise is when it came up that afternoon; if it's still up at dawn, Set is when it goes down that morning. "Before dusk" and "After dawn" mean it stays up all day and never sets. "Never rises" means it doesn't climb above your minimum altitude and horizon at all that day. |
 | Dips below min | Shown only when the target drops below the dashed line during the night and comes back up, usually behind a tree or building in your horizon profile. |
 | Peak altitude | The highest the target gets during darkness, and when. |
 | Blocked | How many minutes the target is above your minimum altitude but behind your horizon profile. A dash means none. |

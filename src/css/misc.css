@@ -1,34 +1,30 @@
-/* Weather Forecasts */
-.weather-forecast-grid {
+/* Sky Conditions: location dropdown, then the links, on one row; the
+   links wrap below the dropdown only when the row is too narrow (Issue #286) */
+.sky-conditions-row {
     display: flex;
     flex-wrap: wrap;
-    gap: 1rem;
+    align-items: center;
+    gap: 0.5rem 1rem;
 }
 
-.weather-location-card {
-    padding: 0.75rem 1rem;
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
-    background: var(--card-bg);
+.sky-conditions-row[hidden] {
+    display: none;
 }
 
-.location-separator {
+.sky-conditions-row label {
+    margin-bottom: 0;
+}
+
+#sky-location-dropdown {
+    min-width: 14rem;
+}
+
+.sky-conditions-links {
+    white-space: nowrap;
+}
+
+.sky-link-separator {
     margin: 0 0.5rem;
-}
-
-.weather-link {
-    color: var(--primary-color);
-    text-decoration: none;
-    margin-right: 0.75rem;
-}
-
-.weather-link:hover {
-    color: var(--primary-color);
-    text-decoration: underline;
-}
-
-.weather-link:last-child {
-    margin-right: 0;
 }
 
 /* Utilities input fields - themed to match app */
@@ -61,23 +57,40 @@
     gap: 1rem;
 }
 
-/* Block links */
-
+/* Block links: accent color, solid underline and, for links that leave the app, a ↗,
+   so a link reads as one without hovering; dotted underlines are kept for
+   tooltips */
 .block-link {
     box-shadow: inset 0 0 0 0 var(--primary-hover);
-    color: var(--text-secondary);
+    color: var(--primary-color);
     margin: 0 -.25rem;
     padding: 0 .25rem;
-    transition: color .3s ease-in-out, box-shadow .3s ease-in-out, text-shadow .3s ease-in-out;
-    text-decoration: none;
+    border-radius: 2px;
+    transition: color .3s ease-in-out, box-shadow .3s ease-in-out, text-shadow .3s ease-in-out, text-decoration-color .3s ease-in-out;
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.2em;
+    text-decoration-color: color-mix(in srgb, var(--primary-color) 60%, transparent);
     text-shadow: 0 0 20px var(--primary-color);
-    border-bottom: 1px dotted color-mix(in srgb, var(--text-secondary) 70%, transparent);
 }
 
+/* inline-block keeps the arrow out of the underline */
+.block-link[target="_blank"]::after {
+    content: "\2197";
+    display: inline-block;
+    margin-left: 0.15em;
+    font-size: 0.8em;
+}
+
+/* The fill is a button's color, so the text takes a button's text color */
 .block-link:hover {
     box-shadow: inset 300px 0 0 0 var(--primary-hover);
-    color: var(--secondary-color);
-    text-decoration: none;
+    color: var(--primary-text);
+    text-decoration-color: transparent;
     text-shadow: none;  /* Remove glow on hover since block fills */
-    border-bottom: 1px dotted transparent);
+}
+
+.block-link:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
 }

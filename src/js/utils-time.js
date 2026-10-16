@@ -220,6 +220,22 @@ const TimeUtils = {
     },
 
     /**
+     * Tonight's date (YYYY-MM-DD) on a location's clock, whatever the
+     * computer's time zone. Before the lookback cutoff hour it is still
+     * the night that began the day before (issue #279)
+     * @param {Object} location - { timezone, timeZone } (see SettingsManager.isDSTActive)
+     * @returns {string}
+     */
+    getTonightStringAt(location) {
+        const now = new Date();
+        const localTime = new Date(now.getTime() + this.locationOffsetHours(now, location) * 3600000);
+        if (localTime.getUTCHours() < APP_CONFIG.DV_LOOKBACK_CUTOFF_HOUR) {
+            localTime.setUTCDate(localTime.getUTCDate() - 1);
+        }
+        return localTime.toISOString().slice(0, 10);
+    },
+
+    /**
      * Get current date/time as DTG string (YYYYMMDD-HHMMSS)
      * @returns {string} Formatted DTG string
      */

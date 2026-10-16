@@ -1,7 +1,7 @@
 /**
  * tutorial-utilities.js
  * "Utilities" tutorial definition.
- * Covers: Weather Forecasts, Light Pollution, and Dust Mote Distance
+ * Covers: Sky Conditions and Dust Mote Distance
  * Estimator. Session Log Analysis has its own view and tutorial
  * (tutorial-log-analysis.js).
  *
@@ -22,7 +22,7 @@ const TUTORIAL_UTILITIES = {
             id: 'welcome',
             type: 'modal',
             title: 'Utilities',
-            body: 'This tutorial walks you through the Utilities view — a collection of tools that support your planning and post-session analysis. It covers weather and light pollution links and the Dust Mote Distance Estimator. It takes about 4 minutes.',
+            body: 'This tutorial walks you through the Utilities view — a collection of tools that support your planning and post-session analysis. It covers the Sky Conditions links and the Dust Mote Distance Estimator. It takes about 4 minutes.',
             target: null,
             position: 'center',
             waitFor: 'next',
@@ -39,26 +39,13 @@ const TUTORIAL_UTILITIES = {
             highlight: true
         },
 
-        // --- Weather ---
+        // --- Sky Conditions ---
         {
-            id: 'weather-overview',
+            id: 'sky-conditions',
             type: 'callout',
-            title: 'Weather Forecasts',
-            body: 'The Weather Forecasts card shows links to three weather services — <strong>Astrospheric</strong>, <strong>Clear Outside</strong>, and <strong>Clouds</strong> — for each of your saved observer locations. Each link opens in a new browser tab and shows a forecast tailored to your exact coordinates.<br><br>Use the additional details in these sources to supplement the forecast data referenced in the Daily Visibility timeline. Use them the day of a planned session to confirm conditions. The <strong>Clouds</strong> website provides near-real-time cloud imagery.',
-            target: '#utilities-weather-forecasts',
-            position: 'bottom',
-            width: '420px',
-            waitFor: 'next',
-            highlight: 'flash'
-        },
-
-        // --- Light Pollution ---
-        {
-            id: 'light-pollution',
-            type: 'callout',
-            title: 'Light Pollution',
-            body: 'The Light Pollution card provides a direct link to the Light Pollution Map for each of your saved locations. This is the recommended way to find the Bortle scale value for a location — open the map, zoom in to your site, and read the Bortle rating.<br><br>Once you know your Bortle value, you can update it in Admin Tools → Manage Observer Locations.',
-            target: '#utilities-light-pollution',
+            title: 'Sky Conditions',
+            body: 'Choose one of your saved locations; it starts on your current location. Each link opens in a new browser tab at that location\'s coordinates:<br><br><strong>Astrospheric</strong> and <strong>Clear Outside</strong>: forecasts to supplement the one in the Daily Visibility timeline. Check them the day of a planned session.<br><strong>Clouds</strong>: near-real-time satellite cloud imagery.<br><strong>Light Pollution</strong>: the Light Pollution Map, the recommended way to find a location\'s Bortle value. Once you know it, update it in Admin Tools → Manage Observer Locations.',
+            target: '#utilities-sky-conditions',
             position: 'bottom',
             width: '420px',
             waitFor: 'next',
@@ -112,7 +99,7 @@ const TUTORIAL_UTILITIES = {
             id: 'dust-results',
             type: 'callout',
             title: 'Distance Results',
-            body: 'The result is the estimated distance from the sensor, in millimeters: the spot\'s diameter times the focal ratio. The summary line below shows the spot diameter in millimeters and the focal ratio used.<br><br>A small distance (a few mm) suggests the dust is on the sensor window. A larger one points to a filter or the rear lens of a flattener or reducer. Dust further up the train is too far out of focus to show as a spot.',
+            body: 'The result is the estimated distance from the sensor, in millimeters: the spot\'s diameter times the focal ratio. The line below it shows the spot diameter in millimeters.<br><br>A small distance (a few mm) suggests the dust is on the sensor window. A larger one points to a filter or the rear lens of a flattener or reducer. Dust further up the train is too far out of focus to show as a spot.',
             target: '#dust-mote-results',
             position: 'top',
             width: '450px',
@@ -125,7 +112,7 @@ const TUTORIAL_UTILITIES = {
             id: 'complete',
             type: 'modal',
             title: 'Utilities Complete',
-            body: 'You now know how to use all three tools in the Utilities view. Use the weather links before every session, the light pollution map to verify your Bortle rating, and the Dust Mote Estimator when cleaning your optical train.<br><br>Next, the Log Analysis tutorial covers reviewing your imaging and guiding sessions.',
+            body: 'You now know how to use the tools in the Utilities view. Use the forecast links before every session, the light pollution map to verify your Bortle rating, and the Dust Mote Estimator when cleaning your optical train.<br><br>Next, the Log Analysis tutorial covers reviewing your imaging and guiding sessions.',
             target: null,
             position: 'center',
             waitFor: 'next',

@@ -5,57 +5,17 @@
     margin: 0 auto;
 }
 
+/* Controls on their own row under the title (Issue #286) */
 .todo-controls {
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 0.75rem;
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
 }
 
-.todo-type-card {
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    padding: 1rem;
-    margin-bottom: 1rem;
-    background: var(--card-bg);
-}
-
-.todo-type-card h3 {
-    margin: 0 0 0.75rem 0;
-    color: var(--text-primary);
-    font-size: 1.1rem;
-    border-bottom: 1px solid var(--border-color);
-    padding-bottom: 0.5rem;
-}
-
-.todo-targets {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    line-height: 1.8;
-}
-
-.todo-target-item {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    width: 100%;
-}
-
-.todo-target-link {
-    color: var(--accent-color);
-    text-decoration: none;
-    cursor: pointer;
-}
-
-.todo-target-link:hover {
-    text-decoration: underline;
-}
-
+/* Fixed widths so the controls don't move when the sort or Chart/List changes */
 .btn-toggle-chart {
-    width: 110px;
+    width: 7rem;
     padding: 0.5rem 1rem;
 }
 
@@ -76,68 +36,39 @@
 /* END OF Rise Time Chart View */
 
 
-
-.btn-remove-todo {
-    background: var(--danger-color, #ef4444);
-    color: white;
-    border: none;
-    border-radius: 4px;
-    padding: 0.15rem 0.5rem;
-    font-size: 0.75rem;
-    cursor: pointer;
-    transition: opacity 0.2s;
-}
-
-.btn-remove-todo:hover {
-    opacity: 0.8;
-}
-
-.todo-view {
-    position: relative;
-}
-
-.todo-view-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0.5rem;
-}
-
-.todo-view-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 2rem;
-    margin-bottom: 1rem;
-}
-
-.todo-view-header h2 {
-    margin: 0;
-}
-
-.todo-sort-container {
+/* Date box with its day/week arrows (issue #279) */
+.todo-date-stepper {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 2px;
+}
+
+.todo-date-stepper .btn-sm {
+    padding: 1px 5px;
+    border: 3px solid var(--border-color);
 }
 
 .todo-sort-label {
     color: var(--text-secondary);
     font-size: 0.9rem;
+    /* Keeps "Sort by:" on one line in the centered controls row (#99) */
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
-.todo-sort-select {
-    padding: 0.4rem 0.8rem;
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
-    background: var(--input-bg);
-    color: var(--text-primary);
+/* Key to the imaging status icons beside each target (#99) */
+.todo-status-legend {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1.5rem;
+    margin-top: 0.75rem;
+    color: var(--text-secondary);
     font-size: 0.9rem;
-    cursor: pointer;
 }
 
 #todo-sort-dropdown {
-    min-width: 180px;
+    width: 10rem;
 }
 
 .todo-empty-message {
@@ -161,7 +92,7 @@
 
 .todo-type-card h3 {
     margin: 0 0 0.75rem 0;
-    color: var(--text-primary);
+    color: var(--text-color);
     font-size: 1.1rem;
     border-bottom: 1px solid var(--border-color);
     padding-bottom: 0.5rem;
@@ -178,10 +109,10 @@
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
+    width: 100%;
 }
 
 .todo-target-link {
-    color: var(--accent-color);
     text-decoration: none;
     cursor: pointer;
 }
@@ -191,7 +122,7 @@
 }
 
 .btn-remove-todo {
-    background: var(--danger-color, #ef4444);
+    background: var(--error-color);
     color: white;
     border: none;
     border-radius: 4px;

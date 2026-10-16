@@ -75,8 +75,12 @@ after 14. When Astryx starts, and once a day while it's open, it also reminds yo
 if your last backup is older than **Backup reminder every** in Settings.
 
 Click **Last backup** for **About Your Data Storage**, which explains why
-backups matter; its **Go to Backup & Restore** button opens the Backup
-dialog.
+backups matter; its **Make a Backup** button opens the Backup dialog.
+
+::: {.shot id="backup-storage-dialog"}
+About Your Data Storage, opened from Last backup at the bottom of the
+sidebar.
+:::
 
 ## Restoring a Backup
 

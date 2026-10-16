@@ -471,8 +471,8 @@ const TargetFilter = {
 
             catalogMenu.innerHTML = `
                 <div style="display: flex; gap: 0.5rem; padding: 0.5rem; border-bottom: 1px solid var(--border-color);">
-                    <button type="button" class="btn-sm" id="catalog-select-all">Select All</button>
-                    <button type="button" class="btn-sm" id="catalog-select-none">Select None</button>
+                    <button type="button" class="btn-secondary btn-sm" id="catalog-select-all">Select All</button>
+                    <button type="button" class="btn-secondary btn-sm" id="catalog-select-none">Select None</button>
                 </div>
                 ${checkboxesHTML}
             `;
@@ -494,8 +494,8 @@ const TargetFilter = {
 
             typeMenu.innerHTML = `
                 <div style="display: flex; gap: 0.5rem; padding: 0.5rem; border-bottom: 1px solid var(--border-color);">
-                    <button type="button" class="btn-sm" id="type-select-all">Select All</button>
-                    <button type="button" class="btn-sm" id="type-select-none">Select None</button>
+                    <button type="button" class="btn-secondary btn-sm" id="type-select-all">Select All</button>
+                    <button type="button" class="btn-secondary btn-sm" id="type-select-none">Select None</button>
                 </div>
                 ${checkboxesHTML}
             `;

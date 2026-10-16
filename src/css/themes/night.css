@@ -4,12 +4,14 @@
     --sidebar-bg: #0a0000;
     --card-bg: #0f0000;
     --card-hover: #150000;
+    --hover-bg: var(--card-hover);    /* hover background for rows, menu items, and collapsible headers */
     --input-bg: #0f0000;
+    --search-input-bg: #0f0000;     /* Target Selection search box (Issue #99) */
 
     /* Text Colors - Dimmer red spectrum for night vision */
     --text-color: #cc5555;          /* Dimmer red (was #ff6666) */
     --text-secondary: #994444;      /* Even dimmer (was #cc4444) */
-    --primary-text: #dd6666;        /* Moderate (was #ff8888) */
+    --primary-text: #000000;
 
     /* Primary Colors - Moderate red */
     --primary-color: #cc4444;       /* Dimmer (was #ff4444) */

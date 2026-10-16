@@ -1,7 +1,7 @@
 /**
  * tutorial-settings.js
  * "Configuring Settings" tutorial definition.
- * Covers: DST Mode, Min Altitude, Filter defaults, and Auto-backup.
+ * Covers: DST Mode, Minimum Altitude, Filter defaults, and Auto-backup.
  *
  * Modal — use when there's no specific element to point at (introductions,
  * transitions, instructions to navigate somewhere)
@@ -59,7 +59,7 @@ const TUTORIAL_SETTINGS = {
         {
             id: 'min-altitude',
             type: 'callout',
-            title: 'Min Altitude',
+            title: 'Minimum Altitude',
             body: 'The global minimum altitude used across all analysis tools. Objects below this angle above the horizon are excluded from calculations. Can be overridden in some tools.',
             target: '#global-min-altitude-dropdown',
             position: 'left',
@@ -89,7 +89,7 @@ const TUTORIAL_SETTINGS = {
         {
             id: 'filter-max-mag',
             type: 'callout',
-            title: 'Max Magnitude',
+            title: 'Limiting Magnitude',
             body: 'The default maximum magnitude applied when using the Target Filter. This value can be overwritten in the Target Selection filters. Valid range: -5 to 20.',
             target: '#filter-max-mag',
             position: 'left',
@@ -119,7 +119,7 @@ const TUTORIAL_SETTINGS = {
         {
             id: 'backup-reminder',
             type: 'callout',
-            title: 'Backup Remindern',
+            title: 'Backup Reminder',
             body: 'The number of days Astryx waits after your last backup before raising a toast reminding you to backup.',
             target: '#backup-reminder-dropdown',
             position: 'right',

@@ -51,8 +51,9 @@ dates. Pick the zone by name and daylight saving takes care of itself.
 ::: tip
 To find your latitude and longitude, right-click your observing spot in
 Google Maps: the first item in the menu is the coordinates, in decimal
-degrees, ready to copy. If you're not sure of your Bortle class, the light
-pollution map in [Utilities](utilities.md) shows it.
+degrees, ready to copy. If you're not sure of your Bortle class, the
+**Light Pollution** link in [Utilities](utilities.md) → **Sky Conditions**
+shows it.
 :::
 
 ### Horizon profile
@@ -167,13 +168,13 @@ until you have a reason to change it. Open the system menu (≡), choose
 | Setting | Default | What it does |
 |:------|:---|:--------------|
 | DST Mode | Automatic | Automatic follows each location's time zone. **Always Active** and **Never Active** override it for every location; you shouldn't need them. |
-| Min Altitude | 35° | The lowest a target can be and still count as up. It's the starting value in Daily Visibility, Yearly Observability, and the Sequence Planner, and the value the Target Optimizer, To Do List, and Visibility filter use. Changing it means recalculating Best Months; Astryx offers to. |
+| Minimum Altitude | 35° | The lowest a target can be and still count as up. It's the starting value in Daily Visibility, Yearly Observability, and the Sequence Planner, and the value the Target Optimizer, To Do List, and Visibility filter use. Changing it means recalculating Best Months; Astryx offers to. |
 | Date Format | Your computer's region | How dates are shown and typed: **mm/dd/yyyy**, **dd/mm/yyyy**, or **yyyy-mm-dd**. Astryx always stores dates as yyyy-mm-dd, so changing it changes only what you see. |
 | Min Target Size | 4.0′ | The starting minimum size, in arcminutes, for the Target Selection filters. |
-| Max Magnitude | 14.5 | The starting faintest magnitude for the Target Selection filters. |
+| Limiting Magnitude | 14.5 | The starting faintest magnitude for the Target Selection filters. |
 | Automatic backups on change | On | Saves a backup a while after you change your data. |
 | Minutes before backup | 60 | How long after your last change the automatic backup waits. Each new change restarts the wait. |
-| Backup Folder | Downloads | Where automatic backups go. The web version always uses your browser's downloads folder; the desktop app lets you choose, and uses your Downloads folder until you do. |
+| Backup Folder | Not set | Where backups go. The web version always uses your browser's downloads folder. On the desktop app, until you choose a folder, automatic backups go to your Downloads folder and a manual backup asks where to save. |
 | Backup reminder every | 7 days | How long after your last backup Astryx reminds you to make one. |
 
 ::: why

@@ -65,7 +65,7 @@ updates each time you change one. There's no Apply button.
 | Type | Targets of the types you tick, such as Emission nebula or Galaxy. **Select All** and **Select None** work here too. |
 | Visibility | Targets that are well placed from your location in the month you choose. **Any month** turns this filter off. |
 | Min Size (′) | Targets at least this large, in arcminutes. It starts at the Min Target Size in Settings. Leave it blank to include every size. |
-| Limiting Mag | Targets at least this bright. Lower numbers are brighter. It starts at the Max Magnitude in Settings. Leave it blank to include every magnitude. |
+| Limiting Mag | Targets at least this bright. Lower numbers are brighter. It starts at the Limiting Magnitude in Settings. Leave it blank to include every magnitude. |
 
 **Reset**, below the filters, puts every filter back to its default.
 

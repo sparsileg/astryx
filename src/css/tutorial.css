@@ -191,5 +191,5 @@
 }
 
 .tutorial-btn-exit:hover {
-    color: var(--danger-color);
+    color: var(--error-color);
 }

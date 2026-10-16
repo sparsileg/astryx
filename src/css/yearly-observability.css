@@ -15,7 +15,7 @@
 
 .yo-help p {
     margin: 0;
-    color: var(--text-primary);
+    color: var(--text-color);
     font-size: 0.95rem;
     line-height: 1.5;
 }
@@ -48,27 +48,24 @@
     flex-wrap: wrap;
 }
 
-/* Header */
-.yo-header {
+/* Summary and Minimum Altitude on one row in the controls card (Issue #286) */
+.yo-controls {
     display: flex;
-    justify-content: space-between;
+    flex-wrap: wrap;
     align-items: center;
-    margin-bottom: 1rem;
-}
-
-.yo-header h2 {
-    margin: 0;
-    color: var(--text-primary);
+    justify-content: center;
+    gap: 0.5rem 2rem;
 }
 
 .yo-header-subtitle {
-    margin: 0.25rem 0 0 0;
+    margin: 0;
     color: var(--text-secondary);
     font-size: 0.9rem;
 }
 
 .yo-header-controls {
-    margin-top: 0.5rem;
+    display: flex;
+    align-items: center;
 }
 
 .yo-header-controls label {

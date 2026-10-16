@@ -64,7 +64,8 @@ const TUTORIAL_VIEWFINDER = {
             title: 'Equipment Selection',
             body: 'Select the telescope and sensor you plan to use. Astryx calculates field of view from the telescope\'s focal length and multiplier (reducer or Barlow) combined with the sensor\'s pixel size and resolution — all drawn from the equipment you entered in Admin Tools.<br><br>Your last used combination is saved and restored between sessions.',
             target: '#fov-telescope-sensor',
-            position: 'bottom',
+            // Left, so the box doesn't cover the dropdowns' lists
+            position: 'left',
             waitFor: 'next',
             highlight: true
         },

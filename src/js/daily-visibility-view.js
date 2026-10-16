@@ -344,12 +344,14 @@ const DailyVisibilityView = {
      * Attach event handlers
      */
     attachEventHandlers() {
-        this._addRepeatButton('dv-prev-week', -7);
-        this._addRepeatButton('dv-prev-day',  -1);
-        this._addRepeatButton('dv-next-day',   1);
-        this._addRepeatButton('dv-next-week',  7);
         const dateInput = document.getElementById('dv-date');
-        if (dateInput) DateInput.attach(dateInput, () => this.recalculate());
+        if (dateInput) {
+            DateInput.attach(dateInput, () => this.recalculate());
+            [['dv-prev-week', -7], ['dv-prev-day', -1], ['dv-next-day', 1], ['dv-next-week', 7]].forEach(([id, days]) => {
+                const button = document.getElementById(id);
+                if (button) DateInput.attachStepButton(button, dateInput, days, () => this.recalculate());
+            });
+        }
         const dvMinAltTrigger = document.getElementById('dv-min-alt-trigger');
         const dvMinAltDropdown = document.getElementById('dv-min-alt-dropdown');
         const dvMinAltMenu = document.getElementById('dv-min-alt-menu');
@@ -371,25 +373,6 @@ const DailyVisibilityView = {
         document.getElementById('dv-use-horizon')?.addEventListener('change', () => this.recalculate());
     },
 
-    _addRepeatButton(id, days) {
-        const btn = document.getElementById(id);
-        if (!btn) return;
-        let holdTimer = null;
-        let repeatTimer = null;
-        btn.addEventListener('click', () => this.shiftDate(days));
-        btn.addEventListener('mousedown', () => {
-            holdTimer = setTimeout(() => {
-                repeatTimer = setInterval(() => this.shiftDate(days), 333);
-            }, 500);
-        });
-        const cancel = () => {
-            clearTimeout(holdTimer);
-            clearInterval(repeatTimer);
-        };
-        btn.addEventListener('mouseup', cancel);
-        btn.addEventListener('mouseleave', cancel);
-    },
-
     initControls() {
         const dateInput = document.getElementById('dv-date');
         if (dateInput) {
@@ -407,17 +390,6 @@ const DailyVisibilityView = {
         if (useHorizon) {
             useHorizon.checked = this.currentData?.useHorizon ?? true;
         }
-    },
-
-    shiftDate(days) {
-        const dateInput = document.getElementById('dv-date');
-        const date = dateInput && DateInput.value(dateInput);
-        if (!date) return;
-        const parts = date.split('-');
-        const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
-        d.setDate(d.getDate() + days);
-        DateInput.set(dateInput, TimeUtils.formatDateForInput(d));
-        this.recalculate();
     },
 
     recalculate() {
@@ -555,16 +527,19 @@ const DailyVisibilityView = {
         const rows = [['Min altitude', `${data.minAltitude}°`]];
 
         // Rise time
-        if (data.riseJD) {
+        if (data.neverRises) {
+            rows.push(['Rise', 'Never rises']);
+        } else if (data.riseJD) {
             rows.push(['Rise', TimeUtils.formatLocalTimeWithDate(TimeUtils.jdToDate(data.riseJD), data)]);
         } else {
             rows.push(['Rise', 'Before dusk']);
         }
 
-        // Set time; actualSetJD is an extended search's set time after dawn
-        const setJD = data.setJD ?? data.actualSetJD;
-        if (setJD) {
-            rows.push(['Set', TimeUtils.formatLocalTimeWithDate(TimeUtils.jdToDate(setJD), data)]);
+        // Set time
+        if (data.neverRises) {
+            rows.push(['Set', '—']);
+        } else if (data.setJD) {
+            rows.push(['Set', TimeUtils.formatLocalTimeWithDate(TimeUtils.jdToDate(data.setJD), data)]);
         } else {
             rows.push(['Set', 'After dawn']);
         }
@@ -630,14 +605,7 @@ const DailyVisibilityView = {
         const riseTime = (data.riseJD && data.riseJD >= data.duskJD) ? data.riseJD : data.duskJD;
 
         // End: target set if it's before dawn, otherwise dawn
-        let setTime;
-        if (data.setJD && data.setJD <= data.dawnJD) {
-            setTime = data.setJD;
-        } else if (data.actualSetJD && data.actualSetJD <= data.dawnJD) {
-            setTime = data.actualSetJD;
-        } else {
-            setTime = data.dawnJD;
-        }
+        const setTime = (data.setJD && data.setJD <= data.dawnJD) ? data.setJD : data.dawnJD;
 
         const separationAt = (jd) => {
             const moonPos = getMoonPosition(jd);
@@ -695,8 +663,8 @@ const DailyVisibilityView = {
             timelineEndJD,
             duskJD: data.duskJD,
             dawnJD: data.dawnJD,
-            targetRiseJD: data.riseJD,
-            targetSetJD: data.setJD,
+            targetRises: data.timelineCrossings.rises,
+            targetSets: data.timelineCrossings.sets,
             moonriseJD: data.moonRiseSet.moonrise,
             moonsetJD: data.moonRiseSet.moonset,
             jdToTimelinePercent: (jd) => {
@@ -851,8 +819,8 @@ const DailyVisibilityView = {
         // Add markers for all events
         addMarker(timelineData.duskJD, '☀️↓', 'Astronomical Dusk');
         addMarker(timelineData.dawnJD, '☀️↑', 'Astronomical Dawn');
-        addMarker(timelineData.targetRiseJD, '✨↑', 'Target Rise');
-        addMarker(timelineData.targetSetJD, '✨↓', 'Target Set');
+        timelineData.targetRises.forEach(jd => addMarker(jd, '✨↑', 'Target Rise'));
+        timelineData.targetSets.forEach(jd => addMarker(jd, '✨↓', 'Target Set'));
         addMarker(timelineData.moonriseJD, '🌙↑', 'Moonrise');
         addMarker(timelineData.moonsetJD, '🌙↓', 'Moonset');
     },

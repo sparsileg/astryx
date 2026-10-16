@@ -21,7 +21,7 @@ const OptimizerView = {
     currentResults: null,
     totalEvaluated: 0,
 
-    // The Date, Start, and Source that produced currentResults, restored with them
+    // The Date, Start, and Source of the last run, restored on entry
     resultsInputs: null,
 
     /**
@@ -36,16 +36,18 @@ const OptimizerView = {
         this.updateFilterSourceOption();
         this.attachEventHandlers();
 
-        // Re-render results if we have them from a previous run, with the
-        // inputs that produced them (so the card's Daily Visibility button
-        // uses the results' date)
+        // Show the results of the last run as they were left (cards removed
+        // with ✕ stay removed), with the inputs that produced them; otherwise
+        // run now (Issue #99)
+        this.restoreResultsInputs();
         if (this.currentResults && this.currentResults.length > 0) {
-            this.restoreResultsInputs();
             if (this.displayMode === 'combinations' && this.currentCombos) {
                 this.renderCombinations(this.currentCombos);
             } else {
                 this.renderResults(this.currentResults, this.totalEvaluated);
             }
+        } else {
+            this.execute();
         }
 
         console.log('Target Optimizer initialized');
@@ -61,7 +63,10 @@ const OptimizerView = {
         document.getElementById('optimizer-start-label').textContent = inputs.startLabel;
         document.getElementById('optimizer-custom-time').value = inputs.customStartTime;
         this.showCustomTime(inputs.startLabel === 'Custom');
-        document.getElementById('optimizer-source-label').textContent = inputs.sourceLabel;
+        // The Filter Targets count follows the pool now loaded
+        document.getElementById('optimizer-source-label').textContent = inputs.sourceLabel.startsWith('Filter Targets')
+            ? document.getElementById('optimizer-source-filter').textContent
+            : inputs.sourceLabel;
     },
 
     showCustomTime(show) {
@@ -118,11 +123,13 @@ const OptimizerView = {
                         DateInput.value(document.getElementById('optimizer-date')),
                         DataManager.getLocations()[SettingsManager.getSelectedLocation()]);
                 }
+                this.execute();
             });
         }
 
-        TimeInput.attach(document.getElementById('optimizer-custom-time'));
-        DateInput.attach(document.getElementById('optimizer-date'));
+        // The results update whenever a control holds a valid entry (Issue #99)
+        TimeInput.attach(document.getElementById('optimizer-custom-time'), () => this.execute());
+        DateInput.attach(document.getElementById('optimizer-date'), () => this.execute());
 
         // Source dropdown
         const sourceTrigger = document.getElementById('optimizer-source-trigger');
@@ -142,20 +149,27 @@ const OptimizerView = {
                 const label = document.getElementById('optimizer-source-label');
                 if (label) label.textContent = item.textContent;
                 sourceDropdown.classList.remove('open');
-            });
-        }
-
-        // Execute button
-        const executeBtn = document.getElementById('optimizer-execute-btn');
-        if (executeBtn) {
-            executeBtn.addEventListener('click', () => {
                 this.execute();
             });
         }
     },
 
     /**
-     * Execute optimization
+     * Show why there are no results in their place. Runs are automatic, so
+     * this replaces the toasts a run used to show (Issue #99)
+     * @param {string} text
+     */
+    showMessage(text) {
+        this.currentResults = null;
+        this.currentCombos = null;
+        const container = document.getElementById('optimizer-results');
+        if (!container) return;
+        container.innerHTML = `<div class="card optimizer-message"><div class="card-body">${HtmlUtils.escapeHtml(text)}</div></div>`;
+    },
+
+    /**
+     * Score the source's targets for the night and show them, in the current
+     * display mode
      */
     execute() {
         const date = DateInput.value(document.getElementById('optimizer-date'));
@@ -166,32 +180,39 @@ const OptimizerView = {
         const customStartTime = TimeInput.value(document.getElementById('optimizer-custom-time'));
 
         if (!date) {
-            UIManager.showToast('Enter a date, or pick one from the calendar', 'error');
+            this.showMessage('Enter a date, or pick one from the calendar');
             return;
         }
 
         // Issues #271, #273: don't quietly start at dusk when the custom time isn't a time
         if (startTimeMode === 'custom' && !customStartTime) {
-            UIManager.showToast('Enter the custom start time as 24-hour HH:MM, or choose Dusk', 'error');
+            this.showMessage('Enter the custom start time as 24-hour HH:MM, or choose Dusk');
             return;
         }
 
+        this.resultsInputs = {
+            date,
+            startLabel,
+            customStartTime,
+            sourceLabel
+        };
+
         const locationName = SettingsManager.getSelectedLocation();
         if (!locationName) {
-            UIManager.showToast('No location selected. Please set a location in settings.', 'error');
+            this.showMessage('No location selected. Please set a location in settings.');
             return;
         }
 
         const location = DataManager.getLocations()[locationName];
         if (!location) {
-            UIManager.showToast('Location data not found.', 'error');
+            this.showMessage('Location data not found.');
             return;
         }
 
         // Calculate dusk/dawn for the session
         const timing = SeqPlanCalculations.calculateSessionTiming(date, location);
         if (!timing) {
-            UIManager.showToast('No astronomical night at this location/date', 'error');
+            this.showMessage('No astronomical night at this location on this date');
             return;
         }
 
@@ -223,14 +244,14 @@ const OptimizerView = {
         // Assemble candidate pool
         const candidates = OptimizerCalculations.assembleCandidatePool(source);
         if (candidates.length === 0) {
-            UIManager.showToast('No candidates found in selected source', 'warning');
+            this.showMessage(source === 'todo' ? 'Your To Do List is empty' : 'No targets were sent from Target Selection');
             return;
         }
 
         // Score candidates
         const results = OptimizerCalculations.scoreCandidates(candidates, session);
         if (results.length === 0) {
-            UIManager.showToast('No targets meet minimum visibility requirements', 'warning');
+            this.showMessage('No targets meet minimum visibility requirements on this night');
             return;
         }
 
@@ -239,15 +260,14 @@ const OptimizerView = {
 
         // Store session for combination coverage calculation
         this.currentSession = session;
-        this.resultsInputs = {
-            date,
-            startLabel,
-            customStartTime,
-            sourceLabel
-        };
 
-        // Render results
-        this.renderResults(results, this.totalEvaluated);
+        if (this.displayMode === 'combinations') {
+            this.currentResults = results;
+            this.currentCombos = OptimizerCalculations.generateCombinations(results);
+            this.renderCombinations(this.currentCombos);
+        } else {
+            this.renderResults(results, this.totalEvaluated);
+        }
     },
 
     /**
@@ -260,6 +280,19 @@ const OptimizerView = {
      */
     _localTime(jd) {
         return TimeUtils.formatLocalTime(jdToDate(jd), this.currentSession.location);
+    },
+
+    /**
+     * Individual Targets / Best Combinations switch, styled like the
+     * Viewfinder's Actual / Wider (Issue #289)
+     */
+    _modeToggleHtml() {
+        const isCombos = this.displayMode === 'combinations';
+        return `
+                    <div class="mode-toggle optimizer-mode-toggle tooltip-host has-tip" data-tooltip-key="to_mode">
+                        <button type="button" class="mode-toggle-option optimizer-mode-btn ${isCombos ? '' : 'active'}" data-mode="individual">Individual Targets</button>
+                        <button type="button" class="mode-toggle-option optimizer-mode-btn ${isCombos ? 'active' : ''}" data-mode="combinations">Best Combinations</button>
+                    </div>`;
     },
 
     renderResults(results, totalEvaluated) {
@@ -278,14 +311,15 @@ const OptimizerView = {
                 <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
                     <h3>Suggested Targets</h3>
                     ${showToggle ? `
-                    <div class="optimizer-mode-toggle">
-                        <button class="btn-sm optimizer-mode-btn ${this.displayMode !== 'combinations' ? 'btn-primary' : 'btn-secondary'}" data-mode="individual">Individual Targets</button>
-                        <button class="btn-sm optimizer-mode-btn ${this.displayMode === 'combinations' ? 'btn-primary' : 'btn-secondary'}" data-mode="combinations">Best Combinations</button>
-                    </div>` : ''}
+                    ${this._modeToggleHtml()}` : ''}
                 </div>
                 <div class="card-body">
                     <div class="optimizer-results-summary">
-                        <span>Showing ${results.length} of ${totalEvaluated} evaluated</span>
+                        <span class="optimizer-summary-left">
+                            <span>Scored the top ${results.length} of ${totalEvaluated} targets</span>
+                            <span class="tooltip-host has-tip" data-tooltip-key="to_scores">Scores</span>
+                            <span class="tooltip-host has-tip" data-tooltip-key="to_composite">Composite score</span>
+                        </span>
                         ${(() => {
                             const counts = results._eliminationCounts || {};
                             const parts = Object.entries(counts).map(([reason, count]) => `${count} ${reason.toLowerCase()}`);
@@ -302,7 +336,6 @@ const OptimizerView = {
             const windowEnd   = this._localTime(target.windowEndJD);
             const peakTime    = this._localTime(target.peakJD);
             const typeDisplay = OBJECT_TYPES?.[target.type] || target.type || 'Unknown';
-            const sizeDisplay = target.sizeMax ? `${target.sizeMax}'` : '—';
             const commonDisplay = target.common ? target.common.split(',')[0].trim() : '';
             const dipHTML = target.visibilityDip ? (() => {
                 const dipStart = this._localTime(target.visibilityDip.dipStartJD);
@@ -322,11 +355,11 @@ const OptimizerView = {
                                 <span class="opt-name">${target.name}</span>
                                 ${commonDisplay ? `<span class="opt-sep">·</span><span class="opt-meta">${commonDisplay}</span>` : ''}
                                 <span class="opt-sep">·</span><span class="opt-meta">${typeDisplay}</span>
-                                <span class="opt-sep">·</span><span class="opt-meta">Min/Max Size: ${target.sizeMin ? target.sizeMin + "'" : '—'}/${target.sizeMax ? target.sizeMax + "'" : '—'}</span>
+                                <span class="opt-sep">·</span><span class="opt-meta">Min/Max Size: ${target.sizeMin ? target.sizeMin + '′' : '—'}/${target.sizeMax ? target.sizeMax + '′' : '—'}</span>
                             </div>
                             <div style="display: flex; gap: 0.25rem; flex-shrink: 0;">
-                                <button class="btn-primary btn-sm optimizer-dv-btn" data-index="${index}" title="View Daily Visibility">Daily Visibility</button>
-                                <button class="btn-primary btn-sm optimizer-pin-card-btn" data-index="${index}" title="Add to Pinned Targets">📌 Pin</button>
+                                <button class="btn-secondary btn-sm optimizer-dv-btn" data-index="${index}" title="View Daily Visibility">Daily Visibility</button>
+                                <button class="btn-secondary btn-sm optimizer-pin-card-btn" data-index="${index}" title="Add to Pinned Targets">📌 Pin</button>
                             </div>
                         </div>
                         <div class="optimizer-candidate-line1">
@@ -351,8 +384,6 @@ const OptimizerView = {
                                 </div>
                                 <div class="optimizer-composite-line">Composite Score: <strong>${target.scores.composite}</strong></div>
                             </div>
-                            <!-- STUB: thumbnail image placeholder - future implementation -->
-                            <div class="optimizer-thumbnail-stub" style="display:none;">IMG<br>future</div>
                         </div>
                     </div>
                 </div>
@@ -427,12 +458,15 @@ const OptimizerView = {
             <div class="card" style="margin-top: 1rem;">
                 <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
                     <h3>Best Combinations</h3>
-                    <div class="optimizer-mode-toggle">
-                        <button class="btn-sm optimizer-mode-btn btn-secondary" data-mode="individual">Individual Targets</button>
-                        <button class="btn-sm optimizer-mode-btn btn-primary" data-mode="combinations">Best Combinations</button>
-                    </div>
+                    ${this._modeToggleHtml()}
                 </div>
                 <div class="card-body">
+                    <div class="optimizer-results-summary">
+                        <span class="optimizer-summary-left">
+                            <span class="tooltip-host has-tip" data-tooltip-key="to_coverage">Coverage</span>
+                            <span class="tooltip-host has-tip" data-tooltip-key="to_comboScore">Combo score</span>
+                        </span>
+                    </div>
                     <div id="optimizer-combo-list">
         `;
 
@@ -477,9 +511,9 @@ const OptimizerView = {
                                 <div style="display: flex; gap: 0.5rem; align-items: baseline;">
                                     <span class="opt-meta">Coverage: ${unionHours}h / ${nightHours}h</span>
                                     <span class="opt-sep">·</span>
-                                    <span class="opt-meta">Avg score: ${combo.comboScore.toFixed(0)}</span>
+                                    <span class="opt-meta">Combo score: ${combo.comboScore.toFixed(0)}</span>
                                 </div>
-                                <button class="btn-primary btn-sm optimizer-replace-btn" data-index="${globalIndex}" style="flex-shrink: 0;">Replace Pinned Targets</button>
+                                <button class="btn-secondary btn-sm optimizer-replace-btn" data-index="${globalIndex}" style="flex-shrink: 0;">Replace Pinned Targets</button>
                             </div>
                             <div class="optimizer-combo-targets">
                                 ${targetsHtml}
@@ -637,6 +671,11 @@ const OptimizerView = {
     receiveFilterPool(targets) {
         this.filterTargetsPool = targets;
         this.updateFilterSourceOption();
+        // Results from the previous pool are out of date: run again on entry (Issue #99)
+        if (this.resultsInputs?.sourceLabel.startsWith('Filter Targets')) {
+            this.currentResults = null;
+            this.currentCombos = null;
+        }
     }
 
 };

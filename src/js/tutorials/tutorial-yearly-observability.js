@@ -57,7 +57,7 @@ const TUTORIAL_YEARLY_OBSERVABILITY = {
             id: 'header',
             type: 'callout',
             title: 'Target Summary',
-            body: 'The header shows the <strong>Current Target</strong>, its peak altitude across the year, the best calendar month for imaging from your location, and the full range of months during which it is observable. This gives you an immediate at-a-glance answer to "when should I image this target?"',
+            body: 'The <strong>Current Target</strong> is named beside the title. This card shows its peak altitude across the year, the best calendar month for imaging from your location, and the full range of months during which it is observable. This gives you an immediate at-a-glance answer to "when should I image this target?"',
             target: '#yearly-observability-header',
             position: 'bottom',
             waitFor: 'next',

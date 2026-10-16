@@ -76,7 +76,7 @@ const TUTORIAL_LOG_ANALYSIS = {
             id: 'session-accordion',
             type: 'callout',
             title: 'The Combined Report',
-            body: 'Loading the Session Log adds the <strong>Combined Report</strong> below the file pickers, collapsed. Add the night\'s PHD2 Guide Log for the guiding analysis; without it, the guide figures are left out.<br><br>Click the report\'s header to expand it, and again to collapse it. Loading a new file in either picker rebuilds the report.<br><br>Above the report are a <strong>Download PDF Report</strong> button to save it with your other session files, and a <strong>Download Per-Sub CSV</strong> button. Neither needs the report open.',
+            body: 'Loading the Session Log adds the <strong>Combined Report</strong> below the drop box, collapsed. Add the night\'s PHD2 Guide Log for the guiding analysis; without it, the guide figures are left out.<br><br>Click the report\'s header to expand it, and again to collapse it. Loading a new log rebuilds the report.<br><br>Above the report are a <strong>Download Per-Sub CSV</strong> button, and a <strong>Download PDF Report</strong> button to save it with your other session files. Neither needs the report open.',
             target: '#session-analysis-accordions',
             position: 'top',
             width: '500px',

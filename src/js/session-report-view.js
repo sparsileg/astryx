@@ -83,8 +83,8 @@ const SessionReportView = {
         // The downloads sit above the report, so they work without opening it
         container.insertAdjacentHTML('beforeend', `
             <div id="combined-report-actions" class="analysis-report-actions">
-                <button class="btn btn-primary btn-sm" id="combined-csv-btn">Download Per-Sub CSV</button>
-                <button class="btn btn-primary btn-sm" id="combined-pdf-btn">Download PDF Report</button>
+                <button class="btn btn-secondary btn-sm" id="combined-csv-btn">Download Per-Sub CSV</button>
+                <button class="btn btn-secondary btn-sm" id="combined-pdf-btn">Download PDF Report</button>
             </div>
         `);
         container.appendChild(accordion);

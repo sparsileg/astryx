@@ -60,6 +60,11 @@
     gap: 0.5rem;
 }
 
+/* Last row of the card until a report is added below it (Issue #286) */
+.log-guide-settings:has(+ #session-analysis-accordions:empty) {
+    margin-bottom: 0;
+}
+
 .log-guide-settings label {
     display: inline;
     margin-bottom: 0;
@@ -98,12 +103,12 @@
     gap: 0.5rem;
     padding: 0.6rem 0.75rem;
     cursor: pointer;
-    background: var(--card-header-bg);
+    background: var(--secondary-color);
     user-select: none;
 }
 
 .analysis-accordion-header:hover {
-    background: var(--hover-bg);
+    background: var(--secondary-hover);
 }
 
 .analysis-accordion-arrow {

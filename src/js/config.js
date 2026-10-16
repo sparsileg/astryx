@@ -15,7 +15,7 @@
 const APP_CONFIG = {
     APP_NAME: 'Astryx',
     APP_TITLE: 'Astryx - Astrophotography Planning Tool',
-    APP_VERSION: '1.19.0',
+    APP_VERSION: '1.95.0',
     DB_NAME: 'astryx-db',
     DB_VERSION: 8,
     TARGET_DATA_PATH: './data/',
@@ -25,6 +25,9 @@ const APP_CONFIG = {
     FONT_SIZE_DEFAULT_PX: 16,
     FONT_SIZE_MIN_PX: 8,
     FONT_SIZE_MAX_PX: 26,
+    // Sidebar width range for dragging its edge, in rem so it follows the font size (Issue #285)
+    SIDEBAR_MIN_WIDTH_REM: 17.5,
+    SIDEBAR_MAX_WIDTH_REM: 30,
 
     // Calculation constants
     TIMELINE_EXTENSION_HOURS: 1/24,
@@ -57,6 +60,7 @@ const APP_CONFIG = {
     MIN_CONTINUOUS_DARK_HOURS: 2, // longest dark run above min altitude for a target to count as observable (To-Do, Best Months)
     TOAST_DURATION_MS: 3000, // how long a toast stays up
     TOAST_LONG_DURATION_MS: 6000, // for toasts with more to read
+    TOOLTIP_POINTER_OFFSET_PX: 12, // gap between the pointer and its tooltip
     DROPDOWN_EDGE_MARGIN_PX: 8, // gap kept between an open dropdown menu and the edge it would cross
     MAX_SEARCH_RESULTS: 101, // maximum search results you can set
     DEFAULT_MIN_SIZE: 4.0,   // target filter arc minutes
@@ -93,8 +97,12 @@ const APP_CONFIG = {
     // Default target (used when no current target is selected)
     DEFAULT_TARGET: 'M 42',
 
-    // Daily visibility: hours past midnight before which we default to previous night
+    // Daily Visibility and To Do List: hours past midnight before which we default to previous night
     DV_LOOKBACK_CUTOFF_HOUR: 12,
+
+    // Date arrows (◀ ▶): holding one down steps again after this delay, then at this interval
+    DATE_STEP_HOLD_DELAY_MS: 500,
+    DATE_STEP_REPEAT_MS: 333,
 
     // Daily visibility: how long the moon dial takes to move to a new night
     DV_MOON_DIAL_ANIMATION_MS: 600,

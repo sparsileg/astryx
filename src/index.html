@@ -36,6 +36,8 @@
         <button id="sidebar-toggle" class="sidebar-toggle" aria-label="Toggle sidebar">
           <span class="toggle-icon">⇐</span>
         </button>
+        <!-- Drag to set the sidebar width, double-click for the default (Issue #285) -->
+        <div class="sidebar-resizer" aria-hidden="true"></div>
         <div class="sidebar-header">
           <div class="logo-ring">
             <img src="images/logo-wo-ring.png" class="app-logo" alt="logo">
@@ -47,7 +49,7 @@
           </div>
           <div class="theme-selector">
             <div class="astryx-dropdown" id="theme-dropdown">
-              <div class="astryx-dropdown-trigger" id="theme-dropdown-trigger" class="tooltip-host" data-tooltip-key="sb_theme">
+              <div class="astryx-dropdown-trigger tooltip-host" id="theme-dropdown-trigger" data-tooltip-key="sb_theme">
                 <span id="theme-dropdown-label">Dark</span>
                 <span class="astryx-dropdown-arrow"> </span>
               </div>
@@ -74,7 +76,7 @@
           </div>
           <div class="theme-selector" style="margin-top: 0.5rem;">
             <div class="astryx-dropdown" id="location-dropdown">
-              <div class="astryx-dropdown-trigger" id="location-dropdown-trigger" data-tooltip-key="sb_location">
+              <div class="astryx-dropdown-trigger tooltip-host" id="location-dropdown-trigger" data-tooltip-key="sb_location">
                 <span id="location-dropdown-label">Select a
                   location...</span>
                 <span class="astryx-dropdown-arrow"> </span>
@@ -84,8 +86,7 @@
             </div>
           </div>
           <button id="sidebar-current-target" class="tooltip-host
-                                                     btn-secondary" data-tooltip-key="sb_currentTgt">Current Target:
-            None</button>
+                                                     btn-secondary" data-tooltip-key="sb_currentTgt">No current target</button>
         </div>
 
         <div class="sidebar-content">
@@ -128,7 +129,7 @@
 
           <div class="sidebar-pinned-section">
             <div class="sidebar-pinned-separator"></div>
-            <h4 class="sidebar-pinned-title">📌 Pinned Targets</h4>
+            <h4 class="sidebar-pinned-title tooltip-host" data-tooltip-key="sb_pinned">📌 Pinned Targets</h4>
             <div id="sidebar-pinned-targets"></div>
           </div>
         </div>
@@ -238,7 +239,7 @@
 
       <!-- Target Selection Template -->
       <template id="ts-visibility-template">
-        <div class="visibility-view view-bg-icon view-bg-icon-target-selection">
+        <div class="visibility-view">
           <div class="ts-view-header">
             <h2 id="target-selection-source" class="view-title">Target Selection</h2>
           </div>
@@ -265,8 +266,8 @@
                 </div>
 
                 <div class="form-group">
-                  <label for="target-name" class="tooltip-host"
-                         data-tooltip-key="ts_tgtName">Target Name (type to search targets):</label>
+                  <label for="target-name" class="tooltip-host has-tip"
+                         data-tooltip-key="ts_tgtName">Target Name:</label>
                   <input type="text" id="target-name" class="full-width" placeholder="Search targets...">
                 </div>
 
@@ -279,7 +280,7 @@
 
                 <!-- Catalog Filter -->
                 <div class="form-group form-inline" style="margin-bottom: 0.75rem;">
-                  <label class="tooltip-host" style="min-width: 90px;"
+                  <label class="tooltip-host has-tip" style="min-width: 90px;"
                          data-tooltip-key="ts_catalog">Catalog:</label>
                   <div class="astryx-dropdown" style="flex: 1;">
                     <div class="astryx-dropdown-trigger" id="target-filter-catalog-trigger">
@@ -288,8 +289,8 @@
                     </div>
                     <div class="astryx-dropdown-menu" id="target-filter-catalog-menu">
                       <div style="display: flex; gap: 0.5rem; padding: 0.5rem; border-bottom: 1px solid var(--border-color);">
-                        <button type="button" class="btn-sm" id="catalog-select-all">Select All</button>
-                        <button type="button" class="btn-sm" id="catalog-select-none">Select None</button>
+                        <button type="button" class="btn-secondary btn-sm" id="catalog-select-all">Select All</button>
+                        <button type="button" class="btn-secondary btn-sm" id="catalog-select-none">Select None</button>
                       </div>
                       <!-- Populated by JS -->
                     </div>
@@ -298,7 +299,7 @@
 
                 <!-- Type Filter -->
                 <div class="form-group form-inline" style="margin-bottom: 0.75rem;">
-                  <label class="tooltip-host" style="min-width: 90px;"
+                  <label class="tooltip-host has-tip" style="min-width: 90px;"
                          data-tooltip-key="ts_type">Type:</label>
                   <div class="astryx-dropdown" style="flex: 1;">
                     <div class="astryx-dropdown-trigger" id="target-filter-type-trigger">
@@ -307,8 +308,8 @@
                     </div>
                     <div class="astryx-dropdown-menu" id="target-filter-type-menu">
                       <div style="display: flex; gap: 0.5rem; padding: 0.5rem; border-bottom: 1px solid var(--border-color);">
-                        <button type="button" class="btn-sm" id="type-select-all">Select All</button>
-                        <button type="button" class="btn-sm" id="type-select-none">Select None</button>
+                        <button type="button" class="btn-secondary btn-sm" id="type-select-all">Select All</button>
+                        <button type="button" class="btn-secondary btn-sm" id="type-select-none">Select None</button>
                       </div>
                       <!-- Populated by JS -->
                     </div>
@@ -317,7 +318,7 @@
 
                 <!-- Month Filter -->
                 <div class="form-group form-inline" style="margin-bottom: 0.75rem;">
-                  <label class="tooltip-host" style="min-width: 90px;"
+                  <label class="tooltip-host has-tip" style="min-width: 90px;"
                          data-tooltip-key="ts_month">Visibility:</label>
                   <div class="astryx-dropdown" style="flex: 1;">
                     <div class="astryx-dropdown-trigger" id="target-filter-month-trigger">
@@ -344,14 +345,14 @@
 
                 <!-- Size Filter -->
                 <div class="form-group form-inline" style="margin-bottom: 0.75rem;">
-                  <label for="target-filter-size" class="tooltip-host" style="min-width: 90px;"
+                  <label for="target-filter-size" class="tooltip-host has-tip" style="min-width: 90px;"
                          data-tooltip-key="ts_minSize">Min Size (′):</label>
                   <input type="number" id="target-filter-size" style="flex: 1;" placeholder="Min..." min="0" step="0.1" value="4.0">
                 </div>
 
                 <!-- Magnitude Filter -->
                 <div class="form-group form-inline" style="margin-bottom: 0.75rem;">
-                  <label for="target-filter-magnitude" class="tooltip-host" style="min-width: 90px;"
+                  <label for="target-filter-magnitude" class="tooltip-host has-tip" style="min-width: 90px;"
                          data-tooltip-key="ts_limitMag">Limiting Mag:</label>
                   <input type="number" id="target-filter-magnitude" style="flex: 1;" placeholder="Max..." step="0.1" value="14.5">
                 </div>
@@ -395,10 +396,10 @@
                 <h3 id="filter-results-label">📋 Results</h3>
                 <div id="filter-results-options" style="display: flex; flex-direction: column; gap: 0.35rem; align-items: flex-end;">
                   <button id="create-imaging-program-btn" class="btn-secondary btn-sm tooltip-host" data-tooltip-key="ts_createIP">
-                    <div>Create Imaging Program</div>
+                    <div class="has-tip">Create Imaging Program</div>
                   </button>
                   <button id="send-to-optimizer-btn" class="btn-secondary btn-sm tooltip-host" data-tooltip-key="ts_sendOpt">
-                    <div>Send to Optimizer</div>
+                    <div class="has-tip">Send to Optimizer</div>
                   </button>
                 </div>
               </div>
@@ -456,14 +457,14 @@
 
       <!-- Daily Visibility Template -->
       <template id="daily-visibility-template">
-        <div class="view-header view-bg-icon view-bg-icon-daily-visibility">
+        <div class="view-header">
           <h2 class="view-title">Daily Visibility</h2>
-          <span id="analysis-title"></span>
+          <span id="analysis-title" class="view-header-target"></span>
         </div>
         <div id="daily-visibility-content">
           <div id="daily-visibility-message"></div>
 
-          <div class="dv-controls-row">
+          <div class="card controls-card dv-controls-row">
             <label class="dv-label">Date</label>
             <button id="dv-prev-week" class="btn-secondary btn-sm">◀◀</button>
             <button id="dv-prev-day" class="btn-secondary btn-sm">◀</button>
@@ -471,7 +472,7 @@
             <button id="dv-next-day" class="btn-secondary btn-sm">▶</button>
             <button id="dv-next-week" class="btn-secondary btn-sm">▶▶</button>
             <label class="dv-label">Min Alt</label>
-            <div class="astryx-dropdown" id="dv-min-alt-dropdown">
+            <div class="astryx-dropdown compact" id="dv-min-alt-dropdown">
               <div class="astryx-dropdown-trigger" id="dv-min-alt-trigger">
                 <span id="dv-min-alt-label">30°</span>
                 <span class="astryx-dropdown-arrow"> </span>
@@ -491,7 +492,7 @@
                 <div class="astryx-dropdown-item" data-value="60">60°</div>
               </div>
             </div>
-            <label class="dv-label"><input type="checkbox" id="dv-use-horizon" checked> Horizon</label>
+            <label class="dv-label tooltip-host has-tip" data-tooltip-key="dv_horizon"><input type="checkbox" id="dv-use-horizon" checked> Horizon</label>
           </div>
 
           <!-- Gradient Timeline Container (moved to top) -->
@@ -561,10 +562,10 @@
       <!-- Settings Modal Template -->
       <template id="settings-template">
         <div>
-          <!-- Row 1: DST Mode | Min Altitude -->
-          <div class="settings-two-col">
+          <!-- Row 1: DST Mode | Minimum Altitude, side by side (Issue #99) -->
+          <div class="settings-inline-row">
             <div class="form-group form-inline">
-              <label class="tooltip-host" data-tooltip-key="set_DST">DST Mode</label>
+              <label class="tooltip-host has-tip" data-tooltip-key="set_DST">DST Mode</label>
               <div class="astryx-dropdown" id="dst-mode-dropdown">
                 <div class="astryx-dropdown-trigger" id="dst-mode-trigger">
                   <span id="dst-mode-label">Automatic</span>
@@ -578,7 +579,7 @@
               </div>
             </div>
             <div class="form-group form-inline">
-              <label class="tooltip-host" data-tooltip-key="set_minAlt">Min Altitude</label>
+              <label class="tooltip-host has-tip" data-tooltip-key="set_minAlt">Minimum Altitude</label>
               <div class="astryx-dropdown" id="global-min-altitude-dropdown">
                 <div class="astryx-dropdown-trigger" id="global-min-altitude-trigger">
                   <span id="global-min-altitude-label">35°</span>
@@ -604,7 +605,7 @@
           <!-- Row 2: Date Format (issue #274) -->
           <div class="settings-two-col">
             <div class="form-group form-inline">
-              <label class="tooltip-host" data-tooltip-key="set_dateFormat">Date Format</label>
+              <label class="tooltip-host has-tip" data-tooltip-key="set_dateFormat">Date Format</label>
               <div class="astryx-dropdown" id="date-format-dropdown">
                 <div class="astryx-dropdown-trigger" id="date-format-trigger">
                   <span id="date-format-label">mm/dd/yyyy</span>
@@ -621,19 +622,19 @@
           <!-- Row 3: Filter defaults - Min Size | Max Magnitude -->
           <div class="settings-two-col">
             <div class="form-group form-inline">
-              <label for="filter-min-size" class="tooltip-host" data-tooltip-key="set_filterMinSize">Min Target Size (arcmin)</label>
+              <label for="filter-min-size" class="tooltip-host has-tip" data-tooltip-key="set_filterMinSize">Min Target Size (arcmin)</label>
               <input type="text" id="filter-min-size" style="width: 5rem;">
             </div>
             <div class="form-group form-inline">
-              <label for="filter-max-mag" class="tooltip-host" data-tooltip-key="set_filterMaxMag">Max Magnitude</label>
+              <label for="filter-max-mag" class="tooltip-host has-tip" data-tooltip-key="set_filterMaxMag">Limiting Magnitude</label>
               <input type="text" id="filter-max-mag" style="width: 5rem;">
             </div>
           </div>
           <!-- Row 4: Automatic Backups | Minutes before backup -->
           <div style="display: flex; align-items: center; gap: 0.5rem;">
-            <label for="auto-backup-enabled" style="margin-bottom: 0; display: inline;" class="tooltip-host" data-tooltip-key="set_autoBU">Automatic backups on change</label>
+            <label for="auto-backup-enabled" style="margin-bottom: 0; display: inline;" class="tooltip-host has-tip" data-tooltip-key="set_autoBU">Automatic backups on change</label>
             <input type="checkbox" id="auto-backup-enabled">
-            <label style="margin-bottom: 0; display: inline; margin-left: 1rem;" class="tooltip-host" data-tooltip-key="set_backupDelay">Minutes before backup</label>
+            <label style="margin-bottom: 0; display: inline; margin-left: 1rem;" class="tooltip-host has-tip" data-tooltip-key="set_backupDelay">Minutes before backup</label>
             <div class="astryx-dropdown" id="backup-delay-dropdown">
               <div class="astryx-dropdown-trigger" id="backup-delay-trigger">
                 <span id="backup-delay-label">60</span>
@@ -649,14 +650,14 @@
           </div>
           <!-- Row: Backup Folder (Tauri only; web shows fixed read-only text) -->
           <div class="form-group form-inline" id="backup-folder-row">
-            <label for="backup-folder-input">Backup Folder</label>
+            <label for="backup-folder-input" class="tooltip-host has-tip" data-tooltip-key="set_backupFolder">Backup Folder</label>
             <input type="text" id="backup-folder-input" readonly style="width: 14rem;">
             <button type="button" class="btn btn-sm btn-secondary" id="backup-folder-browse">Browse</button>
             <button type="button" class="btn btn-sm btn-secondary" id="backup-folder-clear">Clear</button>
           </div>
           <!-- Row 5: Backup reminder interval -->
           <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem;">
-            <label style="margin-bottom: 0; display: inline;">Backup reminder every</label>
+            <label style="margin-bottom: 0; display: inline;" class="tooltip-host has-tip" data-tooltip-key="set_backupReminder">Backup reminder every</label>
             <div class="astryx-dropdown" id="backup-reminder-dropdown">
               <div class="astryx-dropdown-trigger" id="backup-reminder-trigger">
                 <span id="backup-reminder-label">7</span>
@@ -849,7 +850,7 @@
                 <span class="detail-value" id="detail-common"></span>
               </div>
               <div class="detail-item">
-                <span class="detail-label">Other Info:</span>
+                <span class="detail-label tooltip-host has-tip" data-tooltip-key="td_other">Other Info:</span>
                 <span class="detail-value" id="detail-other"></span>
               </div>
               <div class="detail-item">
@@ -879,7 +880,7 @@
                 <span class="detail-value" id="detail-mag"></span>
               </div>
               <div class="detail-item">
-                <span class="detail-label">Surface Brightness:</span>
+                <span class="detail-label tooltip-host has-tip" data-tooltip-key="td_subr">Surface Brightness:</span>
                 <span class="detail-value" id="detail-subr"></span>
               </div>
             </div>
@@ -978,7 +979,7 @@
 
       <!-- Field of View Template -->
       <template id="fov-template">
-        <div class="fov-view view-bg-icon view-bg-icon-viewfinder">
+        <div class="fov-view">
           <h2 class="view-title">Viewfinder</h2>
           <div class="fov-top-row">
             <!-- Target Info Card -->
@@ -1030,20 +1031,20 @@
             </div>
             <div class="card-body fov-view-body">
               <div class="fov-controls">
-                <div class="fov-mode-toggle" id="fov-mode-toggle">
-                  <span class="fov-mode-option active"
-                        data-mode="actual">Actual</span>
-                  <span class="fov-mode-option"
-                        data-mode="larger">Wider</span>
+                <div class="mode-toggle tooltip-host has-tip" id="fov-mode-toggle" data-tooltip-key="fov_mode">
+                  <button type="button" class="mode-toggle-option active"
+                        data-mode="actual">Actual</button>
+                  <button type="button" class="mode-toggle-option"
+                        data-mode="larger">Wider</button>
                 </div>
                 <div class="fov-checkboxes">
                   <label><input type="checkbox" id="fov-show-dss">DSS image</label>
-                  <label><input type="checkbox" id="fov-show-target">Target size</label>
+                  <label class="tooltip-host has-tip" data-tooltip-key="fov_targetSize"><input type="checkbox" id="fov-show-target">Target size</label>
                   <label><input type="checkbox" id="fov-show-moon">Full moon</label>
                   <label><input type="checkbox" id="fov-show-crosshair">Crosshair</label>
                 </div>
                 <div id="fov-rotation-control" class="fov-rotation-control">
-                  <label for="fov-rotation-input">Rotate camera to:</label>
+                  <label for="fov-rotation-input" class="tooltip-host has-tip" data-tooltip-key="fov_rotate">Rotate camera to:</label>
                   <div class="fov-rotation-row">
                     <button id="fov-rotate-ccw" class="btn-secondary btn-sm">↺</button>
                     <input type="number" id="fov-rotation-input" value="0" min="-180" max="180" step="1">
@@ -1052,7 +1053,7 @@
                   </div>
                 </div>
                 <div id="fov-center-coords" class="fov-center-coords"></div>
-                <button id="fov-snapshot-btn" class="btn-primary btn-sm">📷 Snapshot</button>
+                <button id="fov-snapshot-btn" class="btn-secondary btn-sm">📷 Snapshot</button>
               </div>
               <div class="fov-canvas-wrap">
                 <canvas id="fov-canvas" width="600" height="600"></canvas>
@@ -1087,7 +1088,7 @@
         </div>
 
         <div class="form-group">
-          <label>Status <span class="tooltip-icon tooltip-host" data-tooltip-key="ilog_projectStatus">?</span></label>
+          <label class="tooltip-host has-tip" data-tooltip-key="ilog_projectStatus">Status</label>
           <div class="astryx-dropdown" id="project-status-dropdown">
             <div class="astryx-dropdown-trigger" id="project-status-trigger">
               <span id="project-status-label">Planning</span>
@@ -1104,7 +1105,7 @@
         </div>
 
         <div class="form-group">
-          <label>Targets <span class="tooltip-icon tooltip-host" data-tooltip-key="ilog_projectTargets">?</span></label>
+          <label class="tooltip-host has-tip" data-tooltip-key="ilog_projectTargets">Targets</label>
           <div style="margin-bottom: 0.5rem;">
             <input type="text"
                    id="project-target-search"
@@ -1112,13 +1113,13 @@
                    style="width: 100%;">
           </div>
           <div id="project-target-search-results"
-               style="max-height: 150px; overflow-y: auto; margin-bottom: 1rem; border: 1px solid var(--border-color); border-radius: 4px;">
+               style="max-height: 9.375rem; overflow-y: auto; margin-bottom: 1rem; border: 1px solid var(--border-color); border-radius: 4px;">
           </div>
 
           <div style="border: 1px solid var(--border-color);
                       border-radius: 4px;
                       padding: 0.5rem;
-                      min-height: 100px;
+                      min-height: 6.25rem;
                       background: var(--card-bg);">
             <strong style="display: block; margin-bottom: 0.5rem; color: var(--text-secondary);">Selected Targets:</strong>
             <div id="project-selected-targets-list"></div>
@@ -1135,9 +1136,7 @@
 
         <div class="form-group">
           <div style="display: flex; align-items: center; gap: 0.5rem;">
-            <label for="project-notes" style="margin-bottom: 0;">
-              Notes <span class="tooltip-icon tooltip-host" data-tooltip-key="ilog_projectNotes">?</span>
-            </label>
+            <label for="project-notes" class="tooltip-host has-tip" data-tooltip-key="ilog_projectNotes" style="margin-bottom: 0;">Notes</label>
             <button type="button"
                     class="btn-secondary btn-sm"
                     id="project-notes-expand-btn">
@@ -1162,7 +1161,7 @@
 
         <div class="form-group">
           <div class="form-group">
-            <label>Program Type <span class="tooltip-icon tooltip-host" data-tooltip-key="ilog_programType">?</span></label>
+            <label class="tooltip-host has-tip" data-tooltip-key="ilog_programType">Program Type</label>
             <div style="display: flex; gap: 1.5rem; margin-top: 0.5rem;">
               <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
                 <input type="radio" name="program-type" value="pattern" id="program-type-pattern">
@@ -1178,7 +1177,7 @@
           <!-- Pattern Mode Fields -->
           <div id="pattern-fields" style="display: none;">
             <div class="form-group">
-              <label class="tooltip-host" data-tooltip-key="ilog_catalogPrefix">Catalog Prefix <span class="tooltip-icon">?</span></label>
+              <label>Catalog Prefix</label>
               <div class="astryx-dropdown" id="program-catalog-prefix-dropdown">
                 <div class="astryx-dropdown-trigger" id="program-catalog-prefix-trigger">
                   <span id="program-catalog-prefix-label">Select catalog...</span>
@@ -1190,7 +1189,7 @@
               </div>
             </div>
             <div class="form-group">
-              <label for="program-max-number">Maximum Number <span class="tooltip-icon tooltip-host" data-tooltip-key="ilog_maxNumber">?</span></label>
+              <label for="program-max-number" class="tooltip-host has-tip" data-tooltip-key="ilog_maxNumber">Maximum Number</label>
               <input type="number"
                      id="program-max-number"
                      min="1"
@@ -1277,7 +1276,7 @@
 
             <div class="form-row" style="display: grid; grid-template-columns: 0.92fr 1.16fr 0.92fr 1fr 1fr; gap: 1rem;">
               <div class="form-group">
-                <label for="session-rotation">Rotation (°) <span class="tooltip-icon tooltip-host" data-tooltip-key="ilog_sessionRotation">?</span></label>
+                <label for="session-rotation" class="tooltip-host has-tip" data-tooltip-key="ilog_sessionRotation">Rotation (°)</label>
                 <input type="number"
                        id="session-rotation"
                        step="0.1"
@@ -1285,7 +1284,7 @@
               </div>
 
               <div class="form-group">
-                <label for="session-temp-setpoint">Temp Setpoint (°C) <span class="tooltip-icon tooltip-host" data-tooltip-key="ilog_sessionTemp">?</span></label>
+                <label for="session-temp-setpoint" class="tooltip-host has-tip" data-tooltip-key="ilog_sessionTemp">Temp Setpoint (°C)</label>
                 <input type="number"
                        id="session-temp-setpoint"
                        min="-40"
@@ -1311,7 +1310,7 @@
               </div>
 
               <div class="form-group">
-                <label for="session-gain">Gain <span class="tooltip-icon tooltip-host" data-tooltip-key="ilog_sessionGain">?</span></label>
+                <label for="session-gain">Gain</label>
                 <input type="number"
                        id="session-gain"
                        min="0"
@@ -1321,7 +1320,7 @@
               </div>
 
               <div class="form-group">
-                <label for="session-offset">Offset <span class="tooltip-icon tooltip-host" data-tooltip-key="ilog_sessionOffset">?</span></label>
+                <label for="session-offset" class="tooltip-host has-tip" data-tooltip-key="ilog_sessionOffset">Offset</label>
                 <input type="number"
                        id="session-offset"
                        min="0"
@@ -1339,11 +1338,9 @@
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
               <h4 style="margin: 0;">Moon & Conditions</h4>
               <button type="button"
-                      class="btn-secondary btn-sm tooltip-host"
+                      class="btn-secondary btn-sm tooltip-host has-tip"
                       id="session-calc-moon-btn"
-                      data-tooltip-key="ilog_sessionCalcMoon">
-                Calculate Moon Data <span class="tooltip-icon">?</span>
-              </button>
+                      data-tooltip-key="ilog_sessionCalcMoon">Calculate Moon Data</button>
             </div>
 
             <div class="form-row" style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 1rem;">
@@ -1358,7 +1355,7 @@
               </div>
 
               <div class="form-group">
-                <label for="session-moon-illumination">Illumination (%)</label>
+                <label for="session-moon-illumination" class="tooltip-host has-tip" data-tooltip-key="ilog_sessionIllum">Illumination (%)</label>
                 <input type="number"
                        id="session-moon-illumination"
                        min="0"
@@ -1367,7 +1364,7 @@
               </div>
 
               <div class="form-group">
-                <label for="session-angle-from-moon">Angle from Moon (°)</label>
+                <label for="session-angle-from-moon" class="tooltip-host has-tip" data-tooltip-key="ilog_sessionMoonAngle">Angle from Moon (°)</label>
                 <input type="number"
                        id="session-angle-from-moon"
                        min="0"
@@ -1508,32 +1505,37 @@
 
       <!-- Imaging Log View Template -->
       <template id="imaging-log-view-template">
-        <div class="view-container view-bg-icon view-bg-icon-imaging-log">
-          <h2 class="view-title">Imaging Log</h2>
+        <div class="view-container">
+          <!-- Title and tabs stay put while the tab content scrolls (Issue #286) -->
+          <div class="imaging-log-header view-sticky-header">
+            <h2 class="view-title">Imaging Log</h2>
 
-          <!-- Tab Navigation -->
-          <div class="imaging-log-tabs">
-            <button class="imaging-log-tab-btn active" data-tab="projects">Projects</button>
-            <button class="imaging-log-tab-btn" data-tab="programs">Programs</button>
-            <button class="imaging-log-tab-btn" data-tab="reports">Reports</button>
-            <button class="imaging-log-tab-btn" data-tab="activity">Activity</button>
+            <!-- Tab Navigation -->
+            <div class="imaging-log-tabs">
+              <button class="imaging-log-tab-btn active" data-tab="projects">Projects</button>
+              <button class="imaging-log-tab-btn" data-tab="programs">Programs</button>
+              <button class="imaging-log-tab-btn" data-tab="reports">Reports</button>
+              <button class="imaging-log-tab-btn" data-tab="activity">Activity</button>
+            </div>
           </div>
 
           <!-- Projects Tab -->
           <div id="imaging-log-projects-tab" class="imaging-log-tab-content active">
-            <div class="imaging-log-toolbar">
+            <div class="card controls-card imaging-log-toolbar">
               <button class="btn-primary" id="imaging-log-new-project-btn">+ New Project</button>
 
               <div class="imaging-log-filters">
                 <div style="display: flex; flex-direction: column; gap: 0.25rem;">
-                  <label for="imaging-log-project-search">Search <span class="tooltip-icon tooltip-host" data-tooltip-key="ilog_projectSearch">?</span></label>
-                  <input type="text"
-                         id="imaging-log-project-search"
-                         placeholder="Search projects..."
-                         style="width: 200px;">
+                  <label for="imaging-log-project-search" class="tooltip-host has-tip" data-tooltip-key="ilog_projectSearch">Search</label>
+                  <span class="search-clear-wrap">
+                    <input type="text"
+                           id="imaging-log-project-search"
+                           placeholder="Search projects...">
+                    <button type="button" class="search-clear-btn" id="imaging-log-project-search-clear" aria-label="Clear search">✕</button>
+                  </span>
                 </div>
                 <div style="display: flex; flex-direction: column; gap: 0.25rem;">
-                  <label>Status <span class="tooltip-icon tooltip-host" data-tooltip-key="ilog_statusFilter">?</span></label>
+                  <label class="tooltip-host has-tip" data-tooltip-key="ilog_statusFilter">Status</label>
                   <div class="astryx-dropdown" id="imaging-log-status-dropdown">
                     <div class="astryx-dropdown-trigger" id="imaging-log-status-trigger">
                       <span id="imaging-log-status-label">All But Completed</span>
@@ -1577,7 +1579,7 @@
 
           <!-- Programs Tab -->
           <div id="imaging-log-programs-tab" class="imaging-log-tab-content">
-            <div class="imaging-log-toolbar">
+            <div class="card controls-card imaging-log-toolbar">
               <button class="btn-primary" id="imaging-log-new-program-btn">New Program</button>
             </div>
 
@@ -1593,7 +1595,7 @@
             <div class="card" id="report-catalog-coverage-card">
               <div class="card-header">
                 <h3>Catalog Coverage</h3>
-                <div>Counts include alternate designators of the primary targets</div>
+                <div>Targets in Completed projects, including their other designations</div>
               </div>
               <div class="card-body">
                 <div id="report-catalog-coverage">
@@ -1606,7 +1608,7 @@
             <div class="card" id="report-program-progress-card">
               <div class="card-header">
                 <h3>Program Progress</h3>
-                <div>Counts include alternate designators of the primary targets</div>
+                <div>Targets in Completed projects, counting their other designations</div>
               </div>
               <div class="card-body">
                 <div id="report-program-progress">
@@ -1619,7 +1621,7 @@
             <div class="card" id="report-project-status-card">
               <div class="card-header">
                 <h3>Project Status</h3>
-                <div>Counts are ONLY the primary targets in a project</div>
+                <div>Every project, counting only the targets added to it</div>
               </div>
               <div class="card-body">
                 <div id="report-project-status">
@@ -1728,23 +1730,34 @@
 
       <!-- To Do List View Template -->
       <template id="todo-template">
-        <div class="todo-view view-bg-icon view-bg-icon-todo">
-          <div class="todo-view-header">
+        <div class="todo-view">
+          <!-- Title and the controls card stay in view; the list scrolls under them (Issue #286) -->
+          <div class="view-sticky-header">
             <h2 class="view-title">To Do List</h2>
-            <div class="todo-controls">
-              <label class="todo-sort-label">Sort by:</label>
-              <div class="astryx-dropdown" id="todo-sort-dropdown">
-                <div class="astryx-dropdown-trigger" id="todo-sort-trigger">
-                  <span id="todo-sort-label">Rise Time (Tonight)</span>
-                  <span class="astryx-dropdown-arrow"> </span>
+            <div class="card controls-card">
+              <div class="todo-controls">
+                <div class="todo-date-stepper">
+                  <button id="todo-prev-week" class="btn-secondary btn-sm">◀◀</button>
+                  <button id="todo-prev-day" class="btn-secondary btn-sm">◀</button>
+                  <input type="text" id="todo-date" class="date-entry" maxlength="10">
+                  <button id="todo-next-day" class="btn-secondary btn-sm">▶</button>
+                  <button id="todo-next-week" class="btn-secondary btn-sm">▶▶</button>
                 </div>
-                <div class="astryx-dropdown-menu" id="todo-sort-menu">
-                  <div class="astryx-dropdown-item" data-value="rise">Rise Time (Tonight)</div>
-                  <div class="astryx-dropdown-item" data-value="type">Type</div>
-                  <div class="astryx-dropdown-item" data-value="month">Best Month</div>
+                <label class="todo-sort-label tooltip-host has-tip" data-tooltip-key="todo_sort">Sort by:</label>
+                <div class="astryx-dropdown" id="todo-sort-dropdown">
+                  <div class="astryx-dropdown-trigger" id="todo-sort-trigger">
+                    <span id="todo-sort-label">Rise Time</span>
+                    <span class="astryx-dropdown-arrow"> </span>
+                  </div>
+                  <div class="astryx-dropdown-menu" id="todo-sort-menu">
+                    <div class="astryx-dropdown-item" data-value="rise">Rise Time</div>
+                    <div class="astryx-dropdown-item" data-value="type">Type</div>
+                    <div class="astryx-dropdown-item" data-value="month">Best Month</div>
+                  </div>
                 </div>
+                <button id="toggle-rise-chart" class="btn-toggle-chart btn-secondary btn-small tooltip-host has-tip" data-tooltip-key="todo_chart" style="visibility:hidden;">📊 Chart</button>
               </div>
-              <button id="toggle-rise-chart" class="btn-toggle-chart btn-secondary btn-small" style="visibility:hidden;">📊 Chart</button>
+              <div id="todo-status-legend" class="todo-status-legend"></div>
             </div>
           </div>
           <div id="todo-container"></div>
@@ -1754,8 +1767,10 @@
 
       <!-- Sequence Planner Template -->
       <template id="seq-plan-view-template">
-        <div class="view-container view-bg-icon view-bg-icon-sequence-planner">
-          <h2 class="view-title">Sequence Planner</h2>
+        <div class="view-container">
+          <div class="view-sticky-header">
+            <h2 class="view-title">Sequence Planner</h2>
+          </div>
 
           <!-- Session Settings Card (with Overhead Settings merged) -->
           <div class="card" id="seqplan-session-settings">
@@ -1770,11 +1785,11 @@
               <!-- Row 1: Date and Start -->
               <div class="seq-plan-ss-row">
                 <div class="seq-plan-ss-field">
-                  <label for="seq-plan-date" class="tooltip-host" data-tooltip-key="sp_startDate">Date:</label>
+                  <label for="seq-plan-date" class="tooltip-host has-tip" data-tooltip-key="sp_startDate">Date:</label>
                   <input type="text" id="seq-plan-date" class="date-entry" maxlength="10">
                 </div>
                 <div class="seq-plan-ss-field">
-                  <label class="tooltip-host" data-tooltip-key="sp_startTime">Start:</label>
+                  <label class="tooltip-host has-tip" data-tooltip-key="sp_startTime">Start:</label>
                   <div class="astryx-dropdown seq-plan-ss-wide" id="seq-plan-start-time-dropdown">
                     <div class="astryx-dropdown-trigger" id="seq-plan-start-time-trigger">
                       <span id="seq-plan-start-time-label">Dusk</span>
@@ -1792,7 +1807,7 @@
               <!-- Row 2: Location and Min Alt -->
               <div class="seq-plan-ss-row">
                 <div class="seq-plan-ss-field">
-                  <label class="tooltip-host" data-tooltip-key="sp_location">Location:</label>
+                  <label class="tooltip-host has-tip" data-tooltip-key="sp_location">Location:</label>
                   <div class="astryx-dropdown seq-plan-ss-location" id="seq-plan-location-dropdown">
                     <div class="astryx-dropdown-trigger" id="seq-plan-location-trigger">
                       <span id="seq-plan-location-label">Select location...</span>
@@ -1803,7 +1818,7 @@
                   </div>
                 </div>
                 <div class="seq-plan-ss-field">
-                  <label class="tooltip-host" data-tooltip-key="sp_minAltitude">Min Alt:</label>
+                  <label class="tooltip-host has-tip" data-tooltip-key="sp_minAltitude">Min Alt:</label>
                   <div class="astryx-dropdown seq-plan-ss-number" id="seq-plan-min-altitude-dropdown">
                     <div class="astryx-dropdown-trigger" id="seq-plan-min-altitude-trigger">
                       <span id="seq-plan-min-altitude-label">35°</span>
@@ -1834,13 +1849,13 @@
                 <!-- Row 1: Autofocus -->
                 <div class="seq-plan-ss-row seq-plan-overhead-row-1">
                   <div class="seq-plan-ss-field">
-                    <label class="tooltip-host" data-tooltip-key="sp_afCheck">
+                    <label class="tooltip-host has-tip" data-tooltip-key="sp_afCheck">
                       <input type="checkbox" id="seq-plan-af-enabled">
                       Autofocus
                     </label>
                   </div>
                   <div class="seq-plan-ss-field">
-                    <label class="tooltip-host" data-tooltip-key="sp_afInterval">AF Interval:</label>
+                    <label class="tooltip-host has-tip" data-tooltip-key="sp_afInterval">AF Interval:</label>
                     <div class="astryx-dropdown seq-plan-ss-number" id="seq-plan-af-interval-dropdown">
                       <div class="astryx-dropdown-trigger" id="seq-plan-af-interval-trigger">
                         <span id="seq-plan-af-interval-label">30</span>
@@ -1857,7 +1872,7 @@
                     <span>min</span>
                   </div>
                   <div class="seq-plan-ss-field">
-                    <label class="tooltip-host" data-tooltip-key="sp_afDuration">AF Duration:</label>
+                    <label class="tooltip-host has-tip" data-tooltip-key="sp_afDuration">AF Duration:</label>
                     <div class="astryx-dropdown seq-plan-ss-number" id="seq-plan-af-duration-dropdown">
                       <div class="astryx-dropdown-trigger" id="seq-plan-af-duration-trigger">
                         <span id="seq-plan-af-duration-label">2</span>
@@ -1879,7 +1894,7 @@
                 <!-- Row 2: Flip -->
                 <div class="seq-plan-ss-row seq-plan-overhead-row-2">
                   <div class="seq-plan-ss-field">
-                    <label class="tooltip-host" data-tooltip-key="sp_flipPause">Flip Pause:</label>
+                    <label class="tooltip-host has-tip" data-tooltip-key="sp_flipPause">Flip Pause:</label>
                     <div class="astryx-dropdown seq-plan-ss-number" id="seq-plan-flip-pause-dropdown">
                       <div class="astryx-dropdown-trigger" id="seq-plan-flip-pause-trigger">
                         <span id="seq-plan-flip-pause-label">4</span>
@@ -1901,7 +1916,7 @@
                     <span>min</span>
                   </div>
                   <div class="seq-plan-ss-field">
-                    <label class="tooltip-host" data-tooltip-key="sp_flipDuration">Flip Duration:</label>
+                    <label class="tooltip-host has-tip" data-tooltip-key="sp_flipDuration">Flip Duration:</label>
                     <div class="astryx-dropdown seq-plan-ss-number" id="seq-plan-flip-duration-dropdown">
                       <div class="astryx-dropdown-trigger" id="seq-plan-flip-duration-trigger">
                         <span id="seq-plan-flip-duration-label">2</span>
@@ -1923,7 +1938,7 @@
                     <span>min</span>
                   </div>
                   <div class="seq-plan-ss-field">
-                    <label class="tooltip-host" data-tooltip-key="sp_flipOffset">Flip Offset:</label>
+                    <label class="tooltip-host has-tip" data-tooltip-key="sp_flipOffset">Flip Offset:</label>
                     <div class="astryx-dropdown seq-plan-ss-number" id="seq-plan-flip-offset-dropdown">
                       <div class="astryx-dropdown-trigger" id="seq-plan-flip-offset-trigger">
                         <span id="seq-plan-flip-offset-label">0</span>
@@ -1950,7 +1965,7 @@
                 <!-- Row 3: Calibration and Frames per Dither -->
                 <div class="seq-plan-ss-row seq-plan-overhead-row-3">
                   <div class="seq-plan-ss-field">
-                    <label class="tooltip-host" data-tooltip-key="sp_calibration">Guide Calibration:</label>
+                    <label class="tooltip-host has-tip" data-tooltip-key="sp_calibration">Guide Calibration:</label>
                     <div class="astryx-dropdown seq-plan-ss-number" id="seq-plan-cal-duration-dropdown">
                       <div class="astryx-dropdown-trigger" id="seq-plan-cal-duration-trigger">
                         <span id="seq-plan-cal-duration-label">5</span>
@@ -1968,7 +1983,7 @@
                     <span>min</span>
                   </div>
                   <div class="seq-plan-ss-field">
-                    <label class="tooltip-host" data-tooltip-key="sp_framesPerDither">Frames per Dither:</label>
+                    <label class="tooltip-host has-tip" data-tooltip-key="sp_framesPerDither">Frames per Dither:</label>
                     <div class="astryx-dropdown seq-plan-ss-number" id="seq-plan-frames-per-dither-dropdown">
                       <div class="astryx-dropdown-trigger" id="seq-plan-frames-per-dither-trigger">
                         <span id="seq-plan-frames-per-dither-label">3</span>
@@ -1992,8 +2007,8 @@
           <!-- Target Allocation Card - NEW STRUCTURE FOR PHASE 2 -->
           <div class="card" id="seqplan-target-allocation">
             <div class="card-header">
-              <h3>Target Allocation</h3>
-              <button id="seq-plan-reset-btn" class="btn-secondary" style="margin-left: auto;">Reset & Optimize</button>
+              <h3><span class="tooltip-host has-tip" data-tooltip-key="sp_allocation">Target Allocation</span></h3>
+              <button id="seq-plan-reset-btn" class="btn-secondary tooltip-host has-tip" data-tooltip-key="sp_reset" style="margin-left: auto;">Reset & Optimize</button>
             </div>
             <div class="card-body">
               <div id="seq-plan-target-list">
@@ -2027,27 +2042,27 @@
 
       <!-- Utilities Template -->
       <template id="utilities-view-template">
-        <div class="view-container view-bg-icon view-bg-icon-utilities">
-          <h2 class="view-title">Utilities</h2>
-
-          <div class="card"  id="utilities-weather-forecasts">
-            <div class="card-header">
-              <h3>Weather Forecasts <span class="tooltip-icon tooltip-host" data-tooltip-key="util_weather">?</span></h3>
-            </div>
-            <div class="card-body">
-              <div id="utilities-weather-list">
-                <!-- Weather links will be populated here -->
-              </div>
-            </div>
+        <div class="view-container">
+          <div class="view-sticky-header">
+            <h2 class="view-title">Utilities</h2>
           </div>
 
-          <div class="card"  id="utilities-light-pollution">
+          <div class="card" id="utilities-sky-conditions">
             <div class="card-header">
-              <h3>Light Pollution <span class="tooltip-icon tooltip-host" data-tooltip-key="util_lightPoll">?</span></h3>
+              <h3>Sky Conditions <span class="tooltip-icon tooltip-host" data-tooltip-key="util_skyConditions">?</span></h3>
             </div>
             <div class="card-body">
-              <div id="utilities-light-pollution-info">
-                <!-- light pollution link will be populated here -->
+              <p class="empty-message" id="sky-conditions-empty" hidden>No locations configured. Add locations in Admin Tools → Manage Locations.</p>
+              <div class="sky-conditions-row" id="sky-conditions-row">
+                <label>Location:</label>
+                <div class="astryx-dropdown" id="sky-location-dropdown">
+                  <div class="astryx-dropdown-trigger" id="sky-location-trigger">
+                    <span id="sky-location-label"></span>
+                    <span class="astryx-dropdown-arrow"> </span>
+                  </div>
+                  <div class="astryx-dropdown-menu" id="sky-location-menu"></div>
+                </div>
+                <span class="sky-conditions-links" id="sky-conditions-links"></span>
               </div>
             </div>
           </div>
@@ -2099,15 +2114,14 @@
 
               <!-- Right column: results -->
               <div id="dust-mote-results">
-                <table class="session-table">
-                  <tbody>
-                    <tr>
-                      <td>Distance from<br>Sensor (mm)</td>
-                      <td id="dust-result">—</td>
-                    </tr>
-                  </tbody>
-                </table>
-                <p id="dust-mote-summary" style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-secondary);">—</p>
+                <div class="dust-result-row">
+                  <span class="dust-result-label">Distance from Sensor:</span>
+                  <span id="dust-result" class="dust-result-value">—</span>
+                </div>
+                <div class="dust-result-row">
+                  <span class="dust-result-label">Spot Diameter:</span>
+                  <span id="dust-mote-summary" class="dust-result-value">—</span>
+                </div>
               </div>
             </div>
           </div>
@@ -2119,11 +2133,13 @@
       <!-- Log Analysis View Template -->
       <template id="log-analysis-view-template">
         <div class="view-container">
-          <h2 class="view-title">Log Analysis</h2>
+          <div class="view-sticky-header">
+            <h2 class="view-title">Log Analysis</h2>
+          </div>
 
           <div class="card" id="log-analysis-card">
             <div class="card-header">
-              <h3>Session Log Analysis<span class="tooltip-icon tooltip-host" data-tooltip-key="util_sessLogs">?</span></h3>
+              <h3><span class="tooltip-host has-tip" data-tooltip-key="log_analysis">Session Log Analysis</span></h3>
               ASIAir session and PHD2 guide logs
             </div>
             <div class="card-body">
@@ -2142,7 +2158,7 @@
                 <input type="file" id="log-file" accept=".txt" multiple hidden>
               </div>
               <div class="form-group log-guide-settings">
-                <label for="log-guide-stability">Guide Stability (")<span class="tooltip-icon tooltip-host" data-tooltip-key="log_guideStability">?</span></label>
+                <label for="log-guide-stability" class="tooltip-host has-tip" data-tooltip-key="log_guideStability">Guide Stability (")</label>
                 <input type="number" id="log-guide-stability" min="0.1" step="0.1">
                 <label for="log-guide-settle-time">Settle Time (s)</label>
                 <input type="number" id="log-guide-settle-time" min="1" step="1">
@@ -2157,29 +2173,40 @@
 
       <!-- Backup Reminder Modal Template -->
       <template id="backup-reminder-modal-template">
-        <div style="line-height: 1.6;">
-          <p style="margin-bottom: 1rem;">
-            All your Astryx data — locations, equipment, imaging projects, sessions, programs, your To Do List, and pinned targets — is stored exclusively
-            <span data-storage="web">in your browser's local IndexedDB storage.</span>
-            <span data-storage="desktop">in a database on this computer, in Astryx's application data folder.</span>
-            <strong>Nothing is stored on any server.</strong>
+        <!-- Wording matches the Guide's Backup and Restore chapter (Issue #288) -->
+        <div class="storage-info">
+          <p>
+            Everything you enter in Astryx (settings, locations, equipment, pinned targets, your To Do List, imaging projects, sessions and programs) is stored only
+            <span data-storage="web">in this browser.</span>
+            <span data-storage="desktop">on this computer.</span>
+            <strong>Nothing is stored on any remote server.</strong>
           </p>
-          <p style="margin-bottom: 1rem;">
-            This means if
-            <span data-storage="web">your browser data is cleared, your device is lost or fails, or you switch browsers,</span>
-            <span data-storage="desktop">this computer is lost or fails, or Astryx's application data folder is deleted,</span>
-            your data is gone. Regular backups to redundant or cloud storage are essential.
+          <p>
+            If
+            <span data-storage="web">your browser data is cleared, you switch browsers, or this device fails,</span>
+            <span data-storage="desktop">this computer fails or is lost,</span>
+            your data is gone. A backup kept somewhere else is the only copy that survives.
           </p>
-          <p style="margin-bottom: 0.5rem;"><strong>Recommended backup strategy:</strong></p>
-          <p style="margin-bottom: 0.25rem;">1. Back up the <strong>Target Database</strong> once — it rarely changes and is large. Store it somewhere safe.</p>
-          <p style="margin-bottom: 1rem;">2. Back up <strong>everything else</strong> regularly — after every imaging session or at least weekly. Store these backups in cloud storage or on a separate device.</p>
-          <p style="margin-bottom: 1rem; color: var(--text-secondary); font-size: 0.9rem;">
-            Backups are compressed ZIP files you can restore at any time from the Backup &amp; Restore function in the system menu.
+          <p class="storage-info-heading"><strong>Two kinds of backup:</strong></p>
+          <ul>
+            <li><strong>User data:</strong> everything above. Back it up after every imaging night, or at least weekly.</li>
+            <li><strong>Targets:</strong> the target database and the Best Months you've calculated. Back it up once, and again after calculating Best Months for a new location.</li>
+          </ul>
+          <p>
+            If you have enabled <strong>Automatic backups on change</strong> in the Settings, a user data backup will automatically occur for you a few minutes (see Settings) after the last change. Automatic backups go to
+            <span data-storage="web">your browser's downloads folder.</span>
+            <span data-storage="desktop">the Backup Folder from Settings, including your Downloads folder.</span>
           </p>
-          <div style="text-align: center; margin-top: 1.5rem;">
-            <button class="btn-primary" data-action="goto-backup">
-              Go to Backup &amp; Restore
-            </button>
+          <p>
+            Copy your backups to a cloud drive, a USB stick or another computer. To restore one, choose <strong>Restore</strong> in the system menu (≡).
+          </p>
+          <p class="storage-info-note">
+            <span data-storage="web">Note that the desktop version of Astryx stores its data in the computer's local storage rather than in browser storage.</span>
+            <span data-storage="desktop">Note that the web version of Astryx stores its data in browser storage rather than in the computer's local storage.</span>
+            Backup files are interchangeable between the web and desktop versions.
+          </p>
+          <div class="storage-info-actions">
+            <button class="btn-primary" data-action="goto-backup">Make a Backup</button>
           </div>
         </div>
       </template>
@@ -2187,52 +2214,49 @@
 
       <!-- Target Optimizer View Template -->
       <template id="optimizer-view-template">
-        <div class="view-container view-bg-icon view-bg-icon-optimizer">
-          <h2 class="view-title">Target Optimizer</h2>
+        <div class="view-container">
+          <!-- Title and settings stay put while the results scroll (Issue #286) -->
+          <div class="view-sticky-header">
+            <h2 class="view-title">Target Optimizer</h2>
 
-          <div class="card">
-            <div class="card-header">
-              <h3>Optimizer Settings</h3>
-            </div>
-            <div class="card-body">
+            <div class="card">
+              <div class="card-header">
+                <h3>Optimizer Settings</h3>
+              </div>
+              <div class="card-body">
 
-              <!-- Row 1: Date and Session Start -->
-              <div class="seq-plan-session-row-1">
-                <label for="optimizer-date" class="tooltip-host" data-tooltip-key="to_date">Date:</label>
-                <input type="text" id="optimizer-date" class="date-entry" maxlength="10">
+                <!-- Date, Session Start and Source; the results update when any of them changes (Issue #99) -->
+                <div class="optimizer-settings-row">
+                  <label for="optimizer-date" class="tooltip-host has-tip" data-tooltip-key="to_date">Date:</label>
+                  <input type="text" id="optimizer-date" class="date-entry" maxlength="10">
 
-                <label class="tooltip-host" data-tooltip-key="to_startTime">Start:</label>
-                <div class="astryx-dropdown" id="optimizer-start-dropdown">
-                  <div class="astryx-dropdown-trigger" id="optimizer-start-trigger">
-                    <span id="optimizer-start-label">Dusk</span>
-                    <span class="astryx-dropdown-arrow"> </span>
+                  <label class="tooltip-host has-tip" data-tooltip-key="to_startTime">Start:</label>
+                  <div class="astryx-dropdown" id="optimizer-start-dropdown">
+                    <div class="astryx-dropdown-trigger" id="optimizer-start-trigger">
+                      <span id="optimizer-start-label">Dusk</span>
+                      <span class="astryx-dropdown-arrow"> </span>
+                    </div>
+                    <div class="astryx-dropdown-menu" id="optimizer-start-menu">
+                      <div class="astryx-dropdown-item" data-value="dusk">Dusk</div>
+                      <div class="astryx-dropdown-item" data-value="custom">Custom</div>
+                    </div>
                   </div>
-                  <div class="astryx-dropdown-menu" id="optimizer-start-menu">
-                    <div class="astryx-dropdown-item" data-value="dusk">Dusk</div>
-                    <div class="astryx-dropdown-item" data-value="custom">Custom</div>
+                  <input type="text" id="optimizer-custom-time" class="time-entry" placeholder="HH:MM" maxlength="5" style="opacity:0; pointer-events:none;">
+
+                  <label class="tooltip-host has-tip" data-tooltip-key="to_source">Source:</label>
+                  <div class="astryx-dropdown" id="optimizer-source-dropdown">
+                    <div class="astryx-dropdown-trigger" id="optimizer-source-trigger">
+                      <span id="optimizer-source-label">To Do List</span>
+                      <span class="astryx-dropdown-arrow"> </span>
+                    </div>
+                    <div class="astryx-dropdown-menu" id="optimizer-source-menu">
+                      <div class="astryx-dropdown-item" data-value="todo">To Do List</div>
+                      <div class="astryx-dropdown-item" data-value="filter" id="optimizer-source-filter" style="opacity:0.4;pointer-events:none;">Filter Targets (none loaded)</div>
+                    </div>
                   </div>
                 </div>
-                <input type="text" id="optimizer-custom-time" class="time-entry" placeholder="HH:MM" maxlength="5" style="opacity:0; pointer-events:none;">
+
               </div>
-
-              <!-- Row 2: Source and Execute -->
-              <div class="seq-plan-session-row-1" style="margin-top: 0.75rem;">
-                <label class="tooltip-host" data-tooltip-key="to_source">Source:</label>
-                <div class="astryx-dropdown" id="optimizer-source-dropdown">
-                  <div class="astryx-dropdown-trigger" id="optimizer-source-trigger">
-                    <span id="optimizer-source-label">To Do List</span>
-                    <span class="astryx-dropdown-arrow"> </span>
-                  </div>
-                  <div class="astryx-dropdown-menu" id="optimizer-source-menu">
-                    <div class="astryx-dropdown-item" data-value="todo">To Do List</div>
-                    <div class="astryx-dropdown-item" data-value="filter" id="optimizer-source-filter" style="opacity:0.4;pointer-events:none;">Filter Targets (none loaded)</div>
-                  </div>
-                </div>
-
-                <button type="button" class="btn-sm btn-primary tooltip-host" id="optimizer-execute-btn"
-                        data-tooltip-key="to_findTargets">Find Targets</button>
-              </div>
-
             </div>
           </div>
 
@@ -2245,37 +2269,34 @@
 
       <!-- Yearly Observability Template -->
       <template id="yo-view-template">
-        <div class="view-container yo-view-container view-bg-icon view-bg-icon-yearly-observability">
+        <div class="view-container yo-view-container">
           <div class="view-header">
             <h2 class="view-title">Yearly Observability</h2>
+            <span id="yo-target-name" class="view-header-target"></span>
           </div>
-          <div id="yearly-observability-header">
-            <div class="yo-header">
-              <div>
-                <h2 id="yo-target-name"></h2>
-                <p id="yo-subtitle" class="yo-header-subtitle"></p>
-                <div class="form-inline yo-header-controls">
-                  <label for="yearly-min-altitude">Minimum Altitude:</label>
-                  <div class="astryx-dropdown" id="yo-min-alt-dropdown">
-                    <div class="astryx-dropdown-trigger" id="yo-min-alt-trigger">
-                      <span id="yo-min-alt-label">35°</span>
-                      <span class="astryx-dropdown-arrow"> </span>
-                    </div>
-                    <div class="astryx-dropdown-menu" id="yo-min-alt-menu">
-                      <div class="astryx-dropdown-item" data-value="5">5°</div>
-                      <div class="astryx-dropdown-item" data-value="10">10°</div>
-                      <div class="astryx-dropdown-item" data-value="15">15°</div>
-                      <div class="astryx-dropdown-item" data-value="20">20°</div>
-                      <div class="astryx-dropdown-item" data-value="25">25°</div>
-                      <div class="astryx-dropdown-item" data-value="30">30°</div>
-                      <div class="astryx-dropdown-item" data-value="35">35°</div>
-                      <div class="astryx-dropdown-item" data-value="40">40°</div>
-                      <div class="astryx-dropdown-item" data-value="45">45°</div>
-                      <div class="astryx-dropdown-item" data-value="50">50°</div>
-                      <div class="astryx-dropdown-item" data-value="55">55°</div>
-                      <div class="astryx-dropdown-item" data-value="60">60°</div>
-                    </div>
-                  </div>
+          <!-- Peak altitude, best month, and the minimum altitude control (Issue #286) -->
+          <div id="yearly-observability-header" class="card controls-card yo-controls">
+            <p id="yo-subtitle" class="yo-header-subtitle"></p>
+            <div class="yo-header-controls">
+              <label>Minimum Altitude:</label>
+              <div class="astryx-dropdown compact" id="yo-min-alt-dropdown">
+                <div class="astryx-dropdown-trigger" id="yo-min-alt-trigger">
+                  <span id="yo-min-alt-label">35°</span>
+                  <span class="astryx-dropdown-arrow"> </span>
+                </div>
+                <div class="astryx-dropdown-menu" id="yo-min-alt-menu">
+                  <div class="astryx-dropdown-item" data-value="5">5°</div>
+                  <div class="astryx-dropdown-item" data-value="10">10°</div>
+                  <div class="astryx-dropdown-item" data-value="15">15°</div>
+                  <div class="astryx-dropdown-item" data-value="20">20°</div>
+                  <div class="astryx-dropdown-item" data-value="25">25°</div>
+                  <div class="astryx-dropdown-item" data-value="30">30°</div>
+                  <div class="astryx-dropdown-item" data-value="35">35°</div>
+                  <div class="astryx-dropdown-item" data-value="40">40°</div>
+                  <div class="astryx-dropdown-item" data-value="45">45°</div>
+                  <div class="astryx-dropdown-item" data-value="50">50°</div>
+                  <div class="astryx-dropdown-item" data-value="55">55°</div>
+                  <div class="astryx-dropdown-item" data-value="60">60°</div>
                 </div>
               </div>
             </div>

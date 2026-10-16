@@ -11,11 +11,12 @@ share the night well.
 ## What You'll See
 
 Open **Target Optimizer** in the sidebar. The **Optimizer Settings** card at
-the top holds the controls. After you click **Find Targets**, the results
-appear below it, in the **Suggested Targets** card.
+the top holds the controls. The results appear below it, in the
+**Suggested Targets** card, and update whenever you change the Date, Start,
+or Source; there's no button to press.
 
 ::: {.shot id="target-optimizer-overview"}
-The Target Optimizer after Find Targets: the Optimizer Settings card, the
+The Target Optimizer with results: the Optimizer Settings card, the
 summary line, and the first three result cards.
 :::
 
@@ -26,7 +27,6 @@ summary line, and the first three result cards.
 | Date | The night to plan: the evening of this date and the morning after. It starts at today. |
 | Start | **Dusk** starts the night at astronomical dusk. **Custom** shows a time field for your own start, for example if you can't be at the telescope until 23:00. It starts out at dusk; type the time as 24-hour HH:MM (2300 works too). |
 | Source | The targets to rank: **To Do List**, or **Filter Targets**, the targets you sent from Target Selection. |
-| Find Targets | Ranks the targets and shows the results. |
 
 The night always ends at astronomical dawn. The Optimizer uses the location
 chosen in the sidebar and the Min Altitude from Settings.
@@ -121,7 +121,7 @@ five each:
 
 - **Coverage**: the hours from the earliest window's start to the latest
   window's end, out of the hours in the night.
-- **Avg score**: how good the combination is. It counts both the targets'
+- **Combo score**: how good the combination is. It counts both the targets'
   Composite Scores and the hours each one can have to itself, so it isn't a
   0-to-100 score; use it to compare combinations with each other.
 - Each target's **Window**, **Peak**, and **Score**.
@@ -135,7 +135,7 @@ the combination's targets instead. Astryx asks first.
 
 ::: {.shot id="target-optimizer-combinations"}
 Best Combinations: the Solo Targets, Pairs, and Triplets lists, with
-Coverage, Avg score, and Replace Pinned Targets on each card.
+Coverage, Combo score, and Replace Pinned Targets on each card.
 :::
 
 ::: why
@@ -151,8 +151,10 @@ The results stay while Astryx is open, so you can look at a target in Daily
 Visibility or the Viewfinder and come back to them. The **Date**,
 **Start**, and **Source** come back too, as they were when you ran the
 Optimizer, and the card's **Daily Visibility** button always opens the
-night the results are for. Change them and click **Find Targets** for new
-results.
+night the results are for. Change any of them for new results.
+
+If there's nothing to rank, for example when your To Do List is empty or no
+target clears your Min Altitude that night, the results area says why.
 
 ## Tips
 

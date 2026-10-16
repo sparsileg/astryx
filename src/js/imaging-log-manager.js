@@ -362,9 +362,9 @@ const ImagingLogManager = {
     /**
      * Aggregate imaging activity by date for a given year (Issue #142).
      * Returns a Map keyed by 'YYYY-MM-DD' -> {
-     *   totalSeconds,
-     *   hasUnusedSession (a session that night kept no subs),
-     *   projects: [{ name, subs, taken, subLength, seconds }]
+     *   totalSeconds (Used subs; subs taken for an unprocessed session),
+     *   hasUnprocessedSession (a session that night with Used = 0),
+     *   projects: [{ name, subs, taken, processed, subLength, seconds }]
      * }
      * Kept separate from rendering so future PDF/CSV export can reuse it
      * directly.
@@ -382,21 +382,26 @@ const ImagingLogManager = {
             const project = projectsById.get(session.projectId);
             const projectName = project ? project.name : 'Unknown Project';
 
-            // Used exposures only, as in the project cards and sessions table
+            // Used exposures, as in the project cards and sessions table. A
+            // session with Used = 0 is taken as not processed yet and shaded
+            // by the subs taken, so the night still shows (Issue #282)
             const exposureCount = Number(session.usedExposures) || 0;
+            const taken = Number(session.numExposures) || 0;
+            const processed = exposureCount > 0;
             const subLength = session.subLength || 0;
-            const seconds = subLength * exposureCount;
+            const seconds = subLength * (processed ? exposureCount : taken);
 
             if (!byDate.has(session.date)) {
-                byDate.set(session.date, { totalSeconds: 0, hasUnusedSession: false, projects: [] });
+                byDate.set(session.date, { totalSeconds: 0, hasUnprocessedSession: false, projects: [] });
             }
             const day = byDate.get(session.date);
             day.totalSeconds += seconds;
-            if (exposureCount === 0) day.hasUnusedSession = true;
+            if (!processed) day.hasUnprocessedSession = true;
             day.projects.push({
                 name: projectName,
                 subs: exposureCount,
-                taken: Number(session.numExposures) || 0,
+                taken: taken,
+                processed: processed,
                 subLength: subLength,
                 seconds: seconds
             });

@@ -21,7 +21,7 @@ const context = loadApp([
 const A = get(context, `({
     dateToJD, jdToDate, getLST, getAltitude, getAzimuth, getAngularSeparation,
     getHorizonElevationAtAzimuth, getSunPosition, getMoonPhase, getNightMoonPhase, calculateMoonRiseSet,
-    findAstronomicalDusk, findNextAstronomicalDawn, findTargetRise, findTargetSet,
+    findAstronomicalDusk, findNextAstronomicalDawn, findTargetRise, findTargetSet, findNightVisibility,
     findTargetTransit, isTargetVisibleDuringWindow, findSolarMidnight, getTransitHour, getNightSamples, getHoursAboveAltitude,
     STEP: APP_CONFIG.TARGET_SEARCH_STEP_SIZE, DARK_STEP_MINUTES: APP_CONFIG.DARK_HOURS_STEP_MINUTES
 })`);
@@ -252,6 +252,53 @@ test('rise and set land on the minimum-altitude crossing', () => {
                 assert.ok(A.getAltitude(set - A.STEP, 3, dec, site.latitude, site.longitude) >= 20, `${name} dec=${dec} set`);
             }
         }
+    }
+});
+
+test('night visibility covers the stretch above minimum altitude under way at dusk (issue #279)', () => {
+    const altitudeAt = (jd, ra, dec, site) => A.getAltitude(jd, ra, dec, site.latitude, site.longitude);
+    for (const [name, site] of Object.entries(SITES)) {
+        for (const date of datesOf2026(29)) {
+            const { dusk } = night(site, date);
+            if (dusk === null) continue;
+            for (const ra of range(0, 22, 2)) {
+                for (const dec of [-40, 0, 40, 60]) {
+                    const label = `${name} ${date.toDateString()} ra=${ra} dec=${dec}`;
+                    const { riseJD, setJD } = A.findNightVisibility(dusk, ra, dec, site.latitude, site.longitude, 30);
+                    if (riseJD !== null) {
+                        assert.ok(altitudeAt(riseJD, ra, dec, site) >= 30, `${label} rise`);
+                        assert.ok(altitudeAt(riseJD - A.STEP, ra, dec, site) < 30, `${label} rise`);
+                    }
+                    if (setJD !== null) {
+                        assert.ok(altitudeAt(setJD, ra, dec, site) < 30, `${label} set`);
+                        assert.ok(altitudeAt(setJD - A.STEP, ra, dec, site) >= 30, `${label} set`);
+                        assert.ok(riseJD === null || setJD > riseJD, `${label} set after rise`);
+                    }
+                    if (altitudeAt(dusk, ra, dec, site) >= 30 && riseJD !== null) {
+                        assert.ok(riseJD <= dusk && setJD > dusk, `${label} up at dusk`);
+                    }
+                }
+            }
+        }
+    }
+});
+
+// NGC 7380 rises above 35° near local noon in December; a noon-to-noon
+// search lost its set on Dec 10 and its rise on Dec 11 (issue #279)
+test('NGC 7380 rises and sets on consecutive December nights (issue #279)', () => {
+    const site = SITES.home;
+    let previous = null;
+    for (const day of [9, 10, 11]) {
+        const { dusk } = night(site, new Date(2026, 11, day));
+        const { riseJD, setJD } = A.findNightVisibility(dusk, 22.789, 58.132, site.latitude, site.longitude, 35);
+        assert.ok(riseJD !== null && riseJD < dusk, `Dec ${day} rises before dusk`);
+        assert.ok(setJD !== null && setJD > dusk, `Dec ${day} sets after dusk`);
+        if (previous) {
+            // A sidereal day earlier each night: about 4 minutes
+            assert.ok(Math.abs(riseJD - previous.riseJD - 1 + 4 * MINUTE) < 2 * MINUTE, `Dec ${day} rise`);
+            assert.ok(Math.abs(setJD - previous.setJD - 1 + 4 * MINUTE) < 2 * MINUTE, `Dec ${day} set`);
+        }
+        previous = { riseJD, setJD };
     }
 });
 

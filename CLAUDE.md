@@ -15,13 +15,6 @@ The project is in maintenance mode: bug fixes, UI tweaks, tutorial updates.
 
 No `package.json`, no bundler, no build step.
 
-```bash
-just serve    # web build: npx serve src --listen 1420
-just dev      # desktop: cargo tauri dev (starts the server itself)
-just test     # JS astronomy/planner tests (Node) + Rust tests
-just check    # fmt-check, clippy, then all tests
-```
-
 `just` lists every recipe (`justfile` at the repo root).
 
 Builds, installers, and the GitHub Actions release workflow:
@@ -108,18 +101,6 @@ Builds, installers, and the GitHub Actions release workflow:
   before committing any change to the astronomy or planner code, not after
   each edit (Stan tests changes in the app first). Test sites are in
   `tests/lib/sites.js`.
-  - `reference` — values checked against external sources
-    (`tests/reference-cases.js`).
-  - `usno-twilight` — every 2026 dusk and dawn at each site vs saved USNO
-    tables (`tests/fixtures/usno-twilight/`).
-  - `usno-moon` — every 2026 primary moon phase vs USNO
-    (`tests/fixtures/usno-moon/`).
-  - `time-zones` — DST follows each location's zone in any computer zone.
-  - `invariants` — properties that hold for any input (dusk before dawn,
-    altitudes in range, smooth day-to-day changes).
-  - `consistency` — views that compute the same quantity agree.
-  - `planners` — sequence plan rules, plus snapshots of plans, Target
-    Optimizer, Best Months, and Yearly output (`tests/snapshots/`).
   Snapshot values that move after a deliberate fix are expected: re-record
   with `just update-snapshots` and review the diff. Never update a snapshot
   to make a failure go away.
@@ -140,20 +121,8 @@ Builds, installers, and the GitHub Actions release workflow:
 
 ### Rust / SQLite (`src-tauri/`)
 
-- One crate, no workspace. Shared state is `AstryxState` holding
-  `Mutex<Connection>`.
-- Pragmas on open: WAL, `foreign_keys=ON`, `synchronous=NORMAL`.
-- **Migrations** (`db/migrations.rs`) are keyed on `PRAGMA user_version` and
-  append-only. Never edit an existing migration; add `migrate_vN` to
-  `MIGRATIONS` (the schema version follows from its length). Table
-  definitions live in `db/schema.rs`.
-- Each command file has thin `#[tauri::command]` wrappers that lock with
-  `state.conn()?` and call the store's `sql::` functions, which take a
-  `&Connection` and hold the SQL. Tests live beside them and use
-  `db::test_conn()` (in-memory, fully migrated). New database code goes in
-  `sql::` with a test.
-- Commands return `Result<T, String>`. Propagate with
-  `.map_err(|e| e.to_string())?`; no `unwrap()` / `println!` (use `log::`).
+- Rust/SQLite conventions (append-only migrations, `sql::` functions with
+  tests): see `src-tauri/CLAUDE.md`.
 - JS calls go through `DBManagerTauri`, which surfaces failures as a toast.
   Never let a failed `invoke()` pass silently.
 

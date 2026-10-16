@@ -50,7 +50,7 @@ const TUTORIAL_TARGET_FILTERING = {
             id: 'filter-catalog',
             type: 'callout',
             title: 'Filter by Catalog',
-            body: 'Select one or more catalogs from the dropdown to include objects from those catalogs in the results. Click on the Catalog dropdown and select <strong>Select None</strong>. Check the <em>Messier</em> catalog — you may have to scroll to see it. Click on the dropdown to collapse it.',
+            body: 'Select one or more catalogs from the dropdown to include objects from those catalogs in the results. Click on the Catalog dropdown and select <strong>Select None</strong>. Check the <em>Messier</em> catalog. Click on the dropdown to collapse it.',
             target: '#target-filter-catalog-trigger',
             position: 'right',
             waitFor: 'next',

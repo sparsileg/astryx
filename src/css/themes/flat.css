@@ -4,7 +4,9 @@
     --sidebar-bg: #453a2e;
     --card-bg: #4e4035;
     --card-hover: #5a4a3d;
+    --hover-bg: var(--card-hover);    /* hover background for rows, menu items, and collapsible headers */
     --input-bg: #453a2e;
+    --search-input-bg: #66543f;     /* Target Selection search box, lighter than the card so it stands out (Issue #99) */
 
     /* Text Colors */
     --text-color: #e0d0b8;
@@ -129,15 +131,6 @@ tr:nth-child(even) {
 .info-box-wrapper {
     background: rgba(255, 255, 255, 0.04);
     border: none !important;
-}
-
-/* Restore block-link dotted underline suppressed by global border reset */
-.block-link {
-    border-bottom: 1px dotted color-mix(in srgb, var(--text-secondary) 70%, transparent) !important;
-}
-
-.block-link:hover {
-    border-bottom: 1px dotted transparent !important;
 }
 
 /* Logo */
