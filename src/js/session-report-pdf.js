@@ -64,11 +64,30 @@ const SessionReportPdf = {
     },
 
     // -------------------------------------------------------------------------
-    // Entry point
+    // Entry points
     // -------------------------------------------------------------------------
 
     download(fs, context) {
-        if (!fs || fs.kind === 'calibrationOnly') return;
+        const docDefinition = this._docDefinition(fs, context);
+        if (!docDefinition) return;
+        const night = SessionReportView._formatNight(fs).replace(/[\s/]/g, '_');
+        const filename = `${fs.targets.join('_').replace(/\s+/g, '_')}_${night}_combined-report.pdf`;
+        pdfMake.createPdf(docDefinition).download(filename);
+    },
+
+    /**
+     * The same PDF as download() makes, as bytes, for the desktop
+     * `analyze-logs` command to write to stdout (issue #293). Resolves to
+     * null for a night with nothing to report.
+     */
+    bytes(fs, context) {
+        const docDefinition = this._docDefinition(fs, context);
+        if (!docDefinition) return Promise.resolve(null);
+        return new Promise(resolve => pdfMake.createPdf(docDefinition).getBuffer(resolve));
+    },
+
+    _docDefinition(fs, context) {
+        if (!fs || fs.kind === 'calibrationOnly') return null;
         const colors = this._colors();
         const tableLayout = this._tableLayout();
 
@@ -79,7 +98,7 @@ const SessionReportPdf = {
         content.push(...this._guidingFindingsFocus(fs, context, colors, tableLayout));
         content.push(...this._dataQuality(fs, context, colors, tableLayout));
 
-        const docDefinition = {
+        return {
             pageSize: 'LETTER',
             pageMargins: [54, 54, 54, 54],
             defaultStyle: { font: 'Roboto', fontSize: 9 },
@@ -100,10 +119,6 @@ const SessionReportPdf = {
             }),
             content,
         };
-
-        const night = SessionReportView._formatNight(fs).replace(/[\s/]/g, '_');
-        const filename = `${fs.targets.join('_').replace(/\s+/g, '_')}_${night}_combined-report.pdf`;
-        pdfMake.createPdf(docDefinition).download(filename);
     },
 
     // -------------------------------------------------------------------------

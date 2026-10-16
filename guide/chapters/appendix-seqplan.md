@@ -48,9 +48,9 @@ time between exposures = sub gap + dither time ÷ Frames per Dither
 ```
 
 or just the sub gap with **Frames per Dither** at 0. The sub gap starts at
-5 seconds and the dither time at 25 seconds. Each session log you analyze
-in Log Analysis moves each one halfway toward what that night
-measured, if the log has enough clean samples.
+5 seconds and the dither time at 25 seconds. Once you analyze session logs
+in Log Analysis, each is the average of what your 20 most recent nights
+measured, counting only nights with enough clean samples.
 
 The last exposure of the night is allowed to run past the end of the
 session rather than be cut short.

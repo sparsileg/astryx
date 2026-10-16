@@ -13,9 +13,22 @@ const App = {
     async init() {
         console.log('Initializing ' + APP_CONFIG.APP_NAME + '...');
 
+        let cliCommand = null;
         try {
             // Initialize database
             await DBManager.init();
+
+            // A command-line run (desktop, issue #292) loads the stored data
+            // its task needs, runs it and exits, with none of the startup
+            // side effects below: no target update, backups, tutorials or toasts
+            cliCommand = await CliTasks.getCommand();
+            if (cliCommand) {
+                if (!await SettingsManager.init() || !await DataManager.init()) {
+                    throw new Error("the stored settings and data couldn't be loaded");
+                }
+                await CliTasks.run(cliCommand);
+                return;
+            }
 
             // Load settings and data
             await SettingsManager.init();
@@ -29,8 +42,6 @@ const App = {
             // Initialize UI
             UIManager.init();
             DropdownPosition.init();
-
-            await this.applyStartupOptions();
 
             // Populate sidebar pinned targets strip (persistent across all views)
             VisibilityTargets.updatePinnedDisplay();
@@ -112,47 +123,11 @@ const App = {
             console.log(APP_CONFIG.APP_NAME + ' initialized successfully');
         } catch (error) {
             console.error('Failed to initialize' + APP_CONFIG.APP_NAME + ':', error);
-            this.showInitializationError(error);
-        }
-    },
-
-    /**
-     * Options given at startup: on the command line on the desktop
-     * (`astryx --reset-learned`), as URL parameters on the web
-     * (`?reset-learned=1`). Each applies to that one start only. They're
-     * listed in the Guide appendix "Command-Line Options" (issue #281).
-     */
-    async applyStartupOptions() {
-        const actions = {
-            'reset-learned': async () => {
-                await SettingsManager.resetLearnedValues();
-                UIManager.showToast('Learned Sub Gap and Dither Duration reset to their defaults', 'success', APP_CONFIG.TOAST_LONG_DURATION_MS);
-            },
-        };
-
-        let options;
-        if (window.__TAURI__) {
-            try {
-                options = await window.__TAURI__.core.invoke('get_startup_args');
-            } catch (error) {
-                UIManager.showToast(`Couldn't read the command-line options: ${error}`, 'error');
+            if (cliCommand) {
+                await CliTasks.fail(error);
                 return;
             }
-        } else {
-            // Removed from the address so a reload doesn't apply them again
-            const params = new URLSearchParams(window.location.search);
-            const given = Object.keys(actions).filter(name => params.get(name) === '1');
-            if (given.length === 0) return;
-            given.forEach(name => params.delete(name));
-            const query = params.toString();
-            history.replaceState(null, '', window.location.pathname + (query ? `?${query}` : '') + window.location.hash);
-            options = given.map(name => `--${name}`);
-        }
-
-        for (const option of options) {
-            const action = option.startsWith('--') ? actions[option.slice(2)] : null;
-            if (action) await action();
-            else UIManager.showToast(`Unknown command-line option: ${option}`, 'warning', APP_CONFIG.TOAST_LONG_DURATION_MS);
+            this.showInitializationError(error);
         }
     },
 

@@ -3,6 +3,8 @@
 
 #let version = "$version$"
 #let accent = rgb("#1f4e8c")
+// Lighter than ink and accent, so links stand out by brightness too (#291)
+#let link-color = rgb("#0b5cad")
 #let ink = rgb("#1d232b")
 #let muted = rgb("#5b6472")
 #let rule-color = rgb("#d5dae1")
@@ -60,7 +62,8 @@
 #set par(justify: true, leading: 0.7em, spacing: 1.15em)
 #show raw: set text(font: "IBM Plex Mono", size: 0.88em)
 #show raw.where(block: true): block.with(fill: code-fill, inset: 9pt, radius: 3pt, width: 100%)
-#show link: set text(fill: accent)
+// Underlined, so links don't rely on color alone (#291)
+#show link: it => underline(offset: 2pt, stroke: 0.6pt + link-color, text(fill: link-color, it))
 #set list(indent: 0.5em, spacing: 0.75em)
 #set enum(indent: 0.5em, spacing: 0.75em)
 

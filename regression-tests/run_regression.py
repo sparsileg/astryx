@@ -62,14 +62,11 @@ STUB_ENV_JS = r"""
 var console = { log: function(){}, warn: function(){}, error: function(){} };
 
 var SettingsManager = {
-    // Only getters are exercised meaningfully — setLearnedSubGapS/
-    // setLearnedDitherDurationS are settings-persistence side effects
-    // this harness deliberately doesn't test (see AsiairLogParser.
+    // Only getters — storing learned values is a settings-persistence side
+    // effect this harness deliberately doesn't test (see AsiairLogParser.
     // updateLearnedValues, which this harness never calls at all).
     getLearnedSubGapS: function() { return APP_CONFIG.DEFAULT_SUB_GAP_S; },
     getLearnedDitherDurationS: function() { return APP_CONFIG.DEFAULT_DITHER_DURATION_S; },
-    setLearnedSubGapS: function() {},
-    setLearnedDitherDurationS: function() {},
     getSetting: function(key, defaultValue) { return defaultValue; },
 };
 """

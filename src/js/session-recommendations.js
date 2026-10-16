@@ -55,8 +55,8 @@ const SessionRecommendations = {
         if (!context || !context.asiairParsed) return recs;
         const asiairParsed = context.asiairParsed;
 
-        recs.push(this._subGapRec(fs, asiairParsed));
-        recs.push(this._ditherDurationRec(fs, asiairParsed));
+        recs.push(this._subGapRec(fs, asiairParsed, context.learned));
+        recs.push(this._ditherDurationRec(fs, asiairParsed, context.learned));
         recs.push(this._afDurationRec(asiairParsed));
         recs.push(this._calDurationRec(asiairParsed));
         recs.push(this._flipDurationRec(asiairParsed));
@@ -66,14 +66,14 @@ const SessionRecommendations = {
 
     // Measured by AsiairLogParser.measureSubGap, the same calculation the
     // learned value uses, kept to pairs of clean-tier subs here (issue #281).
-    _subGapRec(fs, asiairParsed) {
+    _subGapRec(fs, asiairParsed, learned) {
         const subGap = AsiairLogParser.measureSubGap(asiairParsed.runs,
             sub => this._subTierByImageNo(fs, sub.imageNo) === 'clean');
         const stored = (typeof SettingsManager !== 'undefined') ? SettingsManager.getLearnedSubGapS() : null;
         if (!subGap) {
             return this._makeRec({
                 group: 'behavior', setting: 'Sub Gap',
-                observed: 'no clean-block samples this session', recommended: this._learnedValueText(asiairParsed, 'subGap'), changeNeeded: false,
+                observed: 'no clean-block samples this session', recommended: this._learnedValueText(asiairParsed, 'subGap', learned), changeNeeded: false,
                 evidence: 'Every consecutive sub pair this session involved at least one non-clean sub.',
                 confidence: 'measured', expectedImpact: 'none',
             });
@@ -87,7 +87,7 @@ const SessionRecommendations = {
         return this._makeRec({
             group: 'behavior', setting: 'Sub Gap',
             observed: `${mean.toFixed(1)}s (n=${n}, ${note})`,
-            recommended: this._learnedValueText(asiairParsed, 'subGap'),
+            recommended: this._learnedValueText(asiairParsed, 'subGap', learned),
             changeNeeded,
             evidence: `Mean sub-to-sub gap from clean blocks only, ${n} sample(s) (${note}).`,
             confidence: 'measured',
@@ -95,7 +95,7 @@ const SessionRecommendations = {
         });
     },
 
-    _ditherDurationRec(fs, asiairParsed) {
+    _ditherDurationRec(fs, asiairParsed, learned) {
         const samples = [];
         for (const run of asiairParsed.runs.filter(r => r.kind === 'light')) {
             const dithers = run.events.filter(e => e.type === 'dither' && e.outcome === 'done' && e.durationS != null);
@@ -112,7 +112,7 @@ const SessionRecommendations = {
         if (samples.length === 0) {
             return this._makeRec({
                 group: 'behavior', setting: 'Dither Duration',
-                observed: 'no clean-block samples this session', recommended: this._learnedValueText(asiairParsed, 'dither'), changeNeeded: false,
+                observed: 'no clean-block samples this session', recommended: this._learnedValueText(asiairParsed, 'dither', learned), changeNeeded: false,
                 evidence: 'No dither this session both settled cleanly and was immediately followed by a clean sub.',
                 confidence: 'measured', expectedImpact: 'none',
             });
@@ -123,7 +123,7 @@ const SessionRecommendations = {
         return this._makeRec({
             group: 'behavior', setting: 'Dither Duration',
             observed: `${mean.toFixed(1)}s (n=${samples.length}, clean blocks only)`,
-            recommended: this._learnedValueText(asiairParsed, 'dither'),
+            recommended: this._learnedValueText(asiairParsed, 'dither', learned),
             changeNeeded,
             evidence: `Mean settle duration of dithers that both completed 'done' and were followed by a clean sub, ${samples.length} sample(s).`,
             confidence: 'measured',
@@ -131,20 +131,30 @@ const SessionRecommendations = {
         });
     },
 
-    // The stored moving average, and what this log fed into it. The value
-    // averaged in is measured over all light subs (AsiairLogParser
-    // .measureSubGap, applied by updateLearnedValues), so it can differ
-    // slightly from the clean-tier figure in the Observed column.
-    _learnedValueText(asiairParsed, which) {
+    // The stored average, what it was before this log, and this log's
+    // figure that went into it (issues #294, #295). That figure is
+    // measured over all light subs (AsiairLogParser.measureSubGap, applied
+    // by updateLearnedValues), so it can differ slightly from the
+    // clean-tier figure in the Observed column. learned is what
+    // updateLearnedValues returned; without it, only the stored value shows.
+    _learnedValueText(asiairParsed, which, learned) {
         const r = asiairParsed.recommendations;
         const subGap = which === 'subGap';
+        const fmt = seconds => `${seconds.toFixed(APP_CONFIG.ASIAIR_LEARNED_DECIMALS)}s`;
         const stored = subGap ? SettingsManager.getLearnedSubGapS() : SettingsManager.getLearnedDitherDurationS();
         const applied = subGap ? r.observedSubGapS : r.observedDitherDurationS;
         const count = subGap ? r.subGapSampleCount : r.ditherSampleCount;
         const met = subGap ? r.subGapMeetsMinSamples : r.ditherMeetsMinSamples;
-        return met
-            ? `${stored}s (this log added ${applied}s, n=${count})`
-            : `${stored}s (not updated: ${count} clean sample${count === 1 ? '' : 's'}, minimum ${APP_CONFIG.ASIAIR_MIN_CLEAN_SAMPLES})`;
+        const change = subGap ? learned?.subGap : learned?.dither;
+        const windowNights = APP_CONFIG.ASIAIR_LEARNED_WINDOW_NIGHTS;
+        if (learned?.alreadyLearned) return `${fmt(stored)} (this log is already in the average)`;
+        if (!met) return `${fmt(stored)} (not updated: ${count} clean sample${count === 1 ? '' : 's'}, minimum ${APP_CONFIG.ASIAIR_MIN_CLEAN_SAMPLES})`;
+        if (!change) return fmt(stored);
+        if (!change.inWindow) return `${fmt(stored)} (this log's ${fmt(applied)} is older than the last ${windowNights} nights)`;
+        const nights = change.nights === windowNights
+            ? `the last ${windowNights} nights`
+            : `${change.nights} night${change.nights === 1 ? '' : 's'}`;
+        return `${fmt(change.to)} (was ${fmt(change.from)}; this log's ${fmt(applied)} included, average of ${nights})`;
     },
 
     _afDurationRec(asiairParsed) {

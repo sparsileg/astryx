@@ -201,7 +201,7 @@ const SessionReportView = {
     },
 
     // Imaging telescope/sensor. Primary source: Astryx's own imaging-log
-    // session matched to this night (utilities-view.js resolves
+    // session matched to this night (LogAnalysisManager.analyze resolves
     // context.telescope/sensor/telescopeName/sensorName before this
     // renders — neither raw log describes the imaging train, only the
     // guide train). Falls back to the "exactly one registered" heuristic
@@ -1220,7 +1220,7 @@ const SessionReportView = {
         _recommendationGroups() {
             return [
                 { key: 'behavior', title: 'Behavior', columns: ['Measurement', 'Observed', 'Moving Average', 'Confidence'],
-                  note: `Astryx learns from your session logs to estimate more accurately how many subs fit into a stretch of imaging time. Sub Gap is the dead time between one sub ending and the next starting (download and overhead). Dither Duration is how long a dither takes to settle. The Sequence Planner adds the sub gap after every sub and the dither duration after every dither, so the closer these values match your rig, the better it can estimate the number of subs. Observed is what this log measured. Moving Average is the value Astryx now plans with: this log's measurement blended with earlier sessions, so one unusual night nudges it rather than replacing it. A log updates the average only when it has at least ${APP_CONFIG.ASIAIR_MIN_CLEAN_SAMPLES} clean samples; otherwise the stored value is left as it was.` },
+                  note: `Astryx learns from your session logs to estimate more accurately how many subs fit into a stretch of imaging time. Sub Gap is the dead time between one sub ending and the next starting (download and overhead). Dither Duration is how long a dither takes to settle. The Sequence Planner adds the sub gap after every sub and the dither duration after every dither, so the closer these values match your rig, the better it can estimate the number of subs. Observed is what this log measured in its clean blocks. Moving Average is the value Astryx now plans with, followed by the value before this log and this log's figure that was averaged in. Each log moves the average halfway toward its own figure, so one unusual night nudges it rather than replacing it. This log's figure is measured over all of its subs, so it can differ slightly from Observed. A log updates the average only once, and only when it has at least ${APP_CONFIG.ASIAIR_MIN_CLEAN_SAMPLES} clean samples; otherwise the stored value is left as it was.` },
                 { key: 'sequencePlanning', title: 'Sequence Planning', columns: ['Setting', 'Observed', 'Recommended', 'Confidence'],
                   note: 'AF Duration covers autofocus, re-selecting the guide star and settling, but not calibration. Guide Calibration Duration includes settling. Flip Duration runs from the start of the flip to its end and leaves out the pause before it.' },
                 { key: 'asiair', title: 'ASIAir Configuration', columns: ['Setting', 'Observed', 'Recommended', 'Confidence'] },
