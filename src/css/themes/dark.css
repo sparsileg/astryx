@@ -4,12 +4,14 @@
     --sidebar-bg: #0f1419;
     --card-bg: #1a1f2e;
     --card-hover: #252b3b;
+    --hover-bg: var(--card-hover);    /* hover background for rows, menu items, and collapsible headers */
     --input-bg: #1a1f2e;
+    --search-input-bg: #1a1f2e;     /* Target Selection search box (Issue #99) */
 
     /* Text Colors */
     --text-color: #e1e4e8;
     --text-secondary: #8b92a0;
-    --primary-text: #ffffff;
+    --primary-text: #000000;
 
     /* Primary Colors */
     --primary-color: #4fc3f7;

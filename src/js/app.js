@@ -49,6 +49,7 @@ const App = {
 
             // sidebar toggle
             this.initSidebarToggle();
+            this.initSidebarResize();
 
             // Setup routing
             this.setupRouter();
@@ -230,6 +231,64 @@ const App = {
         }
     },
 
+
+    // Drag the sidebar's right edge to set its width; double-click resets it (Issue #285)
+    initSidebarResize() {
+        const sidebar = document.querySelector('.sidebar');
+        const resizer = sidebar?.querySelector('.sidebar-resizer');
+        if (!resizer) {
+            Log.debug('Sidebar resizer not found!');
+            return;
+        }
+
+        const minRem = APP_CONFIG.SIDEBAR_MIN_WIDTH_REM;
+        const maxRem = APP_CONFIG.SIDEBAR_MAX_WIDTH_REM;
+        const setWidth = (rem) => sidebar.style.setProperty('--sidebar-width', `${rem}rem`);
+        const saveWidth = (rem) => {
+            try {
+                if (rem === null) localStorage.removeItem('sidebarWidthRem');
+                else localStorage.setItem('sidebarWidthRem', rem);
+            } catch (e) {
+                Log.debug('Sidebar width not saved:', e);
+            }
+        };
+
+        let saved = null;
+        try {
+            saved = parseFloat(localStorage.getItem('sidebarWidthRem'));
+        } catch (e) {
+            Log.debug('Sidebar width not read:', e);
+        }
+        if (Number.isFinite(saved)) setWidth(Math.min(maxRem, Math.max(minRem, saved)));
+
+        let widthRem = null;
+        resizer.addEventListener('pointerdown', (e) => {
+            if (e.button !== 0) return;
+            e.preventDefault();
+            resizer.setPointerCapture(e.pointerId);
+            sidebar.classList.add('resizing');
+            widthRem = null;
+        });
+        resizer.addEventListener('pointermove', (e) => {
+            if (!resizer.hasPointerCapture(e.pointerId)) return;
+            const remPx = parseFloat(getComputedStyle(document.documentElement).fontSize);
+            const px = e.clientX - sidebar.getBoundingClientRect().left;
+            widthRem = Math.min(maxRem, Math.max(minRem, px / remPx));
+            setWidth(widthRem);
+        });
+        const endDrag = (e) => {
+            if (!resizer.hasPointerCapture(e.pointerId)) return;
+            resizer.releasePointerCapture(e.pointerId);
+            sidebar.classList.remove('resizing');
+            if (widthRem !== null) saveWidth(widthRem);
+        };
+        resizer.addEventListener('pointerup', endDrag);
+        resizer.addEventListener('pointercancel', endDrag);
+        resizer.addEventListener('dblclick', () => {
+            sidebar.style.removeProperty('--sidebar-width');
+            saveWidth(null);
+        });
+    },
 
     initSidebarToggle() {
         const sidebar = document.querySelector('.sidebar');

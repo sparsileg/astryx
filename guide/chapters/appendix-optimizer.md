@@ -75,7 +75,7 @@ pair score     = (composite₁ × usable hours₁ + composite₂ × usable hours
 triplet score  = (sum of composite × usable hours over the three) ÷ 3
 ```
 
-This is the **Avg score** on each combination. The five best solo targets,
+This is the **Combo score** on each combination. The five best solo targets,
 pairs, and triplets are shown.
 
 **Coverage** is the time from the earliest window start to the latest

@@ -3,11 +3,14 @@
    Target Optimizer styles
    ============================================================ */
 
-#optimizer-execute-btn {
-    min-width: 7.5rem;
-    background-color: var(--primary-color);
-    color: var(--primary-text);
-    border-color: var(--primary-color);
+/* Date, Start (with its custom time) and Source on one row (Issue #99) */
+.optimizer-settings-row {
+    display: grid;
+    grid-template-columns: repeat(7, auto);
+    justify-content: start;
+    gap: 0.5rem 1rem;
+    align-items: center;
+    margin-top: 0.5rem;
 }
 
 #optimizer-start-dropdown {
@@ -21,18 +24,23 @@
 }
 
 /* Results summary bar */
+/* Count and score labels on the first row, elimination reasons below (Issue #99) */
 .optimizer-results-summary {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.35rem;
     margin: 1rem 0 0.5rem 0;
     font-size: 0.85rem;
     color: var(--text-secondary);
 }
 
-/* Pin selected button */
-#optimizer-pin-btn {
-    min-width: 160px;
+/* Count plus the score explanation labels (Issue #99) */
+.optimizer-summary-left {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 1.25rem;
 }
 
 /* Candidate card */
@@ -135,21 +143,6 @@
     color: var(--primary-color);
 }
 
-/* Thumbnail stub */
-.optimizer-thumbnail-stub {
-    width: 80px;
-    background: var(--secondary-color);
-    border: 1px dashed var(--border-color);
-    border-radius: 4px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.65rem;
-    color: var(--text-secondary);
-    text-align: center;
-    /* STUB: replace with actual thumbnail image in future implementation */
-}
-
 /* Combo section headers */
 .optimizer-combo-section-header {
     font-size: 0.85rem;
@@ -199,4 +192,10 @@
 /* 24-hour HH:MM entry, as in the Sequence Planner (issue #273) */
 #optimizer-custom-time {
     width: 5rem;
+}
+
+/* Why there are no results, in place of them (Issue #99) */
+.optimizer-message {
+    margin-top: 1rem;
+    color: var(--text-secondary);
 }

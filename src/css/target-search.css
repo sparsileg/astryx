@@ -102,3 +102,9 @@
     font-weight: 500;
     font-size: 0.9rem;
 }
+
+/* The search box stands out from the card behind it */
+#target-name {
+    border: 2px solid var(--primary-color);
+    background: var(--search-input-bg);
+}

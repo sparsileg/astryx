@@ -55,6 +55,7 @@ const FOVView = {
         this._offsetCenter = null;
         this._widerCenter = null;
         this._boxDragged = false;
+        this._targetInView = true;
         this.lastDSSFailureToastKey = null;
         FOVCanvas.dssImage = null;
         FOVCanvas.dragBoxAngle = 0;
@@ -130,7 +131,7 @@ const FOVView = {
         // Restore larger mode toggle visual state
         const modeToggle = document.getElementById('fov-mode-toggle');
         if (modeToggle) {
-            modeToggle.querySelectorAll('.fov-mode-option').forEach(el => {
+            modeToggle.querySelectorAll('.mode-toggle-option').forEach(el => {
                 el.classList.toggle('active', el.dataset.mode === (this.largerMode ? 'larger' : 'actual'));
             });
         }
@@ -319,9 +320,9 @@ const FOVView = {
         const modeToggle = document.getElementById('fov-mode-toggle');
         if (modeToggle) {
             modeToggle.addEventListener('click', (e) => {
-                const option = e.target.closest('.fov-mode-option');
+                const option = e.target.closest('.mode-toggle-option');
                 if (!option) return;
-                modeToggle.querySelectorAll('.fov-mode-option').forEach(el => el.classList.remove('active'));
+                modeToggle.querySelectorAll('.mode-toggle-option').forEach(el => el.classList.remove('active'));
                 option.classList.add('active');
                 this.largerMode = option.dataset.mode === 'larger';
                 if (this.largerMode) {
@@ -349,7 +350,6 @@ const FOVView = {
                     // target stops being the reference — Issue #96
                     if (FOVCanvas.dragBox && this.largeFOVData && this._boxDragged) {
                         this._offsetCenter = this.dragBoxCenter(this.largeFOVData);
-                        this.applyOffTargetState();
                     }
 
                     FOVCanvas.removeDragListeners();
@@ -455,8 +455,8 @@ const FOVView = {
             return;
         }
 
-        // Off target: the same rows, blank, so the card keeps its height
-        if (this._offsetCenter) {
+        // Target out of the frame: the same rows, blank, so the card keeps its height
+        if (!this._targetInView) {
             const grid = document.createElement('div');
             grid.className = 'fov-target-rows';
             for (const label of ['Object:', 'Size:']) {
@@ -530,26 +530,16 @@ const FOVView = {
         // Calculate FOV
         const fovData = FOVCalculations.calculateFOV(telescope, sensor);
 
-        // Calculate field coverage if target exists
-        let fieldCoverage = null;
-        if (this.currentTarget && this.currentTarget.size_max && this.currentTarget.size_min && !this._offsetCenter) {
-            const targetSizeMax = parseFloat(this.currentTarget.size_max);
-            const targetSizeMin = parseFloat(this.currentTarget.size_min);
-
+        // Field coverage while the target is in the frame
+        const fieldCoverage = this.getFieldCoverage(fovData);
+        if (fieldCoverage !== null) {
             // Condition 1: linear — largest target dimension vs smallest FOV dimension
             const fovSmaller = Math.min(fovData.fovWidthArcmin, fovData.fovHeightArcmin);
-            const targetLarger = Math.max(targetSizeMax, targetSizeMin);
+            const targetLarger = Math.max(parseFloat(this.currentTarget.size_max), parseFloat(this.currentTarget.size_min));
             const linearPct = (targetLarger / fovSmaller) * 100;
 
-            // Condition 2: area — ellipse if dimensions differ, rectangle if same
-            const isEllipse = targetSizeMax !== targetSizeMin;
-            const targetArea = isEllipse
-                ? Math.PI * (targetSizeMax / 2) * (targetSizeMin / 2)
-                : targetSizeMax * targetSizeMin;
-            const fovArea = fovData.fovWidthArcmin * fovData.fovHeightArcmin;
-            const areaPct = (targetArea / fovArea) * 100;
-
-            fieldCoverage = areaPct;
+            // Condition 2: area
+            const areaPct = fieldCoverage;
 
             // Toast if either condition triggered — once per unique combination
             const linearTriggered = linearPct > 70;
@@ -609,10 +599,19 @@ const FOVView = {
      */
     drawActual(fovData) {
         if (!fovData) return;
-        const targetForCanvas = this.currentTarget && this.showTarget ? {
+        // Turning the camera can bring the target into the frame or take it out
+        const inView = this.isTargetInView(fovData);
+        if (inView !== this._targetInView) {
+            this._targetInView = inView;
+            this.applyTargetInViewState(fovData);
+        }
+        const offset = this.targetFrameOffset() ?? { skyX: 0, skyY: 0 };
+        const targetForCanvas = this.currentTarget && this.showTarget && inView ? {
             ...this.currentTarget,
             size_max: parseFloat(this.currentTarget.size_max) || 0,
-            size_min: parseFloat(this.currentTarget.size_min) || 0
+            size_min: parseFloat(this.currentTarget.size_min) || 0,
+            skyX: offset.skyX,
+            skyY: offset.skyY
         } : null;
         FOVCanvas.render(fovData, targetForCanvas);
 
@@ -638,21 +637,21 @@ const FOVView = {
 
         resultsDiv.innerHTML = `
             <div style="display: grid; grid-template-columns: auto 1fr; gap: 0.5rem 1rem; align-items: center;">
-                <strong>Effective Focal Length:</strong>
+                <strong class="tooltip-host has-tip" data-tooltip-key="fov_efl">Effective Focal Length:</strong>
                 <span>${fovData.effectiveFocalLength.toFixed(0)} mm</span>
 
                 <strong>Field of View:</strong>
                 <span>${fovData.fovWidth.toFixed(3)}° × ${fovData.fovHeight.toFixed(3)}°</span>
 
-                <strong>Resolution:</strong>
+                <strong class="tooltip-host has-tip" data-tooltip-key="fov_resolution">Resolution:</strong>
                 <span>${fovData.resolution.toFixed(2)} arcsec/pixel</span>
 
 ${targetRows}
-                <strong>Dawes Limit:</strong>
+                <strong class="tooltip-host has-tip" data-tooltip-key="fov_dawes">Dawes Limit:</strong>
                 <span>${fovData.dawesLimit.toFixed(2)} arcsec</span>
 
                 ${fieldCoverage !== null ? `
-                <strong>Field Coverage:</strong>
+                <strong class="tooltip-host has-tip" data-tooltip-key="fov_coverage">Field Coverage:</strong>
                 <span>${fieldCoverage.toFixed(1)}%</span>
                 ` : ''}
             </div>
@@ -943,18 +942,56 @@ ${targetRows}
     },
 
     /**
-     * Once the frame has moved off the target, the target no longer
-     * describes what's in it: blank the Current Target card and turn off
-     * Target size
+     * The target's offset in the frame once the frame has been dragged off
+     * it; null while the frame is centered on the target
      */
-    applyOffTargetState() {
+    targetFrameOffset() {
+        if (!this._offsetCenter || !this.currentTarget) return null;
+        return FOVCalculations.getTargetFrameOffset(this._offsetCenter, this.currentTarget, FOVCanvas.dragBoxAngle || 0);
+    },
+
+    /**
+     * Whether the target still describes the frame: its center is inside
+     * the frame, wherever the frame was dragged (Issue #96)
+     */
+    isTargetInView(fovData) {
+        const offset = this.targetFrameOffset();
+        return offset === null || FOVCalculations.isInFrame(offset, fovData);
+    },
+
+    /**
+     * Percent of the field's area the target fills (an ellipse if its
+     * dimensions differ, a rectangle if not); null without a target size
+     * or with the target out of the frame
+     */
+    getFieldCoverage(fovData) {
+        if (!this.currentTarget?.size_max || !this.currentTarget?.size_min || !this.isTargetInView(fovData)) return null;
+        const sizeMax = parseFloat(this.currentTarget.size_max);
+        const sizeMin = parseFloat(this.currentTarget.size_min);
+        const targetArea = sizeMax !== sizeMin
+            ? Math.PI * (sizeMax / 2) * (sizeMin / 2)
+            : sizeMax * sizeMin;
+        return (targetArea / (fovData.fovWidthArcmin * fovData.fovHeightArcmin)) * 100;
+    },
+
+    /**
+     * With the target out of the frame, it no longer describes what's in
+     * it: blank the Current Target card, drop the target rows from the
+     * results, and turn off Target size. Back in the frame, restore them.
+     */
+    applyTargetInViewState(fovData) {
         this.displayTargetInfo();
+        this.displayResults(fovData, this.getFieldCoverage(fovData));
         const showTarget = document.getElementById('fov-show-target');
-        if (showTarget) {
-            showTarget.checked = false;
-            showTarget.disabled = true;
+        if (this._targetInView) {
+            if (showTarget) showTarget.disabled = false;
+        } else {
+            if (showTarget) {
+                showTarget.checked = false;
+                showTarget.disabled = true;
+            }
+            this.showTarget = false;
         }
-        this.showTarget = false;
     },
 
     /**

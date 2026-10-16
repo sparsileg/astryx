@@ -41,8 +41,14 @@
 // A captured screenshot, from ::: shot when images/<id>.png exists
 // (callouts.lua); the caption is the text written inside the shot box.
 // The height cap keeps tall window captures from filling the page.
+// Full width unless that would be taller than the cap; the frame fits the
+// picture either way, so wide, short captures get no blank bands
 #let screenshot(path, caption) = figure(
-  block(stroke: 0.6pt + rule-color, image(path, width: 100%, height: 14cm, fit: "contain")),
+  layout(size => {
+    let full = image(path, width: size.width)
+    let shot = if measure(full).height > 14cm { image(path, height: 14cm) } else { full }
+    block(stroke: 0.6pt + rule-color, shot)
+  }),
   caption: caption,
 )
 #show figure.where(kind: image): set figure.caption(position: bottom)

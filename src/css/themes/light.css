@@ -4,7 +4,9 @@
     --sidebar-bg: #f8f9fa;
     --card-bg: #f8f9fa;
     --card-hover: #e9ecef;
+    --hover-bg: var(--card-hover);    /* hover background for rows, menu items, and collapsible headers */
     --input-bg: #ffffff;
+    --search-input-bg: #ffffff;     /* Target Selection search box (Issue #99) */
 
     /* Text Colors */
     --text-color: #212529;

@@ -159,7 +159,7 @@ const BackupManagerTauri = {
 
         } catch (error) {
             console.error('Backup failed:', error);
-            UIManager.showToast('Backup failed: ' + error.message, 'error');
+            UIManager.showToast('Backup failed: ' + (error.message ?? error), 'error');
         }
     },
 
@@ -244,7 +244,7 @@ const BackupManagerTauri = {
             UIManager.showToast(fromLastSession ? 'Auto-backup saved: changes from your last session' : 'Auto-backup saved', 'success');
         } catch (error) {
             console.error('Auto-backup failed:', error);
-            UIManager.showToast('Auto-backup failed: ' + error.message, 'error');
+            UIManager.showToast('Auto-backup failed: ' + (error.message ?? error), 'error');
         }
     },
 
@@ -293,7 +293,7 @@ const BackupManagerTauri = {
 
         } catch (error) {
             console.error('Failed to read backup file:', error);
-            UIManager.showToast('Failed to read backup file: ' + error.message, 'error');
+            UIManager.showToast('Failed to read backup file: ' + (error.message ?? error), 'error');
         }
     },
 

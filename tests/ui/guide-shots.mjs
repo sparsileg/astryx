@@ -140,11 +140,12 @@ async function contentRegion(page) {
         const shown = content.filter(el => {
             const r = el.getBoundingClientRect();
             const hit = document.elementFromPoint(r.x + r.width / 2, r.y + Math.min(r.height / 2, 8));
-            return r.width > 0 && r.height > 0 && hit && (el.contains(hit) || hit.contains(el));
+            return r.width > 0 && r.height > 0 && hit && el.contains(hit);
         });
-        // Cards mark where the view's panels end; their text can overflow a clipped list
+        // Cards mark where the view's panels end; panels that aren't cards (Yearly
+        // Observability's graph and legend) end at their last shown content
         const cards = [...document.querySelectorAll('main.main-content .card')].map(el => el.getBoundingClientRect()).filter(r => r.height > 0);
-        const bottom = Math.max(...(cards.length ? cards : shown.map(el => el.getBoundingClientRect())).map(r => r.bottom));
+        const bottom = Math.max(...[...cards, ...shown.map(el => el.getBoundingClientRect())].map(r => r.bottom));
         return { x: main.x, y: 0, width: main.width, height: Math.min(bottom + 48, maxHeight) };
     }, MAX_SHOT_HEIGHT);
     return { screenshot: options => page.screenshot({ ...options, clip: region }) };
@@ -216,13 +217,12 @@ const SHOTS = {
         await page.click('h2.view-title');
     },
     'target-optimizer-overview': async page => {
+        // Results update on their own when the view opens
         await openView(page, 'sidebar-target-optimizer');
-        await page.click('#optimizer-execute-btn');
         await page.waitForTimeout(SETTLE_MS * 3);
     },
     'target-optimizer-combinations': async page => {
         await openView(page, 'sidebar-target-optimizer');
-        await page.click('#optimizer-execute-btn');
         await page.waitForTimeout(SETTLE_MS * 3);
         await page.click('.optimizer-mode-btn[data-mode="combinations"]');
         await page.waitForTimeout(SETTLE_MS * 2);
@@ -286,6 +286,18 @@ const SHOTS = {
         await openView(page, 'sidebar-imaging-log');
         await page.click('[data-tab="activity"]');
         await page.waitForTimeout(SETTLE_MS);
+    },
+    'utilities-overview': async page => {
+        await openView(page, 'sidebar-utilities');
+        await pickDropdown(page, 'dust-telescope', '80mm Refractor');
+        await pickDropdown(page, 'dust-sensor', 'Color Camera');
+        await page.fill('#dust-spot-pixels', '60');
+        await page.waitForTimeout(SETTLE_MS);
+    },
+    'backup-storage-dialog': async page => {
+        await page.click('#backup-reminder-indicator');
+        await page.waitForTimeout(SETTLE_MS);
+        return page.locator('.modal-content');
     },
     'log-analysis-overview': async page => {
         await openView(page, 'sidebar-log-analysis');

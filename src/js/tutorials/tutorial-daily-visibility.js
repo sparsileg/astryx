@@ -110,7 +110,7 @@ const TUTORIAL_DAILY_VISIBILITY = {
             id: 'timeline-colors',
             type: 'callout',
             title: 'Reading the Colors',
-            body: 'The background colour tells you the sky state at each point in time: <strong>white</strong> is daylight, <strong>gray</strong>  indicates moonlight or before astronomical dusk or after astronomical dawn, and <strong>dark grey/black</strong> is astronomical darkness.',
+            body: 'The background color tells you the sky state at each point in time: <strong>white</strong> is daylight, <strong>gray</strong> indicates moonlight or before astronomical dusk or after astronomical dawn, and <strong>dark gray/black</strong> is astronomical darkness.',
             target: '.gradient-legend',
             position: 'top',
             waitFor: 'next',

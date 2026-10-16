@@ -100,7 +100,9 @@ already viewed are kept for about two weeks, so they still work offline.
 
 The sidebar on the left lists the views. Above them are the color theme,
 the location you're observing from, and the **Current Target** button. Below
-them is the list of your **Pinned Targets**.
+them is the list of your **Pinned Targets**. Drag the sidebar's right edge
+to widen or narrow it, and double-click the edge to return to the default
+width. The arrow at its top collapses it to give the views more room.
 
 ### The Current Target
 

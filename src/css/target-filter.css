@@ -1,7 +1,12 @@
 /* target-filter.css - for target filter */
 
-#target-filter-type-menu {
-    max-height: 580px;
+/* Catalog, Type and Month: 13 options without scrolling. A row is 2.6rem
+   (0.5rem padding top and bottom, 1.6 line height); 14 rows include the
+   Select All / Select None row, plus room for the borders */
+#target-filter-catalog-menu,
+#target-filter-type-menu,
+#target-filter-month-menu {
+    max-height: calc(14 * 2.6rem + 0.5rem);
 }
 
 #target-filter-buttons {

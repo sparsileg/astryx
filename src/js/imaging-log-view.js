@@ -45,6 +45,12 @@ const ImagingLogView = {
         const searchInput = document.getElementById('imaging-log-project-search');
         if (searchInput) {
             searchInput.addEventListener('input', () => this.renderProjectList());
+            // Issue #99: ✕ empties the search and shows the list again
+            document.getElementById('imaging-log-project-search-clear')?.addEventListener('click', () => {
+                searchInput.value = '';
+                searchInput.focus();
+                this.renderProjectList();
+            });
         }
 
         // Status filter dropdown
@@ -282,7 +288,7 @@ const ImagingLogView = {
                 <div class="project-sessions-toggle" data-action="toggle-project-sessions" data-project-id="${project.id}">
                     <span class="sessions-chevron" id="chevron-${project.id}">▶</span>
                     <span class="sessions-label">Imaging Sessions</span>
-                    <button class="btn-primary btn-sm add-session-btn"
+                    <button class="btn-secondary btn-sm add-session-btn"
                             id="add-session-btn-${project.id}"
                             style="display: none; margin-left: auto;"
                             data-action="add-session" data-project-id="${project.id}">
@@ -298,7 +304,7 @@ const ImagingLogView = {
             <tr>
             <th>Date</th>
             <th>Filter</th>
-            <th>Exposures</th>
+            <th><span class="tooltip-host has-tip" data-tooltip-key="ilog_sessionExposures">Exposures</span></th>
             <th>Integration</th>
             <th>Location</th>
             <th>Actions</th>
@@ -402,9 +408,7 @@ const ImagingLogView = {
                         requestAnimationFrame(() => {
                             notesTextarea.scrollTop = notesTextarea.scrollHeight;
                             const modalBody = document.getElementById('modal-body');
-                            const modalContent = document.querySelector('.modal-content');
                             if (modalBody) modalBody.scrollTop = modalBody.scrollHeight;
-                            if (modalContent) modalContent.scrollTop = modalContent.scrollHeight;
                         });
                     });
                 } else {
@@ -1244,13 +1248,13 @@ const ImagingLogView = {
 
                 <div class="project-card-meta">
                     <span>Targets: ${progress.total}</span>
-                    <span>Imaged: ${progress.imaged} (${progressPercent}%)</span>
+                    <span class="tooltip-host has-tip" data-tooltip-key="ilog_programImaged">Imaged: ${progress.imaged} (${progressPercent}%)</span>
                     <span>Remaining: ${progress.total - progress.imaged}</span>
                     <span class="project-status-badge ${statusClass}">${status}</span>
                 </div>
 
                 <div style="margin-top: 0.75rem;">
-                    <div style="background: var(--border-color); height: 8px; border-radius: 4px; overflow: hidden;">
+                    <div style="background: var(--border-color); height: 0.5rem; border-radius: 4px; overflow: hidden;">
                         <div style="background: var(--primary-color); height: 100%; width: ${progressPercent}%; transition: width 0.3s;"></div>
                     </div>
                 </div>
@@ -1472,7 +1476,7 @@ const ImagingLogView = {
                     <summary style="cursor: pointer; font-weight: 600; margin-bottom: 0.5rem;">
                         Matched Targets (${results.matched.length})
                     </summary>
-                    <div style="max-height: 200px; overflow-y: auto; padding: 0.5rem; background: var(--hover-bg); border-radius: 4px;">
+                    <div style="max-height: 12.5rem; overflow-y: auto; padding: 0.5rem; background: var(--hover-bg); border-radius: 4px;">
                         ${results.matched.map(m =>
                             `<div>${HtmlUtils.escapeHtml(m.input)} → ${HtmlUtils.escapeHtml(m.target.object)}</div>`
                         ).join('')}
@@ -1487,7 +1491,7 @@ const ImagingLogView = {
                     <summary style="cursor: pointer; font-weight: 600; margin-bottom: 0.5rem; color: var(--error-color);">
                         Failed Targets (${results.failed.length})
                     </summary>
-                    <div style="max-height: 200px; overflow-y: auto; padding: 0.5rem; background: var(--hover-bg); border-radius: 4px; margin-bottom: 0.5rem;">
+                    <div style="max-height: 12.5rem; overflow-y: auto; padding: 0.5rem; background: var(--hover-bg); border-radius: 4px; margin-bottom: 0.5rem;">
                         ${results.failed.map(f =>
                             `<div>${HtmlUtils.escapeHtml(f.input)}</div>`
                         ).join('')}
@@ -1689,7 +1693,7 @@ const ImagingLogView = {
                         <summary style="cursor: pointer; color: var(--success-color); font-size: 0.9rem;">
                             Targets Completed (${progress.imaged})
                         </summary>
-                        <div style="margin-top: 0.5rem; max-height: 200px; overflow-y: auto; padding: 0.5rem; background: var(--hover-bg); border-radius: 4px; font-size: 0.9rem;">
+                        <div style="margin-top: 0.5rem; max-height: 12.5rem; overflow-y: auto; padding: 0.5rem; background: var(--hover-bg); border-radius: 4px; font-size: 0.9rem;">
                             ${completedHTML}
                         </div>
                     </details>
@@ -1709,7 +1713,7 @@ const ImagingLogView = {
                             <summary style="cursor: pointer; color: var(--text-secondary); font-size: 0.9rem;">
                                 Targets yet to be imaged (${missingTargets.length})
                             </summary>
-                            <div style="margin-top: 0.5rem; max-height: 150px; overflow-y: auto; padding: 0.5rem; background: var(--hover-bg); border-radius: 4px; font-size: 0.9rem;">
+                            <div style="margin-top: 0.5rem; max-height: 9.375rem; overflow-y: auto; padding: 0.5rem; background: var(--hover-bg); border-radius: 4px; font-size: 0.9rem;">
                                 ${sortedMissing.map(t => HtmlUtils.escapeHtml(t)).join(', ')}
                             </div>
                         </details>
@@ -1733,7 +1737,7 @@ const ImagingLogView = {
                     <div style="margin-bottom: 0.5rem;">
                         Progress: ${progress.imaged}/${progress.total} (${progress.percentage}%)
                     </div>
-                    <div style="background: var(--border-color); height: 8px; border-radius: 4px; overflow: hidden; margin-bottom: 0.75rem;">
+                    <div style="background: var(--border-color); height: 0.5rem; border-radius: 4px; overflow: hidden; margin-bottom: 0.75rem;">
                         <div style="background: var(--primary-color); height: 100%; width: ${progress.percentage}%;"></div>
                     </div>
                     ${completedSection}

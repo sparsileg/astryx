@@ -23,6 +23,11 @@
     margin-bottom: 0.75rem;
 }
 
+/* The card's own padding is the space below the last row */
+.seq-plan-ss-row:last-child {
+    margin-bottom: 0;
+}
+
 #session-settings-body > .seq-plan-ss-row:first-child {
     margin-top: 0.5rem;
 }
@@ -58,17 +63,6 @@
     color: var(--text-secondary);
 }
 
-/* Target Optimizer settings rows (optimizer-view-template) */
-.seq-plan-session-row-1 {
-    display: grid;
-    grid-template-columns: repeat(5, auto);
-    justify-content: start;
-    gap: 0.5rem 1rem;
-    align-items: center;
-    margin-top: 0.5rem;
-    margin-bottom: 0.75rem;
-}
-
 /* Keep custom time input in layout but invisible when not needed */
 #seq-plan-custom-time {
     width: var(--ss-time-width);
@@ -79,17 +73,26 @@
 
 /* ---------------------------------------------------------------------- */
 /* Target Allocation - Compact Layout */
+/* One grid for all rows, so the name column fits the longest name and every
+   row's exposure sits right after it; the slider takes the rest of the width,
+   rem so it scales with the font size (Issue #99).
+   Columns: move buttons, name, exposure, slider, allocation */
+.seq-plan-target-grid {
+    display: grid;
+    grid-template-columns: 1.875rem max-content 7.25rem minmax(12.5rem, 1fr) 11.25rem;
+    column-gap: 0.75rem;
+    row-gap: 0.5rem;
+}
+
 .seq-plan-target-row {
     display: grid;
-    grid-template-columns: 30px 140px 115px 40px 275px 180px;
-    gap: 0.75rem;
+    grid-template-columns: subgrid;
+    grid-column: 1 / -1;
     align-items: center;
     padding: 0.6rem 0.75rem;
-    margin-bottom: 0.5rem;
     background: var(--card-bg);
     border: 1px solid var(--border-color);
     border-radius: 4px;
-    cursor: move;
     transition: background 0.2s;
 }
 
@@ -97,28 +100,14 @@
     background: var(--hover-bg);
 }
 
-.seq-plan-target-row.dragging {
-    opacity: 0.5;
-}
-
-.seq-plan-drag-handle {
-    cursor: grab;
-    font-size: 1.1rem;
-    color: var(--text-secondary);
-    text-align: center;
-    user-select: none;
-}
-
-.seq-plan-drag-handle:active {
-    cursor: grabbing;
-}
-
 .seq-plan-target-name {
+    padding-right: 3rem;
     font-weight: bold;
     color: var(--text-color);
 }
 
 .seq-plan-exposure-input {
+    width: 5rem;
     padding: 0.4rem;
     border: 1px solid var(--border-color);
     border-radius: 4px;

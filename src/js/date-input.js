@@ -118,6 +118,36 @@ const DateInput = {
     },
 
     /**
+     * Make a button step the box's date by a number of days and call
+     * onStep(YYYY-MM-DD). Holding it down keeps stepping (issue #279)
+     */
+    attachStepButton(button, input, days, onStep) {
+        let holdTimer = null;
+        let repeatTimer = null;
+        const step = () => {
+            const date = this.value(input);
+            if (!date) return;
+            const [year, month, day] = date.split('-').map(Number);
+            const d = new Date(year, month - 1, day + days);
+            const next = TimeUtils.formatDateForInput(d);
+            this.set(input, next);
+            onStep(next);
+        };
+        button.addEventListener('click', step);
+        button.addEventListener('mousedown', () => {
+            holdTimer = setTimeout(() => {
+                repeatTimer = setInterval(step, APP_CONFIG.DATE_STEP_REPEAT_MS);
+            }, APP_CONFIG.DATE_STEP_HOLD_DELAY_MS);
+        });
+        const cancel = () => {
+            clearTimeout(holdTimer);
+            clearInterval(repeatTimer);
+        };
+        button.addEventListener('mouseup', cancel);
+        button.addEventListener('mouseleave', cancel);
+    },
+
+    /**
      * Open the calendar under the box, at the box's month (or today's)
      */
     open(input, onValid) {

@@ -125,5 +125,37 @@ const FOVCalculations = {
      */
     getFullMoonDiameter() {
         return 31.0; // Average full moon diameter in arcminutes
+    },
+
+    /**
+     * Where a target sits relative to a frame's center, in arcminutes.
+     * sky: north up, east left (x right, y down), as the sky image is drawn
+     * before the camera turns it. frame: the same point with the camera
+     * turned by cameraAngleDeg, so the sky turns the other way. Flat
+     * approximation, like the Wider drag (Issue #96)
+     * @param {{raDeg: number, decDeg: number}} frameCenter
+     * @param {{ra: number, dec: number}} target - RA in hours, Dec in degrees
+     * @param {number} cameraAngleDeg
+     * @returns {{skyX: number, skyY: number, frameX: number, frameY: number}}
+     */
+    getTargetFrameOffset(frameCenter, target, cameraAngleDeg) {
+        const dRA = ((target.ra * 15 - frameCenter.raDeg + 540) % 360) - 180;
+        const skyX = -dRA * Math.cos(frameCenter.decDeg * Math.PI / 180) * 60;
+        const skyY = -(target.dec - frameCenter.decDeg) * 60;
+        const skyAngle = -cameraAngleDeg * Math.PI / 180;
+        return {
+            skyX,
+            skyY,
+            frameX: skyX * Math.cos(skyAngle) - skyY * Math.sin(skyAngle),
+            frameY: skyX * Math.sin(skyAngle) + skyY * Math.cos(skyAngle)
+        };
+    },
+
+    /**
+     * Whether a frame offset (from getTargetFrameOffset) falls inside the frame
+     */
+    isInFrame(offset, fovData) {
+        return Math.abs(offset.frameX) <= fovData.fovWidthArcmin / 2
+            && Math.abs(offset.frameY) <= fovData.fovHeightArcmin / 2;
     }
 };

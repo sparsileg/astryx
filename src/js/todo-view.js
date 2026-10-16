@@ -8,6 +8,9 @@ const ToDoView = {
     container: null,
     currentSort: 'rise', // 'type', 'month', or 'rise'
     riseTimeViewMode: 'chart',  // 'list' or 'chart'
+    selectedDate: null,         // YYYY-MM-DD night every sort uses; tonight on each visit
+    riseTimeData: null,         // the selected night's dusk, dawn and rise times
+    nightMessage: null,         // why riseTimeData couldn't be worked out (HTML)
 
     /**
      * Check if a target is pinned
@@ -30,8 +33,12 @@ const ToDoView = {
         container.innerHTML = '';
         container.appendChild(content);
 
-        // Add sort dropdown to the header
+        // Date and sort controls in the header
+        const location = DataManager.getLocation(SettingsManager.getSelectedLocation());
+        this.selectedDate = location ? TimeUtils.getTonightStringAt(location) : TimeUtils.getTodayString();
+        this.addDateControl();
         this.addSortDropdown();
+        this.renderStatusLegend();
 
         // Render the list
         this.renderToDoList();
@@ -49,6 +56,34 @@ const ToDoView = {
             this._minAltitudeChangedHandler = () => this.renderToDoList();
             document.addEventListener('min-altitude-changed', this._minAltitudeChangedHandler);
         }
+    },
+
+    /**
+     * The Date box: the night the rise times and charts are for, and the month
+     * Best Month starts from
+     */
+    addDateControl() {
+        const input = document.getElementById('todo-date');
+        if (!input) return;
+        const onDate = (date) => {
+            if (date === this.selectedDate) return;
+            this.selectedDate = date;
+            this.renderToDoList();
+        };
+        DateInput.set(input, this.selectedDate);
+        DateInput.attach(input, onDate);
+        [['todo-prev-week', -7], ['todo-prev-day', -1], ['todo-next-day', 1], ['todo-next-week', 7]].forEach(([id, days]) => {
+            const button = document.getElementById(id);
+            if (button) DateInput.attachStepButton(button, input, days, onDate);
+        });
+    },
+
+    /**
+     * Local noon on the selected date, which the night's calculations start from
+     */
+    selectedNoon() {
+        const [year, month, day] = this.selectedDate.split('-').map(Number);
+        return new Date(year, month - 1, day, 12, 0, 0);
     },
 
     /**
@@ -92,6 +127,19 @@ const ToDoView = {
     },
 
     /**
+     * Explain the imaging status icons beside each target (Issue #99)
+     */
+    renderStatusLegend() {
+        const legend = document.getElementById('todo-status-legend');
+        if (!legend) return;
+        legend.innerHTML = `
+            <span>${this.IMAGING_STATUS_ICONS.none}Not in a project</span>
+            <span>${this.IMAGING_STATUS_ICONS.active}In a project</span>
+            <span>${this.IMAGING_STATUS_ICONS.complete}Project completed</span>
+        `;
+    },
+
+    /**
      * Show or hide the chart toggle button based on current sort
      */
     updateToggleButton() {
@@ -106,6 +154,10 @@ const ToDoView = {
      */
     async renderToDoList() {
         await this.loadImagingProjects();
+        // Rise Time and every chart need the selected night
+        if (this.currentSort === 'rise' || this.riseTimeViewMode === 'chart') {
+            this.calculateNight();
+        }
         if (this.currentSort === 'month') {
             this.renderByMonth();
         } else if (this.currentSort === 'rise') {
@@ -224,9 +276,9 @@ const ToDoView = {
         // Build HTML - start one month before current month, then wrap around
         let html = '';
 
-        // Calculate starting month (one month before current)
-        const currentMonth = new Date().getMonth() + 1; // 1-12
-        const startMonth = currentMonth === 1 ? 12 : currentMonth - 1;
+        // Calculate starting month (one month before the selected date's)
+        const selectedMonth = this.selectedNoon().getMonth() + 1; // 1-12
+        const startMonth = selectedMonth === 1 ? 12 : selectedMonth - 1;
 
         if (this.riseTimeViewMode === 'chart') {
             // Build ordered list of label rows and target rows for chart
@@ -271,23 +323,18 @@ const ToDoView = {
     },
 
     /**
-     * Render To Do list sorted by rise time for tonight
+     * Work out the selected night's dusk, dawn, and each target's rise time
+     * into riseTimeData, or say in nightMessage why it can't be done
      */
-    renderByRiseTime() {
-        const todoContainer = document.getElementById('todo-container');
-        if (!todoContainer) return;
-
+    calculateNight() {
+        this.riseTimeData = null;
+        this.nightMessage = null;
         const toDoTargets = ToDoManager.getToDoTargets();
-
-        if (toDoTargets.length === 0) {
-            todoContainer.innerHTML = this.getEmptyMessage();
-            return;
-        }
 
         // Get selected location
         const locationName = SettingsManager.getSelectedLocation();
         if (!locationName) {
-            todoContainer.innerHTML = `
+            this.nightMessage = `
             <div class="todo-empty-message">
                 <p class="todo-empty-title">   No location selected</p>
                 <p>Please select an observer location from the sidebar to calculate rise times.</p>
@@ -298,7 +345,7 @@ const ToDoView = {
 
         const location = DataManager.getLocation(locationName);
         if (!location) {
-            todoContainer.innerHTML = `
+            this.nightMessage = `
             <div class="todo-empty-message">
                 <p class="todo-empty-title">⚠️ Location not found</p>
             </div>
@@ -306,17 +353,17 @@ const ToDoView = {
             return;
         }
 
-        // Get today's date and calculate dusk/dawn
-        const today = new Date();
-        const isDST = SettingsManager.isDSTOnDate(today, location);
+        // Dusk and dawn of the selected night
+        const night = this.selectedNoon();
+        const isDST = SettingsManager.isDSTOnDate(night, location);
 
-        const duskJD = findAstronomicalDusk(today, location.latitude, location.longitude, location.timezone, isDST);
-        const dawnJD = findNextAstronomicalDawn(today, location.latitude, location.longitude, location.timezone, isDST);
+        const duskJD = findAstronomicalDusk(night, location.latitude, location.longitude, location.timezone, isDST);
+        const dawnJD = findNextAstronomicalDawn(night, location.latitude, location.longitude, location.timezone, isDST);
 
         if (!duskJD || !dawnJD) {
-            todoContainer.innerHTML = `
+            this.nightMessage = `
             <div class="todo-empty-message">
-                <p class="todo-empty-title">⚠️ No astronomical darkness tonight</p>
+                <p class="todo-empty-title">⚠️ No astronomical darkness</p>
                 <p>At this location and date, there is no astronomical darkness.</p>
             </div>
         `;
@@ -328,22 +375,12 @@ const ToDoView = {
         const observable = [];
         const notObservable = [];
 
-        // Calculate noon-to-noon window for rise/set calculations
-        // Use local date, not UTC
-        const year = today.getFullYear();
-        const month = (today.getMonth() + 1).toString().padStart(2, '0');
-        const day = today.getDate().toString().padStart(2, '0');
-        const dateStr = `${year}-${month}-${day}`;
-        const noonWindow = getNoonToNoonWindow(dateStr, location.timezone, isDST);
-
         const nightSamples = getNightSamples(duskJD, dawnJD, location.longitude);
 
         // Calculate rise/set times for each target
         toDoTargets.forEach(target => {
-            const riseJD = findTargetRise(noonWindow.startJD, noonWindow.endJD, target.ra, target.dec,
-                                          location.latitude, location.longitude, minAltitude);
-            const setJD = findTargetSet(noonWindow.startJD, noonWindow.endJD, target.ra, target.dec,
-                                        location.latitude, location.longitude, minAltitude);
+            const { riseJD, setJD } = findNightVisibility(duskJD, target.ra, target.dec,
+                                                  location.latitude, location.longitude, minAltitude);
 
             // Check if target is truly circumpolar (never sets below minAltitude over 24 hours)
             let isCircumpolar = false;
@@ -416,6 +453,24 @@ const ToDoView = {
             location: location,
             isDST: isDST
         };
+    },
+
+    /**
+     * Render To Do list sorted by rise time on the selected night
+     */
+    renderByRiseTime() {
+        const todoContainer = document.getElementById('todo-container');
+        if (!todoContainer) return;
+
+        if (ToDoManager.getToDoTargets().length === 0) {
+            todoContainer.innerHTML = this.getEmptyMessage();
+            return;
+        }
+
+        if (!this.riseTimeData) {
+            todoContainer.innerHTML = this.nightMessage;
+            return;
+        }
 
         // Render based on view mode
         if (this.riseTimeViewMode === 'chart') {
@@ -463,7 +518,7 @@ const ToDoView = {
     `;
             });
 
-            html += this.buildCard(`Observable Tonight (${observable.length})`, null, targets.join(''), true);
+            html += this.buildCard(`Observable (${observable.length})`, null, targets.join(''), true, 'todo_observable');
         }
 
         // Build not observable targets
@@ -492,7 +547,7 @@ const ToDoView = {
     `;
             });
 
-            html += this.buildCard(`Not Observable Tonight (${notObservable.length})`, null, targets.join(''), true);
+            html += this.buildCard(`Not Observable (${notObservable.length})`, null, targets.join(''), true, 'todo_notObservable');
         }
 
         todoContainer.innerHTML = html;
@@ -508,13 +563,13 @@ const ToDoView = {
         const todoContainer = document.getElementById('todo-container');
         if (!todoContainer || !this.riseTimeData) return;
 
-        const { observable, duskJD, dawnJD } = this.riseTimeData;
+        const { observable, duskJD, dawnJD, location, isDST } = this.riseTimeData;
         const minAltitude = SettingsManager.getGlobalMinAltitude();
 
         if (observable.length === 0) {
             todoContainer.innerHTML = `
             <div class="todo-empty-message">
-                <p class="todo-empty-title">📋 No observable targets tonight</p>
+                <p class="todo-empty-title">📋 No observable targets</p>
                 <p>No targets meet the 2-hour minimum darkness criteria.</p>
             </div>
         `;
@@ -567,15 +622,9 @@ const ToDoView = {
         ctx.fillStyle = bgColor;
         ctx.fillRect(0, 0, totalWidth, totalHeight);
 
-        // Get location for timezone
-        const locationName = SettingsManager.getSelectedLocation();
-        const location = DataManager.getLocation(locationName);
-        const timezone = location ? location.timezone : 0;
-        const isDST = location ? SettingsManager.isDSTOnDate(new Date(), location) : false;
-
         // Format dusk and dawn times
-        const duskTime = this.formatLocalTime(duskJD, timezone, isDST);
-        const dawnTime = this.formatLocalTime(dawnJD, timezone, isDST);
+        const duskTime = this.formatLocalTime(duskJD, location.timezone, isDST);
+        const dawnTime = this.formatLocalTime(dawnJD, location.timezone, isDST);
 
         // Draw header with two lines
         const chartLeft = padding + labelWidth;
@@ -591,10 +640,9 @@ const ToDoView = {
         ctx.textAlign = 'right';
         ctx.fillText('Dawn', chartRight - 5, padding + 15);
 
-        // Format today's date
-        const today = new Date();
+        // Format the selected date
         const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-        const formattedDate = today.toLocaleDateString('en-US', dateOptions);
+        const formattedDate = this.selectedNoon().toLocaleDateString('en-US', dateOptions);
 
         // Line 1 center: Date and minimum altitude
         ctx.font = '0.9rem sans-serif';
@@ -754,13 +802,9 @@ const ToDoView = {
         this.updateToggleButtonText();
 
         const todoContainer = document.getElementById('todo-container');
-        if (!todoContainer || !this.riseTimeData) {
-            todoContainer.innerHTML = `
-                <div class="todo-empty-message">
-                    <p class="todo-empty-title">⚠️ Rise time data not available</p>
-                    <p>Switch to Rise Time sort first to load tonight's data, then switch back.</p>
-                </div>
-            `;
+        if (!todoContainer) return;
+        if (!this.riseTimeData) {
+            todoContainer.innerHTML = this.nightMessage;
             return;
         }
 
@@ -789,7 +833,7 @@ const ToDoView = {
         if (cleanRows.filter(r => !r.isLabel).length === 0) {
             todoContainer.innerHTML = `
                 <div class="todo-empty-message">
-                    <p class="todo-empty-title">📋 No observable targets tonight</p>
+                    <p class="todo-empty-title">📋 No observable targets</p>
                     <p>No targets meet the minimum altitude criteria.</p>
                 </div>
             `;
@@ -851,9 +895,8 @@ const ToDoView = {
         ctx.textAlign = 'right';
         ctx.fillText('Dawn', chartRight - 5, padding + 15);
 
-        const today = new Date();
         const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-        const formattedDate = today.toLocaleDateString('en-US', dateOptions);
+        const formattedDate = this.selectedNoon().toLocaleDateString('en-US', dateOptions);
 
         ctx.font = '0.9rem sans-serif';
         ctx.textAlign = 'center';
@@ -1104,7 +1147,7 @@ const ToDoView = {
     /**
      * Build a card for a group of targets
      */
-    buildCard(title, targets, customContent = null, showType = false) {
+    buildCard(title, targets, customContent = null, showType = false, tooltipKey = null) {
         let content;
 
         if (customContent) {
@@ -1138,7 +1181,9 @@ const ToDoView = {
 
         return `
             <div class="todo-type-card">
-                <h3>${title}</h3>
+                ${tooltipKey
+                    ? `<h3><span class="tooltip-host has-tip" data-tooltip-key="${tooltipKey}">${title}</span></h3>`
+                    : `<h3>${title}</h3>`}
                 <div class="todo-targets">
                     ${content}
                 </div>

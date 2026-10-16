@@ -1,96 +1,114 @@
 /**
  * utilities-view.js
- * Utilities view for weather forecasts and other tools
+ * Utilities view for sky-condition links and other tools
  */
 
 const UtilitiesView = {
+    // Sky Conditions links: each site takes the location's coordinates in
+    // its own URL format
+    SKY_LINKS: [
+        { label: 'Astrospheric', url: (lat, lon) => `https://astrospheric.com/?Latitude=${lat}&Longitude=${lon}&Loc=Forecast` },
+        { label: 'Clear Outside', url: (lat, lon) => `https://clearoutside.com/forecast/${lat}/${lon}?view=current` },
+        { label: 'Clouds', url: (lat, lon) => `https://zoom.earth/maps/satellite/#view=${lat},${lon},8z` },
+        { label: 'Light Pollution', url: (lat, lon) => `https://www.lightpollutionmap.info/#zoom=16.0&lat=${lat}&lon=${lon}` }
+    ],
+
+    // Location chosen in the Sky Conditions dropdown
+    _skyLocation: null,
+
     /**
      * Initialize the view
      */
     init() {
-        this.renderWeatherForecasts();
-        this.renderLightPollutionInfo();
+        this.initSkyConditions();
         this.renderDustMoteCalculator();
 
         // Listen for location updates
-        this._locationsHandler = () => {
-            this.renderWeatherForecasts();
-            this.renderLightPollutionInfo();
-        };
+        this._locationsHandler = () => this.renderSkyConditions();
         document.addEventListener('locations-updated', this._locationsHandler);
+        // A new current location becomes the Sky Conditions location
+        this._selectedLocationHandler = (e) => {
+            this._skyLocation = e.detail.locationName;
+            this.renderSkyConditions();
+        };
+        document.addEventListener('selected-location-changed', this._selectedLocationHandler);
     },
 
     /**
-     * Render weather forecast links for all locations
+     * Wire the Sky Conditions location dropdown and render the card
      */
-    renderWeatherForecasts() {
-        const container = document.getElementById('utilities-weather-list');
-        if (!container) return;
-        Log.debug('In renderWeatherForecasts()');
+    initSkyConditions() {
+        const dropdown = document.getElementById('sky-location-dropdown');
+        const trigger = document.getElementById('sky-location-trigger');
+        const menu = document.getElementById('sky-location-menu');
+        if (!dropdown || !trigger || !menu) return;
 
-        const locations = DataManager.getLocations();
+        this._skyLocation = SettingsManager.getSelectedLocation();
 
-        if (Object.keys(locations).length === 0) {
-            container.innerHTML = '<p class="empty-message">No locations configured. Add locations in Admin Tools → Manage Locations.</p>';
-            return;
-        }
-
-        let html = '<div class="weather-forecast-grid">';
-
-        /*const zoomUrl = `https://zoom.earth/maps/satellite/#place=${location.latitude},-${location.longitude}/date=2026-03-18,15:00,-4`;*/
-
-        Object.entries(locations).forEach(([name, location]) => {
-            const astrosphericUrl = `https://astrospheric.com/?Latitude=${location.latitude}&Longitude=${location.longitude}&Loc=Forecast`;
-            const clearOutsideUrl = `https://clearoutside.com/forecast/${location.latitude}/${location.longitude}?view=current`;
-            const cloudsUrl = `https://zoom.earth/maps/satellite/#view=${location.latitude},${location.longitude},8z`;
-
-            html += `
-                <div class="weather-location-card">
-                    <strong>${HtmlUtils.escapeHtml(name)}</strong>
-                    <span class="location-separator">•</span>
-                    <a class="block-link" href="${astrosphericUrl}" target="_blank" class="weather-link">Astrospheric</a>
-                    <span class="location-separator">•</span>
-                    <a class="block-link" href="${clearOutsideUrl}" target="_blank" class="weather-link">Clear Outside</a>
-                    <span class="location-separator">•</span>
-                    <a class="block-link" href="${cloudsUrl}" target="_blank" class="weather-link">Clouds</a>
-                </div>
-            `;
+        trigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            dropdown.classList.toggle('open');
         });
 
-        html += '</div>';
-        container.innerHTML = html;
+        menu.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const item = e.target.closest('.astryx-dropdown-item');
+            if (!item) return;
+            dropdown.classList.remove('open');
+            this._skyLocation = item.dataset.value;
+            this.renderSkyConditions();
+        });
+
+        this.renderSkyConditions();
     },
 
     /**
-     * Render light pollution info maps
+     * Fill the location menu and point the links at the chosen location,
+     * the current location to start with (Issue #286)
      */
-    renderLightPollutionInfo() {
-        const container = document.getElementById('utilities-light-pollution-info');
-        if (!container) return;
-        Log.debug('In renderLightPollutionInfo()');
+    renderSkyConditions() {
+        const row = document.getElementById('sky-conditions-row');
+        const empty = document.getElementById('sky-conditions-empty');
+        const menu = document.getElementById('sky-location-menu');
+        const label = document.getElementById('sky-location-label');
+        const links = document.getElementById('sky-conditions-links');
+        if (!row || !empty || !menu || !label || !links) return;
 
         const locations = DataManager.getLocations();
+        const names = Object.keys(locations);
+        row.hidden = names.length === 0;
+        empty.hidden = names.length > 0;
+        if (names.length === 0) return;
 
-        if (Object.keys(locations).length === 0) {
-            container.innerHTML = '<p class="empty-message">No locations configured. Add locations in Admin Tools → Manage Locations.</p>';
-            return;
-        }
+        if (!locations[this._skyLocation]) this._skyLocation = names[0];
+        const location = locations[this._skyLocation];
 
-        let html = '<div class="weather-forecast-grid">';
-
-        Object.entries(locations).forEach(([name, location]) => {
-            const lightPollutionUrl = `https://www.lightpollutionmap.info/#zoom=16.0&lat=${location.latitude}&lon=${location.longitude}`;
-
-            html += `
-                <div class="weather-location-card">
-                    <a class="block-link" href="${lightPollutionUrl}" target="_blank" class="weather-link"><strong>${HtmlUtils.escapeHtml(name)}</strong></a>
-                </div>
-            `;
+        menu.innerHTML = '';
+        names.forEach(name => {
+            const item = document.createElement('div');
+            item.className = 'astryx-dropdown-item';
+            item.dataset.value = name;
+            item.textContent = name;
+            if (name === this._skyLocation) item.classList.add('selected');
+            menu.appendChild(item);
         });
+        label.textContent = this._skyLocation;
 
-        html += '</div>';
-        container.innerHTML = html;
-
+        links.innerHTML = '';
+        this.SKY_LINKS.forEach((link, i) => {
+            if (i > 0) {
+                const separator = document.createElement('span');
+                separator.className = 'sky-link-separator';
+                separator.textContent = '•';
+                links.appendChild(separator);
+            }
+            const a = document.createElement('a');
+            a.className = 'block-link';
+            a.href = link.url(location.latitude, location.longitude);
+            a.target = '_blank';
+            a.textContent = link.label;
+            links.appendChild(a);
+        });
     },
 
     /**
@@ -230,8 +248,8 @@ const UtilitiesView = {
 
         const result  = document.getElementById('dust-result');
         const summary = document.getElementById('dust-mote-summary');
-        if (result)  result.textContent  = distanceMm.toFixed(1);
-        if (summary)  summary.textContent  = `Spot diameter: ${spotDiameterMm.toFixed(3)} mm  •  f/${fRatio}`;
+        if (result)  result.textContent  = `${distanceMm.toFixed(1)} mm`;
+        if (summary)  summary.textContent  = `${spotDiameterMm.toFixed(3)} mm`;
     },
 
     /**
@@ -241,6 +259,10 @@ const UtilitiesView = {
         if (this._locationsHandler) {
             document.removeEventListener('locations-updated', this._locationsHandler);
             this._locationsHandler = null;
+        }
+        if (this._selectedLocationHandler) {
+            document.removeEventListener('selected-location-changed', this._selectedLocationHandler);
+            this._selectedLocationHandler = null;
         }
     }
 

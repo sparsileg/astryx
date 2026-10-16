@@ -51,8 +51,7 @@ picks the ones that suit *tonight*.
 2. Open **Target Optimizer** (see [Target Optimizer](target-optimizer.md)).
    The date starts at today.
 3. In the source list, choose **Filter Targets**, which now shows how many
-   targets you sent.
-4. Click **Find Targets**.
+   targets you sent. The results update as soon as you choose.
 
 Each result card shows when the target is above your minimum altitude, how
 high it climbs, and how far it is from the Moon, with a score for each. The

@@ -2,18 +2,24 @@
 
 ::: {.note title="At a glance"}
 The **To Do List** is your shortlist: targets you'd like to image someday.
-It shows which of them you can image tonight and when each one is up, or
-sorts them by type or by the month they're best placed. Click a target to
+It shows which of them you can image on a night and when each one is up,
+or sorts them by type or by the month they're best placed. Click a target to
 make it the Current Target.
 :::
 
 ## What You'll See
 
-Open **To Do List** in the sidebar. At the top of the view are two
+Open **To Do List** in the sidebar. At the top of the view are three
 controls:
 
-- **Sort by:** chooses how the list is arranged: **Rise Time (Tonight)**,
-  **Type**, or **Best Month**. It starts at Rise Time (Tonight).
+- **Date:** the night the list is worked out for. It starts at tonight
+  each time you open the view. Every sort uses it: Rise Time and the charts
+  show this night, and Best Month starts at the month before this date.
+  Type a date, click 📅 to pick one from a calendar, or use the arrows:
+  ◀ and ▶ move one day, ◀◀ and ▶▶ move a week. Hold an arrow down to
+  keep moving.
+- **Sort by:** chooses how the list is arranged: **Rise Time**, **Type**,
+  or **Best Month**. It starts at Rise Time.
 - The button next to it switches between a chart and a plain list. It's
   labeled with the view it switches *to*: **List** while you're looking at
   the chart, **Chart** while you're looking at the list. The view starts as
@@ -22,8 +28,8 @@ controls:
 If the list is empty, Astryx says so and points you to Target Selection.
 
 ::: {.shot id="todo-list-chart"}
-To Do List sorted by Rise Time (Tonight), chart view: the header with
-tonight's date, Minimum altitude, and dusk and dawn times, and a dozen bars,
+To Do List sorted by Rise Time, chart view: the header with
+the night's date, Minimum altitude, and dusk and dawn times, and a dozen bars,
 one of them gold for a pinned target.
 :::
 
@@ -36,35 +42,34 @@ Targets](target-selection.md)). Click **Add to To Do List**.
 
 Once the target is on the list, the button reads **Remove from To Do
 List**. In the To Do List itself, the list view has a **Remove**
-button on every row. The chart has no Remove buttons; switch to **List**
-to remove targets.
+button on every row. In the chart, click a target's bar to open its
+Target Details, then click **Remove from To Do List**.
 
-## Rise Time (Tonight)
+## Rise Time
 
-With **Rise Time (Tonight)**, Astryx works out tonight's darkness from the
-location chosen in the sidebar and splits your list in two:
+With **Rise Time**, Astryx works out the darkness on the night in the
+**Date** box, at the location chosen in the sidebar, and splits your list
+in two:
 
-- **Observable Tonight** holds the targets that spend at least two unbroken
+- **Observable** holds the targets that spend at least two unbroken
   hours above your minimum altitude between astronomical dusk and dawn.
   Targets that never drop below your minimum altitude (circumpolar targets)
   always count.
-- **Not Observable Tonight** holds the rest.
+- **Not Observable** holds the rest.
 
-The minimum altitude here is the **Min Altitude** in Settings. "Tonight" is
-always tonight; to look at another date, use the Target Optimizer or Daily
-Visibility.
+The minimum altitude here is the **Min Altitude** in Settings.
 
 ::: note
 This is not the same test as the Visibility filter in Target Selection,
 which looks at a whole month. A target can be in season by the Visibility
-filter and still be Not Observable Tonight, or the reverse, on a night when
+filter and still be Not Observable, or the reverse, on a night when
 it's poorly placed.
 :::
 
 ### The List
 
 In the list view, each card shows its count, for example "Observable
-Tonight (12)". Circumpolar targets come first, then the rest in the order
+(12)". Circumpolar targets come first, then the rest in the order
 they rise. Each row shows:
 
 - the imaging status circle (empty, half filled, or filled, as in Target
@@ -73,13 +78,14 @@ they rise. Each row shows:
 - the designation, type, and up to two common names,
 - **Rise** and **Set**: the times the target climbs above and sinks below
   your minimum altitude, in the location's local time. Circumpolar targets
-  show "Circumpolar" for both. "N/A" means the target doesn't cross your
-  minimum altitude in the 24 hours from noon to noon.
+  show "Circumpolar" for both. If the target is already above your minimum
+  altitude at dusk, Rise is when it climbed above it that afternoon. "N/A"
+  means the target never climbs above your minimum altitude that day.
 
 ### The Chart
 
-The chart shows only the Observable Tonight targets. Its header gives
-tonight's date, your **Minimum altitude**, and the **Astronomical dusk** and
+The chart shows only the Observable targets. Its header gives
+the night's date, your **Minimum altitude**, and the **Astronomical dusk** and
 **Astronomical dawn** times. The left edge of the chart is dusk and the
 right edge is dawn.
 
@@ -111,9 +117,9 @@ The other two sorts group the whole list:
 - **Type** makes one group per object type, such as Emission nebula or
   Galaxy, in alphabetical order. Within a group, targets are in order of
   their Best Month.
-- **Best Month** makes one group per month, starting with last month, so
-  the targets whose season is ending come first, then this month's, then
-  the months ahead. Targets with no Best Month for your location are in
+- **Best Month** makes one group per month, starting with the month before
+  the one in the **Date** box, so the targets whose season is ending come
+  first, then that month's, then the months ahead. Targets with no Best Month for your location are in
   **No Best Month Data** at the end. Typically that's because the target
   never rises high enough from that location to image, and often never
   rises above the horizon at all: a far-southern target seen from the
@@ -122,7 +128,8 @@ The other two sorts group the whole list:
 
 The list view shows every target in your To Do List, with the number of
 targets in each month. The chart view shows the same groups, but only the
-targets that are Observable Tonight, so it can leave out whole groups.
+targets that are Observable on the night in the Date box, so it can leave
+out whole groups.
 
 ::: {.shot id="todo-list-month"}
 To Do List sorted by Best Month, list view: cards for last month, this
@@ -145,7 +152,7 @@ for that target.
 
 ::: tip
 Use the To Do List as the [Target Optimizer](target-optimizer.md)'s source. Choose **To Do List**
-in the Target Optimizer's source list and click **Find Targets**: it ranks
+in the Target Optimizer's source list: it ranks
 everything on your list for the night you choose, without filtering the
 whole database again.
 :::

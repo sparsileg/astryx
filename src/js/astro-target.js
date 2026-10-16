@@ -122,6 +122,92 @@ function findTargetSet(startJD, endJD, raHours, decDeg, latitude, longitude, min
 }
 
 /**
+ * Rise and set of the target's stretch above minimum altitude that matters
+ * for a night: the one under way at dusk, or else the first one starting
+ * after dusk. Either end may fall outside dusk–dawn. A noon-to-noon search
+ * splits a stretch that spans local noon, giving no set or the next day's
+ * rise. See Issue #279.
+ * @param {number} duskJD - Astronomical dusk (Julian Date)
+ * @param {number} raHours - Target right ascension (hours)
+ * @param {number} decDeg - Target declination (degrees)
+ * @param {number} latitude - Observer latitude (degrees)
+ * @param {number} longitude - Observer longitude (degrees)
+ * @param {number} minAltitude - Minimum altitude threshold (degrees)
+ * @param {Array} horizonArray - Optional horizon profile
+ * @returns {{riseJD:number|null, setJD:number|null}} null where the target
+ *   doesn't cross within a day (never rises, or never sets)
+ */
+function findNightVisibility(duskJD, raHours, decDeg, latitude, longitude, minAltitude, horizonArray = null) {
+    const stepSize = APP_CONFIG.TARGET_SEARCH_STEP_SIZE;
+    const searchDays = 1;
+    const isVisible = jd => isAboveHorizon(
+        getAltitude(jd, raHours, decDeg, latitude, longitude),
+        getAzimuth(jd, raHours, decDeg, latitude, longitude),
+        minAltitude, horizonArray);
+
+    const upAtDusk = isVisible(duskJD);
+    let riseJD = null;
+    if (upAtDusk) {
+        // Step back from dusk to the start of this stretch
+        for (let jd = duskJD - stepSize; jd >= duskJD - searchDays; jd -= stepSize) {
+            if (!isVisible(jd)) {
+                riseJD = jd + stepSize;
+                break;
+            }
+        }
+    } else {
+        riseJD = findTargetRise(duskJD, duskJD + searchDays, raHours, decDeg, latitude, longitude, minAltitude, horizonArray);
+    }
+
+    // The stretch ends at the first set after it starts (or after dusk, if
+    // the target was up for the whole day before)
+    let setJD = null;
+    const setSearchStart = riseJD ?? duskJD;
+    if (riseJD !== null || upAtDusk) {
+        for (let jd = setSearchStart; jd <= setSearchStart + searchDays; jd += stepSize) {
+            if (!isVisible(jd)) {
+                setJD = jd;
+                break;
+            }
+        }
+    }
+
+    return { riseJD, setJD };
+}
+
+/**
+ * Every rise above and set below minimum altitude within a window, for
+ * marking a timeline. Rise is the first step above, set the first step
+ * below, as in findTargetRise/findTargetSet. See Issue #279.
+ * @param {number} startJD - Window start (Julian Date)
+ * @param {number} endJD - Window end (Julian Date)
+ * @param {number} raHours - Target right ascension (hours)
+ * @param {number} decDeg - Target declination (degrees)
+ * @param {number} latitude - Observer latitude (degrees)
+ * @param {number} longitude - Observer longitude (degrees)
+ * @param {number} minAltitude - Minimum altitude threshold (degrees)
+ * @param {Array} horizonArray - Optional horizon profile
+ * @returns {{rises:number[], sets:number[]}} JDs in time order
+ */
+function findAltitudeCrossings(startJD, endJD, raHours, decDeg, latitude, longitude, minAltitude, horizonArray = null) {
+    const stepSize = APP_CONFIG.TARGET_SEARCH_STEP_SIZE;
+    const rises = [];
+    const sets = [];
+    let prevVisible = null;
+
+    for (let jd = startJD; jd <= endJD; jd += stepSize) {
+        const altitude = getAltitude(jd, raHours, decDeg, latitude, longitude);
+        const azimuth = getAzimuth(jd, raHours, decDeg, latitude, longitude);
+        const isVisible = isAboveHorizon(altitude, azimuth, minAltitude, horizonArray);
+        if (prevVisible === false && isVisible) rises.push(jd);
+        if (prevVisible === true && !isVisible) sets.push(jd);
+        prevVisible = isVisible;
+    }
+
+    return { rises, sets };
+}
+
+/**
  * Detect a below-minimum-altitude trough occurring between two
  * above-minimum-altitude segments within the window — the case
  * findTargetRise/findTargetSet cannot represent, since each tracks only

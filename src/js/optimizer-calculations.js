@@ -31,6 +31,23 @@ const OPTIMIZER_WEIGHTS = {
 const OptimizerCalculations = {
 
     /**
+     * The composite score's weights as text, largest first, two per line,
+     * for the Composite score tooltip (Issue #99)
+     */
+    describeWeights() {
+        const labels = {
+            windowDuration:   'Window',
+            peakAltitude:     'Altitude',
+            transitCentering: 'Centering',
+            moonSeparation:   'Moon'
+        };
+        const parts = Object.entries(OPTIMIZER_WEIGHTS)
+            .sort((a, b) => b[1] - a[1])
+            .map(([key, weight]) => `${labels[key]} ${Math.round(weight * 100)}%`);
+        return `${parts.slice(0, 2).join(', ')}\n${parts.slice(2).join(', ')}`;
+    },
+
+    /**
      * Score candidate targets for a given night
      * @param {Array} candidates - Normalized candidate array from assembleCandidatePool
      * @param {Object} session - { date, location, minAltitude, duskJD, sessionStartJD, sessionEndJD (dawn) }

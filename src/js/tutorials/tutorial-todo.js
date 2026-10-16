@@ -48,6 +48,16 @@ const TUTORIAL_TODO = {
 
         // --- Sort control ---
         {
+            id: 'date-control',
+            type: 'callout',
+            title: 'Date',
+            body: 'The <strong>Date</strong> box sets the night the To Do List is worked out for. It starts at tonight each time you open the view. Rise times, the Observable groups, and the charts are for this night, and <strong>Best Month</strong> starts its list at the month before this date. Type a date, click 📅 to pick one, or use the arrows: ◀ and ▶ move one day, ◀◀ and ▶▶ move a week.',
+            target: '.todo-date-stepper',
+            position: 'bottom',
+            waitFor: 'next',
+            highlight: true
+        },
+        {
             id: 'sort-control',
             type: 'callout',
             title: 'Sort Options',
@@ -95,7 +105,7 @@ const TUTORIAL_TODO = {
             id: 'sort-by-month',
             type: 'callout',
             title: 'Grouped by Best Month',
-            body: 'Here targets are grouped by their best calendar month for imaging from your current location.<br><br>Use this view for long-range planning — for example, identifying which targets you should prioritize over the next few months before they become less favorable.<br><br>Targets without Best Month data appear in a <em>No Best Month Data</em> group at the bottom.',
+            body: 'Here targets are grouped by their best calendar month for imaging from your current location, starting with the month before the one in the Date box.<br><br>Use this view for long-range planning — for example, identifying which targets you should prioritize over the next few months before they become less favorable.<br><br>Targets without Best Month data appear in a <em>No Best Month Data</em> group at the bottom.',
             target: '#todo-container',
             position: 'right',
             waitFor: 'next',
@@ -116,8 +126,8 @@ const TUTORIAL_TODO = {
         {
             id: 'sort-by-rise',
             type: 'callout',
-            title: 'Tonight\'s Observable Targets',
-            body: 'Rise Time view splits your list into <strong>Observable Tonight</strong> and <strong>Not Observable Tonight</strong>, ordered by rise time for the current date and your selected location. This is your go-to view on an imaging night — it shows exactly which targets are accessible and in what order they become available.<br><br>Note that if any of the targets on the <strong>To Do List</strong> are pinned, they will be shaded a different color.',
+            title: 'Observable Targets',
+            body: 'Rise Time view splits your list into <strong>Observable</strong> and <strong>Not Observable</strong>, ordered by rise time for the night in the Date box and your selected location. This is your go-to view on an imaging night — it shows exactly which targets are accessible and in what order they become available.<br><br>Note that if any of the targets on the <strong>To Do List</strong> are pinned, they will be shaded a different color.',
             target: '#todo-container',
             position: 'right',
             waitFor: 'next',
@@ -140,7 +150,7 @@ const TUTORIAL_TODO = {
             id: 'removing-targets',
             type: 'callout',
             title: 'Removing Targets',
-            body: 'In the <strong>List</strong> view, each target has a <strong>Remove</strong> button to remove it from the list. You can also click a target to open its Target Details and click <strong>Remove from To Do List</strong> there.',
+            body: 'In the <strong>List</strong> view, each target has a <strong>Remove</strong> button to remove it from the list. In the <strong>Chart</strong> view, click a target\'s bar to open its Target Details and click <strong>Remove from To Do List</strong> there.',
             target: '.btn-remove-todo',
             position: 'right',
             waitFor: 'next',

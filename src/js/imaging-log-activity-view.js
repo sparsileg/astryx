@@ -169,7 +169,7 @@ const ImagingLogActivityView = {
                     const day = activity.get(dateStr);
                     const level = day ? levelFor(day.totalSeconds) : 0;
                     const tooltip = this.buildTooltip(dateStr, day);
-                    const unused = day?.hasUnusedSession ? ' activity-cell-unused' : '';
+                    const unused = day?.hasUnprocessedSession ? ' activity-cell-unused' : '';
                     cellsHtml += `<div class="activity-cell activity-level-${level}${unused}" style="grid-column:${week + 1};grid-row:${dow + 1};" data-tooltip="${HtmlUtils.escapeHtml(tooltip)}"></div>`;
                 }
 
@@ -194,9 +194,9 @@ const ImagingLogActivityView = {
                 <div class="activity-cell activity-level-2"></div>
                 <div class="activity-cell activity-level-3"></div>
                 <div class="activity-cell activity-level-4"></div>
-                <span>More</span>
+                <span class="tooltip-host has-tip" data-tooltip-key="ilog_activityShade">More</span>
                 <div class="activity-cell activity-level-0 activity-cell-unused activity-legend-unused"></div>
-                <span>Imaged, none used</span>
+                <span>Not processed yet (shaded by subs taken)</span>
             </div>
         `;
     },
@@ -213,7 +213,9 @@ const ImagingLogActivityView = {
         }
         const lines = [TimeUtils.formatDisplayDate(dateStr)];
         day.projects.forEach(p => {
-            lines.push(`${p.name} \u2014 ${p.subs} used of ${p.taken} x ${p.subLength}s`);
+            lines.push(p.processed
+                ? `${p.name} \u2014 ${p.subs} used of ${p.taken} x ${p.subLength}s`
+                : `${p.name} \u2014 ${p.taken} taken x ${p.subLength}s, not processed`);
         });
         return lines.join('\n');
     },

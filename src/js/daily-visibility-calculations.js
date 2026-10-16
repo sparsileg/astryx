@@ -51,36 +51,26 @@ const DailyVisibilityCalculations = {
             Log.debug(`No dark sky on ${dateStr}`);
             return null;
         }
-        // Calculate noon-to-noon search window for rise/set times
+        // Noon-to-noon window for moon rise/set
         const dateParts = dateStr.split('-');
         const obsDate = new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) - 1, parseInt(dateParts[2]));
         const isDST = SettingsManager.isDSTOnDate(obsDate, location);
         const noonWindow = getNoonToNoonWindow(dateStr, location.timezone, isDST);
 
-        // Find rise/set times within noon-to-noon window (not just dusk-to-dawn)
-        const riseJD = findTargetRise(noonWindow.startJD, noonWindow.endJD, ra, dec,
-                                      latitude, longitude, minAltitude, horizonArray);
-        const setJD = findTargetSet(noonWindow.startJD, noonWindow.endJD, ra, dec,
-                                    latitude, longitude, minAltitude, horizonArray);
+        // Rise and set of the stretch above min altitude under way at dusk, or
+        // the next one; either may fall outside dusk–dawn (Issue #279)
+        const { riseJD, setJD } = findNightVisibility(duskJD, ra, dec,
+                                                      latitude, longitude, minAltitude, horizonArray);
+        // No rise and no set: either always up or never up
+        const neverRises = riseJD === null && setJD === null && !isAboveHorizon(
+            getAltitude(duskJD, ra, dec, latitude, longitude),
+            getAzimuth(duskJD, ra, dec, latitude, longitude),
+            minAltitude, horizonArray);
 
-        // Extend search for set time if still up at dawn
-        let actualSetJD = setJD;
-        if (!setJD) {
-            const dawnAltitude = getAltitude(dawnJD, ra, dec, latitude, longitude);
-            const dawnAzimuth = getAzimuth(dawnJD, ra, dec, latitude, longitude);
-            if (isAboveHorizon(dawnAltitude, dawnAzimuth, minAltitude, horizonArray)) {
-                // Search forward from dawn for up to 12 hours
-                for (let step = 1; step < 720; step++) {
-                    const testJD = dawnJD + step * APP_CONFIG.TARGET_SEARCH_STEP_SIZE;
-                    const altitude = getAltitude(testJD, ra, dec, latitude, longitude);
-                    const azimuth = getAzimuth(testJD, ra, dec, latitude, longitude);
-                    if (!isAboveHorizon(altitude, azimuth, minAltitude, horizonArray)) {
-                        actualSetJD = testJD;
-                        break;
-                    }
-                }
-            }
-        }
+        // Every rise and set on the noon-to-noon timeline, which can include
+        // the next morning's rise as well as the night's (Issue #279)
+        const timelineCrossings = findAltitudeCrossings(noonWindow.startJD, noonWindow.endJD, ra, dec,
+                                                        latitude, longitude, minAltitude, horizonArray);
 
         // Moon rise and set for the noon-to-noon day; an event just past the
         // window is still found (the timeline skips it, the Moon Details card shows it)
@@ -130,7 +120,8 @@ const DailyVisibilityCalculations = {
             dawnJD: dawnJD,
             riseJD: riseJD,
             setJD: setJD,
-            actualSetJD: actualSetJD,
+            neverRises: neverRises,
+            timelineCrossings: timelineCrossings,
             moonRiseSet: moonRiseSet,
             moonUp: isMoonUpDuring(duskJD, dawnJD, latitude, longitude, elevation),
             timezone: location.timezone,

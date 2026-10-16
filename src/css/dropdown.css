@@ -17,6 +17,14 @@
     transition: border-color 0.2s;
 }
 
+/* Small trigger, the height of the date box beside it (Issue #286) */
+.astryx-dropdown.compact .astryx-dropdown-trigger {
+    font-size: 0.85rem;
+    line-height: normal;
+    padding: 2px 4px;
+    border-radius: 4px;
+}
+
 .astryx-dropdown-trigger:hover {
     border-color: var(--primary-color);
 }

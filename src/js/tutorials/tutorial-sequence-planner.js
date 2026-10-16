@@ -4,7 +4,7 @@
  * Covers: navigating to the view, session settings (date, start time,
  * location, min altitude, horizon), overhead settings (autofocus, flip,
  * calibration, between subs), collapsible sections, target allocation
- * (exposure time, sliders, drag to reorder), Reset & Optimize, the
+ * (exposure time, sliders, arrows to reorder), Reset & Optimize, the
  * timeline visualization, the Imaging Plan results, and warnings.
  *
  * Modal  — use when there's no specific element to point at

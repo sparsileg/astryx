@@ -4,6 +4,37 @@
  */
 
 /* ============================================================================
+   About Your Data Storage (Issue #288)
+   ============================================================================ */
+
+.storage-info {
+    line-height: 1.6;
+}
+
+.storage-info p,
+.storage-info ul {
+    margin: 0 0 0.75rem;
+}
+
+.storage-info .storage-info-heading {
+    margin-bottom: 0.25rem;
+}
+
+.storage-info ul {
+    padding-left: 1.5rem;
+}
+
+.storage-info .storage-info-note {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.storage-info-actions {
+    text-align: center;
+    margin-top: 1rem;
+}
+
+/* ============================================================================
    Backup/Restore Shared Styles
    ============================================================================ */
 
@@ -232,7 +263,7 @@
 
 .backup-restore-warning {
     padding: 1rem;
-    background: rgba(var(--warning-color-rgb), 0.1);
+    background: color-mix(in srgb, var(--warning-color) 10%, transparent);
     border: 1px solid var(--warning-color);
     border-radius: 4px;
     margin-top: 1rem;
