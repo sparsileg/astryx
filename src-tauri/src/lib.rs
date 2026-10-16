@@ -1,10 +1,16 @@
 // src-tauri/src/lib.rs
 // Tauri application entry point, application state, and command registration.
 
+mod cli;
 mod commands;
 mod db;
 
 use std::sync::{Arc, Mutex, MutexGuard};
+
+use tauri::Manager;
+use tauri_plugin_window_state::StateFlags;
+
+use commands::cli::CliCommand;
 
 // ── Application state ─────────────────────────────────────────────────────────
 
@@ -26,10 +32,16 @@ impl AstryxState {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // Before anything else, so help and command-line mistakes never start
+    // the app or open the database (issue #292)
+    let command = cli::parse();
+
     let app_data_dir = dirs_next::data_dir()
         .unwrap_or_else(|| std::path::PathBuf::from("."))
         .join("Astryx");
     std::fs::create_dir_all(&app_data_dir).expect("Failed to create app data directory");
+
+    let _instance_lock = cli::lock_instance(&app_data_dir, command.is_some());
 
     let db_conn = db::open_db(app_data_dir).expect("Failed to open database");
 
@@ -46,13 +58,34 @@ pub fn run() {
                         .build(),
                 )?;
             }
+            // The main window is created here rather than automatically
+            // (tauri.conf.json "create": false), hidden on a command-line run
+            // (issue #292). Creating it hidden and showing it later leaves
+            // its title-bar buttons dead on KDE Wayland.
+            let window_config = app
+                .config()
+                .app
+                .windows
+                .first()
+                .ok_or("tauri.conf.json defines no window")?
+                .clone();
+            tauri::WebviewWindowBuilder::from_config(app.handle(), &window_config)?
+                .visible(app.state::<CliCommand>().0.is_none())
+                .build()?;
             Ok(())
         })
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_opener::init())
-        .plugin(tauri_plugin_window_state::Builder::default().build())
+        // Size and position are remembered, visibility isn't: a hidden
+        // command-line run must not make the next start open hidden (#292)
+        .plugin(
+            tauri_plugin_window_state::Builder::default()
+                .with_state_flags(StateFlags::all() & !StateFlags::VISIBLE)
+                .build(),
+        )
         .manage(state)
+        .manage(CliCommand(command))
         .invoke_handler(tauri::generate_handler![
             // Settings
             commands::settings::get_settings,
@@ -118,8 +151,12 @@ pub fn run() {
             commands::tutorial_progress::delete_tutorial_progress,
             // Help
             commands::help::open_user_guide,
-            // Startup
-            commands::startup::get_startup_args,
+            // Command line
+            commands::cli::get_cli_command,
+            commands::cli::cli_write_stderr,
+            commands::cli::cli_write_stdout,
+            commands::cli::cli_read_file,
+            commands::cli::cli_exit,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

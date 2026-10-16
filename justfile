@@ -57,6 +57,10 @@ serve:
 dev:
     cargo tauri dev
 
+# Release exe only, no installers (src-tauri/target/release/)
+build-exe:
+    cargo tauri build --no-bundle
+
 # Build the User Guide PDF into src/help/ (needs pandoc and typst)
 guide:
     guide/build-guide.sh

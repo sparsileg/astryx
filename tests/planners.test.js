@@ -93,7 +93,7 @@ function sessionConfig(date, loc, overrides = {}) {
         meridianFlipPause: 4, meridianFlipDuration: 2, meridianFlipOffset: 0,
         interExposureTime: framesPerDither === 0
             ? SettingsManager.getLearnedSubGapS()
-            : SettingsManager.getLearnedSubGapS() + Math.round(SettingsManager.getLearnedDitherDurationS() / framesPerDither),
+            : SettingsManager.getLearnedSubGapS() + SettingsManager.getLearnedDitherDurationS() / framesPerDither,
         ...overrides,
     };
 }

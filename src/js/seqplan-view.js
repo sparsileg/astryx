@@ -557,9 +557,10 @@ const SeqPlanView = {
             meridianFlipPause: parseInt(this._getDropdownValue('seq-plan-flip-pause-menu', '4')),
             meridianFlipDuration: parseInt(this._getDropdownValue('seq-plan-flip-duration-menu', '2')),
             meridianFlipOffset: parseInt(this._getDropdownValue('seq-plan-flip-offset-menu', '0')),
+            // Not rounded: the learned values are in tenths (issue #295)
             interExposureTime: SettingsManager.getFramesPerDither() === 0
                 ? SettingsManager.getLearnedSubGapS()
-                : SettingsManager.getLearnedSubGapS() + Math.round(SettingsManager.getLearnedDitherDurationS() / SettingsManager.getFramesPerDither())
+                : SettingsManager.getLearnedSubGapS() + SettingsManager.getLearnedDitherDurationS() / SettingsManager.getFramesPerDither()
         };
     },
 

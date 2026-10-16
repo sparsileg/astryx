@@ -467,63 +467,47 @@ async setBackupReminderDays(days) {
         return this.settings.learnedSubGapS ?? APP_CONFIG.DEFAULT_SUB_GAP_S;
     },
 
-    // Provenance for the learned sub gap (ELR.p1-3 Change 3) — null until a
-    // log analysis has actually set them.
-    getLearnedSubGapMeta() {
-        return {
-            sampleCount: this.settings.learnedSubGapSampleCount ?? null,
-            derivedDate: this.settings.learnedSubGapDate ?? null,
-        };
+    // The nights learned from (issue #295): { start, subGapS, ditherS } for
+    // each Session Log, by its start time, with null for a figure the night
+    // had too few clean samples for. The learned values are the average of
+    // the newest of them (AsiairLogParser.updateLearnedValues).
+    getLearnedNights() {
+        return this.settings.learnedNights ?? [];
     },
 
-    async setLearnedSubGapS(value, { sampleCount, derivedDate } = {}) {
-        this.settings.learnedSubGapS = value;
-        if (sampleCount !== undefined) this.settings.learnedSubGapSampleCount = sampleCount;
-        if (derivedDate !== undefined) this.settings.learnedSubGapDate = derivedDate;
-        await this.saveSettings();
-    },
-
-    // Start times of the Session Logs already used to update the learned
-    // values, so loading a log again doesn't apply its figures a second time
     hasLearnedFromLog(logStart) {
-        return (this.settings.learnedFromLogs ?? []).includes(logStart);
+        return this.getLearnedNights().some(n => n.start === logStart);
     },
 
-    async addLearnedFromLog(logStart) {
-        this.settings.learnedFromLogs = [...(this.settings.learnedFromLogs ?? []), logStart];
+    async addLearnedNight(night, { subGapS, ditherS }) {
+        this.settings.learnedNights = [...this.getLearnedNights(), night];
+        if (subGapS != null) this.settings.learnedSubGapS = subGapS;
+        if (ditherS != null) this.settings.learnedDitherDurationS = ditherS;
+        this._deleteLearnedBefore295();
         await this.saveSettings();
+    },
+
+    // Fields from before issue #295: start times without figures, and the
+    // last night's sample counts, which nothing read
+    _deleteLearnedBefore295() {
+        delete this.settings.learnedFromLogs;
+        delete this.settings.learnedSubGapSampleCount;
+        delete this.settings.learnedSubGapDate;
+        delete this.settings.learnedDitherDurationSampleCount;
+        delete this.settings.learnedDitherDurationDate;
     },
 
     getLearnedDitherDurationS() {
         return this.settings.learnedDitherDurationS ?? APP_CONFIG.DEFAULT_DITHER_DURATION_S;
     },
 
-    // Provenance for the learned dither duration (ELR.p1-3 Change 3) — null
-    // until a log analysis has actually set them.
-    getLearnedDitherDurationMeta() {
-        return {
-            sampleCount: this.settings.learnedDitherDurationSampleCount ?? null,
-            derivedDate: this.settings.learnedDitherDurationDate ?? null,
-        };
-    },
-
-    async setLearnedDitherDurationS(value, { sampleCount, derivedDate } = {}) {
-        this.settings.learnedDitherDurationS = value;
-        if (sampleCount !== undefined) this.settings.learnedDitherDurationSampleCount = sampleCount;
-        if (derivedDate !== undefined) this.settings.learnedDitherDurationDate = derivedDate;
-        await this.saveSettings();
-    },
-
     // Back to the defaults, forgetting which logs they were learned from, so
-    // loading those logs again relearns them (--reset-learned, issue #281)
+    // loading those logs again relearns them (`astryx reset-learned`, issue #292)
     async resetLearnedValues() {
         this.settings.learnedSubGapS = APP_CONFIG.DEFAULT_SUB_GAP_S;
         this.settings.learnedDitherDurationS = APP_CONFIG.DEFAULT_DITHER_DURATION_S;
-        delete this.settings.learnedSubGapSampleCount;
-        delete this.settings.learnedSubGapDate;
-        delete this.settings.learnedDitherDurationSampleCount;
-        delete this.settings.learnedDitherDurationDate;
-        delete this.settings.learnedFromLogs;
+        delete this.settings.learnedNights;
+        this._deleteLearnedBefore295();
         await this.saveSettings();
     },
 

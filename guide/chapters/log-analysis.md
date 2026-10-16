@@ -64,18 +64,30 @@ Planner needs:
   exposure and the start of the next, and
 - the **dither duration**: how long a dither takes to settle.
 
-It moves its stored figures halfway toward each night's
-measurements, so a single unusual night doesn't throw them off. A night
-with too few clean samples leaves them alone. The **Behavior** table in the
-Combined Report's Recommendations shows each night's measurement and the
-stored figure, with what this log added to it, or why it added nothing.
+Each stored figure is the average of your 20 most recent nights, to a
+tenth of a second, so a single unusual night doesn't throw it off. Most
+recent means by the night's date, not by when you analyzed it, so the
+order you load logs in doesn't matter, and an older night than those 20
+doesn't change the figures. A night with too few clean samples doesn't
+count toward a figure. Until you've analyzed 20 nights, the figures are
+the average of those you have; the very first replaces the starting
+values.
+
+The **Behavior** table in the Combined Report's Recommendations shows
+each night's measurement and the stored figure. After the stored figure
+it says what it was before this log, for example
+`1.1s (was 1.2s; this log's 0.9s included, average of the last 20 nights)`,
+or why this log didn't change it.
 
 ::: note
 Each night's Session Log updates the stored figures once. Astryx
 remembers which logs it has used, by their start times, so loading the same
 log again leaves the figures alone and tells you so. The report itself
-appears as usual. To start the figures over, see
-[Command-Line Options](appendix-command-line.md).
+appears as usual. In the desktop app, [The Command Line](appendix-command-line.md)
+can start the figures over, and can analyze many nights' logs in one go.
+Start them over after changing something that alters them, such as your
+camera, mount, dither size, or settle settings, so old nights don't hold
+them back.
 :::
 
 ## The Combined Report

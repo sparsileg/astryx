@@ -1708,8 +1708,8 @@ const AsiairLogParser = {
         const derivationDate = new Date().toISOString().slice(0, 10);
 
         return {
-            observedSubGapS: Math.round(observedSubGapS),
-            observedDitherDurationS: Math.round(observedDitherDurationS),
+            observedSubGapS: this.roundLearned(observedSubGapS),
+            observedDitherDurationS: this.roundLearned(observedDitherDurationS),
 
             // Sample counts + derivation date travel with the learned
             // values so updateLearnedValues() and SettingsManager can
@@ -1724,54 +1724,67 @@ const AsiairLogParser = {
     },
 
     /**
-     * Update learned sub gap and dither duration via EMA (issue #145).
+     * Update the learned sub gap and dither duration (issue #145).
      * Public and explicit (ELR.p1-4) — parse() no longer calls this itself;
      * callers must invoke it deliberately after a parse succeeds and await
      * it, so viewing a log is a pure read unless the caller specifically
      * asks to also refresh planning values. See
-     * LogAnalysisView._loadAsiairLog for the one existing call site.
+     * LogAnalysisView._loadLogs for the existing call site.
      *
-     * ELR.p1-3 Change 3: skips the update entirely when a night doesn't have
-     * enough clean samples, rather than let noise or a single dirty night
-     * pull the stored value around. A log that has already updated the
-     * values (recognized by its start time) is skipped, so loading the same
-     * log twice doesn't apply the EMA twice.
+     * Each learned value is the average of the most recent nights by date
+     * (ASIAIR_LEARNED_WINDOW_NIGHTS, issue #295), so the order logs are
+     * analyzed in doesn't matter. A figure from a night with too few clean
+     * samples (ELR.p1-3 Change 3) isn't stored. A log that has already been
+     * learned from (recognized by its start time) is skipped.
      *
      * @param {object} parsed - Full result from parse()
-     * @returns {Promise<boolean>} false when this log had already been learned from
+     * @returns {Promise<object>} what changed, for the report's text
+     *   (issue #294): { alreadyLearned: true } when this log had already
+     *   been learned from, otherwise { alreadyLearned: false, subGap,
+     *   dither }, each null when this log has no figure for it, or
+     *   { from, to, inWindow, nights }: the value before and after in
+     *   seconds, whether this night is among the most recent, and how many
+     *   nights the average holds
      */
     async updateLearnedValues(parsed) {
-        const { recommendations } = parsed;
-        const EMA_WEIGHT = APP_CONFIG.ASIAIR_LEARNED_VALUE_WEIGHT;
-        const logStart = parsed.wallClock.start?.toISOString();
+        const r = parsed.recommendations;
+        const start = parsed.wallClock.start?.toISOString();
 
-        if (logStart && SettingsManager.hasLearnedFromLog(logStart)) return false;
+        if (start && SettingsManager.hasLearnedFromLog(start)) return { alreadyLearned: true };
 
-        if (recommendations.subGapMeetsMinSamples) {
-            const storedSubGap = SettingsManager.getLearnedSubGapS();
-            const newSubGap = Math.round(
-                (1 - EMA_WEIGHT) * storedSubGap + EMA_WEIGHT * recommendations.observedSubGapS
-            );
-            await SettingsManager.setLearnedSubGapS(newSubGap, {
-                sampleCount: recommendations.subGapSampleCount,
-                derivedDate: recommendations.derivationDate,
-            });
+        const night = {
+            start,
+            subGapS: r.subGapMeetsMinSamples ? r.observedSubGapS : null,
+            ditherS: r.ditherMeetsMinSamples ? r.observedDitherDurationS : null,
+        };
+        if (!start || (night.subGapS == null && night.ditherS == null)) {
+            return { alreadyLearned: false, subGap: null, dither: null };
         }
 
-        if (recommendations.ditherMeetsMinSamples) {
-            const storedDitherDuration = SettingsManager.getLearnedDitherDurationS();
-            const newDitherDuration = Math.round(
-                (1 - EMA_WEIGHT) * storedDitherDuration + EMA_WEIGHT * recommendations.observedDitherDurationS
-            );
-            await SettingsManager.setLearnedDitherDurationS(newDitherDuration, {
-                sampleCount: recommendations.ditherSampleCount,
-                derivedDate: recommendations.derivationDate,
-            });
-        }
+        const nights = [...SettingsManager.getLearnedNights(), night];
+        const subGap = this._learnedChange(nights, night, 'subGapS', SettingsManager.getLearnedSubGapS());
+        const dither = this._learnedChange(nights, night, 'ditherS', SettingsManager.getLearnedDitherDurationS());
+        await SettingsManager.addLearnedNight(night, { subGapS: subGap?.to, ditherS: dither?.to });
+        return { alreadyLearned: false, subGap, dither };
+    },
 
-        const updated = recommendations.subGapMeetsMinSamples || recommendations.ditherMeetsMinSamples;
-        if (logStart && updated) await SettingsManager.addLearnedFromLog(logStart);
-        return true;
+    // The average of the most recent nights by date with a figure for key,
+    // once night is added (issue #295); null when night has no figure. A
+    // night older than those leaves the stored value as it is.
+    _learnedChange(nights, night, key, stored) {
+        if (night[key] == null) return null;
+        const recent = nights.filter(n => n[key] != null)
+            .sort((a, b) => b.start.localeCompare(a.start))
+            .slice(0, APP_CONFIG.ASIAIR_LEARNED_WINDOW_NIGHTS);
+        if (!recent.includes(night)) return { from: stored, to: stored, inWindow: false, nights: recent.length };
+        const mean = recent.reduce((sum, n) => sum + n[key], 0) / recent.length;
+        return { from: stored, to: this.roundLearned(mean), inWindow: true, nights: recent.length };
+    },
+
+    // Learned figures are kept to ASIAIR_LEARNED_DECIMALS (issue #295)
+    roundLearned(seconds) {
+        const scale = 10 ** APP_CONFIG.ASIAIR_LEARNED_DECIMALS;
+        return Math.round(seconds * scale) / scale;
     },
 
 

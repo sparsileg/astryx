@@ -15,7 +15,7 @@
 const APP_CONFIG = {
     APP_NAME: 'Astryx',
     APP_TITLE: 'Astryx - Astrophotography Planning Tool',
-    APP_VERSION: '1.95.0',
+    APP_VERSION: '1.96.0',
     DB_NAME: 'astryx-db',
     DB_VERSION: 8,
     TARGET_DATA_PATH: './data/',
@@ -214,11 +214,13 @@ const APP_CONFIG = {
     // measurement.
     ASIAIR_SUB_GAP_MAX_S: 90,
 
-    // Share of the gap between the stored and the observed value that one
-    // night's log closes. Values are whole seconds, so a change under half a
-    // second rounds away: at 0.5 the stored value settles within 1 s of what
-    // the logs measure (at 0.2 it stalled up to 2 s short).
-    ASIAIR_LEARNED_VALUE_WEIGHT: 0.5,
+    // The learned sub gap and dither duration are each the average of this
+    // many nights, the most recent by date (issue #295)
+    ASIAIR_LEARNED_WINDOW_NIGHTS: 20,
+
+    // Decimal places kept in each night's figures and the learned averages
+    // (issue #295); whole seconds kept a 2 s sub gap from ever reaching 1 s
+    ASIAIR_LEARNED_DECIMALS: 1,
 
     // Session analysis fusion/invariant thresholds (ELR.p3-2). All values
     // sourced from threshold-calibration.md §11's summary table — rig-
