@@ -27,7 +27,7 @@ const context = loadApp([
     'js/astro-sun.js',
 ], []);
 const { findAstronomicalDusk, findNextAstronomicalDawn, jdToDate } = get(context,
-    '({ findAstronomicalDusk, findNextAstronomicalDawn, jdToDate: TimeUtils.jdToDate })');
+    '({ findAstronomicalDusk, findNextAstronomicalDawn, jdToDate })');
 
 const YEAR = 2026;
 const HOUR_MS = 3600000;

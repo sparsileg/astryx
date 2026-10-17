@@ -40,9 +40,11 @@ const SessionFusion = {
 
         const subs = [];
         for (const run of lightRuns) {
+            let previousSub = null;
             for (const block of run.blocks) {
                 for (const sub of block.subs) {
-                    subs.push(this._buildFusedSub(sub, run, guideIndex));
+                    subs.push(this._buildFusedSub(sub, run, guideIndex, previousSub));
+                    previousSub = sub;
                 }
             }
         }
@@ -140,19 +142,20 @@ const SessionFusion = {
     // Resolves each session's frame.t (seconds since that session's own
     // start) to an absolute epoch-ms timestamp, since there's no absolute
     // timestamp on the frame row itself — only on the session header
-    // ("Guiding Begins at ..."). Both parsers' timestamp strings parse
-    // consistently via the native Date constructor (verified against real
-    // corpus data — ASIAir's "YYYY/MM/DD HH:MM:SS" and PHD2's
-    // "YYYY-MM-DD HH:MM:SS" both resolve the same way), so absolute-time
-    // comparison across the two logs is valid.
+    // ("Guiding Begins at ..."). Both parsers read their timestamp strings
+    // with TimeUtils.parseWallClock (ASIAir's "YYYY/MM/DD HH:MM:SS" and
+    // PHD2's "YYYY-MM-DD HH:MM:SS"), so times compare across the two logs.
+    // A session without its own pixel scale uses the log's, as the parser
+    // does; a frame with neither is left out rather than read as 1″/px
+    // (Issue #323).
     _buildGuideIndex(phd2Parsed) {
         const frames = [];
         const drops = [];
 
         for (const session of phd2Parsed.sessions) {
-            const sessionStartMs = new Date(session.startTime).getTime();
+            const sessionStartMs = Phd2LogParser._parsePhd2Time(session.startTime)?.getTime() ?? NaN;
             if (Number.isNaN(sessionStartMs)) continue;
-            const pixelScale = session.equipment && session.equipment.pixelScaleArcsec;
+            const pixelScale = session.equipment?.pixelScaleArcsec ?? phd2Parsed.equipment?.pixelScale ?? null;
 
             for (const frame of session.frames) {
                 frames.push({
@@ -178,7 +181,7 @@ const SessionFusion = {
     // Per-sub join
     // -------------------------------------------------------------------------
 
-    _buildFusedSub(sub, run, guideIndex) {
+    _buildFusedSub(sub, run, guideIndex, previousSub) {
         const startMs = sub.startedAt ? sub.startedAt.getTime() : null;
         const endMs = (startMs !== null && sub.exposureS) ? startMs + sub.exposureS * 1000 : null;
 
@@ -186,7 +189,7 @@ const SessionFusion = {
             ? this._joinGuideWindow(guideIndex, startMs, endMs)
             : null;
 
-        const settledAtStart = this._resolveSettledAtStart(sub, run);
+        const settledAtStart = this._resolveSettledAtStart(sub, run, previousSub);
         const guideFailureCount = this._countGuideFailures(run, startMs, endMs);
         const { blockAchievedStarSize, temperatureC } = this._resolvePrecedingAf(run, startMs);
 
@@ -216,7 +219,7 @@ const SessionFusion = {
     // separately from the drops index.
     _joinGuideWindow(guideIndex, startMs, endMs) {
         const framesInWindow = this._binarySearchRange(guideIndex.frames, startMs, endMs)
-            .filter(f => f.settled);
+            .filter(f => f.settled && f.pixelScale != null);
         const dropsInWindow = this._binarySearchRange(guideIndex.drops, startMs, endMs);
 
         if (framesInWindow.length === 0) {
@@ -226,9 +229,9 @@ const SessionFusion = {
             };
         }
 
-        const scale = framesInWindow[0].pixelScale || 1;
-        const raArcsec = framesInWindow.map(f => f.raRaw * scale);
-        const decArcsec = framesInWindow.map(f => f.decRaw * scale);
+        // Each frame at its own session's scale (Issue #323)
+        const raArcsec = framesInWindow.map(f => f.raRaw * f.pixelScale);
+        const decArcsec = framesInWindow.map(f => f.decRaw * f.pixelScale);
         const totalArcsec = framesInWindow.map((f, i) => Math.sqrt(raArcsec[i] ** 2 + decArcsec[i] ** 2));
 
         const rms = (arr) => Math.sqrt(arr.reduce((s, v) => s + v * v, 0) / arr.length);
@@ -270,17 +273,19 @@ const SessionFusion = {
 
     // D3 (design doc §6): a sub is unsettled-at-start when the dither
     // immediately preceding it (within the same run) ended in 'timeout' or
-    // 'failed'. This was left as a neutral `true` placeholder by #230
+    // 'failed'. Only a dither since the previous sub of the run started
+    // counts; the subs after that one aren't affected by it (Issue #322). This was left as a neutral `true` placeholder by #230
     // ("populating from real event data is a later issue") — resolved here
     // at fusion time rather than by re-touching the parser, since
     // correlating a sub against its run's own event list is a join, which
     // is what this file is for.
-    _resolveSettledAtStart(sub, run) {
+    _resolveSettledAtStart(sub, run, previousSub) {
         if (!sub.startedAt) return true;
-        const dithers = run.events.filter(e => e.type === 'dither' && e.end && e.end <= sub.startedAt);
-        if (dithers.length === 0) return true;
-        const preceding = dithers.reduce((latest, d) => (d.end > latest.end ? d : latest));
-        return preceding.outcome === 'done';
+        const windowStart = previousSub?.startedAt ?? run.startedAt;
+        return run.events
+            .filter(e => e.type === 'dither' && e.start && e.end &&
+                (!windowStart || e.start >= windowStart) && e.end <= sub.startedAt)
+            .every(d => d.outcome === 'done');
     },
 
     _countGuideFailures(run, startMs, endMs) {
@@ -419,19 +424,13 @@ const SessionFusion = {
         // guide-star-swap sub dominates the pooled figure. Caught during
         // validation: an earlier version without this exclusion produced
         // 2.80" for 2026-07-23 against the already-validated 0.97" figure.
-        let weightedRmsSum = 0;
-        let weightedFrameCount = 0;
         const criticalRms = (APP_CONFIG.PHD2_GUIDE_THRESHOLDS && APP_CONFIG.PHD2_GUIDE_THRESHOLDS.RMS_CRITICAL) || 4.0;
 
         for (const sub of subs) {
             byTier[sub.tier] = (byTier[sub.tier] || 0) + 1;
             if (!sub.aborted && sub.exposureS) totalIntegrationS += sub.exposureS;
-            if (sub.guide && sub.guide.rmsTotal !== null && sub.guide.frameCount > 0 &&
-                sub.guide.rmsTotal <= criticalRms) {
-                weightedRmsSum += sub.guide.rmsTotal * sub.guide.frameCount;
-                weightedFrameCount += sub.guide.frameCount;
-            }
         }
+        const guidedSubs = subs.filter(sub => sub.guide && sub.guide.rmsTotal !== null && sub.guide.rmsTotal <= criticalRms);
 
         return {
             totalSubs: subs.length,
@@ -447,8 +446,24 @@ const SessionFusion = {
             // calibration.md, prior issue deliveries) rather than
             // introducing a second, subtly different "night RMS".
             guideRmsSettled: (phd2Parsed && phd2Parsed.overall) ? phd2Parsed.overall.totRms : null,
-            guideRmsDuringExposures: weightedFrameCount > 0 ? weightedRmsSum / weightedFrameCount : null,
+            guideRmsDuringExposures: this.pooledGuideRms(guidedSubs, 'rmsTotal'),
         };
+    },
+
+    // The RMS of every guide frame in subs, from each sub's own RMS and
+    // frame count: √(Σ n·rms² / Σ n). A mean of the RMS values is always
+    // lower (Issue #323). key: 'rmsTotal', 'rmsRa' or 'rmsDec'; null when
+    // the subs have no guide frames.
+    pooledGuideRms(subs, key) {
+        let sumSquares = 0, frames = 0;
+        for (const sub of subs) {
+            const rms = sub.guide?.[key];
+            const n = sub.guide?.frameCount ?? 0;
+            if (rms == null || n === 0) continue;
+            sumSquares += n * rms * rms;
+            frames += n;
+        }
+        return frames > 0 ? Math.sqrt(sumSquares / frames) : null;
     },
 
     _computeAcquisitionS(asiairParsed) {

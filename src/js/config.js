@@ -15,7 +15,7 @@
 const APP_CONFIG = {
     APP_NAME: 'Astryx',
     APP_TITLE: 'Astryx - Astrophotography Planning Tool',
-    APP_VERSION: '1.96.2',
+    APP_VERSION: '1.96.3',
     DB_NAME: 'astryx-db',
     DB_VERSION: 8,
     TARGET_DATA_PATH: './data/',
@@ -205,6 +205,12 @@ const APP_CONFIG = {
     // terminators land within ~60-90s in the corpus; this is a ceiling
     // against a genuinely unparseable log, not a tuned value.
     ASIAIR_SETTLE_SCAN_TIMEOUT_S: 300,
+
+    // The same kind of ceiling for a meridian flip's scan from its
+    // [Meridian Flip|Begin] line to its end line: the wait, the flip and the
+    // re-centre take minutes; this only stops a flip with no end line from
+    // swallowing the rest of the log (Issue #319).
+    ASIAIR_FLIP_SCAN_TIMEOUT_S: 3600,
 
     // Minimum number of clean samples (settled dithers, or un-interrupted
     // sub-to-sub gaps) required before a learned value is updated from a

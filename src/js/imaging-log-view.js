@@ -928,11 +928,11 @@ const ImagingLogView = {
             const moonRiseSet = calculateMoonRiseSetForNight(noonWindow.startJD, noonWindow.endJD, location.latitude, location.longitude, location.elevation);
 
             if (moonRiseSet.moonrise) {
-                document.getElementById('session-moon-rise').value = TimeUtils.formatLocalTime(TimeUtils.jdToDate(moonRiseSet.moonrise), location);
+                document.getElementById('session-moon-rise').value = TimeUtils.formatLocalTime(jdToDate(moonRiseSet.moonrise), location);
             }
 
             if (moonRiseSet.moonset) {
-                document.getElementById('session-moon-set').value = TimeUtils.formatLocalTime(TimeUtils.jdToDate(moonRiseSet.moonset), location);
+                document.getElementById('session-moon-set').value = TimeUtils.formatLocalTime(jdToDate(moonRiseSet.moonset), location);
             }
 
             // Closest approach while the target is above the global minimum
@@ -985,7 +985,8 @@ const ImagingLogView = {
         const smoke = this._getSessionDropdownValue('session-smoke-menu');
         const seeing = this._getSessionDropdownValue('session-seeing-menu');
         const transparency = this._getSessionDropdownValue('session-transparency-menu');
-        const subLength = parseInt(document.getElementById('session-sub-length').value);
+        // Issue #309: fractional exposures (2.5 s) are stored as entered
+        const subLength = parseFloat(document.getElementById('session-sub-length').value);
         const numExposures = parseInt(document.getElementById('session-num-exposures').value);
         const usedInput = document.getElementById('session-used-exposures').value;
         const usedExposures = usedInput === '' ? 0 : parseInt(usedInput);

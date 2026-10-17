@@ -127,7 +127,7 @@ const TUTORIAL_TODO = {
             id: 'sort-by-rise',
             type: 'callout',
             title: 'Observable Targets',
-            body: 'Rise Time view splits your list into <strong>Observable</strong> and <strong>Not Observable</strong>, ordered by rise time for the night in the Date box and your selected location. This is your go-to view on an imaging night — it shows exactly which targets are accessible and in what order they become available.<br><br>Note that if any of the targets on the <strong>To Do List</strong> are pinned, they will be shaded a different color.',
+            body: 'Rise Time view splits your list into <strong>Observable</strong> and <strong>Not Observable</strong>, ordered by rise time for the night in the Date box and your selected location. This is your go-to view on an imaging night — it shows exactly which targets are accessible and in what order they become available.<br><br>Note that pinned targets on the <strong>To Do List</strong> are marked with 📌 and shaded a different color.',
             target: '#todo-container',
             position: 'right',
             waitFor: 'next',

@@ -237,14 +237,14 @@ const SessionInvariants = {
         const sessionRanges = phd2Parsed.sessions
             .filter(s => s.startTime)
             .map(s => {
-                const from = new Date(s.startTime).getTime();
+                const from = Phd2LogParser._parsePhd2Time(s.startTime)?.getTime() ?? NaN;
                 // A session with no endTime means the log ended mid-session
                 // (no "Guiding Ends" line) rather than that it never
                 // overlaps anything — use its last frame's timestamp as an
                 // effective end instead of excluding it from coverage.
                 let to;
                 if (s.endTime) {
-                    to = new Date(s.endTime).getTime();
+                    to = Phd2LogParser._parsePhd2Time(s.endTime)?.getTime() ?? NaN;
                 } else if (s.frames.length > 0) {
                     to = from + s.frames[s.frames.length - 1].t * 1000;
                 } else {
@@ -296,7 +296,10 @@ const SessionInvariants = {
         for (const session of phd2Parsed.sessions) {
             if (!session.startTime || !session.endTime || !session.equipment.guideExposureMs) continue;
             if (session.frames.length < shortSessionFrames) continue;
-            const durationS = (new Date(session.endTime).getTime() - new Date(session.startTime).getTime()) / 1000;
+            const start = Phd2LogParser._parsePhd2Time(session.startTime);
+            const end = Phd2LogParser._parsePhd2Time(session.endTime);
+            if (!start || !end) continue;
+            const durationS = (end - start) / 1000;
             if (durationS <= 0) continue;
             const expectedS = session.frames.length * (session.equipment.guideExposureMs / 1000);
             const deltaFraction = Math.abs(durationS - expectedS) / durationS;

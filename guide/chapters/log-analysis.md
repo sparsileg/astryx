@@ -125,8 +125,8 @@ image number. Then up to three tables:
 | Guiding Configuration | PHD2 settings: Search Region, Star Mass Tolerance, Guide Star Selection, and Calibration Timing. Star Mass Tolerance is flagged when PHD2 lost the guide star to a change in its brightness in more than one guide session. |
 
 Each row gives what was **Observed**, what's **Recommended**, and the
-**Confidence**. A row that needs a change is highlighted, with the evidence
-below it. A setting with nothing to change is still listed, so you know it
+**Confidence**. A row that needs a change says **Change suggested** under
+the setting's name, with the evidence below it. A setting with nothing to change is still listed, so you know it
 was checked.
 
 The confidence tells you how far to trust a row:
@@ -155,7 +155,8 @@ settings are worth a look.
 | Guide Stability | Dither settle times and timeouts | Timeouts mean your stability setting is too tight for the night's guiding. |
 | Guide Exposure | — | Shown for reference. |
 
-A row worth changing is highlighted and says what to try. The aggression
+A row worth changing says **Change suggested** under the setting's name,
+and says what to try. The aggression
 rows are marked inferred: try a suggestion for a few nights and compare
 the reports before keeping it.
 
@@ -194,7 +195,8 @@ dither settled. Marginal and Reject rows are highlighted.
 
 The guide camera and mount, overall guiding statistics, and the results
 for each side of the pier (counting only guide sessions while imaging) and
-for dithering. Below them are the **Guide Sessions** table (each stretch
+for dithering, with the **effective frames per dither**: how many subs
+your ASIAir took between dithers. Below them are the **Guide Sessions** table (each stretch
 of guiding between interruptions, with its RMS, **Peak RA**, **Peak Dec**,
 and SNR; short sessions and locks near the frame edge are noted below it)
 and the **Calibrations** table (each PHD2 calibration: **West Rate**,
@@ -202,8 +204,10 @@ and the **Calibrations** table (each PHD2 calibration: **West Rate**,
 
 ### Findings
 
-Every problem the analysis found, most severe first, each with the
-evidence behind it. An Inferred finding also says what other explanations
+Every problem the analysis found, most severe first, each starting with
+its level (**Critical**, **Warning** or **Info**) and followed by the
+evidence behind it. Flagged events in the Session Timeline start with
+their level the same way. An Inferred finding also says what other explanations
 it ruled out. [Combined Report Details](appendix-combined-report.md) lists
 the checks.
 
@@ -222,6 +226,9 @@ How far to trust everything above:
 - how many subs have no guide data,
 - any settle scans that never ended in the log (left out of the
   durations rather than estimated),
+- any meridian flip with no end line, for example when Autorun was
+  stopped during the flip (the subs after it and the rest of the log
+  are still read),
 - **Meridian Flip Verification**, and
 - **Stated Limits**: what log analysis can never see.
 
@@ -233,7 +240,10 @@ when the next sub wouldn't finish before the Flip Pause; that time shows
 as its own row, **Wait for a sub**, and changes from flip to flip. The
 table needs the night's
 location, so it appears only when the night is in the Imaging Log;
-otherwise a note says what's missing.
+otherwise a note says what's missing. The log's times are read as the
+clock at that location, so the table comes out the same whatever time
+zone your computer is set to. Every time in the report is the time your
+ASIAir wrote in its log.
 
 ### Saving the Report
 

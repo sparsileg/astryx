@@ -281,9 +281,7 @@ const AsiairLogParser = {
     },
 
     _parseTimestamp(line) {
-        const m = line.match(/^(\d{4}\/\d{2}\/\d{2} \d{2}:\d{2}:\d{2})/);
-        if (!m) return null;
-        return new Date(m[1].replace(/\//g, '-').replace(' ', 'T'));
+        return TimeUtils.parseWallClock(line);
     },
 
     // Single source of truth for recognizing a settle terminator line.
@@ -328,6 +326,25 @@ const AsiairLogParser = {
     // before a terminator, the scan aborts rather than absorbing whatever
     // it happens to find later.
     SETTLE_SCAN_STOP_SET: ['Exposure', '[AutoFocus|Begin]', '[Autorun|', 'Log disabled'],
+
+    // A flip that never logs [Meridian Flip|End] (Autorun stopped during the
+    // wait, the mount lost, the log cut off) ends its scan at one of these,
+    // at the first line that only comes after a flip (a sub, an autofocus,
+    // guiding or a dither, which are then still read), or after
+    // ASIAIR_FLIP_SCAN_TIMEOUT_S, rather than at the end of the log
+    // (Issue #319). Only plate solves and slews come between a flip's
+    // begin and end lines in the corpus. Returns 'stopped',
+    // 'imaging_resumed', 'timeout_exceeded' or null.
+    FLIP_SCAN_STOP_SET: ['[Autorun|End]', '[Autorun|Begin]', 'Stop Autorun Manually', 'Log disabled'],
+    FLIP_SCAN_RESUMED_PATTERNS: [/Exposure \d+\.?\d*m?s image \d+#/, /\[AutoFocus\|Begin\]/, /\[Guide\] Start Guiding/, /\[Guide\] Dither/],
+
+    _flipScanStop(line, pauseStart) {
+        if (this.FLIP_SCAN_STOP_SET.some(p => line.includes(p))) return 'stopped';
+        if (this.FLIP_SCAN_RESUMED_PATTERNS.some(p => p.test(line))) return 'imaging_resumed';
+        const t = this._parseTimestamp(line);
+        if (pauseStart && t && (t - pauseStart) / 1000 > APP_CONFIG.ASIAIR_FLIP_SCAN_TIMEOUT_S) return 'timeout_exceeded';
+        return null;
+    },
 
     // -------------------------------------------------------------------------
     // Event extraction
@@ -434,6 +451,7 @@ const AsiairLogParser = {
                 const pauseStart = this._parseTimestamp(line);
                 let flipStart = null;
                 let flipEnd = null;
+                let stopReason = null;
                 let j = i + 1;
 
                 while (j < lines.length) {
@@ -444,6 +462,8 @@ const AsiairLogParser = {
                         flipEnd = this._parseTimestamp(lines[j]);
                         break;
                     }
+                    stopReason = this._flipScanStop(lines[j], pauseStart);
+                    if (stopReason) break;
                     j++;
                 }
 
@@ -463,7 +483,16 @@ const AsiairLogParser = {
                         durationS: (flipEnd - flipStart) / 1000
                     });
                 }
-                i = j + 1;
+                if (flipEnd) {
+                    i = j + 1;
+                } else {
+                    // The stopping line is still handled (Issue #319)
+                    parseFailures.push({
+                        type: 'meridian_flip', reason: stopReason ?? 'eof',
+                        start: pauseStart, startLine: i + 1, atLine: j + 1,
+                    });
+                    i = j;
+                }
                 continue;
             }
 
@@ -1108,6 +1137,7 @@ const AsiairLogParser = {
                         j = nextIndex;
                         continue;
                     }
+                    if (this._flipScanStop(lines[j], pauseStart)) break;
                     j++;
                 }
 
@@ -1118,9 +1148,11 @@ const AsiairLogParser = {
                     flipStartedAt: flipStart,
                     flipEndedAt: flipEnd,
                     flipNumber,
-                    outcome: flipEnd ? 'succeeded' : null, // no failure string observed in corpus (log-format-survey §2.6)
+                    // No failure string observed in the corpus (log-format-survey
+                    // §2.6): a flip without its end line is 'interrupted' (Issue #319)
+                    outcome: flipEnd ? 'succeeded' : 'interrupted',
                 });
-                i = j + 1;
+                i = flipEnd ? j + 1 : j;
                 continue;
             }
 
@@ -1505,12 +1537,12 @@ const AsiairLogParser = {
         for (const line of allLines) {
             const disabledMatch = line.match(/^Log disabled at (\d{4}\/\d{2}\/\d{2} \d{2}:\d{2}:\d{2})/);
             if (disabledMatch) {
-                disabledAt = new Date(disabledMatch[1].replace(/\//g, '-').replace(' ', 'T'));
+                disabledAt = TimeUtils.parseWallClock(disabledMatch[1]);
                 continue;
             }
             const enabledMatch = line.match(/^Log enabled at (\d{4}\/\d{2}\/\d{2} \d{2}:\d{2}:\d{2})/);
             if (enabledMatch && disabledAt) {
-                const enabledAt = new Date(enabledMatch[1].replace(/\//g, '-').replace(' ', 'T'));
+                const enabledAt = TimeUtils.parseWallClock(enabledMatch[1]);
                 gaps.push({ startedAt: disabledAt, endedAt: enabledAt, durationS: (enabledAt - disabledAt) / 1000 });
                 disabledAt = null;
             }
@@ -1748,7 +1780,8 @@ const AsiairLogParser = {
      */
     async updateLearnedValues(parsed) {
         const r = parsed.recommendations;
-        const start = parsed.wallClock.start?.toISOString();
+        // The log's own clock text, the same on every computer (Issue #303)
+        const start = parsed.wallClock.start ? TimeUtils.formatWallClock(parsed.wallClock.start) : null;
 
         if (start && SettingsManager.hasLearnedFromLog(start)) return { alreadyLearned: true };
 
@@ -1794,7 +1827,7 @@ const AsiairLogParser = {
 
     fmtTime(date) {
         if (!date) return '';
-        return date.toTimeString().slice(0, 5);
+        return TimeUtils.formatWallClock(date).slice(11, 16);
     },
 
     fmtMinutes(seconds) {

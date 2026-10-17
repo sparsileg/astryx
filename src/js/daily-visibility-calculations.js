@@ -27,8 +27,8 @@ const DailyVisibilityCalculations = {
 
         // Convert JD to local time strings
         if (duskJD && dawnJD) {
-            const duskUTC = TimeUtils.jdToDate(duskJD);
-            const dawnUTC = TimeUtils.jdToDate(dawnJD);
+            const duskUTC = jdToDate(duskJD);
+            const dawnUTC = jdToDate(dawnJD);
 
             return {
                 duskJD: duskJD,

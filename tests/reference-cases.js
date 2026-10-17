@@ -18,35 +18,37 @@
 const TIME_TOLERANCE_MINUTES = 2;
 
 const REFERENCE_CASES = [
-    // --- utils-time.js ---
+    // --- astro-core.js ---
     {
         name: 'dateToJD: J2000.0 epoch',
-        actual: () => TimeUtils.dateToJD(new Date(Date.UTC(2000, 0, 1, 12, 0, 0))),
+        actual: () => dateToJD(new Date(Date.UTC(2000, 0, 1, 12, 0, 0))),
         expected: 2451545.0,
         tolerance: 0.0000001,
         source: 'IAU standard J2000.0 epoch (JD 2451545.0 = 2000-01-01 12:00 UTC)'
     },
     {
         name: 'dateToJD: 2026-06-21 00:00 UTC',
-        actual: () => TimeUtils.dateToJD(new Date(Date.UTC(2026, 5, 21, 0, 0, 0))),
+        actual: () => dateToJD(new Date(Date.UTC(2026, 5, 21, 0, 0, 0))),
         expected: 2461212.5,
         tolerance: 0.0000001,
         source: 'Computed via standard Julian Day algorithm (Meeus)'
     },
     {
-        name: 'dateToJD / jdToDate round-trip consistency',
+        // Issue #302: a truncating copy turned 16:00:00 into 15:59:59.999
+        name: 'dateToJD / jdToDate: every minute of a day round-trips exactly',
         actual: () => {
-            const originalDate = new Date(Date.UTC(2026, 5, 21, 3, 47, 0));
-            const jd = TimeUtils.dateToJD(originalDate);
-            const roundTrip = TimeUtils.jdToDate(jd);
-            return (roundTrip.getTime() - originalDate.getTime()) / 60000; // diff in minutes
+            const start = Date.UTC(2026, 5, 21, 0, 0, 0);
+            let wrong = 0;
+            for (let i = 0; i < 1440; i++) {
+                const ms = start + i * 60000;
+                if (jdToDate(dateToJD(new Date(ms))).getTime() !== ms) wrong++;
+            }
+            return wrong;
         },
         expected: 0,
-        tolerance: TIME_TOLERANCE_MINUTES,
-        source: 'snapshot (round-trip self-consistency, not externally verified)'
+        tolerance: 0,
+        source: 'round-trip self-consistency'
     },
-
-    // --- astro-core.js ---
     {
         name: 'getGMST: matches documented constant at J2000.0',
         actual: () => getGMST(2451545.0),
@@ -433,6 +435,28 @@ const REFERENCE_CASES = [
         expected: 3,
         tolerance: 0,
         source: 'synthetic fixture; regression guard for the unhandled Settle Timeout token'
+    },
+    {
+        name: 'ASIAir _extractEvents: a meridian flip with no end line does not swallow the rest of the log',
+        actual: () => {
+            const lines = [
+                '2026/07/23 02:00:00 Exposure 300.0s image 1#',
+                '2026/07/23 02:05:00 [Meridian Flip|Begin] Wait 8min to Meridian Flip',
+                '2026/07/23 02:07:00 Stop Autorun Manually',
+                '2026/07/23 02:07:01 [Autorun|End] Pause Autorun',
+                '2026/07/23 02:10:00 [Autorun|Begin] M 31 Start',
+                '2026/07/23 02:10:05 Exposure 300.0s image 2#',
+                '2026/07/23 02:15:05 Exposure 300.0s image 3#',
+                '2026/07/23 02:20:05 [Autorun|End] Finish Autorun',
+            ];
+            const { events, parseFailures } = AsiairLogParser._extractEvents(lines);
+            const subs = events.filter(e => e.type === 'imaging').reduce((n, e) => n + e.subCount, 0);
+            const flipFailures = parseFailures.filter(f => f.type === 'meridian_flip').length;
+            return subs * 10 + flipFailures;
+        },
+        expected: 31, // 3 subs, 1 flip reported without its end
+        tolerance: 0,
+        source: 'synthetic fixture; Issue #319'
     },
     {
         name: 'PHD2: DROP row does not poison settled RMS with NaN',

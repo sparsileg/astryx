@@ -30,7 +30,7 @@ If the list is empty, Astryx says so and points you to Target Selection.
 ::: {.shot id="todo-list-chart"}
 To Do List sorted by Rise Time, chart view: the header with
 the night's date, Minimum altitude, and dusk and dawn times, and a dozen bars,
-one of them gold for a pinned target.
+one of them gold, with a pin before its name, for a pinned target.
 :::
 
 ## Adding and Removing Targets
@@ -98,7 +98,7 @@ altitude to when it sets below it, cut off at dusk and dawn:
 - The line inside the bar is the target's altitude through the night, from
   the horizon at the bottom of the bar to straight overhead at the top. The
   peak of the line is when the target is highest.
-- A gold bar is a pinned target.
+- A gold bar with 📌 before the name is a pinned target.
 - The circle before the name is the imaging status.
 
 Click a bar to make that target the Current Target.

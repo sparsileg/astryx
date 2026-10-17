@@ -51,6 +51,8 @@ const SettingsManager = {
                 await this.saveSettings();
             }
 
+            if (this._rekeyLearnedNights()) await this.saveSettings();
+
             console.log('SettingsManager initialized successfully');
             return true;
         } catch (error) {
@@ -67,6 +69,7 @@ const SettingsManager = {
         if (savedSettings) {
             this.settings = { ...this.settings, ...savedSettings.data };
         }
+        this._rekeyLearnedNights();
     },
 
     /**
@@ -478,11 +481,28 @@ async setBackupReminderDays(days) {
     },
 
     // The nights learned from (issue #295): { start, subGapS, ditherS } for
-    // each Session Log, by its start time, with null for a figure the night
+    // each Session Log, by its start time as the log writes it, with null for a figure the night
     // had too few clean samples for. The learned values are the average of
     // the newest of them (AsiairLogParser.updateLearnedValues).
     getLearnedNights() {
         return this.settings.learnedNights ?? [];
+    },
+
+    // Nights were keyed by an ISO instant read in the computer's time zone,
+    // so another computer gave the same log another key. They're now keyed
+    // by the log's own clock text (Issue #303). Returns whether any changed.
+    _rekeyLearnedNights() {
+        let changed = false;
+        const nights = this.getLearnedNights().map(n => {
+            if (!n.start?.includes('T')) return n;
+            changed = true;
+            const local = new Date(n.start);
+            const wallClock = new Date(Date.UTC(local.getFullYear(), local.getMonth(), local.getDate(),
+                local.getHours(), local.getMinutes(), local.getSeconds()));
+            return { ...n, start: TimeUtils.formatWallClock(wallClock) };
+        });
+        if (changed) this.settings.learnedNights = nights;
+        return changed;
     },
 
     hasLearnedFromLog(logStart) {

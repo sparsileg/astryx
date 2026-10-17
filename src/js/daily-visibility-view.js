@@ -506,7 +506,7 @@ const DailyVisibilityView = {
             .filter(([, jd]) => jd)
             .sort(([, a], [, b]) => a - b);
         for (const [label, jd] of events) {
-            rows.push([label, TimeUtils.formatLocalTimeWithDate(TimeUtils.jdToDate(jd), data)]);
+            rows.push([label, TimeUtils.formatLocalTimeWithDate(jdToDate(jd), data)]);
         }
         if (!data.moonRiseSet.moonrise && !data.moonRiseSet.moonset) {
             rows.push([null, 'No rise/set during observation']);
@@ -530,7 +530,7 @@ const DailyVisibilityView = {
         if (data.neverRises) {
             rows.push(['Rise', 'Never rises']);
         } else if (data.riseJD) {
-            rows.push(['Rise', TimeUtils.formatLocalTimeWithDate(TimeUtils.jdToDate(data.riseJD), data)]);
+            rows.push(['Rise', TimeUtils.formatLocalTimeWithDate(jdToDate(data.riseJD), data)]);
         } else {
             rows.push(['Rise', 'Before dusk']);
         }
@@ -539,7 +539,7 @@ const DailyVisibilityView = {
         if (data.neverRises) {
             rows.push(['Set', '—']);
         } else if (data.setJD) {
-            rows.push(['Set', TimeUtils.formatLocalTimeWithDate(TimeUtils.jdToDate(data.setJD), data)]);
+            rows.push(['Set', TimeUtils.formatLocalTimeWithDate(jdToDate(data.setJD), data)]);
         } else {
             rows.push(['Set', 'After dawn']);
         }
@@ -554,8 +554,8 @@ const DailyVisibilityView = {
             const dip = findVisibilityDip(data.duskJD, data.dawnJD, targetRA, targetDEC,
                 latitude, longitude, data.minAltitude, horizonArray);
             if (dip) {
-                const dipStartStr = TimeUtils.formatLocalTimeWithDate(TimeUtils.jdToDate(dip.dipStartJD), data);
-                const dipEndStr = TimeUtils.formatLocalTimeWithDate(TimeUtils.jdToDate(dip.dipEndJD), data);
+                const dipStartStr = TimeUtils.formatLocalTimeWithDate(jdToDate(dip.dipStartJD), data);
+                const dipEndStr = TimeUtils.formatLocalTimeWithDate(jdToDate(dip.dipEndJD), data);
                 rows.push(['Dips below min', `${dipStartStr}–${dipEndStr}`]);
             }
         }
@@ -575,16 +575,7 @@ const DailyVisibilityView = {
         }
 
         if (maxAltitudeJD) {
-            const peakTime = TimeUtils.jdToDate(maxAltitudeJD);
-            const isDST = SettingsManager.isDSTActive(peakTime, data);
-            const offsetHours = isDST ? data.timezone + 1 : data.timezone;
-            const adjustedTime = new Date(peakTime.getTime() + offsetHours * 3600000);
-            const peakTimeStr = adjustedTime.toLocaleTimeString('en-US', {
-                hour12: false,
-                hour: '2-digit',
-                minute: '2-digit',
-                timeZone: 'UTC'
-            });
+            const peakTimeStr = TimeUtils.formatLocalTime(jdToDate(maxAltitudeJD), data);
 
             rows.push(['Peak altitude', `${maxAltitude.toFixed(1)}° at ${peakTimeStr}`]);
         } else {
@@ -788,17 +779,7 @@ const DailyVisibilityView = {
             const position = timelineData.jdToTimelinePercent(jd);
             if (position === null || position < 0 || position > 100) return;
 
-            const localTime = TimeUtils.jdToDate(jd);
-            const isDST = SettingsManager.isDSTActive(localTime, data);
-            const offsetHours = isDST ? data.timezone + 1 : data.timezone;
-            const adjustedTime = new Date(localTime.getTime() + offsetHours * 3600000);
-
-            const timeString = adjustedTime.toLocaleTimeString('en-US', {
-                hour12: false,
-                hour: '2-digit',
-                minute: '2-digit',
-                timeZone: 'UTC'
-            });
+            const timeString = TimeUtils.formatLocalTime(jdToDate(jd), data);
 
             const marker = document.createElement('div');
             marker.className = 'time-marker';
