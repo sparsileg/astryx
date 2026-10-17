@@ -143,7 +143,7 @@ fn try_lock(path: &Path, exclusive: bool) -> Result<File, TryLockError> {
     Ok(file)
 }
 
-fn fail(message: &str) -> ! {
+pub fn fail(message: &str) -> ! {
     let _ = writeln!(std::io::stderr(), "{message}");
     std::process::exit(EXIT_FAILED);
 }

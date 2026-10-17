@@ -4,9 +4,11 @@
 // CURRENT_SCHEMA_VERSION follows from its length. Never edit existing entries.
 
 use crate::db::schema;
-use rusqlite::{Connection, Result};
+use rusqlite::{Connection, Result, Transaction, TransactionBehavior};
 
-const MIGRATIONS: &[fn(&Connection) -> Result<()>] = &[
+type Migration = fn(&Connection) -> Result<()>;
+
+const MIGRATIONS: &[Migration] = &[
     migrate_v1, // version 0 → 1: create all tables
     migrate_v2, // version 1 → 2: location time zones
 ];
@@ -14,15 +16,23 @@ const MIGRATIONS: &[fn(&Connection) -> Result<()>] = &[
 pub const CURRENT_SCHEMA_VERSION: u32 = MIGRATIONS.len() as u32;
 
 pub fn run_migrations(conn: &Connection) -> Result<()> {
-    let version = get_version(conn)?;
+    apply(conn, MIGRATIONS)
+}
+
+/// Each migration and its version bump commit together, so one cut short
+/// leaves the old version and schema and simply runs again (Issue #301)
+fn apply(conn: &Connection, migrations: &[Migration]) -> Result<()> {
+    let version = stored_version(conn)?;
     log::info!("DB schema version on open: {}", version);
 
-    for (i, migration) in MIGRATIONS.iter().enumerate() {
+    for (i, migration) in migrations.iter().enumerate() {
         let target = (i + 1) as u32;
         if version < target {
             log::info!("Applying DB migration to version {}", target);
-            migration(conn)?;
-            set_version(conn, target)?;
+            let tx = Transaction::new_unchecked(conn, TransactionBehavior::Immediate)?;
+            migration(&tx)?;
+            set_version(&tx, target)?;
+            tx.commit()?;
             log::info!("DB migration to version {} complete", target);
         }
     }
@@ -30,7 +40,7 @@ pub fn run_migrations(conn: &Connection) -> Result<()> {
     Ok(())
 }
 
-fn get_version(conn: &Connection) -> Result<u32> {
+pub fn stored_version(conn: &Connection) -> Result<u32> {
     conn.query_row("PRAGMA user_version", [], |row| row.get(0))
 }
 
@@ -98,7 +108,7 @@ mod tests {
     #[test]
     fn fresh_database_reaches_current_version() {
         let conn = test_conn();
-        assert_eq!(get_version(&conn).unwrap(), CURRENT_SCHEMA_VERSION);
+        assert_eq!(stored_version(&conn).unwrap(), CURRENT_SCHEMA_VERSION);
     }
 
     #[test]
@@ -156,8 +166,35 @@ mod tests {
         let conn = test_conn();
         let before = names(&conn, "table");
         run_migrations(&conn).unwrap();
-        assert_eq!(get_version(&conn).unwrap(), CURRENT_SCHEMA_VERSION);
+        assert_eq!(stored_version(&conn).unwrap(), CURRENT_SCHEMA_VERSION);
         assert_eq!(names(&conn, "table"), before);
+    }
+
+    /// Leaves its first change behind if not rolled back
+    fn v2_then_fail(conn: &Connection) -> Result<()> {
+        migrate_v2(conn)?;
+        conn.execute_batch("NOT VALID SQL")
+    }
+
+    fn has_time_zone(conn: &Connection) -> bool {
+        conn.prepare("SELECT time_zone FROM locations").is_ok()
+    }
+
+    #[test]
+    fn a_migration_that_fails_halfway_changes_nothing() {
+        let conn = Connection::open_in_memory().unwrap();
+        assert!(apply(&conn, &[migrate_v1, v2_then_fail]).is_err());
+        assert_eq!(stored_version(&conn).unwrap(), 1);
+        assert!(!has_time_zone(&conn));
+    }
+
+    #[test]
+    fn migrating_again_after_a_failure_succeeds() {
+        let conn = Connection::open_in_memory().unwrap();
+        assert!(apply(&conn, &[migrate_v1, v2_then_fail]).is_err());
+        run_migrations(&conn).unwrap();
+        assert_eq!(stored_version(&conn).unwrap(), CURRENT_SCHEMA_VERSION);
+        assert!(has_time_zone(&conn));
     }
 
     #[test]

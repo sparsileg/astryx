@@ -573,20 +573,33 @@ const BackupManagerWeb = {
     // ============================================================================
 
     // Stores a backup can hold: key as used by generateBackupData and the
-    // restore checkboxes, backupKey as written in the backup file
+    // restore checkboxes, backupKey as written in the backup file, storesKey
+    // naming the database store in APP_CONFIG.STORES (looked up when used:
+    // config.js loads after this file)
     RESTORE_STORES: [
-        { key: 'settings', backupKey: 'settings', name: 'Settings', isArray: false },
-        { key: 'locations', backupKey: 'locations', name: 'Locations', isArray: true },
-        { key: 'telescopes', backupKey: 'telescopes', name: 'Telescopes', isArray: true },
-        { key: 'sensors', backupKey: 'sensors', name: 'Sensors', isArray: true },
-        { key: 'filters', backupKey: 'filters', name: 'Filters', isArray: true },
-        { key: 'pinnedTargets', backupKey: 'pinnedTargets', name: 'Pinned Targets', isArray: true },
-        { key: 'toDoTargets', backupKey: 'toDoTargets', name: 'To Do List', isArray: true },
-        { key: 'imagingProjects', backupKey: 'imagingProjects', name: 'Imaging Projects', isArray: true },
-        { key: 'imagingSessions', backupKey: 'imagingSessions', name: 'Imaging Sessions', isArray: true },
-        { key: 'imagingPrograms', backupKey: 'imagingPrograms', name: 'Imaging Programs', isArray: true },
-        { key: 'targets', backupKey: 'targetDatabase', name: 'Target Database', isArray: true }
+        { key: 'settings', backupKey: 'settings', storesKey: 'SETTINGS', name: 'Settings', isArray: false },
+        { key: 'locations', backupKey: 'locations', storesKey: 'LOCATIONS', name: 'Locations', isArray: true },
+        { key: 'telescopes', backupKey: 'telescopes', storesKey: 'TELESCOPES', name: 'Telescopes', isArray: true },
+        { key: 'sensors', backupKey: 'sensors', storesKey: 'SENSORS', name: 'Sensors', isArray: true },
+        { key: 'filters', backupKey: 'filters', storesKey: 'FILTERS', name: 'Filters', isArray: true },
+        { key: 'pinnedTargets', backupKey: 'pinnedTargets', storesKey: 'PINNED_TARGETS', name: 'Pinned Targets', isArray: true },
+        { key: 'toDoTargets', backupKey: 'toDoTargets', storesKey: 'TODO_TARGETS', name: 'To Do List', isArray: true },
+        { key: 'imagingProjects', backupKey: 'imagingProjects', storesKey: 'IMAGING_PROJECTS', name: 'Imaging Projects', isArray: true },
+        { key: 'imagingSessions', backupKey: 'imagingSessions', storesKey: 'IMAGING_SESSIONS', name: 'Imaging Sessions', isArray: true },
+        { key: 'imagingPrograms', backupKey: 'imagingPrograms', storesKey: 'IMAGING_PROGRAMS', name: 'Imaging Programs', isArray: true },
+        { key: 'targets', backupKey: 'targetDatabase', storesKey: 'TARGETS', name: 'Target Database', isArray: true }
     ],
+
+    /**
+     * Whether a backup holds this store. A settings record without its id
+     * (a backup made with no settings saved) can't be restored, so it isn't
+     * offered, and restoring never clears the settings for it (Issue #299).
+     */
+    storeInBackup(store, backupData) {
+        const data = backupData[store.backupKey];
+        if (store.key === 'settings') return data?.id !== undefined;
+        return data !== undefined;
+    },
 
     /**
      * Compare each store in a backup with the current data, and decide whether
@@ -595,7 +608,7 @@ const BackupManagerWeb = {
      * @returns {{identical: Object<string, boolean>, verdict: string, backupChange: number, currentChange: number}}
      */
     async compareBackupToCurrent(backupData) {
-        const stores = this.RESTORE_STORES.filter(s => backupData[s.backupKey] !== undefined);
+        const stores = this.RESTORE_STORES.filter(s => this.storeInBackup(s, backupData));
         const current = await this.generateBackupData(stores.map(s => s.key));
 
         const identical = {};
@@ -810,7 +823,7 @@ const BackupManagerWeb = {
 
         BackupManagerWeb.RESTORE_STORES.forEach(store => {
             // Check if this store exists in the backup
-            if (backupData[store.backupKey] !== undefined) {
+            if (BackupManagerWeb.storeInBackup(store, backupData)) {
                 const backupCount = store.isArray ? backupData[store.backupKey].length : 1;
                 const currentCount = store.key === 'settings' ? 1 : currentCounts[store.key];
                 let rowClass = 'backup-restore-checkbox-item';
@@ -891,10 +904,7 @@ const BackupManagerWeb = {
         try {
             UIManager.showToast('Restoring data...', 'info');
 
-            // Execute restore for each selected store
-            for (const store of selectedStores) {
-                await this.restoreDataStore(store, backupData);
-            }
+            await this.restoreStores(selectedStores, backupData);
 
             // Restored settings bring back the backup's own change time. Without
             // them the restore is a change made now, so it gets backed up.
@@ -919,7 +929,8 @@ const BackupManagerWeb = {
 
         } catch (error) {
             console.error('Restore failed:', error);
-            UIManager.showToast('Restore failed: ' + error.message, 'error');
+            // Every restore runs in one transaction, so a failure changes nothing (Issue #299)
+            UIManager.showToast('Restore failed, nothing was changed: ' + (error.message ?? error), 'error', APP_CONFIG.TOAST_LONG_DURATION_MS);
         }
     },
 
@@ -941,69 +952,68 @@ const BackupManagerWeb = {
     },
 
     /**
-     * Restore a single data store from backup
+     * Replace the ticked stores with the backup's data in one transaction, so
+     * a restore that fails leaves every store as it was (Issue #299)
      */
-    async restoreDataStore(storeKey, backupData) {
-        Log.debug('restoreDataStore called for:', storeKey);
-        // Map store keys to actual store names and backup data keys
-        const storeMapping = {
-            'settings': { storeName: APP_CONFIG.STORES.SETTINGS, backupKey: 'settings', isArray: false },
-            'locations': { storeName: APP_CONFIG.STORES.LOCATIONS, backupKey: 'locations', isArray: true },
-            'telescopes': { storeName: APP_CONFIG.STORES.TELESCOPES, backupKey: 'telescopes', isArray: true },
-            'sensors': { storeName: APP_CONFIG.STORES.SENSORS, backupKey: 'sensors', isArray: true },
-            'filters': { storeName: APP_CONFIG.STORES.FILTERS, backupKey: 'filters', isArray: true },
-            'pinnedTargets': { storeName: APP_CONFIG.STORES.PINNED_TARGETS, backupKey: 'pinnedTargets', isArray: true },
-            'toDoTargets': { storeName: APP_CONFIG.STORES.TODO_TARGETS, backupKey: 'toDoTargets', isArray: true },
-            'imagingProjects': { storeName: APP_CONFIG.STORES.IMAGING_PROJECTS, backupKey: 'imagingProjects', isArray: true },
-            'imagingSessions': { storeName: APP_CONFIG.STORES.IMAGING_SESSIONS, backupKey: 'imagingSessions', isArray: true },
-            'imagingPrograms': { storeName: APP_CONFIG.STORES.IMAGING_PROGRAMS, backupKey: 'imagingPrograms', isArray: true },
-            'targets': { storeName: APP_CONFIG.STORES.TARGETS, backupKey: 'targetDatabase', isArray: true }
-        };
-
-        const mapping = storeMapping[storeKey];
-        if (!mapping) {
-            throw new Error(`Unknown store: ${storeKey}`);
-        }
-
-        const data = backupData[mapping.backupKey];
-        if (!data) {
-            console.warn(`No data found for store: ${storeKey}`);
-            return;
-        }
-
-        // Clear the store
-        if (storeKey === 'settings') {
-            // The SETTINGS store also holds the separate target-version record.
-            // Clearing it for a settings-only restore must not lose that value.
-            const targetVersionRecord = await DBManager.get(APP_CONFIG.STORES.SETTINGS, 'target-version');
-            // Kept even when unset here, so e.g. a Windows backup folder never
-            // reaches a Linux machine
-            const kept = {};
-            APP_CONFIG.BACKUP_RESTORE_KEPT_SETTINGS.forEach(key => {
-                kept[key] = SettingsManager.getSetting(key);
-            });
-            await DBManager.clear(mapping.storeName);
-            await DBManager.put(mapping.storeName, { ...data, data: { ...data.data, ...kept } });
-            if (targetVersionRecord) {
-                await DBManager.put(mapping.storeName, targetVersionRecord);
+    async restoreStores(selectedStores, backupData) {
+        const settingsStore = APP_CONFIG.STORES.SETTINGS;
+        const writes = [];
+        for (const key of selectedStores) {
+            const store = this.RESTORE_STORES.find(s => s.key === key);
+            const data = backupData[store.backupKey];
+            if (!data) {
+                console.warn(`No data found for store: ${key}`);
+                continue;
             }
-        } else {
-            await DBManager.clear(mapping.storeName);
-
-            // Restore data
-            if (mapping.isArray) {
-                // Restore array of items (bulk operation for speed)
-                await DBManager.putBulk(mapping.storeName, data);
+            if (key === 'settings') {
+                // The SETTINGS store also holds the separate target-version record.
+                // Clearing it for a settings-only restore must not lose that value.
+                const targetVersionRecord = await DBManager.get(settingsStore, 'target-version');
+                const records = [{ ...data, data: this.restoredSettingsData(data) }];
+                if (targetVersionRecord) records.push(targetVersionRecord);
+                writes.push({ storeName: settingsStore, clear: true, records });
             } else {
-                // Restore single item (settings)
-                await DBManager.put(mapping.storeName, data);
+                const storeName = APP_CONFIG.STORES[store.storesKey];
+                this.checkRecordKeys(store, storeName, data);
+                writes.push({ storeName, clear: true, records: data });
+            }
+            // Restored targets bring back their own target version
+            if (key === 'targets' && backupData.targetVersion) {
+                writes.push({
+                    storeName: settingsStore,
+                    clear: false,
+                    records: [{ id: 'target-version', value: backupData.targetVersion }]
+                });
             }
         }
+        await DBManager.writeStores(writes);
+    },
 
-        // If restoring targets, also restore the target version number
-        if (storeKey === 'targets' && backupData.targetVersion) {
-            await DataManager.setTargetVersion(backupData.targetVersion);
+    /**
+     * Throw, naming the store and record, when a record lacks the key its
+     * store needs, e.g. "Locations record 3: missing name". The database would
+     * reject it anyway, but only with a message that names neither.
+     */
+    checkRecordKeys(store, storeName, records) {
+        const key = DBManager.requiredKey(storeName);
+        if (key === null) return;
+        const bad = records.findIndex(record => record?.[key] === undefined || record?.[key] === null);
+        if (bad !== -1) {
+            throw new Error(`${store.name} record ${bad + 1}: missing ${key}`);
         }
-    }
+    },
+
+    /**
+     * A backup's settings data as restored: settings that belong to this
+     * machine are kept, even when unset here, so e.g. a Windows backup folder
+     * never reaches a Linux machine
+     */
+    restoredSettingsData(settingsRecord) {
+        const kept = {};
+        APP_CONFIG.BACKUP_RESTORE_KEPT_SETTINGS.forEach(setting => {
+            kept[setting] = SettingsManager.getSetting(setting);
+        });
+        return { ...settingsRecord.data, ...kept };
+    },
 
 };
