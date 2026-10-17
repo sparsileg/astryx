@@ -117,6 +117,16 @@ const DataManager = {
     },
 
     /**
+     * The name in records (keyed by name) that matches name, ignoring case
+     * and surrounding spaces, or undefined, so a save never silently
+     * replaces a record (Issue #326)
+     */
+    existingName(records, name) {
+        const wanted = name.trim().toLowerCase();
+        return Object.keys(records).find(key => key.trim().toLowerCase() === wanted);
+    },
+
+    /**
      * Save a location
      */
     async saveLocation(name, location) {
@@ -141,59 +151,46 @@ const DataManager = {
     },
 
     /**
-     * Delete a location
+     * Target fields holding one value per location, keyed by location name
+     */
+    PER_LOCATION_FIELDS: ['bestMonth', 'peakAltitude', 'visibilityStart', 'visibilityEnd'],
+
+    /**
+     * Delete a location. Its Best Months data is removed from the targets
+     * first, in one bulk write, so a failure leaves the location in place
+     * (Issue #316).
      */
     async deleteLocation(name) {
+        await this.cleanupLocationDataFromTargets(name);
         delete this.locations[name];
         await DBManager.delete(APP_CONFIG.STORES.LOCATIONS, name);
-
-        // Clean up best month data for this location from all targets
-        await this.cleanupLocationDataFromTargets(name);
     },
 
     /**
-     * Remove location-specific data from all targets
-     * Called when a location is deleted
+     * Remove a location's per-location data from every target that has it.
+     * Memory changes only once the write has succeeded (Issue #316).
      */
     async cleanupLocationDataFromTargets(locationName) {
-        let cleanedCount = 0;
+        const holds = target => this.PER_LOCATION_FIELDS.some(field =>
+            target[field] && typeof target[field] === 'object' && target[field][locationName] !== undefined);
+        const changed = this.targetDatabase.filter(holds);
+        if (changed.length === 0) return;
 
-        for (const target of this.targetDatabase) {
-            let needsUpdate = false;
-
-            // Remove location data from bestMonth object
-            if (target.bestMonth && typeof target.bestMonth === 'object' && target.bestMonth[locationName] !== undefined) {
-                delete target.bestMonth[locationName];
-                needsUpdate = true;
+        const cleaned = changed.map(target => {
+            const copy = { ...target };
+            for (const field of this.PER_LOCATION_FIELDS) {
+                if (copy[field] && typeof copy[field] === 'object') {
+                    const { [locationName]: _removed, ...rest } = copy[field];
+                    copy[field] = rest;
+                }
             }
+            return copy;
+        });
+        await this.bulkUpdateTargets(cleaned);
 
-            // Remove location data from peakAltitude object
-            if (target.peakAltitude && typeof target.peakAltitude === 'object' && target.peakAltitude[locationName] !== undefined) {
-                delete target.peakAltitude[locationName];
-                needsUpdate = true;
-            }
-
-            // Remove location data from visibilityStart object
-            if (target.visibilityStart && typeof target.visibilityStart === 'object' && target.visibilityStart[locationName] !== undefined) {
-                delete target.visibilityStart[locationName];
-                needsUpdate = true;
-            }
-
-            // Remove location data from visibilityEnd object
-            if (target.visibilityEnd && typeof target.visibilityEnd === 'object' && target.visibilityEnd[locationName] !== undefined) {
-                delete target.visibilityEnd[locationName];
-                needsUpdate = true;
-            }
-
-            // Save target if any data was removed
-            if (needsUpdate) {
-                await DBManager.put(APP_CONFIG.STORES.TARGETS, target);
-                cleanedCount++;
-            }
-        }
-
-        // Reload targets to refresh in-memory data
-        await this.loadTargets();
+        changed.forEach((target, i) => {
+            for (const field of this.PER_LOCATION_FIELDS) target[field] = cleaned[i][field];
+        });
     },
 
     /**
@@ -346,8 +343,8 @@ const DataManager = {
                 return false;
             }
 
-            await DBManager.clear(APP_CONFIG.STORES.TARGETS);
-            await this.importTargets(parsed.targets, String(meta.version));
+            await DBManager.replaceTargets(parsed.targets, String(meta.version));
+            await this.loadTargets();
             Log.debug(`Target database loaded: ${parsed.targets.length} targets (version ${meta.version})`);
 
             if (parsed.targets.length !== meta.count) {

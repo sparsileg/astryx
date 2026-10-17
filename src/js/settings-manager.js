@@ -287,6 +287,16 @@ const SettingsManager = {
         return this.settings.bestMonthsAltitudes[locationName] ?? this.settings.lastBestMonthsAltitude;
     },
 
+    /**
+     * Every location Best Months have been calculated for, including one
+     * calculated before per-location tracking
+     */
+    getBestMonthsLocations() {
+        const names = Object.keys(this.settings.bestMonthsAltitudes);
+        const last = this.settings.lastBestMonthsLocation;
+        return last && !names.includes(last) ? [...names, last] : names;
+    },
+
     async setBestMonthsAltitude(locationName, altitude) {
         this.settings.bestMonthsAltitudes = { ...this.settings.bestMonthsAltitudes, [locationName]: altitude };
         await this.saveSettings();

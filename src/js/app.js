@@ -111,13 +111,11 @@ const App = {
             const inProgressTutorial = await TutorialManager.findInProgressTutorial();
             UIManager.updateTutorialMenuItems(inProgressTutorial);
 
-            // Auto-calculate Best Months for selected location if needed
-            // (skip if a target-DB reload is pending — it would kill the calc mid-run)
+            // Calculate Best Months the selected location lacks, and those a
+            // catalogue update removed (skip if a target-DB reload is pending —
+            // it would kill the calc mid-run)
             if (!targetsReloadPending) {
-                const selectedLocation = SettingsManager.getSelectedLocation();
-                if (selectedLocation && !UIManager.locationHasBestMonths(selectedLocation)) {
-                    await UIManager.autoCalculateBestMonths(selectedLocation);
-                }
+                await UIManager.calculateMissingBestMonths();
             }
 
             console.log(APP_CONFIG.APP_NAME + ' initialized successfully');

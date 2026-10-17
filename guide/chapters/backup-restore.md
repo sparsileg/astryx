@@ -64,6 +64,11 @@ doesn't count as a change.
 - Automatic backups go to your browser's downloads folder on the web
   version. On the desktop app they go to the **Backup Folder** from
   Settings, or to your Downloads folder if you haven't set one.
+- On the web version, Astryx can't tell whether your browser actually saved
+  the file. A browser can block a download it didn't expect, or ask where to
+  save it and be dismissed. So the message says the backup was
+  **downloaded**, not saved; check your downloads folder now and then. The
+  desktop app writes the file itself and says if that fails.
 
 See [Getting Started](getting-started.md) for these settings.
 

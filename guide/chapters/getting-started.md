@@ -104,7 +104,8 @@ target that's behind your neighbor's oak tree.
 Click **Edit** next to a location in the Existing Locations list to load it
 into the form, change what you need, and click **Save Location**. A
 location's name can't be changed once it's saved; to use a different name,
-add a new location and delete the old one. Click
+add a new location and delete the old one. A new location can't reuse a
+saved location's name, even with different capitals or spaces. Click
 **Delete** to remove it. A location that's recorded in an Imaging Log session
 can't be deleted.
 
@@ -150,9 +151,16 @@ so add at least one before your first session.
 ### Changing or removing equipment
 
 Equipment can't be edited in place. To change a telescope or sensor, save it
-again under the same name with the new values, which replaces the old entry.
-Click **Delete** to remove an item. Anything recorded in an Imaging Log
-session can't be deleted.
+again under the same name with the new values. Astryx asks before replacing
+the old entry; capitals and spaces don't make it a different name.
+
+Imaging Log sessions refer to equipment by name. If a session used the
+telescope or sensor, the session shows the new values after you replace it,
+and Astryx says so when it asks. To keep the old values for past sessions,
+save the changed setup under a new name instead.
+
+A filter can't be added twice under the same name. Click **Delete** to remove
+an item. Anything recorded in an Imaging Log session can't be deleted.
 
 ::: note
 Only the Viewfinder, the dust mote calculator in Utilities, and the Imaging

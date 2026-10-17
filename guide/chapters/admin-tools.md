@@ -39,8 +39,10 @@ When you change **Min Altitude** in Settings, Astryx offers to calculate
 them again for the location in the sidebar, and for each other location
 when you choose it.
 
-Calculate them again yourself after you move a location's coordinates, or
-after Astryx's target database has been updated:
+After Astryx's target database has been updated, it calculates them again
+on its own for every location that had them, one location after another.
+
+Calculate them again yourself after you move a location's coordinates:
 
 1. Open the system menu (≡), point to **Admin Tools**, and click
    **Calculate Best Months**.
@@ -80,8 +82,10 @@ new objects. **Check for Target Updates** compares your copy with the
 latest:
 
 - "Target database is already up to date" means there's nothing to do.
-- Otherwise Astryx downloads the new database and reloads. Best Months for
-  the location chosen in the sidebar are then calculated again.
+- Otherwise Astryx downloads the new database and reloads. Best Months are
+  then calculated again for every location that had them, starting with the
+  one chosen in the sidebar. If the download or the save fails, your
+  current target database is kept.
 
 It needs an internet connection. The version of your target database is
 the number after "t" at the bottom of the sidebar, for example "v1.11.1 d6
