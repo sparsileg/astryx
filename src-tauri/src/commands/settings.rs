@@ -4,8 +4,8 @@ use crate::AstryxState;
 use std::sync::Arc;
 use tauri::State;
 
-const APP_SETTINGS_ID: &str = "app-settings";
-const TARGET_VERSION_ID: &str = "target-version";
+pub(crate) const APP_SETTINGS_ID: &str = "app-settings";
+pub(crate) const TARGET_VERSION_ID: &str = "target-version";
 
 /// Get the app-settings JSON blob. Returns null if not yet saved.
 #[tauri::command]

@@ -7,6 +7,9 @@
   append-only. Never edit an existing migration; add `migrate_vN` to
   `MIGRATIONS` (the schema version follows from its length). Table
   definitions live in `db/schema.rs`.
+  Each migration commits with its version bump in one transaction, and
+  `open_db` saves `astryx.db.pre-v{N}.bak` (newest 3 kept) before any
+  pending migration runs (#301).
 - Each command file has thin `#[tauri::command]` wrappers that lock with
   `state.conn()?` and call the store's `sql::` functions, which take a
   `&Connection` and hold the SQL. Tests live beside them and use

@@ -30,6 +30,20 @@ impl AstryxState {
 
 // ── Application entry point ───────────────────────────────────────────────────
 
+/// Report why the app can't start and exit: in a dialog on a normal start,
+/// since no window exists yet, and on stderr either way (Issue #301)
+fn cannot_start(message: &str, command_line: bool) -> ! {
+    if !command_line {
+        rfd::MessageDialog::new()
+            .set_level(rfd::MessageLevel::Error)
+            .set_title("Astryx can't start")
+            .set_description(message)
+            .set_buttons(rfd::MessageButtons::Ok)
+            .show();
+    }
+    cli::fail(message)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     // Before anything else, so help and command-line mistakes never start
@@ -39,11 +53,20 @@ pub fn run() {
     let app_data_dir = dirs_next::data_dir()
         .unwrap_or_else(|| std::path::PathBuf::from("."))
         .join("Astryx");
-    std::fs::create_dir_all(&app_data_dir).expect("Failed to create app data directory");
+    let command_line = command.is_some();
+    if let Err(e) = std::fs::create_dir_all(&app_data_dir) {
+        cannot_start(
+            &format!(
+                "Couldn't create the data folder {}: {e}",
+                app_data_dir.display()
+            ),
+            command_line,
+        );
+    }
 
-    let _instance_lock = cli::lock_instance(&app_data_dir, command.is_some());
+    let _instance_lock = cli::lock_instance(&app_data_dir, command_line);
 
-    let db_conn = db::open_db(app_data_dir).expect("Failed to open database");
+    let db_conn = db::open_db(&app_data_dir).unwrap_or_else(|e| cannot_start(&e, command_line));
 
     let state = Arc::new(AstryxState {
         db: Mutex::new(db_conn),
@@ -144,7 +167,8 @@ pub fn run() {
             commands::imaging_programs::delete_program,
             // Backup
             commands::backup::read_zip_backup,
-            commands::backup::restore_imaging_log,
+            commands::backup::write_backup_file,
+            commands::backup::restore_stores,
             // Tutorial Progress
             commands::tutorial_progress::get_tutorial_progress,
             commands::tutorial_progress::save_tutorial_progress,

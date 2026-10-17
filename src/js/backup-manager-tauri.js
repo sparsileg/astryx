@@ -4,7 +4,8 @@
  * Uses native file dialogs and SQLite via Tauri commands.
  * Selected automatically by backup-manager.js shim when running in Tauri.
  *
- * File I/O uses tauri-plugin-dialog and tauri-plugin-fs.
+ * File I/O uses tauri-plugin-dialog and tauri-plugin-fs; backups are written
+ * by the write_backup_file command.
  * All modal, counting, store mapping, and restore logic is shared with
  * BackupManagerWeb — only file selection and file save differ.
  */
@@ -128,8 +129,8 @@ const BackupManagerTauri = {
 
         try {
             const backupData = await this.generateBackupData(selectedStores);
-            const dtg = TimeUtils.nowDTG();
-            const baseName = `${APP_CONFIG.APP_NAME}-v${APP_CONFIG.APP_VERSION}-d${APP_CONFIG.DB_VERSION}-userdata-${dtg}`;
+            // The name shown in the modal, which reflects the ticked stores
+            const baseName = document.getElementById('backup-filename').value;
             const defaultFilename = `${baseName}.zip`;
 
             const backupFolder = SettingsManager.getBackupFolder();
@@ -149,12 +150,12 @@ const BackupManagerTauri = {
             const zip = new JSZip();
             zip.file(`${baseName}.json`, jsonString);
             const zipBlob = await zip.generateAsync({ type: 'uint8array', compression: 'DEFLATE' });
-            await window.__TAURI__.fs.writeFile(savePath, zipBlob);
+            await this._writeBackupFile(savePath, zipBlob);
 
             await SettingsManager.saveSetting('lastBackupTimestamp', TimeUtils.nowDTG());
             BackupReminder.onBackupComplete();
 
-            const fileSize = this.formatBytes(new TextEncoder().encode(jsonString).length);
+            const fileSize = this.formatBytes(zipBlob.length);
             this.showBackupSuccessModal(savePath.split(/[/\\]/).pop(), fileSize, selectedStores, backupData);
 
         } catch (error) {
@@ -212,6 +213,12 @@ const BackupManagerTauri = {
         }
     },
 
+    // Written by Rust, so a Backup Folder outside the fs plugin's scope works.
+    // bytes: a Uint8Array, sent as a plain array (see cli_write_stdout)
+    _writeBackupFile(path, bytes) {
+        return invoke('write_backup_file', { path, bytes: Array.from(bytes) });
+    },
+
     // The Backup Folder from Settings, or the system Downloads folder
     async _autoBackupFolder() {
         const backupFolder = SettingsManager.getBackupFolder();
@@ -237,7 +244,7 @@ const BackupManagerTauri = {
             const zip = new JSZip();
             zip.file(`${baseName}.json`, jsonString);
             const zipBlob = await zip.generateAsync({ type: 'uint8array', compression: 'DEFLATE' });
-            await window.__TAURI__.fs.writeFile(savePath, zipBlob);
+            await this._writeBackupFile(savePath, zipBlob);
 
             await SettingsManager.saveSetting('lastBackupTimestamp', TimeUtils.nowDTG());
             BackupReminder.onBackupComplete();
@@ -278,7 +285,7 @@ const BackupManagerTauri = {
             this.restoreFile = {
                 name: filename,
                 path: path,
-                size: new TextEncoder().encode(JSON.stringify(backupData)).length
+                size: (await window.__TAURI__.fs.stat(path)).size
             };
             this._restoreData = backupData;
 
@@ -325,22 +332,29 @@ const BackupManagerTauri = {
         return BackupManagerWeb.handleRestoreExecute.call(this, modalBody, backupData);
     },
 
-    async restoreDataStore(storeKey, backupData) {
-        console.log('BackupManagerTauri.restoreDataStore:', storeKey);
-        // Imaging log stores must be restored together to preserve FK relationships
-        if (storeKey === 'imagingProjects') {
-            await invoke('restore_imaging_log', {
-                projects: backupData.imagingProjects || [],
-                sessions: backupData.imagingSessions || [],
-                programs: backupData.imagingPrograms || [],
-            });
-            return;
+    /**
+     * Replace the ticked stores in one SQLite transaction, so a restore that
+     * fails leaves every store as it was (Issue #299). Projects and sessions
+     * go together; programs only when ticked (Issue #298).
+     */
+    async restoreStores(selectedStores, backupData) {
+        const restore = {};
+        for (const key of selectedStores) {
+            const store = BackupManagerWeb.RESTORE_STORES.find(s => s.key === key);
+            const data = backupData[store.backupKey];
+            if (!data) {
+                console.warn(`No data found for store: ${key}`);
+                continue;
+            }
+            restore[key] = key === 'settings'
+                ? JSON.stringify(BackupManagerWeb.restoredSettingsData(data))
+                : data;
         }
-        // Sessions and programs are handled by restore_imaging_log above
-        if (storeKey === 'imagingSessions' || storeKey === 'imagingPrograms') {
-            return;
+        // Restored targets bring back their own target version
+        if (restore.targets && backupData.targetVersion) {
+            restore.targetVersion = String(backupData.targetVersion);
         }
-        return BackupManagerWeb.restoreDataStore.call(this, storeKey, backupData);
+        await invoke('restore_stores', { restore });
     },
 
     // ── Not used in Tauri (web-only file input pattern) ───────────────────────
