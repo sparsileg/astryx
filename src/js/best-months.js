@@ -18,109 +18,107 @@ const BestMonths = {
         this.isCalculating = true;
         this.cancelRequested = false;
 
-        const location = DataManager.getLocation(locationName);
-        if (!location) {
-            throw new Error(`Location "${locationName}" not found`);
+        // Cleared however the run ends, a failure included (Issue #307)
+        try {
+            const location = DataManager.getLocation(locationName);
+            if (!location) {
+                throw new Error(`Location "${locationName}" not found`);
+            }
+            const twilightCache = this.buildTwilightCache(location);
+
+            const targets = DataManager.getTargets();
+            const totalTargets = targets.length;
+            const results = [];
+            let visibleCount = 0;
+            let notVisibleCount = 0;
+
+            Log.debug(`Calculating best months for ${totalTargets} targets...`);
+
+            // Calculate for each target, collecting results apart from the
+            // targets, so a cancelled run leaves them as they were (Issue #307)
+            for (const target of targets) {
+                if (this.cancelRequested) {
+                    return { cancelled: true };
+                }
+
+                // Calculate best month using type-specific altitude thresholds and weighted scoring
+                const transitResult = this.calculateBestMonth(target, location, twilightCache);
+
+                // Calculate visibility window based on dark hours
+                const visibilityResult = this.calculateVisibilityWindow(target, location, minAltitude, minDarkHours, twilightCache);
+                results.push({ transitResult, visibilityResult });
+
+                if (transitResult.bestMonth !== null && visibilityResult.visibilityStart !== null) {
+                    visibleCount++;
+                } else {
+                    notVisibleCount++;
+                }
+
+                // Call progress callback
+                if (progressCallback) {
+                    progressCallback(results.length, totalTargets, target.object);
+                }
+
+                // Yield to event loop periodically so UI can repaint — no DB write here,
+                // only the final bulk write persists results
+                if (results.length % 100 === 0) {
+                    await new Promise(resolve => setTimeout(resolve, 0));
+                }
+            }
+
+            // Write copies holding the results in one bulk operation, then
+            // reload: memory changes only if the write succeeded
+            const updated = targets.map((target, i) => this.withLocationResult(target, locationName, results[i]));
+            await DataManager.bulkUpdateTargets(updated);
+            await DataManager.loadTargets();
+
+            // Store calculation parameters and completion timestamp only now —
+            // a cancelled or interrupted run must not claim to be done.
+            const now = new Date();
+            const timestamp = now.getUTCFullYear().toString() +
+                  (now.getUTCMonth() + 1).toString().padStart(2, '0') +
+                  now.getUTCDate().toString().padStart(2, '0') + '-' +
+                  now.getUTCHours().toString().padStart(2, '0') +
+                  now.getUTCMinutes().toString().padStart(2, '0') +
+                  now.getUTCSeconds().toString().padStart(2, '0') + 'Z';
+
+            await SettingsManager.setBestMonthsAltitude(locationName, minAltitude);
+            await SettingsManager.setLastBestMonthsDarkHours(minDarkHours);
+            await SettingsManager.setLastBestMonthsCalculated(timestamp);
+            await SettingsManager.setLastBestMonthsLocation(locationName);
+
+            document.dispatchEvent(new CustomEvent('best-months-updated', { detail: { locationName } }));
+
+            return {
+                cancelled: false,
+                totalTargets: totalTargets,
+                visibleCount: visibleCount,
+                notVisibleCount: notVisibleCount
+            };
+        } finally {
+            this.isCalculating = false;
         }
-        const twilightCache = this.buildTwilightCache(location);
+    },
 
-        const targets = DataManager.getTargets();
-        const totalTargets = targets.length;
-        let processedCount = 0;
-        let visibleCount = 0;
-        let notVisibleCount = 0;
-
-        Log.debug(`Calculating best months for ${totalTargets} targets...`);
-
-        // Calculate for each target
-        for (const target of targets) {
-            if (this.cancelRequested) {
-                this.isCalculating = false;
-                return { cancelled: true };
-            }
-
-            // Calculate best month using type-specific altitude thresholds and weighted scoring
-            const transitResult = this.calculateBestMonth(target, location, twilightCache);
-
-            // Calculate visibility window based on dark hours
-            const visibilityResult = this.calculateVisibilityWindow(target, location, minAltitude, minDarkHours, twilightCache);
-            // Initialize objects if they don't exist or convert old single values
-            if (typeof target.bestMonth !== 'object' || target.bestMonth === null) {
-                target.bestMonth = {};
-            }
-            if (typeof target.peakAltitude !== 'object' || target.peakAltitude === null) {
-                target.peakAltitude = {};
-            }
-            if (typeof target.visibilityStart !== 'object' || target.visibilityStart === null) {
-                target.visibilityStart = {};
-            }
-            if (typeof target.visibilityEnd !== 'object' || target.visibilityEnd === null) {
-                target.visibilityEnd = {};
-            }
-
-            // Store results keyed by location name
-            target.bestMonth[locationName] = transitResult.bestMonth;
-            target.peakAltitude[locationName] = transitResult.peakAltitude;
-            target.visibilityStart[locationName] = visibilityResult.visibilityStart;
-            target.visibilityEnd[locationName] = visibilityResult.visibilityEnd;
-
-            // Remove old bestMonthCalculated field if it exists
-            if (target.bestMonthCalculated) {
-                delete target.bestMonthCalculated;
-            }
-
-            if (transitResult.bestMonth !== null && visibilityResult.visibilityStart !== null) {
-                visibleCount++;
-            } else {
-                notVisibleCount++;
-            }
-
-            processedCount++;
-
-            // Call progress callback
-            if (progressCallback) {
-                progressCallback(processedCount, totalTargets, target.object);
-            }
-
-            // Yield to event loop periodically so UI can repaint — no DB write here,
-            // only the final bulk write persists results
-            if (processedCount % 100 === 0) {
-                await new Promise(resolve => setTimeout(resolve, 0));
-            }
-        }
-
-        // Write all targets in one bulk operation now that calculation is complete —
-        // avoids partial data persisting if the run is interrupted mid-loop
-        await DataManager.bulkUpdateTargets(targets);
-
-        this.isCalculating = false;
-
-        // Reload targets to pick up changes
-        await DataManager.loadTargets();
-
-        // Store calculation parameters and completion timestamp only now —
-        // a cancelled or interrupted run must not claim to be done.
-        const now = new Date();
-        const timestamp = now.getUTCFullYear().toString() +
-              (now.getUTCMonth() + 1).toString().padStart(2, '0') +
-              now.getUTCDate().toString().padStart(2, '0') + '-' +
-              now.getUTCHours().toString().padStart(2, '0') +
-              now.getUTCMinutes().toString().padStart(2, '0') +
-              now.getUTCSeconds().toString().padStart(2, '0') + 'Z';
-
-        await SettingsManager.setBestMonthsAltitude(locationName, minAltitude);
-        await SettingsManager.setLastBestMonthsDarkHours(minDarkHours);
-        await SettingsManager.setLastBestMonthsCalculated(timestamp);
-        await SettingsManager.setLastBestMonthsLocation(locationName);
-
-        document.dispatchEvent(new CustomEvent('best-months-updated', { detail: { locationName } }));
-
-        return {
-            cancelled: false,
-            totalTargets: totalTargets,
-            visibleCount: visibleCount,
-            notVisibleCount: notVisibleCount
+    /**
+     * A copy of target with one location's results set. Old single values
+     * become per-location objects, and the old bestMonthCalculated field is
+     * dropped (Issue #307).
+     */
+    withLocationResult(target, locationName, { transitResult, visibilityResult }) {
+        const values = {
+            bestMonth: transitResult.bestMonth,
+            peakAltitude: transitResult.peakAltitude,
+            visibilityStart: visibilityResult.visibilityStart,
+            visibilityEnd: visibilityResult.visibilityEnd
         };
+        const copy = { ...target };
+        for (const [field, value] of Object.entries(values)) {
+            const perLocation = typeof target[field] === 'object' && target[field] !== null ? target[field] : {};
+            copy[field] = { ...perLocation, [locationName]: value };
+        }
+        delete copy.bestMonthCalculated;
+        return copy;
     },
 
     /**
@@ -166,73 +164,76 @@ const BestMonths = {
         this.isCalculating = true;
         this.cancelRequested = false;
 
-        const locations = Object.keys(DataManager.getLocations());
-        const totalLocations = locations.length;
+        // Issue #307
+        try {
+            const locations = Object.keys(DataManager.getLocations());
+            const totalLocations = locations.length;
 
-        if (totalLocations === 0) {
-            return {
+            if (totalLocations === 0) {
+                return {
+                    cancelled: false,
+                    error: 'No locations found'
+                };
+            }
+
+            const results = {
                 cancelled: false,
-                error: 'No locations found'
+                locationsProcessed: 0,
+                locationResults: {}
             };
-        }
 
-        const results = {
-            cancelled: false,
-            locationsProcessed: 0,
-            locationResults: {}
-        };
-
-        for (let i = 0; i < totalLocations; i++) {
-            if (this.cancelRequested) {
-                results.cancelled = true;
-                break;
-            }
-
-            const locationName = locations[i];
-
-            // Location-level progress callback
-            if (progressCallback) {
-                progressCallback({
-                    phase: 'location',
-                    currentLocation: locationName,
-                    locationIndex: i + 1,
-                    totalLocations: totalLocations
-                });
-            }
-
-            // Calculate for this location
-            const locationResult = await this.calculateBestMonths(
-                locationName,
-                minAltitude,
-                minDarkHours,
-                (processed, total, targetName) => {
-                    // Target-level progress callback
-                    if (progressCallback) {
-                        progressCallback({
-                            phase: 'target',
-                            currentLocation: locationName,
-                            locationIndex: i + 1,
-                            totalLocations: totalLocations,
-                            processedTargets: processed,
-                            totalTargets: total,
-                            currentTarget: targetName
-                        });
-                    }
+            for (let i = 0; i < totalLocations; i++) {
+                if (this.cancelRequested) {
+                    results.cancelled = true;
+                    break;
                 }
-            );
 
-            // Store results for this location
-            results.locationResults[locationName] = locationResult;
-            results.locationsProcessed++;
+                const locationName = locations[i];
 
-            if (locationResult.cancelled) {
-                results.cancelled = true;
-                break;
+                // Location-level progress callback
+                if (progressCallback) {
+                    progressCallback({
+                        phase: 'location',
+                        currentLocation: locationName,
+                        locationIndex: i + 1,
+                        totalLocations: totalLocations
+                    });
+                }
+
+                // Calculate for this location
+                const locationResult = await this.calculateBestMonths(
+                    locationName,
+                    minAltitude,
+                    minDarkHours,
+                    (processed, total, targetName) => {
+                        // Target-level progress callback
+                        if (progressCallback) {
+                            progressCallback({
+                                phase: 'target',
+                                currentLocation: locationName,
+                                locationIndex: i + 1,
+                                totalLocations: totalLocations,
+                                processedTargets: processed,
+                                totalTargets: total,
+                                currentTarget: targetName
+                            });
+                        }
+                    }
+                );
+
+                // Store results for this location
+                results.locationResults[locationName] = locationResult;
+                results.locationsProcessed++;
+
+                if (locationResult.cancelled) {
+                    results.cancelled = true;
+                    break;
+                }
             }
+            return results;
+        } finally {
+            this.isCalculating = false;
         }
-
-        this.isCalculating = false;
-        return results;
     },
 
     /**

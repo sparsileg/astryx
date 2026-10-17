@@ -530,8 +530,8 @@ const UIManager = {
     openSettingsModal() {
         this.openModal('settings-template', 'Settings', async (action, modalBody) => {
             if (action === 'save') {
-                await this.saveSettingsFromModal(modalBody);
-                this.closeModal();
+                // Stays open on a rejected value (Issue #329)
+                if (await this.saveSettingsFromModal(modalBody)) this.closeModal();
             } else if (action === 'cancel') {
                 this.closeModal();
             }
@@ -727,6 +727,12 @@ const UIManager = {
         // Validation
         if (!name) {
             this.showToast('Please enter a location name', 'error');
+            return;
+        }
+        // Editing keeps the name (read-only); adding can't reuse one (Issue #326)
+        const existing = DataManager.existingName(DataManager.getLocations(), name);
+        if (!nameInput.readOnly && existing !== undefined) {
+            this.showToast(`Location "${existing}" already exists`, 'error');
             return;
         }
         if (isNaN(latitude) || latitude < -90 || latitude > 90) {
@@ -1379,9 +1385,32 @@ const UIManager = {
     },
 
     /**
-     * Save settings from modal
+     * Check a typed number in a Settings field. Returns the number, null when
+     * the field is blank, or undefined after showing an error.
+     */
+    _settingsNumber(modalBody, id, label, [min, max]) {
+        const field = modalBody.querySelector('#' + id);
+        const raw = field?.value.trim() ?? '';
+        if (raw === '') return null;
+        const value = parseFloat(raw);
+        if (isNaN(value) || value < min || value > max) {
+            this.showToast(`${label} must be between ${min} and ${max}`, 'error');
+            field.focus();
+            return undefined;
+        }
+        return value;
+    },
+
+    /**
+     * Save settings from modal. Every typed value is checked before anything
+     * is saved, so a rejected one saves nothing and returns false (Issue #329).
      */
     async saveSettingsFromModal(modalBody) {
+        const filterMinSize = this._settingsNumber(modalBody, 'filter-min-size', 'Min Target Size', APP_CONFIG.FILTER_MIN_SIZE_RANGE);
+        if (filterMinSize === undefined) return false;
+        const filterMaxMag = this._settingsNumber(modalBody, 'filter-max-mag', 'Limiting Magnitude', APP_CONFIG.FILTER_MAX_MAG_RANGE);
+        if (filterMaxMag === undefined) return false;
+
         // Only an actual change counts toward the automatic backup
         const settingsBefore = JSON.stringify(SettingsManager.getSettings());
 
@@ -1414,25 +1443,10 @@ const UIManager = {
             await SettingsManager.setBackupReminderDays(parseInt(backupReminderDays));
         }
 
-        const filterMinSizeRaw = modalBody.querySelector('#filter-min-size')?.value.trim();
-        if (filterMinSizeRaw !== undefined && filterMinSizeRaw !== '') {
-            const filterMinSize = parseFloat(filterMinSizeRaw);
-            if (isNaN(filterMinSize) || filterMinSize < 0.1 || filterMinSize > 999) {
-                this.showToast('Min Target Size must be between 0.1 and 999', 'error');
-                modalBody.querySelector('#filter-min-size').focus();
-                return;
-            }
+        if (filterMinSize !== null) {
             await SettingsManager.setFilterMinSize(filterMinSize);
         }
-
-        const filterMaxMagRaw = modalBody.querySelector('#filter-max-mag')?.value.trim();
-        if (filterMaxMagRaw !== undefined && filterMaxMagRaw !== '') {
-            const filterMaxMag = parseFloat(filterMaxMagRaw);
-            if (isNaN(filterMaxMag) || filterMaxMag < -5 || filterMaxMag > 20) {
-                this.showToast('Max Magnitude must be between -5 and 20', 'error');
-                modalBody.querySelector('#filter-max-mag').focus();
-                return;
-            }
+        if (filterMaxMag !== null) {
             await SettingsManager.setFilterMaxMag(filterMaxMag);
         }
 
@@ -1457,6 +1471,7 @@ const UIManager = {
         if (minAltChanged) {
             await this.offerBestMonthsRecalc(SettingsManager.getSelectedLocation());
         }
+        return true;
     },
 
     /**
@@ -1513,12 +1528,30 @@ const UIManager = {
     },
 
 
+    /**
+     * True when every target holds Best Months for the location. A run sets
+     * it on every target (null when never observable), so a target without
+     * it came from a catalogue update or import since (Issue #339).
+     */
     locationHasBestMonths(locationName) {
         const targets = DataManager.getTargets();
         if (!targets || targets.length === 0) return false;
-        // Sample first 10 targets to check if location has best months data
-        const sample = targets.slice(0, 10);
-        return sample.some(t => t.bestMonth && t.bestMonth[locationName] !== undefined);
+        return targets.every(t => t.bestMonth?.[locationName] !== undefined);
+    },
+
+    /**
+     * Calculate Best Months, one location at a time, for the selected
+     * location and every location calculated before, wherever targets lack
+     * them: after a catalogue update or import only some or none have them
+     * (Issue #339)
+     */
+    async calculateMissingBestMonths() {
+        const names = [SettingsManager.getSelectedLocation(), ...SettingsManager.getBestMonthsLocations()];
+        const missing = [...new Set(names)].filter(name =>
+            name && DataManager.getLocation(name) && !this.locationHasBestMonths(name));
+        for (const name of missing) {
+            await this.autoCalculateBestMonths(name);
+        }
     },
 
     /**
@@ -1655,11 +1688,8 @@ const UIManager = {
 
                 document.dispatchEvent(new CustomEvent('targets-updated'));
 
-                // Auto-calculate best months for current location
-                const locationName = SettingsManager.getSelectedLocation();
-                if (locationName && !this.locationHasBestMonths(locationName)) {
-                    await this.autoCalculateBestMonths(locationName);
-                }
+                // Imported rows replace whole targets, Best Months included
+                await this.calculateMissingBestMonths();
             }
         } catch (error) {
             console.error('Error importing targets:', error);
@@ -2217,10 +2247,24 @@ const UIManager = {
     },
 
     /**
+     * Ask before an equipment save replaces the item of that name. Sessions
+     * record equipment by name, so a session that used it shows the new
+     * values afterwards (Issue #326).
+     */
+    async confirmReplaceEquipment(field, name) {
+        const kind = field === 'telescope' ? 'Telescope' : 'Sensor';
+        let message = `${kind} "${name}" already exists. Replace it with these values?`;
+        if (await ImagingLogManager.isEquipmentInUse(field, name)) {
+            message += ` Imaging Log sessions that used "${name}" will show the new values too, since sessions refer to equipment by name. To keep the old values for those sessions, save these under a new name instead.`;
+        }
+        return this.confirm(message);
+    },
+
+    /**
      * Handle save telescope
      */
     async handleSaveTelescope(modalBody) {
-        const name = document.getElementById('telescope-name')?.value.trim();
+        let name = document.getElementById('telescope-name')?.value.trim();
         const focalLength = parseFloat(document.getElementById('telescope-focal-length')?.value);
         const aperture = parseFloat(document.getElementById('telescope-aperture')?.value);
         const multiplier = parseFloat(document.getElementById('telescope-multiplier')?.value);
@@ -2233,6 +2277,14 @@ const UIManager = {
         if (focalLength <= 0 || aperture <= 0 || multiplier <= 0) {
             this.showToast('Values must be greater than zero', 'error');
             return;
+        }
+
+        // Saving under an existing name replaces that telescope, but only once
+        // confirmed, and keeps its stored spelling (Issue #326)
+        const existing = DataManager.existingName(DataManager.getTelescopes(), name);
+        if (existing !== undefined) {
+            if (!await this.confirmReplaceEquipment('telescope', existing)) return;
+            name = existing;
         }
 
         await DataManager.saveTelescope(name, {
@@ -2323,7 +2375,7 @@ const UIManager = {
      * Handle save sensor
      */
     async handleSaveSensor(modalBody) {
-        const name = document.getElementById('sensor-name')?.value.trim();
+        let name = document.getElementById('sensor-name')?.value.trim();
         const resolutionX = parseInt(document.getElementById('sensor-resolution-x')?.value);
         const resolutionY = parseInt(document.getElementById('sensor-resolution-y')?.value);
         const pixelSizeX = parseFloat(document.getElementById('sensor-pixel-size-x')?.value);
@@ -2337,6 +2389,14 @@ const UIManager = {
         if (resolutionX <= 0 || resolutionY <= 0 || pixelSizeX <= 0 || pixelSizeY <= 0) {
             this.showToast('Values must be greater than zero', 'error');
             return;
+        }
+
+        // Saving under an existing name replaces that sensor, but only once
+        // confirmed, and keeps its stored spelling (Issue #326)
+        const existing = DataManager.existingName(DataManager.getSensors(), name);
+        if (existing !== undefined) {
+            if (!await this.confirmReplaceEquipment('sensor', existing)) return;
+            name = existing;
         }
 
         await DataManager.saveSensor(name, {
@@ -2431,9 +2491,10 @@ const UIManager = {
             return;
         }
 
-        // Check if already exists
-        if (DataManager.getFilter(name)) {
-            this.showToast(`Filter "${name}" already exists`, 'error');
+        // Issue #326
+        const existing = DataManager.existingName(DataManager.getFilters(), name);
+        if (existing !== undefined) {
+            this.showToast(`Filter "${existing}" already exists`, 'error');
             return;
         }
 

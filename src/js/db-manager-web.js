@@ -261,4 +261,15 @@ const DBManagerWeb = {
         });
     },
 
+    /**
+     * Replace the whole target catalogue and its version in one transaction,
+     * so a failed write leaves the previous catalogue (Issue #339)
+     */
+    async replaceTargets(targets, version) {
+        return this.writeStores([
+            { storeName: APP_CONFIG.STORES.TARGETS, clear: true, records: targets },
+            { storeName: APP_CONFIG.STORES.SETTINGS, clear: false, records: [{ id: 'target-version', value: version }] },
+        ]);
+    },
+
 };

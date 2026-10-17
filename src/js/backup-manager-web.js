@@ -246,6 +246,22 @@ const BackupManagerWeb = {
         }
     },
 
+    /**
+     * Start a browser download of blob. The URL is revoked later, not at
+     * once: some browsers cancel a download whose URL is revoked before it
+     * starts (Issue #312).
+     */
+    downloadBlob(blob, fileName) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), APP_CONFIG.DOWNLOAD_URL_REVOKE_DELAY_MS);
+    },
+
     async executeAutoBackup(fromLastSession = false) {
         if (!SettingsManager.getAutoBackupEnabled()) return;
 
@@ -265,18 +281,14 @@ const BackupManagerWeb = {
             zip.file(filename + '.json', jsonString);
             const zipBlob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
 
-            const url = URL.createObjectURL(zipBlob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = filename + '.zip';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
+            this.downloadBlob(zipBlob, filename + '.zip');
 
             await SettingsManager.saveSetting('lastBackupTimestamp', TimeUtils.nowDTG());
             BackupReminder.onBackupComplete();
-            UIManager.showToast(fromLastSession ? 'Auto-backup saved: changes from your last session' : 'Auto-backup saved', 'success');
+            // A page can't tell whether the browser saved a download it
+            // started, so the message doesn't claim it did (Issue #312)
+            const what = fromLastSession ? 'Auto-backup of changes from your last session' : 'Auto-backup';
+            UIManager.showToast(`${what} downloaded: check your Downloads folder`, 'success', APP_CONFIG.TOAST_LONG_DURATION_MS);
         } catch (error) {
             console.error('Auto-backup failed:', error);
             UIManager.showToast('Auto-backup failed: ' + error.message, 'error');
@@ -406,15 +418,7 @@ const BackupManagerWeb = {
         const fileSizeBytes = zipBlob.size;
         const fileSize = this.formatBytes(fileSizeBytes);
 
-        // Create download link
-        const url = URL.createObjectURL(zipBlob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename + '.zip';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+        this.downloadBlob(zipBlob, filename + '.zip');
 
         // Update last backup timestamp
         await SettingsManager.saveSetting('lastBackupTimestamp', TimeUtils.nowDTG());

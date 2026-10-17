@@ -64,6 +64,15 @@ const DBManagerTauri = {
         return handler.putBulk(items);
     },
 
+    /**
+     * Replace the whole target catalogue and its version in one SQLite
+     * transaction, the same replace a restore uses, so a failed write leaves
+     * the previous catalogue (Issue #339)
+     */
+    async replaceTargets(targets, version) {
+        await invoke('restore_stores', { restore: { targets, targetVersion: version } });
+    },
+
     // ── Store handler registry ────────────────────────────────────────────────
 
     _getHandler(storeName) {
