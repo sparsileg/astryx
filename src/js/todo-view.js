@@ -747,9 +747,11 @@ const ToDoView = {
                 ctx.font = `bold ${SettingsManager.scaledPx(13)}px sans-serif`;
                 ctx.textAlign = 'left';
                 const chartTypeDisplay = OBJECT_TYPES[info.target.type] || info.target.type || '';
+                // The pin marks a pinned bar, not its color alone (Issue #325)
+                const pinIcon = isPinned ? '📌 ' : '';
                 const chartLabel = chartTypeDisplay
-                    ? `${info.target.object} ${chartTypeDisplay}`
-                    : info.target.object;
+                    ? `${pinIcon}${info.target.object} ${chartTypeDisplay}`
+                    : `${pinIcon}${info.target.object}`;
                 const labelTextX = labelX + statusWidth;
                 const labelTextY = barY + 20;
                 const labelTextWidth = ctx.measureText(chartLabel).width;
@@ -998,9 +1000,11 @@ const ToDoView = {
                 ctx.font = `bold ${SettingsManager.scaledPx(13)}px sans-serif`;
                 ctx.textAlign = 'left';
                 const chartTypeDisplay = OBJECT_TYPES[info.target.type] || info.target.type || '';
+                // The pin marks a pinned bar, not its color alone (Issue #325)
+                const pinIcon = isPinned ? '📌 ' : '';
                 const chartLabel = chartTypeDisplay
-                    ? `${info.target.object} ${chartTypeDisplay}`
-                    : info.target.object;
+                    ? `${pinIcon}${info.target.object} ${chartTypeDisplay}`
+                    : `${pinIcon}${info.target.object}`;
                 const labelTextX = labelX + statusWidth;
                 const labelTextY = barY + 20;
                 const labelTextWidth = ctx.measureText(chartLabel).width;

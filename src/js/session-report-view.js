@@ -163,8 +163,7 @@ const SessionReportView = {
         if (fs.night) return fs.night;
         if (!fs.span) return '';
         const fmtLocal = (d) => {
-            const y = d.getFullYear(), m = String(d.getMonth() + 1).padStart(2, '0'), day = String(d.getDate()).padStart(2, '0');
-            return `${y}-${m}-${day}`;
+            return TimeUtils.formatWallClock(d).slice(0, 10).replace(/\//g, '-');
         };
         const d1 = fmtLocal(fs.span.from), d2 = fmtLocal(fs.span.to);
         return d1 === d2 ? d1 : `${d1} / ${d2}`;
@@ -235,13 +234,16 @@ const SessionReportView = {
         },
 
         _severityBadge(severity) {
-            const label = severity === 'critical' ? 'Critical' : severity === 'warning' ? 'Warning' : 'Info';
-            return `<span class="guide-flag guide-flag-${severity}">${label}</span>`;
+            return `<span class="guide-flag guide-flag-${severity}">${this._severityLabel(severity)}</span>`;
         },
 
-        _severityIcon(severity) {
-            return severity === 'critical' ? '🔴' : severity === 'warning' ? '🟡' : 'ℹ️';
+        // Severity in words, never by color alone (Issue #325). Shared with the PDF.
+        _severityLabel(severity) {
+            return severity === 'critical' ? 'Critical' : severity === 'warning' ? 'Warning' : 'Info';
         },
+
+        // Marks a row that needs a change in words (Issue #325). Shared with the PDF.
+        CHANGE_SUGGESTED: 'Change suggested',
 
         // -------------------------------------------------------------------------
         // §2 — Session timeline
@@ -287,7 +289,7 @@ const SessionReportView = {
                 const durationCell = durationS != null && durationS > 0 ? AsiairLogParser.fmtMinutes(durationS) : '';
                 const countSuffix = e.count > 1 ? ` ×${e.count}` : '';
                 const label = e.finding
-                      ? `${this._severityIcon(e.finding.severity)} ${HtmlUtils.escapeHtml(e.label)}`
+                      ? `${this._severityLabel(e.finding.severity)} — ${HtmlUtils.escapeHtml(e.label)}`
                       : HtmlUtils.escapeHtml(e.label);
                 const rowClasses = [e.finding ? 'session-report-timeline-flagged' : '', e.verbose ? 'session-report-timeline-verbose' : '']
                       .filter(Boolean).join(' ');
@@ -312,8 +314,8 @@ const SessionReportView = {
                         if (block.subs.length === 0 || !block.startedAt) continue;
                         const seqLo = block.subs[0].sequenceNo, seqHi = block.subs[block.subs.length - 1].sequenceNo;
                         const inBlock = fs.subs.filter(s => s.sequenceNo >= seqLo && s.sequenceNo <= seqHi);
-                        const rmsValues = inBlock.filter(s => s.guide && s.guide.rmsTotal != null).map(s => s.guide.rmsTotal);
-                        const avgRms = rmsValues.length ? rmsValues.reduce((a, b) => a + b, 0) / rmsValues.length : null;
+                        // Weighted by each sub's guide frames (Issue #323)
+                        const avgRms = SessionFusion.pooledGuideRms(inBlock, 'rmsTotal');
                         const imgRange = block.firstImageNo === block.lastImageNo
                               ? `img ${block.firstImageNo}` : `imgs ${block.firstImageNo}–${block.lastImageNo}`;
                         entries.push({
@@ -461,8 +463,7 @@ const SessionReportView = {
         _asDate(value) {
             if (!value) return null;
             if (value instanceof Date) return value;
-            const d = new Date(value);
-            return Number.isNaN(d.getTime()) ? null : d;
+            return Phd2LogParser._parsePhd2Time(value);
         },
 
         _fmtTimelineTime(value) {
@@ -555,12 +556,17 @@ const SessionReportView = {
             return notes;
         },
 
-        // Settle scans that never found their end line. Their time is left
-        // out of the durations rather than estimated. Shared with the PDF.
+        // Settle scans and meridian flips (Issue #319) that never found their
+        // end line. Their time is left out of the durations rather than
+        // estimated. Shared with the PDF.
         _settleScanFailureText(context) {
-            const failures = (context && context.asiairParsed && context.asiairParsed.parseFailures) || [];
-            if (failures.length === 0) return '';
-            return `${failures.length} settle scan(s) had no end in the log and were left out of the durations rather than estimated.`;
+            const failures = context?.asiairParsed?.parseFailures ?? [];
+            const flips = failures.filter(f => f.type === 'meridian_flip').length;
+            const settles = failures.length - flips;
+            const notes = [];
+            if (settles > 0) notes.push(`${settles} settle scan(s) had no end in the log and were left out of the durations rather than estimated.`);
+            if (flips > 0) notes.push(`${flips} meridian flip(s) had no end line in the log (Autorun stopped or the log ended during the flip, or imaging went on without one); the flip time was left out.`);
+            return notes.join(' ');
         },
 
         // -------------------------------------------------------------------------
@@ -721,7 +727,7 @@ const SessionReportView = {
 
             let html = `<h4 class="session-report-section">Findings</h4><ul class="session-report-notes">`;
             for (const item of items) {
-                html += `<li>${this._severityIcon(item.severity)} <strong>${HtmlUtils.escapeHtml(item.title)}</strong>`;
+                html += `<li><strong>${this._severityLabel(item.severity)} — ${HtmlUtils.escapeHtml(item.title)}</strong>`;
                 html += ` <span style="color:var(--text-secondary)">(${item.confidence})</span>`;
                 if (item.detail) html += `<br>${HtmlUtils.escapeHtml(item.detail)}`;
                 if (item.affectedSubs && item.affectedSubs.length > 0) {
@@ -1058,7 +1064,7 @@ const SessionReportView = {
                 if (!start) continue;
                 const end = s.endTime ? Phd2LogParser._parsePhd2Time(s.endTime) : null;
                 const midMs = end ? (start.getTime() + end.getTime()) / 2 : start.getTime();
-                const midJD = dateToJD(new Date(midMs));
+                const midJD = dateToJD(TimeUtils.wallClockToInstant(new Date(midMs), location));
                 const sunPos = getSunPosition(midJD);
                 const sunAlt = getAltitude(midJD, sunPos.ra, sunPos.dec, location.latitude, location.longitude);
                 points.push({ session: s, sunAlt, snr: s.stats.avgSnr });
@@ -1220,7 +1226,7 @@ const SessionReportView = {
         _recommendationGroups() {
             return [
                 { key: 'behavior', title: 'Behavior', columns: ['Measurement', 'Observed', 'Moving Average', 'Confidence'],
-                  note: `Astryx learns from your session logs to estimate more accurately how many subs fit into a stretch of imaging time. Sub Gap is the dead time between one sub ending and the next starting (download and overhead). Dither Duration is how long a dither takes to settle. The Sequence Planner adds the sub gap after every sub and the dither duration after every dither, so the closer these values match your rig, the better it can estimate the number of subs. Observed is what this log measured in its clean blocks. Moving Average is the value Astryx now plans with, followed by the value before this log and this log's figure that was averaged in. Each log moves the average halfway toward its own figure, so one unusual night nudges it rather than replacing it. This log's figure is measured over all of its subs, so it can differ slightly from Observed. A log updates the average only once, and only when it has at least ${APP_CONFIG.ASIAIR_MIN_CLEAN_SAMPLES} clean samples; otherwise the stored value is left as it was.` },
+                  note: `Astryx learns from your session logs to estimate more accurately how many subs fit into a stretch of imaging time. Sub Gap is the dead time between one sub ending and the next starting (download and overhead). Dither Duration is how long a dither takes to settle. The Sequence Planner adds the sub gap after every sub and the dither duration after every dither, so the closer these values match your rig, the better it can estimate the number of subs. Observed is what this log measured in its clean blocks. Moving Average is the value Astryx now plans with, followed by the value before this log and this log's figure that was averaged in. Moving Average is the average of the last ${APP_CONFIG.ASIAIR_LEARNED_WINDOW_NIGHTS} nights learned from, by date, so one unusual night shifts it by only about 1/${APP_CONFIG.ASIAIR_LEARNED_WINDOW_NIGHTS} of its difference, and a log older than those nights doesn't change it. This log's figure is measured over all of its subs, so it can differ slightly from Observed. A log updates the average only once, and only when it has at least ${APP_CONFIG.ASIAIR_MIN_CLEAN_SAMPLES} clean samples; otherwise the stored value is left as it was.` },
                 { key: 'sequencePlanning', title: 'Sequence Planning', columns: ['Setting', 'Observed', 'Recommended', 'Confidence'],
                   note: 'AF Duration covers autofocus, re-selecting the guide star and settling, but not calibration. Guide Calibration Duration includes settling. Flip Duration runs from the start of the flip to its end and leaves out the pause before it.' },
                 { key: 'asiair', title: 'ASIAir Configuration', columns: ['Setting', 'Observed', 'Recommended', 'Confidence'] },
@@ -1265,15 +1271,15 @@ const SessionReportView = {
                 if (g.note) html += `<p class="session-report-note-small" style="color:var(--text-secondary)">${HtmlUtils.escapeHtml(g.note)}</p>`;
                 html += `<table class="session-table"><thead><tr><th>${g.columns[0]}</th><th>${g.columns[1]}</th><th>${g.columns[2]}</th><th>${g.columns[3]}</th></tr></thead><tbody>`;
                 for (const r of groupRecs) {
-                    const rowAttr = r.changeNeeded ? ` class="session-report-tier-warning"` : '';
-                    html += `<tr${rowAttr}>
-                    <td>${HtmlUtils.escapeHtml(r.setting)}</td>
+                    const change = r.changeNeeded ? `<br><strong>${this.CHANGE_SUGGESTED}</strong>` : '';
+                    html += `<tr>
+                    <td>${HtmlUtils.escapeHtml(r.setting)}${change}</td>
                     <td>${HtmlUtils.escapeHtml(r.observed)}</td>
                     <td>${HtmlUtils.escapeHtml(r.recommended)}</td>
                     <td>${HtmlUtils.escapeHtml(r.confidence)}</td>
                 </tr>`;
                     if (r.changeNeeded) {
-                        html += `<tr${rowAttr}><td></td><td colspan="3" style="color:var(--text-secondary)">${HtmlUtils.escapeHtml(r.evidence)}</td></tr>`;
+                        html += `<tr><td></td><td colspan="3" style="color:var(--text-secondary)">${HtmlUtils.escapeHtml(r.evidence)}</td></tr>`;
                     }
                 }
                 html += `</tbody></table>`;
@@ -1293,10 +1299,10 @@ const SessionReportView = {
             html += `<p class="session-report-note-small">${result.summary.map(t => HtmlUtils.escapeHtml(t)).join(' ')}</p>`;
             html += `<table class="session-table"><thead><tr><th>Setting</th><th>Yours</th><th>Tonight</th><th>Assessment</th></tr></thead><tbody>`;
             for (const r of result.rows) {
-                const rowAttr = r.changeNeeded ? ` class="session-report-tier-warning"` : '';
+                const change = r.changeNeeded ? `<br><strong>${this.CHANGE_SUGGESTED}</strong>` : '';
                 const inferred = r.confidence === 'inferred' ? ' (inferred)' : '';
-                html += `<tr${rowAttr}>
-                    <td>${HtmlUtils.escapeHtml(r.setting)}</td>
+                html += `<tr>
+                    <td>${HtmlUtils.escapeHtml(r.setting)}${change}</td>
                     <td>${HtmlUtils.escapeHtml(r.yours)}</td>
                     <td>${HtmlUtils.escapeHtml(r.tonight)}</td>
                     <td>${HtmlUtils.escapeHtml(r.assessment + inferred)}</td>
@@ -1351,7 +1357,7 @@ const SessionReportView = {
             if (failedInvariants.length > 0) {
                 html += `<ul class="session-report-notes">`;
                 for (const inv of failedInvariants) {
-                    html += `<li>${this._severityIcon(inv.severity)} <strong>${inv.id}</strong>: ${HtmlUtils.escapeHtml(inv.impact)}</li>`;
+                    html += `<li>${this._severityLabel(inv.severity)} — <strong>${inv.id}</strong>: ${HtmlUtils.escapeHtml(inv.impact)}</li>`;
                 }
                 html += `</ul>`;
             }

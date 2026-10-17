@@ -32,7 +32,8 @@ from py_mini_racer import MiniRacer
 # session-invariants.js must load before session-detectors.js (which calls
 # SessionInvariants.createFinding unconditionally, no typeof guard).
 # config.js must load first — it defines APP_CONFIG and Log, both referenced
-# elsewhere.
+# elsewhere. utils-time.js comes next: both parsers read log times through
+# TimeUtils.parseWallClock (issue #303).
 #
 # NOT included: astro-core.js / astro-target.js. session-recommendations.js
 # guards every reference to findTargetTransit/dateToJD/jdToDate with a
@@ -44,6 +45,7 @@ from py_mini_racer import MiniRacer
 # ---------------------------------------------------------------------------
 JS_FILES_IN_ORDER = [
     "config.js",
+    "utils-time.js",
     "asiair-log-parser.js",
     "phd2-log-parser.js",
     "session-fusion.js",
@@ -53,9 +55,9 @@ JS_FILES_IN_ORDER = [
 ]
 
 # Minimal stub environment. Verified by grep against the uploaded copies of
-# all seven files above — DataManager, document, and window are NOT
+# all eight files above — DataManager, document, and window are NOT
 # referenced by any of them and are deliberately left undefined rather than
-# stubbed. If a future edit to any of the seven adds a reference to one of
+# stubbed. If a future edit to any of the eight adds a reference to one of
 # those, this harness will throw a clear ReferenceError pointing at exactly
 # what's missing, rather than silently returning wrong data.
 STUB_ENV_JS = r"""
@@ -219,7 +221,7 @@ def evaluate_night(result: dict, expected: dict) -> list[str]:
 def main():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--src-dir", required=True, type=Path,
-                    help="Path to the folder containing the 7 source .js files")
+                    help="Path to the folder containing the 8 source .js files")
     p.add_argument("--corpus-dir", required=True, type=Path,
                     help="Path to the folder containing raw ASIAir/PHD2 log files")
     p.add_argument("--manifest", default="corpus_manifest.json", type=Path,

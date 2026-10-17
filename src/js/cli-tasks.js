@@ -62,7 +62,8 @@ const CliTasks = {
 
     // A log time in the chosen Date Format, e.g. 2026-10-12 21:04
     _dateTime(date) {
-        return `${TimeUtils.formatDisplayDate(TimeUtils.formatDateForInput(date))} ${AsiairLogParser.fmtTime(date)}`;
+        const day = TimeUtils.formatWallClock(date).slice(0, 10).replace(/\//g, '-');
+        return `${TimeUtils.formatDisplayDate(day)} ${AsiairLogParser.fmtTime(date)}`;
     },
 
     /**

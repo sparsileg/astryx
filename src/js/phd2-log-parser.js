@@ -1144,11 +1144,7 @@ const Phd2LogParser = {
 
     _parsePhd2Time(timeStr) {
         if (!timeStr) return null;
-        try {
-            return new Date(timeStr.replace(' ', 'T'));
-        } catch (e) {
-            return null;
-        }
+        return TimeUtils.parseWallClock(timeStr);
     },
 
     // -------------------------------------------------------------------------

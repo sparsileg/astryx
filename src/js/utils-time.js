@@ -54,73 +54,13 @@ const TimeUtils = {
     },
 
     /**
-     * Convert Date object to Julian Date
-     */
-    dateToJD(date) {
-        const year = date.getUTCFullYear();
-        const month = date.getUTCMonth() + 1;
-        const day = date.getUTCDate();
-        const hour = date.getUTCHours();
-        const minute = date.getUTCMinutes();
-        const second = date.getUTCSeconds();
-        const millisecond = date.getUTCMilliseconds();
-
-        let a = Math.floor((14 - month) / 12);
-        let y = year + 4800 - a;
-        let m = month + 12 * a - 3;
-
-        let jdn = day + Math.floor((153 * m + 2) / 5) + 365 * y +
-            Math.floor(y / 4) - Math.floor(y / 100) + Math.floor(y / 400) - 32045;
-
-        let dayFraction = (hour + minute/60.0 + second/3600.0 + millisecond/3600000.0) / 24.0;
-        return jdn + dayFraction - 0.5;
-    },
-
-    /**
-     * Convert Julian Date to Date object
-     */
-    jdToDate(jd) {
-        let a = Math.floor(jd + 0.5);
-        let b, c;
-
-        if (a < 2299161) {
-            c = a + 1524;
-        } else {
-            b = Math.floor((a - 1867216.25) / 36524.25);
-            c = a + b - Math.floor(b / 4) + 1525;
-        }
-
-        let d = Math.floor((c - 122.1) / 365.25);
-        let e = Math.floor(365.25 * d);
-        let f = Math.floor((c - e) / 30.6001);
-
-        let day = c - e - Math.floor(30.6001 * f);
-        let month = f - 1;
-        let year = d - 4716;
-
-        if (f > 13) {
-            month = f - 13;
-            year = d - 4715;
-        }
-
-        let dayFraction = (jd + 0.5) - a;
-        let hours = dayFraction * 24;
-        let minutes = (hours % 1) * 60;
-        let seconds = (minutes % 1) * 60;
-        let milliseconds = (seconds % 1) * 1000;
-
-        return new Date(Date.UTC(year, month - 1, day, Math.floor(hours),
-                                 Math.floor(minutes), Math.floor(seconds), Math.floor(milliseconds)));
-    },
-
-    /**
      * Convert input local time to JD for calculations
      */
     inputTimeToJD(obsDate, timeString, timezone, isDSTActive) {
         const dateTime = new Date(`${obsDate}T${timeString}:00`);
         const offsetHours = isDSTActive ? timezone + 1 : timezone;
         const utcDate = new Date(dateTime.getTime() - offsetHours * 3600000);
-        return this.dateToJD(utcDate);
+        return dateToJD(utcDate);
     },
 
     /**
@@ -140,7 +80,7 @@ const TimeUtils = {
      */
     localWallClockToJD(year, month, day, hour, timezone, isDST) {
         const offsetHours = isDST ? timezone + 1 : timezone;
-        return this.dateToJD(new Date(Date.UTC(year, month, day, hour, 0, 0) - offsetHours * 3600000));
+        return dateToJD(new Date(Date.UTC(year, month, day, hour, 0, 0) - offsetHours * 3600000));
     },
 
     /**
@@ -150,6 +90,40 @@ const TimeUtils = {
      */
     locationOffsetHours(utcTime, location) {
         return SettingsManager.isDSTActive(utcTime, location) ? location.timezone + 1 : location.timezone;
+    },
+
+    /**
+     * A log's "YYYY/MM/DD HH:MM:SS" (or "YYYY-MM-DD HH:MM:SS") wall-clock
+     * text as a Date whose UTC fields are that wall clock, so the
+     * computer's time zone never enters (Issue #303). Read it back with
+     * UTC getters (formatWallClock, AsiairLogParser.fmtTime), and convert
+     * it with wallClockToInstant before any astronomy.
+     * @returns {Date|null}
+     */
+    parseWallClock(text) {
+        const m = text?.match(/^(\d{4})[/-](\d{2})[/-](\d{2})[ T](\d{2}):(\d{2}):(\d{2})/);
+        if (!m) return null;
+        return new Date(Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6]));
+    },
+
+    /**
+     * A parseWallClock Date as "YYYY/MM/DD HH:MM:SS", the logs' own text
+     */
+    formatWallClock(wallClock) {
+        const pad = (n) => String(n).padStart(2, '0');
+        return `${wallClock.getUTCFullYear()}/${pad(wallClock.getUTCMonth() + 1)}/${pad(wallClock.getUTCDate())} ` +
+            `${pad(wallClock.getUTCHours())}:${pad(wallClock.getUTCMinutes())}:${pad(wallClock.getUTCSeconds())}`;
+    },
+
+    /**
+     * The instant a parseWallClock Date names at a location (Issue #303)
+     * @param {Date} wallClock
+     * @param {Object} location - { timezone, timeZone } (see SettingsManager.isDSTActive)
+     * @returns {Date}
+     */
+    wallClockToInstant(wallClock, location) {
+        const standard = new Date(wallClock.getTime() - location.timezone * 3600000);
+        return new Date(wallClock.getTime() - this.locationOffsetHours(standard, location) * 3600000);
     },
 
     /**

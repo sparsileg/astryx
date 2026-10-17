@@ -220,19 +220,12 @@ const SessionDetectors = {
     // (ratio < 1.0) is itself the anomaly this detector exists to catch.
     D9_axisRatioInversion(fusedSession) {
         const critical = (APP_CONFIG.PHD2_GUIDE_THRESHOLDS && APP_CONFIG.PHD2_GUIDE_THRESHOLDS.RMS_CRITICAL) || 4.0;
-        let raSum = 0, decSum = 0, frameCount = 0;
-
-        for (const sub of fusedSession.subs) {
-            if (!sub.guide || sub.guide.rmsTotal === null || sub.guide.frameCount === 0) continue;
-            if (sub.guide.rmsTotal > critical) continue;
-            raSum += sub.guide.rmsRa * sub.guide.frameCount;
-            decSum += sub.guide.rmsDec * sub.guide.frameCount;
-            frameCount += sub.guide.frameCount;
-        }
-        if (frameCount === 0 || decSum === 0) return [];
-
-        const raRms = raSum / frameCount;
-        const decRms = decSum / frameCount;
+        const guided = fusedSession.subs.filter(sub =>
+            sub.guide && sub.guide.rmsTotal !== null && sub.guide.rmsTotal <= critical);
+        // Pooled over frames, not averaged over subs (Issue #323)
+        const raRms = SessionFusion.pooledGuideRms(guided, 'rmsRa');
+        const decRms = SessionFusion.pooledGuideRms(guided, 'rmsDec');
+        if (raRms == null || !decRms) return [];
         const ratio = raRms / decRms;
 
         // Fires on ratio < 1.0 — a genuine Dec-worse-than-RA inversion,

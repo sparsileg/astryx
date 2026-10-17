@@ -67,8 +67,10 @@ const SessionRecommendations = {
     // Measured by AsiairLogParser.measureSubGap, the same calculation the
     // learned value uses, kept to pairs of clean-tier subs here (issue #281).
     _subGapRec(fs, asiairParsed, learned) {
+        // By sequenceNo: image numbers restart in each run (Issue #321)
+        const tierBySeq = new Map(fs.subs.map(s => [s.sequenceNo, s.tier]));
         const subGap = AsiairLogParser.measureSubGap(asiairParsed.runs,
-            sub => this._subTierByImageNo(fs, sub.imageNo) === 'clean');
+            sub => tierBySeq.get(sub.sequenceNo) === 'clean');
         const stored = (typeof SettingsManager !== 'undefined') ? SettingsManager.getLearnedSubGapS() : null;
         if (!subGap) {
             return this._makeRec({
@@ -240,7 +242,10 @@ const SessionRecommendations = {
         if (!event.pauseStartedAt || !event.flipStartedAt) return null;
         if (typeof findTargetTransit !== 'function' || typeof dateToJD !== 'function' || typeof jdToDate !== 'function') return null;
 
-        const centerJD = dateToJD(event.pauseStartedAt);
+        // The log's times are wall clock at the location (Issue #303)
+        const pauseMs = TimeUtils.wallClockToInstant(event.pauseStartedAt, location).getTime();
+        const flipMs = TimeUtils.wallClockToInstant(event.flipStartedAt, location).getTime();
+        const centerJD = dateToJD(new Date(pauseMs));
         const windowDays = 6 / 24;
         const transitJD = findTargetTransit(centerJD - windowDays, centerJD + windowDays,
             run.coords.raHours, run.coords.decDeg, location.longitude);
@@ -249,8 +254,8 @@ const SessionRecommendations = {
         const transitMs = jdToDate(transitJD).getTime();
         return {
             transitMs,
-            xS: (transitMs - event.pauseStartedAt.getTime()) / 1000,
-            yS: (event.flipStartedAt.getTime() - transitMs) / 1000,
+            xS: (transitMs - pauseMs) / 1000,
+            yS: (flipMs - transitMs) / 1000,
         };
     },
 
@@ -409,13 +414,14 @@ const SessionRecommendations = {
         const counts = [];
         for (const run of context.asiairParsed.runs.filter(r => r.kind === 'light')) {
             const subs = run.blocks.flatMap(b => b.subs).filter(s => !s.aborted).sort((a, b) => a.startedAt - b.startedAt);
-            const dithers = run.events.filter(e => e.type === 'dither' && e.startedAt).sort((a, b) => a.startedAt - b.startedAt);
+            // Dither events carry start, not startedAt (Issue #320)
+            const dithers = run.events.filter(e => e.type === 'dither' && e.start).sort((a, b) => a.start - b.start);
             if (subs.length === 0 || dithers.length === 0) continue;
 
             let cursor = 0;
             for (const dither of dithers) {
                 let n = 0;
-                while (cursor < subs.length && subs[cursor].startedAt < dither.startedAt) {
+                while (cursor < subs.length && subs[cursor].startedAt < dither.start) {
                     n++;
                     cursor++;
                 }
@@ -729,11 +735,6 @@ const SessionRecommendations = {
             tonight: `${timesText}${timeouts} of ${dithers.length} timed out`,
             assessment, changeNeeded, confidence: 'measured',
         };
-    },
-
-    _subTierByImageNo(fs, imageNo) {
-        const sub = fs.subs.find(s => s.imageNo === imageNo);
-        return sub ? sub.tier : null;
     },
 
     // -------------------------------------------------------------------------

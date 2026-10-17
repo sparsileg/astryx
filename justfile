@@ -69,6 +69,10 @@ guide:
 ui-test:
     PLAYWRIGHT_DIR=$HOME/.local/share/astryx-playwright node tests/ui/smoke.mjs
 
+# Behavior checks in headless Chromium, each in a fresh profile (optionally one issue's: just ui-checks 326)
+ui-checks issue="":
+    PLAYWRIGHT_DIR=$HOME/.local/share/astryx-playwright node tests/ui/checks.mjs {{issue}}
+
 # Step through every tutorial in headless Chromium (optionally one: just ui-tutorials sidebar)
 ui-tutorials id="":
     PLAYWRIGHT_DIR=$HOME/.local/share/astryx-playwright node tests/ui/tutorials.mjs {{id}}

@@ -126,6 +126,15 @@ const SessionReportPdf = {
     // plain text instead of HTML)
     // -------------------------------------------------------------------------
 
+    // A recommendation's Setting cell, with "Change suggested" under it when
+    // the row needs a change: the color alone doesn't say so (Issue #325)
+    _settingCell(r, color) {
+        const text = r.changeNeeded
+            ? [r.setting, { text: `\n${SessionReportView.CHANGE_SUGGESTED}`, bold: true }]
+            : r.setting;
+        return { text, color };
+    },
+
     _equipmentText(context) {
         if (context && context.telescopeName && context.sensorName) {
             const tel = context.telescope, sen = context.sensor;
@@ -218,7 +227,7 @@ const SessionReportPdf = {
                     for (const r of groupRecs) {
                         const textColor = r.changeNeeded ? colors.warning : undefined;
                         body.push([
-                            { text: r.setting, color: textColor },
+                            this._settingCell(r, textColor),
                             { text: r.observed, color: textColor },
                             { text: r.recommended, color: textColor },
                             { text: r.confidence, color: textColor },
@@ -238,7 +247,7 @@ const SessionReportPdf = {
                     const textColor = r.changeNeeded ? colors.warning : undefined;
                     const inferred = r.confidence === 'inferred' ? ' (inferred)' : '';
                     body.push([
-                        { text: r.setting, color: textColor },
+                        this._settingCell(r, textColor),
                         { text: r.yours, color: textColor },
                         { text: r.tonight, color: textColor },
                         { text: r.assessment + inferred, color: textColor },
@@ -286,7 +295,7 @@ const SessionReportPdf = {
                 const durationS = (e.end && e.at) ? (SessionReportView._asDate(e.end).getTime() - SessionReportView._asDate(e.at).getTime()) / 1000 : null;
                 const durationCell = durationS != null && durationS > 0 ? AsiairLogParser.fmtMinutes(durationS) : '';
                 const eventCell = e.finding
-                    ? { text: e.label, color: e.finding.severity === 'critical' ? colors.critical : e.finding.severity === 'warning' ? colors.warning : colors.info }
+                    ? { text: `${SessionReportView._severityLabel(e.finding.severity)} — ${e.label}`, color: e.finding.severity === 'critical' ? colors.critical : e.finding.severity === 'warning' ? colors.warning : colors.info }
                     : e.label;
                 body.push([timeCell, eventCell, durationCell, e.guideQuality || '']);
             }
@@ -497,7 +506,7 @@ const SessionReportPdf = {
             const ul = [];
             for (const item of items) {
                 const severityColor = item.severity === 'critical' ? colors.critical : item.severity === 'warning' ? colors.warning : colors.info;
-                const lines = [{ text: [{ text: item.title, bold: true, color: severityColor }, { text: `  (${item.confidence})`, color: colors.subtitleText, fontSize: 7 }] }];
+                const lines = [{ text: [{ text: `${SessionReportView._severityLabel(item.severity)} — ${item.title}`, bold: true, color: severityColor }, { text: `  (${item.confidence})`, color: colors.subtitleText, fontSize: 7 }] }];
                 if (item.detail) lines.push({ text: item.detail, fontSize: 7.5, color: colors.noteText });
                 if (item.affectedSubs && item.affectedSubs.length > 0) lines.push({ text: `Affected: ${item.affectedSubs.join(', ')}`, fontSize: 7.5, color: colors.subtitleText });
                 if (item.ruledOut && item.ruledOut.length > 0) lines.push({ text: `Ruled out: ${item.ruledOut.map(r => r.hypothesis).join('; ')}`, fontSize: 7.5, color: colors.subtitleText });
