@@ -15,6 +15,7 @@ const SettingsManager = {
         selectedLocation: null, // Currently selected observer location
         globalMinAltitude: 35, // Global default minimum altitude for all tools
         bestMonthsAltitudes: {},      // Min altitude each location's best months were calculated with
+        bestMonthsVersions: {},       // APP_CONFIG.BEST_MONTHS_VERSION each location's best months were calculated with (issue #304)
         lastBestMonthsAltitude: null, // Altitude of every best months calc before per-location tracking
         lastBestMonthsDarkHours: null, // Last dark hours used for best months calc
         lastBestMonthsCalculated: null, // Timestamp of last best months calc
@@ -300,13 +301,27 @@ const SettingsManager = {
         return last && !names.includes(last) ? [...names, last] : names;
     },
 
+    /**
+     * Record a location's finished Best Months: the min altitude, and the
+     * calculation's version
+     */
     async setBestMonthsAltitude(locationName, altitude) {
         this.settings.bestMonthsAltitudes = { ...this.settings.bestMonthsAltitudes, [locationName]: altitude };
+        this.settings.bestMonthsVersions = { ...this.settings.bestMonthsVersions, [locationName]: APP_CONFIG.BEST_MONTHS_VERSION };
         await this.saveSettings();
+    },
+
+    /**
+     * True when a location's Best Months were calculated the current way;
+     * none recorded means before versions were kept (Issue #304)
+     */
+    bestMonthsCurrent(locationName) {
+        return this.settings.bestMonthsVersions[locationName] === APP_CONFIG.BEST_MONTHS_VERSION;
     },
 
     async clearBestMonthsAltitudes() {
         this.settings.bestMonthsAltitudes = {};
+        this.settings.bestMonthsVersions = {};
         this.settings.lastBestMonthsAltitude = null;
         await this.saveSettings();
     },

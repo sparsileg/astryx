@@ -807,40 +807,17 @@ const DailyVisibilityView = {
     },
 
     /**
-     * Create time labels (original algorithm)
+     * Hour labels, each where its local clock hour occurs
      */
     createLabelsForTimeline(labelsContainer, timelineData, data) {
         labelsContainer.innerHTML = '';
-        labelsContainer.style.display = 'flex';
-        labelsContainer.style.justifyContent = 'space-between';
-        labelsContainer.style.margin = '17px 0 10px 0';
-        labelsContainer.style.fontSize = '0.75rem';
-        labelsContainer.style.color = '#b0b0b0';
-        labelsContainer.style.position = 'relative';
-
-        // Since timeline is noon to noon in LOCAL time, we need to work in local time
-        // timelineStartJD represents local noon, so we just add hours in JD units
-
-        // Start at noon (12:00)
-        let currentHour = 12;
-
-        // Generate labels for each hour from noon to noon (24 hours)
-        for (let i = 0; i <= 24; i++) {
-            const position = (i / 24) * 100; // Simple linear interpolation
-
+        const labels = DailyVisibilityCalculations.hourLabels(timelineData.timelineStartJD, timelineData.timelineEndJD, data);
+        for (const { fraction, text } of labels) {
             const label = document.createElement('div');
             label.className = 'timeline-label';
-            label.style.position = 'absolute';
-            label.style.top = '-18px';
-            label.style.left = position + '%';
-            label.style.transform = 'translateX(-50%)';
-            label.style.whiteSpace = 'nowrap';
-            label.textContent = currentHour.toString();
+            label.style.left = `${fraction * 100}%`;
+            label.textContent = text;
             labelsContainer.appendChild(label);
-
-            // Move to next hour
-            currentHour = (currentHour + 1) % 24;
-            if (currentHour === 0) currentHour = 24; // Show 24 instead of 0 for midnight
         }
     },
 

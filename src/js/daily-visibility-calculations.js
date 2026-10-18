@@ -6,6 +6,25 @@
 const DailyVisibilityCalculations = {
 
     /**
+     * Hour labels for a timeline from startJD to endJD: one per real hour,
+     * showing the location's clock hour at that instant, so the night the
+     * clocks change repeats or skips an hour instead of drifting off the
+     * markers (Issue #310)
+     * @param {Object} location - { timezone, timeZone }
+     * @returns {Array<{fraction: number, text: string}>} fraction of the timeline, hour 1-24
+     */
+    hourLabels(startJD, endJD, location) {
+        const labels = [];
+        const hours = Math.round((endJD - startJD) * 24);
+        for (let i = 0; i <= hours; i++) {
+            const jd = startJD + i / 24;
+            const hour = Number(TimeUtils.formatLocalTime(jdToDate(jd), location).slice(0, 2));
+            labels.push({ fraction: (jd - startJD) / (endJD - startJD), text: String(hour === 0 ? 24 : hour) });
+        }
+        return labels;
+    },
+
+    /**
      * Calculate astronomical twilight times for a given date
      * Uses the same algorithm as the original app
      */

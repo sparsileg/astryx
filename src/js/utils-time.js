@@ -263,10 +263,11 @@ const TimeUtils = {
         const epoch = toEpoch ?? this.currentEpoch();
         const T = (epoch - 2000.0) / 100.0; // Julian centuries from J2000
 
-        // IAU 1976 precession constants (arcseconds)
-        const zeta  = (2306.2181 + 1.39656 * T) * T + 0.30188 * T * T + 0.017998 * T * T * T;
-        const z     = (2306.2181 + 1.39656 * T) * T + 1.09468 * T * T + 0.018203 * T * T * T;
-        const theta = (2004.3109 - 0.85330 * T) * T - 0.42665 * T * T - 0.041775 * T * T * T;
+        // IAU 1976 precession angles from J2000 (T0 = 0), arcseconds. The
+        // T0 terms of the general expressions vanish here (Issue #311)
+        const zeta  = 2306.2181 * T + 0.30188 * T * T + 0.017998 * T * T * T;
+        const z     = 2306.2181 * T + 1.09468 * T * T + 0.018203 * T * T * T;
+        const theta = 2004.3109 * T - 0.42665 * T * T - 0.041833 * T * T * T;
 
         // Convert to radians
         const toRad = Math.PI / 648000; // arcsec to radians

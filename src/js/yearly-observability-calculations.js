@@ -189,20 +189,19 @@ const YearlyObservabilityCalculations = {
         // Calculate moon illumination (always, regardless of observable hours)
         const moonIllumination = getNightMoonPhase(duskJD, dawnJD).illumination / 100; // Convert to 0-1
 
-        // Sample every 15 minutes during the night to find observable hours and minimum separation
-        const sampleInterval = 15 / 1440; // 15 minutes in JD
-        let observableHours = 0;
-        let minSeparation = 180; // Start with maximum possible
+        // Observable hours as every view counts them (Issue #304: this
+        // counted 15-minute samples from dusk to dawn inclusive, one too many)
+        const observableHours = getHoursAboveAltitude(getNightSamples(duskJD, dawnJD, inputs.longitude),
+            inputs.ra, inputs.dec, inputs.latitude, inputs.minAltitude).totalHours;
 
-        let currentJD = duskJD;
-        while (currentJD <= dawnJD) {
-            // Check if target is above minimum altitude
+        // Sample every 15 minutes while the target is up to find the minimum separation
+        const count = Math.max(1, Math.round((dawnJD - duskJD) * 1440 / 15));
+        let minSeparation = 180; // Start with maximum possible
+        for (let i = 0; i <= count; i++) {
+            const currentJD = duskJD + i * (dawnJD - duskJD) / count;
             const targetAlt = getAltitude(currentJD, inputs.ra, inputs.dec, inputs.latitude, inputs.longitude);
 
             if (targetAlt >= inputs.minAltitude) {
-                // This time counts as observable
-                observableHours += 0.25; // 15 minutes = 0.25 hours
-
                 // Get moon position and calculate separation
                 const moonPos = getMoonPosition(currentJD);
                 const separation = getAngularSeparation(inputs.ra, inputs.dec, moonPos.ra, moonPos.dec);
@@ -211,8 +210,6 @@ const YearlyObservabilityCalculations = {
                     minSeparation = separation;
                 }
             }
-
-            currentJD += sampleInterval;
         }
 
         // If no observable time, return early but keep moon illumination

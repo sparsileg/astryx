@@ -28,6 +28,7 @@ changes:
 | Sidereal time | The standard J2000 formula. | Under 0.1 seconds for decades either side of 2000. |
 | Altitudes | No allowance for atmospheric refraction, except at the horizon for sunrise, sunset, moonrise, and moonset. | Refraction lifts objects by less than 0.1° above 30°, where you image. |
 | Rise and set times | Searched minute by minute. | Within one minute. |
+| Hours above Min Altitude in darkness | Altitude every 10 minutes from dusk to dawn, with each rise or set found between samples. | Within a minute; a target up all night gets exactly the night's length. |
 | Sky brightness | A model for comparing times and nights. | A ranking, not a measured sky brightness. |
 
 ## Time Zones

@@ -1218,10 +1218,10 @@ const ImagingLogView = {
         const isPattern = ImagingLogManager.isProgramPatternBased(program);
 
         let status = 'Not Started';
-        if (progress.imaged > 0 && progress.imaged < progress.total) {
-            status = 'Started';
-        } else if (progress.imaged === progress.total && progress.total > 0) {
+        if (progress.imaged >= progress.total && progress.total > 0) {
             status = 'Complete';
+        } else if (progress.imaged > 0) {
+            status = 'Started';
         }
 
         const statusClass = status === 'Complete' ? 'status-completed' : 'status-acquiring-data';
@@ -1632,35 +1632,23 @@ const ImagingLogView = {
             if (progress.imaged > 0) {
                 let completedTargets;
 
+                // Each entry: a label and the designations that count for it
+                const byName = (a, b) => a.label.localeCompare(b.label, undefined, { numeric: true, sensitivity: 'base' });
                 if (isPattern) {
-                    const matchedDesignations = new Set();
-                    projects.forEach(project => {
-                        project.targetDesignations.forEach(designation => {
-                            if (ImagingLogManager.matchesPattern(designation, program.catalogPrefix, program.maxNumber)) {
-                                matchedDesignations.add(designation);
-                            }
-                            const target = DataManager.getTarget(designation);
-                            if (target && target.other) {
-                                const otherDesignations = target.other.split(',').map(d => d.trim()).filter(d => d.length > 0);
-                                otherDesignations.forEach(other => {
-                                    if (ImagingLogManager.matchesPattern(other, program.catalogPrefix, program.maxNumber)) {
-                                        matchedDesignations.add(other);
-                                    }
-                                });
-                            }
-                        });
-                    });
-                    completedTargets = Array.from(matchedDesignations)
-                        .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+                    // One entry per catalogue number, suffixed variants together (Issue #306)
+                    completedTargets = [...ImagingLogManager.patternMatches(program, projects).values()]
+                        .map(set => ({ label: [...set].join(', '), designations: [...set] }))
+                        .sort(byName);
                 } else {
                     completedTargets = program.targetDesignations
                         .filter(t => imagedTargets.has(t))
-                        .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+                        .map(t => ({ label: t, designations: [t] }))
+                        .sort(byName);
                 }
 
                 let completedHTML = '';
-                completedTargets.forEach(target => {
-                    let targetProjects = projects.filter(p => p.targetDesignations.includes(target));
+                completedTargets.forEach(({ label, designations }) => {
+                    let targetProjects = projects.filter(p => p.targetDesignations.some(d => designations.includes(d)));
 
                     if (targetProjects.length === 0) {
                         targetProjects = projects.filter(p => {
@@ -1668,7 +1656,7 @@ const ImagingLogView = {
                                 const dbTarget = DataManager.getTarget(designation);
                                 if (dbTarget && dbTarget.other) {
                                     const otherDesignations = dbTarget.other.split(',').map(d => d.trim());
-                                    return otherDesignations.includes(target);
+                                    return otherDesignations.some(d => designations.includes(d));
                                 }
                                 return false;
                             });
@@ -1684,7 +1672,7 @@ const ImagingLogView = {
 
                     completedHTML += `
                         <div style="padding: 0.25rem;">
-                            <strong>${HtmlUtils.escapeHtml(target)}:</strong> ${projectLinks || '<span style="color: var(--text-secondary);">No project found</span>'}
+                            <strong>${HtmlUtils.escapeHtml(label)}:</strong> ${projectLinks || '<span style="color: var(--text-secondary);">No project found</span>'}
                         </div>
                     `;
                 });

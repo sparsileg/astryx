@@ -286,10 +286,11 @@ test('Best Months: visibility window is the longest run of visible days, wrappin
         [[], [null, null]],
     ];
     // A night is visible when its samples hold the target on the meridian
-    // (4 hours of LST = RA), and not visible when it has no darkness at all
+    // (4 hours of LST = RA: 25 samples 10 minutes apart), and not visible
+    // when it has no darkness at all
     const target = TARGETS.M31;
-    const meridian = { cosLST: Array(24).fill(Math.cos(target.ra * Math.PI / 12)), sinLST: Array(24).fill(Math.sin(target.ra * Math.PI / 12)) };
-    const dark = { cosLST: [], sinLST: [] };
+    const meridian = { cosLST: Array(25).fill(Math.cos(target.ra * Math.PI / 12)), sinLST: Array(25).fill(Math.sin(target.ra * Math.PI / 12)), stepHours: 10 / 60 };
+    const dark = { cosLST: [], sinLST: [], stepHours: 0 };
     const loc = location('home');
     for (const [visibleDays, [start, end]] of cases) {
         const visible = new Set(visibleDays);
@@ -338,4 +339,25 @@ test('Yearly Observability: altitude and scores through the year', () => {
         };
     }
     matchSnapshot('yearly', results);
+});
+
+test('Sequence Planner: a flip just after the window starts is planned, with its overhead (Issue #305)', () => {
+    const transitJD = 2461330.0;
+    // Transit 2 min before the window, flip at +5 min: inside it
+    assert.strictEqual(SeqPlan.checkMeridianFlip(transitJD, transitJD + 2 / 1440, transitJD + 0.1, 5), transitJD + 5 / 1440);
+    // A flip before or after the window is never added
+    assert.strictEqual(SeqPlan.checkMeridianFlip(transitJD, transitJD + 6 / 1440, transitJD + 0.1, 5), null);
+    assert.strictEqual(SeqPlan.checkMeridianFlip(transitJD, transitJD - 0.1, transitJD, 5), null);
+
+    const session = {
+        sessionStartJD: transitJD + 2 / 1440, sessionEndJD: transitJD + 2 / 1440 + 2 / 24,
+        calibrationDuration: 2, autofocusEnabled: false, autofocusDuration: 0, autofocusInterval: 0,
+        meridianFlipOffset: 5, meridianFlipPause: 3, meridianFlipDuration: 2, interExposureTime: 0,
+    };
+    const target = { targetId: 1, allocatedPercent: 100, exposureTime: 60, transitJD: null, nearestTransitJD: transitJD };
+    const [planned] = SeqPlan.calculateExposureCounts([target], session);
+    assert.strictEqual(planned.meridianFlipJD, transitJD + 5 / 1440);
+    // 120 min less the first calibration (2) and the flip's pause, flip and calibration (3 + 2 + 2)
+    assert.strictEqual(planned.targetOverhead, 9);
+    assert.ok(Math.abs(planned.imagingMinutes - 111) < 1e-6, `imaging ${planned.imagingMinutes} min`);
 });

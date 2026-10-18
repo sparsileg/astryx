@@ -108,7 +108,7 @@ const TUTORIAL_IMAGING_PROGRAMS = {
             id: 'catalog-pattern',
             type: 'callout',
             title: 'Catalog Pattern Fields',
-            body: 'Select <strong>Catalog Pattern</strong>.<br><br>When <strong>Catalog Pattern</strong> is selected, enter the catalog prefix and the highest number in the series.<br><br>For example: prefix <em>NGC</em> and maximum number <em>7840</em> covers the entire NGC catalog. Prefix <em>Sh</em> with maximum <em>313</em> covers the Sharpless catalog.<br><br>Astryx matches targets whose designations start with the prefix followed by a number within the range — spaces and capitalisation are handled automatically.',
+            body: 'Select <strong>Catalog Pattern</strong>.<br><br>When <strong>Catalog Pattern</strong> is selected, enter the catalog prefix and the highest number in the series.<br><br>For example: prefix <em>NGC</em> and maximum number <em>7840</em> covers the entire NGC catalog. Prefix <em>Sh</em> with maximum <em>313</em> covers the Sharpless catalog.<br><br>Astryx matches targets whose designations start with the prefix followed by a number within the range — spaces and capitalisation are handled automatically, and a lettered designation such as <em>NGC 5194A</em> counts once with its number.',
             target: '#program-name',
             position: 'top',
             width: '440px',

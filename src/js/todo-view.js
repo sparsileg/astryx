@@ -410,10 +410,10 @@ const ToDoView = {
                 setTimeStr = 'Circumpolar';
             } else {
                 if (riseJD) {
-                    riseTimeStr = this.formatLocalTime(riseJD, location.timezone, isDST);
+                    riseTimeStr = TimeUtils.formatLocalTime(jdToDate(riseJD), location);
                 }
                 if (setJD) {
-                    setTimeStr = this.formatLocalTime(setJD, location.timezone, isDST);
+                    setTimeStr = TimeUtils.formatLocalTime(jdToDate(setJD), location);
                 }
             }
 
@@ -450,8 +450,7 @@ const ToDoView = {
             notObservable: notObservable,
             duskJD: duskJD,
             dawnJD: dawnJD,
-            location: location,
-            isDST: isDST
+            location: location
         };
     },
 
@@ -555,249 +554,16 @@ const ToDoView = {
     },
 
     /**
-     * Render rise time data as a Gantt chart
+     * Render rise time data as a Gantt chart: the grouped chart with no
+     * group labels, in rise order (Issue #335)
      */
-   renderRiseTimeChart() {
-        this.updateToggleButtonText();
-
-        const todoContainer = document.getElementById('todo-container');
-        if (!todoContainer || !this.riseTimeData) return;
-
-        const { observable, duskJD, dawnJD, location, isDST } = this.riseTimeData;
-        const minAltitude = SettingsManager.getGlobalMinAltitude();
-
-        if (observable.length === 0) {
-            todoContainer.innerHTML = `
-            <div class="todo-empty-message">
-                <p class="todo-empty-title">📋 No observable targets</p>
-                <p>No targets meet the 2-hour minimum darkness criteria.</p>
-            </div>
-        `;
-            return;
-        }
-
-        // Add canvas
-        todoContainer.innerHTML = `
-        <div class="todo-rise-chart-container">
-            <canvas id="todo-rise-chart"></canvas>
-        </div>
-    `;
-
-        // Draw the chart
-        const canvas = document.getElementById('todo-rise-chart');
-        if (!canvas) {
-            console.error('Canvas not found');
-            return;
-        }
-
-        const ctx = canvas.getContext('2d');
-
-        // Get container width and calculate responsive chart dimensions
-        const container = canvas.parentElement;
-        const containerWidth = container.clientWidth;
-        const maxChartWidth = 1000;
-        const chartWidth = Math.min(containerWidth - 80, maxChartWidth); // 80px for padding
-
-        // Chart dimensions
-        const labelWidth = 0;
-        const rowHeight = 40;
-        const headerHeight = 60;
-        const padding = 20;
-
-        const totalWidth = labelWidth + chartWidth + padding * 2;
-        const totalHeight = headerHeight + observable.length * rowHeight + padding * 2;
-
-        // Set canvas size
-        canvas.width = totalWidth;
-        canvas.height = totalHeight;
-
-        // Get CSS color values with fallbacks
-        const styles = getComputedStyle(document.documentElement);
-        const bgColor = styles.getPropertyValue('--card-bg').trim() || '#1a1a1a';
-        const textColor = styles.getPropertyValue('--text-color').trim() || '#ffffff';
-        const borderColor = styles.getPropertyValue('--border-color').trim() || '#444444';
-        const accentColor = styles.getPropertyValue('--primary-color').trim() || '#3b82f6';
-
-        // Clear and fill background
-        ctx.fillStyle = bgColor;
-        ctx.fillRect(0, 0, totalWidth, totalHeight);
-
-        // Format dusk and dawn times
-        const duskTime = this.formatLocalTime(duskJD, location.timezone, isDST);
-        const dawnTime = this.formatLocalTime(dawnJD, location.timezone, isDST);
-
-        // Draw header with two lines
-        const chartLeft = padding + labelWidth;
-        const chartRight = padding + labelWidth + chartWidth;
-        const chartCenter = chartLeft + chartWidth / 2;
-
-        ctx.fillStyle = textColor;
-
-        // Line 1: Dusk/Dawn labels at edges
-        ctx.font = `bold ${SettingsManager.scaledPx(14)}px sans-serif`;
-        ctx.textAlign = 'left';
-        ctx.fillText('Dusk', chartLeft + 5, padding + 15);
-        ctx.textAlign = 'right';
-        ctx.fillText('Dawn', chartRight - 5, padding + 15);
-
-        // Format the selected date
-        const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-        const formattedDate = this.selectedNoon().toLocaleDateString('en-US', dateOptions);
-
-        // Line 1 center: Date and minimum altitude
-        ctx.font = '0.9rem sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText(`${formattedDate}  •  Minimum altitude: ${minAltitude}°`, chartCenter, padding + 15);
-
-        // Line 2: Astronomical twilight times
-        ctx.font = '0.9rem sans-serif';
-        ctx.fillText(`Astronomical dusk: ${duskTime}  •  Astronomical dawn: ${dawnTime}`, chartCenter, padding + 35);
-
-        // Starting Y position for target rows
-        const startY = padding + headerHeight;
-
-        // Reset hit regions for click handling
-        this._chartHitRegions = [];
-
-        // Draw each target row (only observable targets)
-        observable.forEach((info, index) => {
-            const y = startY + index * rowHeight;
-
-            // Calculate bar position
-            const startJD = Math.max(info.riseJD, duskJD);
-            const endJD = Math.min(info.setJD, dawnJD);
-
-            if (endJD > startJD) {
-                const barStartFraction = (startJD - duskJD) / (dawnJD - duskJD);
-                const barEndFraction = (endJD - duskJD) / (dawnJD - duskJD);
-
-                const barX = chartLeft + chartWidth * barStartFraction;
-                const barWidth = chartWidth * (barEndFraction - barStartFraction);
-                const barY = y + 5;
-                const barHeight = 30;  // Increased from 20
-
-                // Store hit region for click handling
-                this._chartHitRegions.push({ x: barX, y: barY, w: barWidth, h: barHeight, targetId: info.target.object });
-
-                // Draw bar - use gold for pinned targets
-                const isPinned = this.isTargetPinned(info.target.object);
-                const barColor = isPinned ? '#fbbf24' : accentColor; // Gold for pinned, blue for normal
-
-                ctx.fillStyle = barColor;
-                ctx.globalAlpha = 0.7;
-                ctx.fillRect(barX, barY, barWidth, barHeight);
-                ctx.globalAlpha = 1.0;
-
-                // Draw bar border
-                ctx.strokeStyle = barColor;
-                ctx.lineWidth = 1;
-                ctx.strokeRect(barX, barY, barWidth, barHeight);
-
-                // Draw altitude graph inside bar
-                this.drawAltitudeGraph(ctx, info.target, barX, barY, barWidth, barHeight, duskJD, dawnJD, location, isDST);
-
-                // Draw rise/set times and target label INSIDE the bar
-                ctx.fillStyle = '#ffffff';
-                ctx.font = `${SettingsManager.scaledPx(12)}px sans-serif`;  // Increased from 10px
-
-                let labelX = barX + 5; // Default: 5px from left edge
-
-                // Show rise time if it's after dusk
-                if (info.riseJD >= duskJD) {
-                    ctx.textAlign = 'left';
-                    ctx.fillText(info.riseTime, barX + 5, barY + 20);  // Adjusted Y position
-                    labelX = barX + 5 + ctx.measureText(info.riseTime).width + 30; // 30px after rise time
-                } else {
-                    labelX = barX + 30; // 30px from left edge
-                }
-
-                // Draw target label with imaging status indicator
-                // Draw imaging status indicator as canvas circle
-                const status = this.getImagingStatus(info.target.object);
-                const circleR = 7;
-                const circleX = labelX + circleR;
-                const circleY = barY + 16;
-
-                ctx.beginPath();
-                ctx.arc(circleX, circleY, circleR, 0, Math.PI * 2);
-                if (status === 'complete') {
-                    ctx.fillStyle = '#ffffff';
-                    ctx.fill();
-                } else if (status === 'active') {
-                    // Outline the full circle
-                    ctx.strokeStyle = '#ffffff';
-                    ctx.lineWidth = 1.5;
-                    ctx.stroke();
-                    // Fill right half only
-                    ctx.beginPath();
-                    ctx.arc(circleX, circleY, circleR, -Math.PI * 0.5, Math.PI * 0.5);
-                    ctx.lineTo(circleX, circleY);
-                    ctx.closePath();
-                    ctx.fillStyle = '#ffffff';
-                    ctx.fill();
-                } else {
-                    // Empty: outline only
-                    ctx.strokeStyle = '#ffffff';
-                    ctx.lineWidth = 1.5;
-                    ctx.stroke();
-                }
-                const statusWidth = circleR * 2 + 6;
-
-                // Draw target label with dark backing for contrast
-                ctx.font = `bold ${SettingsManager.scaledPx(13)}px sans-serif`;
-                ctx.textAlign = 'left';
-                const chartTypeDisplay = OBJECT_TYPES[info.target.type] || info.target.type || '';
-                // The pin marks a pinned bar, not its color alone (Issue #325)
-                const pinIcon = isPinned ? '📌 ' : '';
-                const chartLabel = chartTypeDisplay
-                    ? `${pinIcon}${info.target.object} ${chartTypeDisplay}`
-                    : `${pinIcon}${info.target.object}`;
-                const labelTextX = labelX + statusWidth;
-                const labelTextY = barY + 20;
-                const labelTextWidth = ctx.measureText(chartLabel).width;
-                const backingPad = 3;
-                ctx.fillStyle = 'rgba(0,0,0,0.5)';
-                ctx.fillRect(labelTextX - backingPad, labelTextY - 13, labelTextWidth + backingPad * 2, 16);
-                ctx.fillStyle = '#ffffff';
-                ctx.fillText(chartLabel, labelTextX, labelTextY);
-
-                // Show set time if it's before dawn (right-aligned)
-                if (info.setJD <= dawnJD) {
-                    ctx.font = `${SettingsManager.scaledPx(12)}px sans-serif`;  // Increased from 10px
-                    ctx.textAlign = 'right';
-                    ctx.fillText(info.setTime, barX + barWidth - 5, barY + 20);  // Adjusted Y position
-                }
-            }
-
-            // Draw row separator
-            ctx.strokeStyle = borderColor;
-            ctx.lineWidth = 0.5;
-            ctx.globalAlpha = 0.3;
-            ctx.beginPath();
-            ctx.moveTo(padding, y + rowHeight);
-            ctx.lineTo(totalWidth - padding, y + rowHeight);
-            ctx.stroke();
-            ctx.globalAlpha = 1.0;
-        });
-
-        // Attach canvas click handler
-        if (this._canvasClickHandler) {
-            canvas.removeEventListener('click', this._canvasClickHandler);
-        }
-        this._canvasClickHandler = (e) => {
-            const rect = canvas.getBoundingClientRect();
-            const scaleX = canvas.width / rect.width;
-            const scaleY = canvas.height / rect.height;
-            const cx = (e.clientX - rect.left) * scaleX;
-            const cy = (e.clientY - rect.top) * scaleY;
-            const hit = this._chartHitRegions.find(r => cx >= r.x && cx <= r.x + r.w && cy >= r.y && cy <= r.y + r.h);
-            if (hit) this.selectTarget(hit.targetId);
-        };
-        canvas.addEventListener('click', this._canvasClickHandler);
+    renderRiseTimeChart() {
+        this.renderGroupedChart((this.riseTimeData?.observable ?? []).map(info => ({ isLabel: false, target: info.target })));
     },
 
     /**
-     * Render a unified Gantt chart for Type or Best Month views.
+     * Render the Gantt chart for every sort: Type and Best Month rows come
+     * with group labels, Rise Time rows without
      * @param {Array} rows - Array of { isLabel, label } or { isLabel, target } objects
      */
     renderGroupedChart(rows) {
@@ -810,7 +576,7 @@ const ToDoView = {
             return;
         }
 
-        const { duskJD, dawnJD, location, isDST } = this.riseTimeData;
+        const { duskJD, dawnJD, location } = this.riseTimeData;
         const minAltitude = SettingsManager.getGlobalMinAltitude();
 
         // Filter rows to only include label rows and observable targets
@@ -836,7 +602,7 @@ const ToDoView = {
             todoContainer.innerHTML = `
                 <div class="todo-empty-message">
                     <p class="todo-empty-title">📋 No observable targets</p>
-                    <p>No targets meet the minimum altitude criteria.</p>
+                    <p>No targets are above ${minAltitude}° for ${APP_CONFIG.MIN_CONTINUOUS_DARK_HOURS} hours of darkness.</p>
                 </div>
             `;
             return;
@@ -881,9 +647,9 @@ const ToDoView = {
         ctx.fillStyle = bgColor;
         ctx.fillRect(0, 0, totalWidth, totalHeight);
 
-        const timezone = location ? location.timezone : 0;
-        const duskTime = this.formatLocalTime(duskJD, timezone, isDST);
-        const dawnTime = this.formatLocalTime(dawnJD, timezone, isDST);
+        // Each time in the offset in force at that instant, not the night's (Issue #335)
+        const duskTime = TimeUtils.formatLocalTime(jdToDate(duskJD), location);
+        const dawnTime = TimeUtils.formatLocalTime(jdToDate(dawnJD), location);
 
         const chartLeft = padding;
         const chartRight = padding + chartWidth;
@@ -927,99 +693,7 @@ const ToDoView = {
             if (!info) { currentY += rowHeight; return; }
 
             const y = currentY;
-            const startJD = Math.max(info.riseJD, duskJD);
-            const endJD = Math.min(info.setJD, dawnJD);
-
-            if (endJD > startJD) {
-                const barStartFraction = (startJD - duskJD) / (dawnJD - duskJD);
-                const barEndFraction = (endJD - duskJD) / (dawnJD - duskJD);
-                const barX = chartLeft + chartWidth * barStartFraction;
-                const barWidth = chartWidth * (barEndFraction - barStartFraction);
-                const barY = y + 5;
-                const barHeight = 30;
-
-                // Store hit region for click handling
-                this._chartHitRegions.push({ x: barX, y: barY, w: barWidth, h: barHeight, targetId: info.target.object });
-
-                const isPinned = this.isTargetPinned(info.target.object);
-                const barColor = isPinned ? '#fbbf24' : accentColor;
-
-                ctx.fillStyle = barColor;
-                ctx.globalAlpha = 0.7;
-                ctx.fillRect(barX, barY, barWidth, barHeight);
-                ctx.globalAlpha = 1.0;
-
-                ctx.strokeStyle = barColor;
-                ctx.lineWidth = 1;
-                ctx.strokeRect(barX, barY, barWidth, barHeight);
-
-                // Draw altitude graph inside bar
-                this.drawAltitudeGraph(ctx, info.target, barX, barY, barWidth, barHeight, duskJD, dawnJD, location, isDST);
-
-                ctx.fillStyle = '#ffffff';
-                ctx.font = `${SettingsManager.scaledPx(12)}px sans-serif`;
-
-                let labelX = barX + 5;
-                if (info.riseJD >= duskJD) {
-                    ctx.textAlign = 'left';
-                    ctx.fillText(info.riseTime, barX + 5, barY + 20);
-                    labelX = barX + 5 + ctx.measureText(info.riseTime).width + 30;
-                } else {
-                    labelX = barX + 30;
-                }
-
-                // Draw imaging status indicator as canvas circle
-                const status = this.getImagingStatus(info.target.object);
-                const circleR = 7;
-                const circleX = labelX + circleR;
-                const circleY = barY + 16;
-
-                ctx.beginPath();
-                ctx.arc(circleX, circleY, circleR, 0, Math.PI * 2);
-                if (status === 'complete') {
-                    ctx.fillStyle = '#ffffff';
-                    ctx.fill();
-                } else if (status === 'active') {
-                    ctx.strokeStyle = '#ffffff';
-                    ctx.lineWidth = 1.5;
-                    ctx.stroke();
-                    ctx.beginPath();
-                    ctx.arc(circleX, circleY, circleR, -Math.PI * 0.5, Math.PI * 0.5);
-                    ctx.lineTo(circleX, circleY);
-                    ctx.closePath();
-                    ctx.fillStyle = '#ffffff';
-                    ctx.fill();
-                } else {
-                    ctx.strokeStyle = '#ffffff';
-                    ctx.lineWidth = 1.5;
-                    ctx.stroke();
-                }
-                const statusWidth = circleR * 2 + 6;
-
-                // Draw target label with dark backing for contrast
-                ctx.font = `bold ${SettingsManager.scaledPx(13)}px sans-serif`;
-                ctx.textAlign = 'left';
-                const chartTypeDisplay = OBJECT_TYPES[info.target.type] || info.target.type || '';
-                // The pin marks a pinned bar, not its color alone (Issue #325)
-                const pinIcon = isPinned ? '📌 ' : '';
-                const chartLabel = chartTypeDisplay
-                    ? `${pinIcon}${info.target.object} ${chartTypeDisplay}`
-                    : `${pinIcon}${info.target.object}`;
-                const labelTextX = labelX + statusWidth;
-                const labelTextY = barY + 20;
-                const labelTextWidth = ctx.measureText(chartLabel).width;
-                const backingPad = 3;
-                ctx.fillStyle = 'rgba(0,0,0,0.5)';
-                ctx.fillRect(labelTextX - backingPad, labelTextY - 13, labelTextWidth + backingPad * 2, 16);
-                ctx.fillStyle = '#ffffff';
-                ctx.fillText(chartLabel, labelTextX, labelTextY);
-
-                if (info.setJD <= dawnJD) {
-                    ctx.font = `${SettingsManager.scaledPx(12)}px sans-serif`;
-                    ctx.textAlign = 'right';
-                    ctx.fillText(info.setTime, barX + barWidth - 5, barY + 20);
-                }
-            }
+            this._drawTargetBar(ctx, info, y, { chartLeft, chartWidth, duskJD, dawnJD, location, accentColor });
 
             // Row separator
             ctx.strokeStyle = borderColor;
@@ -1051,6 +725,105 @@ const ToDoView = {
     },
 
     /**
+     * Draw one target's bar in a chart row starting at y: altitude graph,
+     * rise and set times, imaging status, and label (Issue #335)
+     */
+    _drawTargetBar(ctx, info, y, { chartLeft, chartWidth, duskJD, dawnJD, location, accentColor }) {
+        const startJD = Math.max(info.riseJD, duskJD);
+        const endJD = Math.min(info.setJD, dawnJD);
+        if (endJD > startJD) {
+            const barStartFraction = (startJD - duskJD) / (dawnJD - duskJD);
+            const barEndFraction = (endJD - duskJD) / (dawnJD - duskJD);
+            const barX = chartLeft + chartWidth * barStartFraction;
+            const barWidth = chartWidth * (barEndFraction - barStartFraction);
+            const barY = y + 5;
+            const barHeight = 30;
+
+            // Store hit region for click handling
+            this._chartHitRegions.push({ x: barX, y: barY, w: barWidth, h: barHeight, targetId: info.target.object });
+
+            const isPinned = this.isTargetPinned(info.target.object);
+            const barColor = isPinned ? '#fbbf24' : accentColor;
+
+            ctx.fillStyle = barColor;
+            ctx.globalAlpha = 0.7;
+            ctx.fillRect(barX, barY, barWidth, barHeight);
+            ctx.globalAlpha = 1.0;
+
+            ctx.strokeStyle = barColor;
+            ctx.lineWidth = 1;
+            ctx.strokeRect(barX, barY, barWidth, barHeight);
+
+            // Draw altitude graph inside bar
+            this.drawAltitudeGraph(ctx, info.target, barX, barY, barWidth, barHeight, duskJD, dawnJD, location);
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = `${SettingsManager.scaledPx(12)}px sans-serif`;
+
+            let labelX = barX + 5;
+            if (info.riseJD >= duskJD) {
+                ctx.textAlign = 'left';
+                ctx.fillText(info.riseTime, barX + 5, barY + 20);
+                labelX = barX + 5 + ctx.measureText(info.riseTime).width + 30;
+            } else {
+                labelX = barX + 30;
+            }
+
+            // Draw imaging status indicator as canvas circle
+            const status = this.getImagingStatus(info.target.object);
+            const circleR = 7;
+            const circleX = labelX + circleR;
+            const circleY = barY + 16;
+
+            ctx.beginPath();
+            ctx.arc(circleX, circleY, circleR, 0, Math.PI * 2);
+            if (status === 'complete') {
+                ctx.fillStyle = '#ffffff';
+                ctx.fill();
+            } else if (status === 'active') {
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.arc(circleX, circleY, circleR, -Math.PI * 0.5, Math.PI * 0.5);
+                ctx.lineTo(circleX, circleY);
+                ctx.closePath();
+                ctx.fillStyle = '#ffffff';
+                ctx.fill();
+            } else {
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+            }
+            const statusWidth = circleR * 2 + 6;
+
+            // Draw target label with dark backing for contrast
+            ctx.font = `bold ${SettingsManager.scaledPx(13)}px sans-serif`;
+            ctx.textAlign = 'left';
+            const chartTypeDisplay = OBJECT_TYPES[info.target.type] || info.target.type || '';
+            // The pin marks a pinned bar, not its color alone (Issue #325)
+            const pinIcon = isPinned ? '📌 ' : '';
+            const chartLabel = chartTypeDisplay
+                ? `${pinIcon}${info.target.object} ${chartTypeDisplay}`
+                : `${pinIcon}${info.target.object}`;
+            const labelTextX = labelX + statusWidth;
+            const labelTextY = barY + 20;
+            const labelTextWidth = ctx.measureText(chartLabel).width;
+            const backingPad = 3;
+            ctx.fillStyle = 'rgba(0,0,0,0.5)';
+            ctx.fillRect(labelTextX - backingPad, labelTextY - 13, labelTextWidth + backingPad * 2, 16);
+            ctx.fillStyle = '#ffffff';
+            ctx.fillText(chartLabel, labelTextX, labelTextY);
+
+            if (info.setJD <= dawnJD) {
+                ctx.font = `${SettingsManager.scaledPx(12)}px sans-serif`;
+                ctx.textAlign = 'right';
+                ctx.fillText(info.setTime, barX + barWidth - 5, barY + 20);
+            }
+        }
+    },
+
+    /**
      * Draw altitude graph inside a chart bar for a target.
      * @param {CanvasRenderingContext2D} ctx
      * @param {Object} target - target object with ra, dec
@@ -1061,9 +834,8 @@ const ToDoView = {
      * @param {number} duskJD - start of window (JD)
      * @param {number} dawnJD - end of window (JD)
      * @param {Object} location - location object with latitude, longitude
-     * @param {boolean} isDST
      */
-    drawAltitudeGraph(ctx, target, barX, barY, barWidth, barHeight, duskJD, dawnJD, location, isDST) {
+    drawAltitudeGraph(ctx, target, barX, barY, barWidth, barHeight, duskJD, dawnJD, location) {
         const samplePoints = APP_CONFIG.TODO_ALTITUDE_SAMPLE_POINTS;
         const style = APP_CONFIG.TODO_ALTITUDE_GRAPH_STYLE;
         const alpha = APP_CONFIG.TODO_ALTITUDE_GRAPH_ALPHA;
@@ -1116,20 +888,6 @@ const ToDoView = {
         }
 
         ctx.restore();
-    },
-
-    /**
-     * Format JD as local time string (HH:MM)
-     */
-    formatLocalTime(jd, timezone, isDST) {
-        const utcDate = jdToDate(jd);
-        const offsetHours = isDST ? timezone + 1 : timezone;
-        const localDate = new Date(utcDate.getTime() + offsetHours * 3600000);
-
-        const hours = localDate.getUTCHours().toString().padStart(2, '0');
-        const minutes = localDate.getUTCMinutes().toString().padStart(2, '0');
-
-        return `${hours}:${minutes}`;
     },
 
 

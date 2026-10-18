@@ -181,7 +181,9 @@ Type**:
 - **Catalog Pattern** covers a numbered catalog: choose a **Catalog
   Prefix** and type the **Maximum Number**. For example, M and 110 make the
   Messier catalog. Targets that don't exist in the database still count
-  toward the total.
+  toward the total. Each number counts once: NGC 5194 and NGC 5194A are
+  the same entry, and a number above the Maximum Number doesn't count, so
+  a program never passes 100%.
 - **Manual List** takes a **Target List**, one designation per line. Astryx
   matches each line against the database, including other designations,
   and shows which lines **Matched** and which **Failed**. **Copy Missing

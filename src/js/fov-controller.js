@@ -515,17 +515,17 @@ const FOVView = {
             return;
         }
 
-        const telescope = DataManager.getTelescope(telescopeName);
-        const sensor = DataManager.getSensor(sensorName);
+        const storedTelescope = DataManager.getTelescope(telescopeName);
+        const storedSensor = DataManager.getSensor(sensorName);
 
-        if (!telescope || !sensor) {
+        if (!storedTelescope || !storedSensor) {
             this.clearResults();
             return;
         }
 
-        // Add names to objects for display
-        telescope.name = telescopeName;
-        sensor.name = sensorName;
+        // Copies with the names for display; the stored objects stay as saved (Issue #331)
+        const telescope = { ...storedTelescope, name: telescopeName };
+        const sensor = { ...storedSensor, name: sensorName };
 
         // Calculate FOV
         const fovData = FOVCalculations.calculateFOV(telescope, sensor);
@@ -960,17 +960,15 @@ ${targetRows}
     },
 
     /**
-     * Percent of the field's area the target fills (an ellipse if its
-     * dimensions differ, a rectangle if not); null without a target size
-     * or with the target out of the frame
+     * Percent of the field's area the target fills, as the ellipse the
+     * canvas draws (a circle when both sizes are equal; Issue #331); null
+     * without a target size or with the target out of the frame
      */
     getFieldCoverage(fovData) {
         if (!this.currentTarget?.size_max || !this.currentTarget?.size_min || !this.isTargetInView(fovData)) return null;
         const sizeMax = parseFloat(this.currentTarget.size_max);
         const sizeMin = parseFloat(this.currentTarget.size_min);
-        const targetArea = sizeMax !== sizeMin
-            ? Math.PI * (sizeMax / 2) * (sizeMin / 2)
-            : sizeMax * sizeMin;
+        const targetArea = Math.PI * (sizeMax / 2) * (sizeMin / 2);
         return (targetArea / (fovData.fovWidthArcmin * fovData.fovHeightArcmin)) * 100;
     },
 

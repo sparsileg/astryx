@@ -347,17 +347,17 @@
 }
 
 .timeline-labels-row {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 0.5rem;
-    font-size: 0.85rem;
+    position: relative;
+    margin: 17px 0 10px 0;
+    font-size: 0.75rem;
     color: var(--text-secondary);
 }
 
 .timeline-label {
     position: absolute;
+    top: -18px;
     transform: translateX(-50%);
-    font-size: 0.75rem;
+    white-space: nowrap;
 }
 
 .gradient-legend {

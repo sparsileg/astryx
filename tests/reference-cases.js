@@ -371,6 +371,49 @@ const REFERENCE_CASES = [
         source: 'formula identity (precessing to J2000 itself must return input Dec unchanged)'
     },
     {
+        // Issue #311: the T0 terms were added as T² terms
+        name: 'precessFromJ2000: θ Persei to 2028.867 (RA)',
+        actual: () => TimeUtils.precessFromJ2000(2.7366627777777777, 49.22846666666667, 2028.867).ra,
+        expected: 2.7695390144126013,
+        tolerance: 0.001 / 3600,
+        source: 'IAU SOFA iauPmat76 (pyerfa 2.0.1.5), Julian epoch; to 0.001 s of RA'
+    },
+    {
+        name: 'precessFromJ2000: θ Persei to 2028.867 (Dec)',
+        actual: () => TimeUtils.precessFromJ2000(2.7366627777777777, 49.22846666666667, 2028.867).dec,
+        expected: 49.349207204094874,
+        tolerance: 0.01 / 3600,
+        source: 'IAU SOFA iauPmat76 (pyerfa 2.0.1.5), Julian epoch; to 0.01″'
+    },
+    {
+        name: 'precessFromJ2000: θ Persei to 2100 (RA)',
+        actual: () => TimeUtils.precessFromJ2000(2.7366627777777777, 49.22846666666667, 2100.0).ra,
+        expected: 2.8510595923969775,
+        tolerance: 0.001 / 3600,
+        source: 'IAU SOFA iauPmat76 (pyerfa 2.0.1.5), Julian epoch; to 0.001 s of RA'
+    },
+    {
+        name: 'precessFromJ2000: θ Persei to 2100 (Dec)',
+        actual: () => TimeUtils.precessFromJ2000(2.7366627777777777, 49.22846666666667, 2100.0).dec,
+        expected: 49.64272128302513,
+        tolerance: 0.01 / 3600,
+        source: 'IAU SOFA iauPmat76 (pyerfa 2.0.1.5), Julian epoch; to 0.01″'
+    },
+    {
+        name: 'precessFromJ2000: near the pole to 2100 (RA)',
+        actual: () => TimeUtils.precessFromJ2000(2.5303, 89.2641, 2100.0).ra,
+        expected: 5.888475290568669,
+        tolerance: 0.001 / 3600,
+        source: 'IAU SOFA iauPmat76 (pyerfa 2.0.1.5), Julian epoch; to 0.001 s of RA'
+    },
+    {
+        name: 'precessFromJ2000: near the pole to 2100 (Dec)',
+        actual: () => TimeUtils.precessFromJ2000(2.5303, 89.2641, 2100.0).dec,
+        expected: 89.54056826631997,
+        tolerance: 0.01 / 3600,
+        source: 'IAU SOFA iauPmat76 (pyerfa 2.0.1.5), Julian epoch; to 0.01″'
+    },
+    {
         name: 'getAzimuth: meridian transit identity (dec<lat, HA=0 → due south)',
         actual: () => {
             const jd = 2451545.0;

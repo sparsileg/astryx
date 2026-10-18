@@ -26,6 +26,7 @@ const context = loadApp([
     'js/utils-html.js',
     'js/session-report-view.js',
     'js/session-report-pdf.js',
+    'js/fov-calculations.js',
 ]);
 // HtmlUtils.escapeHtml escapes through the DOM; this does what a browser's textContent/innerHTML does
 context.document = {
@@ -288,5 +289,58 @@ test('the report says each finding\'s level and which settings to change, on scr
         assert.ok(!/(Dither Duration|Max Duration)\nChange suggested/.test(pdf), 'PDF: unchanged rows unmarked');
     } finally {
         Object.assign(SessionRecommendations, { build, buildGuidingSettings });
+    }
+});
+
+// Issue #336: the PDF's Guiding Analysis carries every note the screen shows
+test('the PDF has the screen\'s dither, SNR and calibration notes, and one plate scale with the reducer', () => {
+    const parsed = parse(twoRuns);
+    const fs = SessionFusion.fuseNight(parsed);
+    const session = {
+        num: 1, startTime: '2025-10-23 21:00:00', endTime: '2025-10-23 22:00:00', frames: [], stats: null, incomplete: false,
+        // Every dither the same way: biased
+        ditherEvents: [[2, 0], [2, 0.1], [2, -0.1], [2, 0]].map(([dxPx, dyPx]) => ({ dxPx, dyPx })),
+        rates: { xAngle: 0, yAngle: 90 },
+    };
+    const cal = (startedAt, west, ortho) => ({ startedAt, west: { ratePxPerSec: west }, north: { ratePxPerSec: 10 }, orthogonalityErrorDeg: ortho, starLostDuringCalibration: 0 });
+    const phd2Parsed = {
+        sessions: [session],
+        calibrations: [cal('2025-10-23 20:50:00', 10, 0.2), cal('2025-10-23 23:00:00', 14, 1.5)],
+        equipment: { pixelScale: 2, camera: 'Guide camera', focalLength: 200 },
+        overall: { sessionCount: 1, fullSessionCount: 1, totalFrames: 0, raRms: null, raRmsAll: 0, decRms: null, decRmsAll: 0,
+            totRms: null, totRmsAll: 0, avgSnr: 10, totalDithers: 4, excludedCriticalSessionCount: 0 },
+    };
+    // 400 mm with a 0.8× reducer and 3.76 µm pixels: 2.42"/px (1.94 without the reducer)
+    const context = { asiairParsed: parsed, phd2Parsed, telescopeName: 'Scope', sensorName: 'Camera',
+        telescope: { focalLength: 400, multiplier: 0.8 }, sensor: { pixelSizeX: 3.76, pixelSizeY: 3.76 } };
+
+    // The SNR note needs a whole night of guide sessions; only its place in both reports is under test here
+    const { _snrDarknessNote } = SessionReportView;
+    SessionReportView._snrDarknessNote = () => ({ text: 'SNR dropped well below the deep-night median', warning: true });
+    try {
+        const html = SessionReportView._buildGuidingHtml(fs, context) + SessionReportView._buildImagingEquipmentHtml(context);
+        const pdfText = node => typeof node === 'string' ? node
+            : Array.isArray(node) ? node.map(pdfText).join('|')
+            : node && typeof node === 'object' ? ['text', 'stack', 'columns', 'table', 'body', 'ul', 'ol'].filter(k => k in node).map(k => pdfText(node[k])).join('|')
+            : '';
+        const pdf = pdfText(SessionReportPdf._guidingFindingsFocus(fs, context, SessionReportPdf._colors(), SessionReportPdf._tableLayout()))
+            + SessionReportPdf._equipmentText(context);
+
+        const notes = [
+            SessionReportView._ditherBiasText(phd2Parsed),
+            SessionReportView._ditherAmplitudeText(context, phd2Parsed),
+            'SNR dropped well below the deep-night median',
+            ...SessionReportView._calibrationNotes(phd2Parsed),
+        ];
+        assert.ok(notes[0].includes('biased +RA'), notes[0]);
+        assert.ok(notes[1].includes('imaging sensor: mean 1.65px'), notes[1]);
+        assert.ok(notes.some(n => n.startsWith('Orthogonality error exceeded')) && notes.some(n => n.startsWith('Calibration rate shifted 40%')), notes.join(' / '));
+        for (const note of notes) {
+            assert.ok(html.includes(note), `screen: ${note}`);
+            assert.ok(pdf.includes(note), `PDF: ${note}`);
+        }
+        assert.ok(html.includes('(2.42"/px)') && pdf.includes('(2.42"/px)'), 'plate scale with the reducer');
+    } finally {
+        SessionReportView._snrDarknessNote = _snrDarknessNote;
     }
 });
