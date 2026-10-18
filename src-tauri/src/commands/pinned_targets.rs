@@ -49,16 +49,18 @@ pub(crate) mod sql {
                 }))
             })
             .map_err(|e| e.to_string())?
-            .filter_map(|r| r.ok())
-            .collect();
+            .collect::<rusqlite::Result<Vec<_>>>()
+            .map_err(|e| e.to_string())?;
 
         Ok(rows)
     }
 
+    /// Saving a pinned name again replaces it, as the web store does (#338).
     pub fn save_pinned_target(conn: &Connection, target: &serde_json::Value) -> Result<(), String> {
         conn.execute(
-            "INSERT OR IGNORE INTO pinned_targets (name, ra, dec, common)
-             VALUES (?1, ?2, ?3, ?4)",
+            "INSERT INTO pinned_targets (name, ra, dec, common)
+             VALUES (?1, ?2, ?3, ?4)
+             ON CONFLICT(name) DO UPDATE SET ra = excluded.ra, dec = excluded.dec, common = excluded.common",
             rusqlite::params![
                 target["name"].as_str().ok_or("missing name")?,
                 target["ra"].as_f64().ok_or("missing ra")?,
@@ -103,7 +105,7 @@ mod tests {
     }
 
     #[test]
-    fn pinning_twice_keeps_the_first() {
+    fn pinning_twice_keeps_the_last() {
         let conn = test_conn();
         save_pinned_target(
             &conn,
@@ -113,7 +115,17 @@ mod tests {
         save_pinned_target(&conn, &json!({ "name": "M 42", "ra": 1.0, "dec": 1.0 })).unwrap();
         let pinned = get_all_pinned_targets(&conn).unwrap();
         assert_eq!(pinned.len(), 1);
-        assert_eq!(pinned[0]["ra"], json!(5.588));
+        assert_eq!(pinned[0]["ra"], json!(1.0));
+        assert_eq!(pinned[0]["common"], json!(null));
+    }
+
+    #[test]
+    fn a_row_that_cannot_be_read_is_an_error_not_dropped() {
+        let conn = test_conn();
+        save_pinned_target(&conn, &json!({ "name": "M 42", "ra": 5.588, "dec": -5.391 })).unwrap();
+        // SQLite keeps a value of any type; a text ra can't be read as f64
+        conn.execute("INSERT INTO pinned_targets (name, ra, dec) VALUES ('M 31', 'bad', 0.0)", []).unwrap();
+        assert!(get_all_pinned_targets(&conn).is_err());
     }
 
     #[test]

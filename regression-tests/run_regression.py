@@ -34,14 +34,11 @@ from py_mini_racer import MiniRacer
 # config.js must load first — it defines APP_CONFIG and Log, both referenced
 # elsewhere. utils-time.js comes next: both parsers read log times through
 # TimeUtils.parseWallClock (issue #303).
-#
-# NOT included: astro-core.js / astro-target.js. session-recommendations.js
-# guards every reference to findTargetTransit/dateToJD/jdToDate with a
-# typeof check, so without them Meridian Flip Verification just returns an
-# empty array rather than throwing — a real, disclosed gap in this harness's
-# coverage, not a crash. Add both files to this list (before
-# session-recommendations.js) to close that gap; nothing else needs to
-# change.
+# astro-core.js and astro-target.js come before session-recommendations.js,
+# which uses them for Meridian Flip Verification. That also needs the
+# night's location, passed as context.location: the night's "location", or
+# else the manifest's "_default_location", named from "_locations"
+# (Issue #338).
 # ---------------------------------------------------------------------------
 JS_FILES_IN_ORDER = [
     "config.js",
@@ -51,6 +48,8 @@ JS_FILES_IN_ORDER = [
     "session-fusion.js",
     "session-invariants.js",
     "session-detectors.js",
+    "astro-core.js",
+    "astro-target.js",
     "session-recommendations.js",
 ]
 
@@ -70,6 +69,11 @@ var SettingsManager = {
     getLearnedSubGapS: function() { return APP_CONFIG.DEFAULT_SUB_GAP_S; },
     getLearnedDitherDurationS: function() { return APP_CONFIG.DEFAULT_DITHER_DURATION_S; },
     getSetting: function(key, defaultValue) { return defaultValue; },
+    // The app's default 'auto' daylight-saving mode, which reading log
+    // times at the night's location needs (Issue #338)
+    isDSTActive: function(instant, location) {
+        return !!location.timeZone && TimeUtils.zoneOffsetHours(location.timeZone, instant) > location.timezone;
+    },
 };
 """
 
@@ -102,7 +106,7 @@ RUNNER_JS = r"""
     }
 
     var fused = SessionFusion.fuseNight(__ctx.asiairParsed, __ctx.phd2Parsed);
-    var context = { asiairParsed: __ctx.asiairParsed, phd2Parsed: __ctx.phd2Parsed };
+    var context = { asiairParsed: __ctx.asiairParsed, phd2Parsed: __ctx.phd2Parsed, location: __ctx.location };
 
     var detectorError = null;
     try {
@@ -119,6 +123,13 @@ RUNNER_JS = r"""
         recError = String((e && e.stack) || e);
     }
 
+    var meridian = [];
+    try {
+        meridian = SessionRecommendations.buildMeridianVerification(context);
+    } catch (e) {
+        recError = String((e && e.stack) || e);
+    }
+
     var nanPaths = [];
     findNaN(fused, 'fused', nanPaths);
 
@@ -129,9 +140,14 @@ RUNNER_JS = r"""
         }, 0);
     }
 
+    var tierCounts = {};
+    fused.subs.forEach(function(s) { tierCounts[s.tier] = (tierCounts[s.tier] || 0) + 1; });
+
     return JSON.stringify({
         fused: fused,
         recommendations: recs,
+        meridianVerification: meridian,
+        tierCounts: tierCounts,
         detectorError: detectorError,
         recError: recError,
         nanPaths: nanPaths,
@@ -153,7 +169,7 @@ def build_context(src_dir: Path) -> MiniRacer:
     return ctx
 
 
-def run_night(ctx: MiniRacer, asiair_text: str, phd2_text: str | None) -> dict:
+def run_night(ctx: MiniRacer, asiair_text: str, phd2_text: str | None, location: dict | None = None) -> dict:
     """Run one night through the real pipeline. Returns the parsed JSON result."""
     asiair_fn = ctx.eval("AsiairLogParser.parse.bind(AsiairLogParser)")
     asiair_parsed_ref = asiair_fn(asiair_text)
@@ -164,8 +180,8 @@ def run_night(ctx: MiniRacer, asiair_text: str, phd2_text: str | None) -> dict:
         phd2_parsed_ref = phd2_fn(phd2_text, asiair_parsed_ref)
 
     ctx.eval("var __ctx = {};")
-    stash = ctx.eval("(function(a, p) { __ctx.asiairParsed = a; __ctx.phd2Parsed = p; })")
-    stash(asiair_parsed_ref, phd2_parsed_ref)
+    stash = ctx.eval("(function(a, p, l) { __ctx.asiairParsed = a; __ctx.phd2Parsed = p; __ctx.location = l ? JSON.parse(l) : null; })")
+    stash(asiair_parsed_ref, phd2_parsed_ref, json.dumps(location) if location else None)
 
     result_json = ctx.eval(RUNNER_JS)
     return json.loads(result_json)
@@ -215,7 +231,33 @@ def evaluate_night(result: dict, expected: dict) -> list[str]:
         if actual != expected["drops"]:
             problems.append(f"PHD2 drop total {actual} vs expected {expected['drops']}")
 
+    # Issue #338: per-sub tiers, the recommendation rows and Meridian Flip
+    # Verification, recorded by --record
+    if "tier_counts" in expected:
+        actual = result.get("tierCounts")
+        if actual != expected["tier_counts"]:
+            problems.append(f"Tier counts {actual} vs expected {expected['tier_counts']}")
+
+    if "recommendations" in expected:
+        actual = recommendation_rows(result)
+        for i in range(max(len(actual), len(expected["recommendations"]))):
+            got = actual[i] if i < len(actual) else None
+            want = expected["recommendations"][i] if i < len(expected["recommendations"]) else None
+            if got != want:
+                problems.append(f"Recommendation row {i + 1}: {got} vs expected {want}")
+
+    if "meridian_verification" in expected:
+        actual = result.get("meridianVerification")
+        if actual != expected["meridian_verification"]:
+            problems.append(f"Meridian Flip Verification {actual} vs expected {expected['meridian_verification']}")
+
     return problems
+
+
+def recommendation_rows(result: dict) -> list[dict]:
+    """The recommendation fields compared night to night."""
+    keys = ("group", "setting", "observed", "recommended", "changeNeeded")
+    return [{k: r.get(k) for k in keys} for r in result.get("recommendations") or []]
 
 
 def main():
@@ -226,6 +268,8 @@ def main():
                     help="Path to the folder containing raw ASIAir/PHD2 log files")
     p.add_argument("--manifest", default="corpus_manifest.json", type=Path,
                     help="JSON manifest mapping night -> filenames + expected values")
+    p.add_argument("--record", action="store_true",
+                    help="Write each night's tier counts, recommendation rows and meridian rows into the manifest as its expected values")
     p.add_argument("--dump-night", default=None,
                     help="Print raw AsiairLogParser.parse() run/block structure for one manifest key, then exit")
     args = p.parse_args()
@@ -289,9 +333,9 @@ def main():
             print(inv_dump(fused))
         return
 
-    args = p.parse_args()
-
     manifest = json.loads(args.manifest.read_text(encoding="utf-8"))
+    locations = manifest.get("_locations", {})
+    default_location = manifest.get("_default_location")
     ctx = build_context(args.src_dir)
 
     total = 0
@@ -321,10 +365,17 @@ def main():
 
         total += 1
         try:
-            result = run_night(ctx, asiair_text, phd2_text)
+            location_name = entry.get("location", default_location)
+            result = run_night(ctx, asiair_text, phd2_text, locations.get(location_name))
         except Exception as e:
             failures[night_key] = [f"Pipeline threw: {e}"]
             continue
+
+        if args.record:
+            expected = entry.setdefault("expected", {})
+            expected["tier_counts"] = result.get("tierCounts")
+            expected["recommendations"] = recommendation_rows(result)
+            expected["meridian_verification"] = result.get("meridianVerification")
 
         problems = evaluate_night(result, entry.get("expected", {}))
         if problems:
@@ -341,6 +392,9 @@ def main():
             print(f"      - {prob}")
     if not failures:
         print("All nights passed.")
+    if args.record:
+        args.manifest.write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+        print(f"Recorded tier counts, recommendation rows and meridian rows into {args.manifest}")
 
     sys.exit(1 if failures else 0)
 

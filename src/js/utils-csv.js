@@ -124,11 +124,6 @@ const CSVUtils = {
                 continue;
             }
             
-            // if (!target.constellation) {
-            //     errors.push(`Line ${lineNumber}: Missing Constellation`);
-            //     continue;
-            // }
-            
             // Validate and convert RA value
             const raValue = parseFloat(target.ra);
             if (isNaN(raValue)) {

@@ -3,14 +3,6 @@
  * Target filtering functionality with preset support
  */
 
-/* configurable parameters */
-const INITIAL_RESULTS_BATCH = 15;
-const LAZY_LOAD_BATCH_SIZE = 15;
-const MAX_TOTAL_RESULTS = 20000;
-const RANDOMIZE_RESULTS = true;
-const MAX_IMAGING_PROGRAM_TARGETS = 199;
-
-
 const TargetFilter = {
     // Lazy loading state
     allResults: [],
@@ -72,7 +64,7 @@ const TargetFilter = {
      * Initialize - scan database for available options
      */
     initialize() {
-        console.log('Initializing TargetFilter...');
+        Log.debug('Initializing TargetFilter...');
 
         const catalogSet = new Set();
         const typeSet = new Set();
@@ -845,17 +837,17 @@ const TargetFilter = {
         // ordered results by relevance (e.g. name search's exact-match-first sort)
         const processed = preserveOrder ?
               results :
-              RANDOMIZE_RESULTS ?
+              APP_CONFIG.FILTER_RANDOMIZE_RESULTS ?
               this.shuffleArray(results) :
               results.sort((a, b) => this.naturalSort(a, b));
 
         // Store all results and reset state
-        this.allResults = processed.slice(0, MAX_TOTAL_RESULTS);
+        this.allResults = processed.slice(0, APP_CONFIG.FILTER_MAX_TOTAL_RESULTS);
         this.displayedCount = 0;
         resultsDiv.innerHTML = '';
 
         // Update count display
-        const totalToShow = Math.min(this.allResults.length, MAX_TOTAL_RESULTS);
+        const totalToShow = Math.min(this.allResults.length, APP_CONFIG.FILTER_MAX_TOTAL_RESULTS);
         countDiv.textContent = `Showing 0 of ${totalToShow} unique results`;
 
         this.loadMoreResults(); // Display initial batch
@@ -905,7 +897,7 @@ const TargetFilter = {
         }
 
         // Calculate batch
-        const batchSize = this.displayedCount === 0 ? INITIAL_RESULTS_BATCH : LAZY_LOAD_BATCH_SIZE;
+        const batchSize = this.displayedCount === 0 ? APP_CONFIG.FILTER_INITIAL_RESULTS_BATCH : APP_CONFIG.FILTER_LAZY_LOAD_BATCH_SIZE;
         const start = this.displayedCount;
         const end = Math.min(start + batchSize, this.allResults.length);
         const batch = this.allResults.slice(start, end);
@@ -1001,7 +993,7 @@ const TargetFilter = {
         if (resultCount === 0) {
             // No results - hide button
             button.style.display = 'none';
-        } else if (resultCount > MAX_IMAGING_PROGRAM_TARGETS) {
+        } else if (resultCount > APP_CONFIG.FILTER_MAX_IMAGING_PROGRAM_TARGETS) {
             // Too many results - show enabled but with warning tooltip
             button.style.display = 'block';
             button.disabled = false;
@@ -1021,7 +1013,7 @@ const TargetFilter = {
         const targetCount = this.allResults.length;
 
         // Check if results exceed maximum
-        if (targetCount > MAX_IMAGING_PROGRAM_TARGETS) {
+        if (targetCount > APP_CONFIG.FILTER_MAX_IMAGING_PROGRAM_TARGETS) {
             UIManager.openModal('filter-results-too-many-template', 'Too Many Results', (action) => {
                 if (action === 'ok') {
                     UIManager.closeModal();
@@ -1069,7 +1061,6 @@ const TargetFilter = {
 
         const programData = {
             name: programName,
-            status: 'Started',
             targetDesignations: targetDesignations
         };
 

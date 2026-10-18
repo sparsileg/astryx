@@ -85,7 +85,7 @@ const SessionRecommendations = {
         const note = subGap.ditherEverySub
             ? 'clean blocks, dither-every-sub — isolated by subtracting mean dither duration'
             : 'clean blocks, no dither between';
-        const changeNeeded = stored != null && Math.abs(mean - stored) > 1;
+        const changeNeeded = stored != null && Math.abs(mean - stored) > APP_CONFIG.LOG_ANALYSIS.SUB_GAP_CHANGE_S;
         return this._makeRec({
             group: 'behavior', setting: 'Sub Gap',
             observed: `${mean.toFixed(1)}s (n=${n}, ${note})`,
@@ -121,7 +121,7 @@ const SessionRecommendations = {
         }
         const mean = samples.reduce((s, v) => s + v, 0) / samples.length;
         const stored = (typeof SettingsManager !== 'undefined') ? SettingsManager.getLearnedDitherDurationS() : null;
-        const changeNeeded = stored != null && Math.abs(mean - stored) > 3;
+        const changeNeeded = stored != null && Math.abs(mean - stored) > APP_CONFIG.LOG_ANALYSIS.DITHER_DURATION_CHANGE_S;
         return this._makeRec({
             group: 'behavior', setting: 'Dither Duration',
             observed: `${mean.toFixed(1)}s (n=${samples.length}, clean blocks only)`,
@@ -248,7 +248,7 @@ const SessionRecommendations = {
         const centerJD = dateToJD(new Date(pauseMs));
         const windowDays = 6 / 24;
         const transitJD = findTargetTransit(centerJD - windowDays, centerJD + windowDays,
-            run.coords.raHours, run.coords.decDeg, location.longitude);
+            run.coords.raHours, location.longitude);
         if (transitJD == null) return null;
 
         const transitMs = jdToDate(transitJD).getTime();
@@ -325,7 +325,7 @@ const SessionRecommendations = {
         const derived = this._deriveMeridianTiming(event, run, context.location);
         if (!derived) return null;
 
-        const pauseSettingS = (SettingsManager.getSetting('seqPlanMeridianFlipPause', 4)) * 60;
+        const pauseSettingS = SettingsManager.getSetting('seqPlanMeridianFlipPause', APP_CONFIG.SEQ_PLAN_DEFAULT_FLIP_PAUSE_MINUTES) * 60;
         const offsetSettingS = (SettingsManager.getSetting('seqPlanMeridianFlipOffset', 0)) * 60;
         const subExposureS = this._lastSubExposureS(run, event.pauseStartedAt);
         return { derived, subExposureS, pauseSettingS, offsetSettingS, subFitWaitS: this._subFitWaitS(derived, subExposureS, pauseSettingS) };

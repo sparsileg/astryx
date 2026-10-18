@@ -11,7 +11,6 @@ const SettingsManager = {
         theme: APP_CONFIG.DEFAULT_THEME,
         fontSizePx: APP_CONFIG.FONT_SIZE_DEFAULT_PX, // Base text size, chosen beside the theme (issue #272)
         dateFormat: null, // 'mdy', 'dmy' or 'ymd' for numeric dates shown; null follows the computer's region (issue #274)
-        resultsCount: 'all', // Not in settings UI, but used by visibility calculator
         selectedLocation: null, // Currently selected observer location
         globalMinAltitude: 35, // Global default minimum altitude for all tools
         bestMonthsAltitudes: {},      // Min altitude each location's best months were calculated with
@@ -243,21 +242,6 @@ const SettingsManager = {
     isDSTOnDate(date, location) {
         const noon = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate(), 12) - location.timezone * 3600000;
         return this.isDSTActive(new Date(noon), location);
-    },
-
-    /**
-     * Get results count setting
-     */
-    getResultsCount() {
-        return this.settings.resultsCount;
-    },
-
-    /**
-     * Update results count
-     */
-    async updateResultsCount(count) {
-        this.settings.resultsCount = count;
-        await this.saveSettings();
     },
 
     /**

@@ -197,12 +197,12 @@ const ImagingLogManager = {
     // ============================================================================
 
     /**
-     * Create a new program
+     * Create a new program. A program has no stored status; the Programs tab
+     * works it out from the sessions (Issue #338)
      */
     async createProgram(programData) {
         const program = {
             name: programData.name,
-            status: programData.status || 'Started',
             created: new Date().toISOString()
         };
 
@@ -231,7 +231,6 @@ const ImagingLogManager = {
         }
 
         program.name = programData.name;
-        program.status = programData.status;
 
         // Pattern-based mode
         if (programData.catalogPrefix && programData.maxNumber) {

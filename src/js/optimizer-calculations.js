@@ -114,7 +114,7 @@ const OptimizerCalculations = {
             // Transit time (used for centering score only)
             const transitJD = findTargetTransit(
                 sessionStartJD, sessionEndJD,
-                candidate.ra, candidate.dec,
+                candidate.ra,
                 location.longitude
             );
 

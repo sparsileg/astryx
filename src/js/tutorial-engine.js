@@ -11,7 +11,7 @@ const TutorialEngine = {
     _overlayEl: null,
     _highlightEl: null,
     _panelEl: null,
-    _clickHandler: null,
+    _removeWaitListener: null, // removes the listener a waitFor: click step added (Issue #338)
     _resumeTo: null,
 
     // -------------------------------------------------------------------------
@@ -42,7 +42,7 @@ const TutorialEngine = {
     },
 
     advance(delayed = false) {
-        console.log('advance: _panelEl before teardown:', this._panelEl);
+        Log.debug('advance: _panelEl before teardown:', this._panelEl);
         this._teardown();
         this._currentStepIndex++;
         const tutorial = this._currentTutorial;
@@ -124,7 +124,7 @@ const TutorialEngine = {
     _showStep(index) {
         const step = this._currentTutorial.steps[index];
         const total = this._currentTutorial.steps.length;
-        console.log(`TutorialEngine: step ${index + 1}/${total} — type=${step.type} id=${step.id}`);
+        Log.debug(`TutorialEngine: step ${index + 1}/${total} — type=${step.type} id=${step.id}`);
         if (step.type === 'modal') {
             this._showModal(step, index, total);
         } else if (step.type === 'callout') {
@@ -154,7 +154,7 @@ const TutorialEngine = {
             </div>
         `;
 
-        panel.querySelector('.tutorial-btn-next').addEventListener('click', () => { console.log('Next clicked, step:', this._currentStepIndex); this.advance(); });
+        panel.querySelector('.tutorial-btn-next').addEventListener('click', () => { Log.debug('Next clicked, step:', this._currentStepIndex); this.advance(); });
         panel.querySelector('.tutorial-btn-exit').addEventListener('click', () => this.exit());
 
         document.body.appendChild(panel);
@@ -290,7 +290,7 @@ const TutorialEngine = {
                         this.advance(true);
                     };
                     targetEl.addEventListener('change', handler, { once: true });
-                    this._clickHandler = () => targetEl.removeEventListener('change', handler);
+                    this._removeWaitListener = () => targetEl.removeEventListener('change', handler);
                 } else {
                     const handler = (e) => {
                         if (e.target.matches(selector) || e.target.closest(selector)) {
@@ -299,7 +299,7 @@ const TutorialEngine = {
                         }
                     };
                     document.addEventListener('click', handler, true);
-                    this._clickHandler = handler;
+                    this._removeWaitListener = () => document.removeEventListener('click', handler, true);
                 }
             } else {
                 // Target not found or not shown — add Next button dynamically
@@ -379,9 +379,9 @@ const TutorialEngine = {
             this._panelEl.remove();
             this._panelEl = null;
         }
-        if (this._clickHandler) {
-            document.removeEventListener('click', this._clickHandler, true);
-            this._clickHandler = null;
+        if (this._removeWaitListener) {
+            this._removeWaitListener();
+            this._removeWaitListener = null;
         }
     },
 

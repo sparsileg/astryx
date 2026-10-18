@@ -371,16 +371,6 @@ const YearlyObservabilityView = {
             tickMark.setAttribute('stroke-width', '3');
             svg.appendChild(tickMark);
 
-            // Month tick mark at top edge of graph
-            const topTickMark = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-            topTickMark.setAttribute('x1', padding.left + x);
-            topTickMark.setAttribute('y1', padding.top - 8);
-            topTickMark.setAttribute('x2', padding.left + x);
-            topTickMark.setAttribute('y2', padding.top - 8);
-            topTickMark.setAttribute('stroke', textSecondary);
-            topTickMark.setAttribute('stroke-width', '3');
-            svg.appendChild(topTickMark);
-
             cumulativeDays += daysInMonth[monthIndex];
         }
 

@@ -724,15 +724,16 @@ const BackupManagerWeb = {
         const ageInDays = Math.floor((now - exportDate) / (1000 * 60 * 60 * 24));
 
         // Determine warning level based on age
+        const [noticeDays, warningDays, criticalDays] = APP_CONFIG.BACKUP_RESTORE_AGE_WARNING_DAYS;
         let warningClass = '';
         let warningIcon = '';
-        if (ageInDays > 180) {
+        if (ageInDays > criticalDays) {
             warningClass = 'age-180';
             warningIcon = '🔴';
-        } else if (ageInDays > 90) {
+        } else if (ageInDays > warningDays) {
             warningClass = 'age-90';
             warningIcon = '🟠';
-        } else if (ageInDays > 30) {
+        } else if (ageInDays > noticeDays) {
             warningClass = 'age-30';
             warningIcon = '🟡';
         }
@@ -787,7 +788,7 @@ const BackupManagerWeb = {
             `;
 
             if (comparison.verdict === 'older') {
-                const age = ageInDays > 30 ? ` This backup is ${ageInDays} days old.` : '';
+                const age = ageInDays > noticeDays ? ` This backup is ${ageInDays} days old.` : '';
                 html += `
                     <div class="backup-restore-warning backup-restore-verdict older ${warningClass}">
                         <div class="backup-restore-warning-title">

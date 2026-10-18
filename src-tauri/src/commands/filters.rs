@@ -34,8 +34,8 @@ pub(crate) mod sql {
                 Ok(serde_json::json!({ "name": row.get::<_, String>(0)? }))
             })
             .map_err(|e| e.to_string())?
-            .filter_map(|r| r.ok())
-            .collect();
+            .collect::<rusqlite::Result<Vec<_>>>()
+            .map_err(|e| e.to_string())?;
 
         Ok(rows)
     }

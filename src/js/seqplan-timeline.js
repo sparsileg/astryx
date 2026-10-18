@@ -304,8 +304,7 @@ const SeqPlanTimeline = {
             e.type === 'autofocus' || e.type === 'calibration' || e.type === 'flip'
         );
 
-        // Calculate positions and detect overlaps for non-AF events
-        const MIN_SPACING = 40; // Minimum pixels between labels
+        // Positions of the calibration and flip labels
         const positions = [];
 
         for (const event of overheadEvents) {
@@ -320,36 +319,12 @@ const SeqPlanTimeline = {
                 continue;
             }
 
-            // Determine label text for cal/flip
-            let label = '';
-            if (event.type === 'calibration') label = 'Cal';
-            //else if (event.type === 'flip') label = 'Cal'; // 'Flip' drawn separately above
-
-            // Determine label row (0 = top row, 1 = bottom row)
-            let row = 0;
-
-            // Check if this position overlaps with any previous labels in row 0
-            for (const pos of positions) {
-                if (pos.row === 0 && Math.abs(pos.x - eventX) < MIN_SPACING) {
-                    row = 1; // Use bottom row
-                    break;
-                }
-            }
-
-            // If row 1 also has overlap, go back to row 0 (will overlap, but unavoidable)
-            if (row === 1) {
-                for (const pos of positions) {
-                    if (pos.row === 1 && Math.abs(pos.x - eventX) < MIN_SPACING) {
-                        row = 0; // Fall back to row 0
-                        break;
-                    }
-                }
-            }
-
-            positions.push({ x: eventX, row: row, label: label, event: event });
+            // A flip's 'Flip' is drawn separately, above where 'Cal' goes
+            const label = event.type === 'calibration' ? 'Cal' : '';
+            positions.push({ x: eventX, label: label, event: event });
         }
 
-        // Now draw calibration and flip markers with staggered labels
+        // Now draw the calibration and flip labels
         for (const pos of positions) {
             const eventX = pos.x;
             const label = pos.label;

@@ -542,16 +542,15 @@ const FOVView = {
             const areaPct = fieldCoverage;
 
             // Toast if either condition triggered — once per unique combination
-            const linearTriggered = linearPct > 70;
-            const areaTriggered = areaPct > 50;
+            const linearTriggered = linearPct > APP_CONFIG.FOV_LARGE_TARGET_WIDTH_PCT;
+            const areaTriggered = areaPct > APP_CONFIG.FOV_LARGE_TARGET_AREA_PCT;
 
             if (linearTriggered || areaTriggered) {
                 const toastKey = `${telescopeName}|${sensorName}|${this.currentTarget.object}`;
                 if (toastKey !== this.lastToastKey) {
                     this.lastToastKey = toastKey;
-                    // Suggest a focal length that would put the target at ~70% of the smaller FOV dimension
-                    const targetOccupancy = 0.7;
-                    const recommendedFL = Math.round(fovData.effectiveFocalLength * (fovSmaller / targetLarger) * targetOccupancy);
+                    // Suggest a focal length that would put the target at FOV_SUGGESTED_TARGET_FRACTION of the smaller FOV dimension
+                    const recommendedFL = Math.round(fovData.effectiveFocalLength * (fovSmaller / targetLarger) * APP_CONFIG.FOV_SUGGESTED_TARGET_FRACTION);
 
                     let msg = '';
                     if (linearTriggered && areaTriggered) {
@@ -561,7 +560,7 @@ const FOVView = {
                     } else {
                         msg = `Target occupies ${areaPct.toFixed(0)}% of field area. Consider a telescope with ~${recommendedFL}mm effective focal length for more context.`;
                     }
-                    UIManager.showToast(msg, 'info', 10000);
+                    UIManager.showToast(msg, 'info', APP_CONFIG.TOAST_LONG_DURATION_MS);
                 }
             }
         }

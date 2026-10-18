@@ -17,6 +17,7 @@
     --primary-color: #d4982e;
     --checkbox-tick: #000000;           /* tick in a ticked drawn checkbox, on --primary-color */
     --on-warning-color: #000000;        /* text on a --warning-color background */
+    --on-primary-color: #000000;        /* text on a --primary-color background, e.g. an info toast (#338) */
     --primary-hover: #bc8025;
 
     /* Secondary Colors */

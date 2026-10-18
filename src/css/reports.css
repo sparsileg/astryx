@@ -145,6 +145,7 @@
     font-weight: 600;
     margin-right: 2px;
 }
-.guide-flag-critical { background: #fadbd8; color: #c0392b; }
-.guide-flag-warning  { background: #fdebd0; color: #e67e22; }
-.guide-flag-info     { background: #d6eaf8; color: #2980b9; }
+/* Tinted from the theme's status colors, so they follow every theme (Issue #338) */
+.guide-flag-critical { background: color-mix(in srgb, var(--error-color) 15%, transparent); color: var(--error-color); }
+.guide-flag-warning  { background: color-mix(in srgb, var(--warning-color) 15%, transparent); color: var(--warning-color); }
+.guide-flag-info     { background: color-mix(in srgb, var(--primary-color) 15%, transparent); color: var(--primary-color); }

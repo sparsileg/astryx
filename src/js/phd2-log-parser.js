@@ -1038,7 +1038,7 @@ const Phd2LogParser = {
                 const inferredNote = g.inferred ? ' (inferred)' : '';
                 anomalies.push({
                     session: s.num,
-                    severity: g.count > 5 ? 'warning' : 'info',
+                    severity: g.count > APP_CONFIG.LOG_ANALYSIS.PHD2_ERROR_CODE_WARNING_COUNT ? 'warning' : 'info',
                     type: 'error_code',
                     code: g.code,
                     timeRange,

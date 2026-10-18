@@ -9,9 +9,9 @@
  * (2025-11-17) comparing this report to the two originals it's meant to
  * replace — see delivery notes for the full before/after reasoning.
  *
- * Contains no thresholds and no classification logic (design doc §3) —
- * every number and tier/severity already exists on FusedSession/findings
- * by the time this file runs. Raw factual tables (per-sub RMS, time
+ * Contains no classification logic (design doc §3) — every tier/severity
+ * already exists on FusedSession/findings by the time this file runs. The
+ * few thresholds its explanatory notes use are in APP_CONFIG.LOG_ANALYSIS. Raw factual tables (per-sub RMS, time
  * accounting) read directly from FusedSession/raw parser output; only
  * diagnostic/explanatory prose is required to trace back to a Finding.
  *
@@ -289,9 +289,7 @@ const SessionReportView = {
                 const label = e.finding
                       ? `${this._severityLabel(e.finding.severity)} — ${HtmlUtils.escapeHtml(e.label)}`
                       : HtmlUtils.escapeHtml(e.label);
-                const rowClasses = [e.finding ? 'session-report-timeline-flagged' : '', e.verbose ? 'session-report-timeline-verbose' : '']
-                      .filter(Boolean).join(' ');
-                const rowAttr = rowClasses ? ` class="${rowClasses}"` : '';
+                const rowAttr = e.verbose ? ' class="session-report-timeline-verbose"' : '';
                 const style = e.verbose && !this._showVerboseEvents ? ' style="display:none"' : '';
                 html += `<tr${rowAttr}${style}><td>${timeCell}</td><td>${label}${countSuffix}</td><td>${durationCell}</td><td>${e.guideQuality || ''}</td></tr>`;
             }
@@ -616,9 +614,7 @@ const SessionReportView = {
                 html += `<p class="session-report-note-small"><strong>${HtmlUtils.escapeHtml(header)}</strong></p>`;
                 html += `<table class="session-table"><thead><tr>${cols.map(c => `<th>${c}</th>`).join('')}</tr></thead><tbody>`;
                 for (const s of subs) {
-                    const tierClass = s.tier === 'reject' ? 'critical' : s.tier === 'marginal' ? 'warning' : s.tier === 'unknown' ? 'info' : '';
-                    const rowAttr = tierClass ? ` class="session-report-tier-${tierClass}"` : '';
-                    html += `<tr${rowAttr}>${this._perSubRow(s).map(v => `<td>${v}</td>`).join('')}</tr>`;
+                    html += `<tr>${this._perSubRow(s).map(v => `<td>${v}</td>`).join('')}</tr>`;
                 }
                 html += `</tbody></table>`;
             }
@@ -985,8 +981,7 @@ const SessionReportView = {
                 const netRaPx = sumDx * Math.cos(xRad) + sumDy * Math.sin(xRad);
                 const netDecPx = sumDx * Math.cos(yRad) + sumDy * Math.sin(yRad);
 
-                const BIAS_THRESHOLD_FRACTION = 0.5;
-                if (randomWalkExpectation > 0 && netMag > BIAS_THRESHOLD_FRACTION * randomWalkExpectation) {
+                if (randomWalkExpectation > 0 && netMag > APP_CONFIG.LOG_ANALYSIS.DITHER_BIAS_FRACTION * randomWalkExpectation) {
                     const axis = Math.abs(netRaPx) >= Math.abs(netDecPx) ? 'RA' : 'Dec';
                     const axisPx = axis === 'RA' ? netRaPx : netDecPx;
                     const sign = axisPx >= 0 ? '+' : '-';
@@ -1011,7 +1006,7 @@ const SessionReportView = {
         // match on any item rather than showing a wrong range.
         _buildD15ConsolidatedNote(fs) {
             const text = this._d15ConsolidatedText(fs);
-            return text ? `<p class="session-report-note-small session-report-tier-warning">${text}</p>` : '';
+            return text ? `<p class="session-report-note-small">${text}</p>` : '';
         },
 
         _d15ConsolidatedText(fs) {
@@ -1046,13 +1041,13 @@ const SessionReportView = {
         // cloud, haze, or dew — while sessions near dusk/dawn legitimately
         // reading lower are normal darkness-driven variation, not flagged.
         //
-        // First-pass thresholds (DEEP_NIGHT_SUN_ALT, THRESHOLD_FRACTION),
-        // not yet corpus-validated the way threshold-calibration.md's other
+        // First-pass thresholds (APP_CONFIG.LOG_ANALYSIS.SNR_*), not yet
+        // corpus-validated the way threshold-calibration.md's other
         // figures are — revisit once more nights have been analyzed.
         _buildSnrDarknessNote(context, phd2) {
             const note = this._snrDarknessNote(context, phd2);
             if (!note) return '';
-            return `<p class="session-report-note-small${note.warning ? ' session-report-tier-warning' : ''}">${note.text}</p>`;
+            return `<p class="session-report-note-small">${note.text}</p>`;
         },
 
         // The SNR vs darkness note as { text, warning }, or null. Shared
@@ -1089,16 +1084,14 @@ const SessionReportView = {
             }
             if (points.length < 3) return null;
 
-            const DEEP_NIGHT_SUN_ALT = -25; // comfortably below the -18° astronomical threshold
-            const deepNight = points.filter(p => p.sunAlt <= DEEP_NIGHT_SUN_ALT);
+            const deepNight = points.filter(p => p.sunAlt <= APP_CONFIG.LOG_ANALYSIS.SNR_DEEP_NIGHT_SUN_ALT_DEG);
             if (deepNight.length < 2) return null;
 
             const snrValues = deepNight.map(p => p.snr).sort((a, b) => a - b);
             const mid = Math.floor(snrValues.length / 2);
             const medianSnr = snrValues.length % 2 ? snrValues[mid] : (snrValues[mid - 1] + snrValues[mid]) / 2;
 
-            const THRESHOLD_FRACTION = 0.75;
-            const anomalous = deepNight.filter(p => p.snr < medianSnr * THRESHOLD_FRACTION);
+            const anomalous = deepNight.filter(p => p.snr < medianSnr * APP_CONFIG.LOG_ANALYSIS.SNR_ANOMALOUS_FRACTION);
 
             const twilightNote = points.length > deepNight.length
                   ? ' SNR dips near the start/end of the session (closer to dusk/dawn) are expected from residual twilight brightness and are not flagged.'
@@ -1118,8 +1111,8 @@ const SessionReportView = {
         // directly, so this is inferred from the nearest guide session in
         // time, not measured), and plain-language Star Lost context.
         //
-        // First-pass thresholds (ORTHO_ELEVATED_DEG, ORTHO_CHANGE_DEG,
-        // RATE_SWING_PCT, DEC_EXPLAINS_DEG), not yet corpus-validated.
+        // First-pass thresholds (APP_CONFIG.LOG_ANALYSIS.CAL_*), not yet
+        // corpus-validated.
         _buildCalibrationAnalysisNote(phd2) {
             const notes = this._calibrationNotes(phd2);
             if (notes.length === 0) return '';
@@ -1146,8 +1139,8 @@ const SessionReportView = {
                 return best;
             };
 
-            const ORTHO_ELEVATED_DEG = 1.0;
-            const ORTHO_CHANGE_DEG = 0.5;
+            const { CAL_ORTHO_ELEVATED_DEG: ORTHO_ELEVATED_DEG, CAL_ORTHO_CHANGE_DEG: ORTHO_CHANGE_DEG,
+                CAL_RATE_SWING_PCT: RATE_SWING_PCT, CAL_DEC_EXPLAINS_DEG: DEC_EXPLAINS_DEG } = APP_CONFIG.LOG_ANALYSIS;
             const orthoElevated = cals.filter(c => c.orthogonalityErrorDeg != null && Math.abs(c.orthogonalityErrorDeg) > ORTHO_ELEVATED_DEG);
             if (orthoElevated.length > 0) {
                 notes.push(`Orthogonality error exceeded ${ORTHO_ELEVATED_DEG}° on ${orthoElevated.length} calibration(s) this session — check for cone error, polar misalignment, or looseness in the guide/OAG train.`);
@@ -1160,8 +1153,6 @@ const SessionReportView = {
                 }
             }
 
-            const RATE_SWING_PCT = 15;
-            const DEC_EXPLAINS_DEG = 15;
             for (let i = 1; i < cals.length; i++) {
                 const prev = cals[i - 1], cur = cals[i];
                 if (prev.west.ratePxPerSec == null || cur.west.ratePxPerSec == null) continue;

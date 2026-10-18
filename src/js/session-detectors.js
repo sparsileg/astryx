@@ -153,6 +153,7 @@ const SessionDetectors = {
         if (!context || !context.phd2Parsed) return [];
         const findings = [];
         const anomalousCount = APP_CONFIG.LOG_ANALYSIS.CADENCE_IRREGULARITY_ANOMALOUS_COUNT;
+        const factor = APP_CONFIG.LOG_ANALYSIS.CADENCE_IRREGULAR_FACTOR;
 
         for (const session of context.phd2Parsed.sessions) {
             const exposureS = session.equipment.guideExposureMs ? session.equipment.guideExposureMs / 1000 : null;
@@ -161,7 +162,7 @@ const SessionDetectors = {
             let irregularCount = 0;
             for (let i = 1; i < session.frames.length; i++) {
                 const interval = session.frames[i].t - session.frames[i - 1].t;
-                if (interval > exposureS * 1.5) irregularCount++;
+                if (interval > exposureS * factor) irregularCount++;
             }
 
             if (irregularCount > anomalousCount) {
@@ -170,7 +171,7 @@ const SessionDetectors = {
                     severity: 'warning',
                     confidence: 'measured',
                     title: `Guide session ${session.num}: ${irregularCount} irregular frame intervals`,
-                    detail: `Intervals exceeding 1.5x guide exposure (corpus baseline: 0-6 clean, 59/33 on known-bad sessions). Anomalous threshold: ${anomalousCount}.`,
+                    detail: `Intervals exceeding ${factor}x guide exposure (corpus baseline: 0-6 clean, 59/33 on known-bad sessions). Anomalous threshold: ${anomalousCount}.`,
                     evidence: [{ source: 'phd2', value: irregularCount }],
                     timeRange: { from: session.startTime, to: session.endTime },
                 }));
@@ -189,7 +190,7 @@ const SessionDetectors = {
 
         const elevated = APP_CONFIG.LOG_ANALYSIS.RMS_ELEVATED_ARCSEC;
         const high = APP_CONFIG.LOG_ANALYSIS.RMS_HIGH_ARCSEC;
-        const critical = (APP_CONFIG.PHD2_GUIDE_THRESHOLDS && APP_CONFIG.PHD2_GUIDE_THRESHOLDS.RMS_CRITICAL) || 4.0;
+        const critical = APP_CONFIG.PHD2_GUIDE_THRESHOLDS.RMS_CRITICAL;
 
         if (rms <= elevated) return [];
 
@@ -219,7 +220,7 @@ const SessionDetectors = {
     // with harmonic-drive periodic error) — a Dec-worse-than-RA night
     // (ratio < 1.0) is itself the anomaly this detector exists to catch.
     D9_axisRatioInversion(fusedSession) {
-        const critical = (APP_CONFIG.PHD2_GUIDE_THRESHOLDS && APP_CONFIG.PHD2_GUIDE_THRESHOLDS.RMS_CRITICAL) || 4.0;
+        const critical = APP_CONFIG.PHD2_GUIDE_THRESHOLDS.RMS_CRITICAL;
         const guided = fusedSession.subs.filter(sub =>
             sub.guide && sub.guide.rmsTotal !== null && sub.guide.rmsTotal <= critical);
         // Pooled over frames, not averaged over subs (Issue #323)
@@ -286,11 +287,11 @@ const SessionDetectors = {
     // deferred further: 511 sessions, min 17px, p5 54px, p10 64px, p25
     // 92px, median 155px. 100px (between the corpus p5 and p10, close to
     // the design doc's own reference point of 105px — where both D1
-    // guide-star-swap sessions locked) is used as the flag distance. Still
-    // ships at info severity unconditionally per the design doc's explicit
-    // instruction — this is a first real threshold with evidence behind
-    // it, not a claim the distribution work is finished.
-    EDGE_DISTANCE_FLAG_PX: 100,
+    // guide-star-swap sessions locked) is used as the flag distance
+    // (APP_CONFIG.LOG_ANALYSIS.EDGE_DISTANCE_FLAG_PX). Still ships at info
+    // severity unconditionally per the design doc's explicit instruction —
+    // this is a first real threshold with evidence behind it, not a claim
+    // the distribution work is finished.
 
     D15_lockPositionEdge(fusedSession, context) {
         if (!context || !context.phd2Parsed) return [];
@@ -303,13 +304,13 @@ const SessionDetectors = {
             const { w, h } = geo.frameSize;
             const edgeDistance = Math.min(x, y, w - x, h - y);
 
-            if (edgeDistance < this.EDGE_DISTANCE_FLAG_PX) {
+            if (edgeDistance < APP_CONFIG.LOG_ANALYSIS.EDGE_DISTANCE_FLAG_PX) {
                 findings.push(SessionInvariants.createFinding({
                     code: 'D15_LOCK_POSITION_EDGE',
                     severity: 'info',
                     confidence: 'measured',
                     title: `Guide session ${session.num}: lock position ${edgeDistance.toFixed(0)}px from frame edge`,
-                    detail: `Corpus distribution (511 sessions): p5 54px, p10 64px, p25 92px, median 155px. Flagged below ${this.EDGE_DISTANCE_FLAG_PX}px.`,
+                    detail: `Corpus distribution (511 sessions): p5 54px, p10 64px, p25 92px, median 155px. Flagged below ${APP_CONFIG.LOG_ANALYSIS.EDGE_DISTANCE_FLAG_PX}px.`,
                     evidence: [{ source: 'phd2', value: edgeDistance }],
                     timeRange: { from: session.startTime, to: session.endTime },
                 }));
@@ -334,8 +335,8 @@ const SessionDetectors = {
     D2_cloudTransparency(fusedSession, context) {
         if (!context || !context.asiairParsed) return [];
         const findings = [];
-        const windowMs = 300 * 1000;
-        const minCount = 3;
+        const windowMs = APP_CONFIG.LOG_ANALYSIS.CLOUD_WINDOW_S * 1000;
+        const minCount = APP_CONFIG.LOG_ANALYSIS.CLOUD_MIN_FAILURES;
 
         for (const run of context.asiairParsed.runs.filter(r => r.kind === 'light')) {
             // Acquisition-phase cutoff: first successfully settled dither
@@ -373,8 +374,8 @@ const SessionDetectors = {
                     confidence: corroboration ? 'derived' : 'inferred',
                     title: `Guide-failure density spike, images ${affectedSubs.length ? affectedSubs[0].imageNo : '?'}-${affectedSubs.length ? affectedSubs[affectedSubs.length - 1].imageNo : '?'}`,
                     detail: corroboration
-                        ? `Guide-failure density >= 3 per 5min window, corroborated by a focuser temperature rise (${corroboration}) — backwards for clear-sky cooling.`
-                        : `Guide-failure density >= 3 per 5min window. No corroborating temperature reversal found nearby — consistent with cloud, but not independently confirmed.`,
+                        ? `Guide-failure density >= ${minCount} per ${windowMs / 60000}min window, corroborated by a focuser temperature rise (${corroboration}) — backwards for clear-sky cooling.`
+                        : `Guide-failure density >= ${minCount} per ${windowMs / 60000}min window. No corroborating temperature reversal found nearby — consistent with cloud, but not independently confirmed.`,
                     evidence: [{ source: 'asiair', timestamp: from }, { source: 'asiair', timestamp: to }],
                     affectedSubs: affectedSubs.map(s => s.imageNo),
                     timeRange: { from, to },
@@ -423,7 +424,7 @@ const SessionDetectors = {
     // overnight clear-sky cooling, and corroborates (doesn't require) the
     // density signal.
     _findCoolingReversal(afEvents, from, to) {
-        const bufferMs = 30 * 60 * 1000; // AF cadence is roughly hourly; look a bit either side
+        const bufferMs = APP_CONFIG.LOG_ANALYSIS.CLOUD_COOLING_SEARCH_MIN * 60 * 1000;
         const nearby = afEvents.filter(e => e.start >= from.getTime() - bufferMs && e.start <= to.getTime() + bufferMs);
         for (let i = 1; i < nearby.length; i++) {
             const delta = nearby[i].temperatureC - nearby[i - 1].temperatureC;
@@ -520,7 +521,8 @@ const SessionDetectors = {
     D1_guideStarSwap(fusedSession, context) {
         if (!context || !context.phd2Parsed) return [];
         const findings = [];
-        const cvMax = APP_CONFIG.LOG_ANALYSIS.STAR_SWAP_DISPLACEMENT_CV_MAX;
+        const { STAR_SWAP_DISPLACEMENT_CV_MAX: cvMax, STAR_SWAP_MASS_FRACTION: massFraction,
+            STAR_SWAP_MIN_DISPLACEMENT_PX: minDisplacementPx, STAR_SWAP_MIN_FRAMES: minFrames } = APP_CONFIG.LOG_ANALYSIS;
 
         for (const session of context.phd2Parsed.sessions) {
             const validFrames = session.frames.filter(f => Number.isFinite(f.starMass) && f.starMass > 0);
@@ -530,8 +532,8 @@ const SessionDetectors = {
             const mid = Math.floor(masses.length / 2);
             const median = masses.length % 2 ? masses[mid] : (masses[mid - 1] + masses[mid]) / 2;
 
-            const flagged = validFrames.filter(f => f.starMass < median * 0.85 && f.total > 8);
-            if (flagged.length < 5) continue;
+            const flagged = validFrames.filter(f => f.starMass < median * massFraction && f.total > minDisplacementPx);
+            if (flagged.length < minFrames) continue;
 
             const displacements = flagged.map(f => f.total);
             const mean = displacements.reduce((s, v) => s + v, 0) / displacements.length;
@@ -587,13 +589,14 @@ const SessionDetectors = {
         }
 
         const typical = APP_CONFIG.LOG_ANALYSIS.AF_DURATION_TYPICAL_S;
-        const outliers = afEvents.filter(e => e.outcome === 'success' && e.durationS && e.durationS > typical * 1.5);
+        const slowFactor = APP_CONFIG.LOG_ANALYSIS.AF_DURATION_OUTLIER_FACTOR;
+        const outliers = afEvents.filter(e => e.outcome === 'success' && e.durationS && e.durationS > typical * slowFactor);
         if (outliers.length > 0) {
             findings.push(SessionInvariants.createFinding({
                 code: 'D11_AF_DURATION_OUTLIER',
                 severity: 'info',
                 confidence: 'measured',
-                title: `${outliers.length} AF cycle(s) took over 1.5x the typical ${typical}s`,
+                title: `${outliers.length} AF cycle(s) took over ${slowFactor}x the typical ${typical}s`,
                 detail: `Corpus median is ${typical}s. Slower cycles usually trace back to the AF star itself (faint, or a rough V-curve) rather than the focuser mechanism.`,
                 evidence: outliers.map(e => ({ source: 'asiair', value: e.durationS })),
             }));
@@ -606,7 +609,7 @@ const SessionDetectors = {
             const third = Math.max(1, Math.floor(sizes.length / 3));
             const firstAvg = sizes.slice(0, third).reduce((s, v) => s + v, 0) / third;
             const lastAvg = sizes.slice(-third).reduce((s, v) => s + v, 0) / third;
-            if (lastAvg > firstAvg * 1.3) {
+            if (lastAvg > firstAvg * APP_CONFIG.LOG_ANALYSIS.AF_STAR_SIZE_GROWTH_FACTOR) {
                 findings.push(SessionInvariants.createFinding({
                     code: 'D11_STAR_SIZE_TREND',
                     severity: 'info',
@@ -637,7 +640,7 @@ const SessionDetectors = {
             .flatMap(r => r.events)
             .filter(e => e.type === 'autofocus' && e.outcome === 'success' && e.temperatureC !== null && e.focuserPosition !== null);
 
-        const minPoints = 5;
+        const minPoints = APP_CONFIG.LOG_ANALYSIS.FOCUS_DRIFT_MIN_POINTS;
         if (afEvents.length < minPoints) {
             return [SessionInvariants.createFinding({
                 code: 'D13_FOCUS_DRIFT_INSUFFICIENT_DATA',
@@ -733,7 +736,7 @@ const SessionDetectors = {
                     evidence: [{ source: 'phd2', value: cal.starLostDuringCalibration }],
                 }));
             }
-            if (cal.orthogonalityErrorDeg !== null && Math.abs(cal.orthogonalityErrorDeg) > 3.5) {
+            if (cal.orthogonalityErrorDeg !== null && Math.abs(cal.orthogonalityErrorDeg) > APP_CONFIG.LOG_ANALYSIS.ORTHOGONALITY_OUTLIER_DEG) {
                 findings.push(SessionInvariants.createFinding({
                     code: 'D10_ORTHOGONALITY_OUTLIER',
                     severity: 'info',
@@ -781,7 +784,7 @@ const SessionDetectors = {
         if (withStarNumber.length >= 3) {
             const first = withStarNumber[0].starNumber;
             const last = withStarNumber[withStarNumber.length - 1].starNumber;
-            if (last < first * 0.6) {
+            if (last < first * APP_CONFIG.LOG_ANALYSIS.STAR_NUMBER_DECLINE_FRACTION) {
                 findings.push(SessionInvariants.createFinding({
                     code: 'D12_STAR_NUMBER_DECLINE',
                     severity: 'info',

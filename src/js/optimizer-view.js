@@ -29,7 +29,7 @@ const OptimizerView = {
      * Initialize Target Optimizer view
      */
     init() {
-        console.log('Initializing Target Optimizer view');
+        Log.debug('Initializing Target Optimizer view');
 
         // Set default date to today
         DateInput.set(document.getElementById('optimizer-date'), TimeUtils.getTodayString());
@@ -52,7 +52,7 @@ const OptimizerView = {
             this.execute();
         }
 
-        console.log('Target Optimizer initialized');
+        Log.debug('Target Optimizer initialized');
     },
 
     /**

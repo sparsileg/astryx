@@ -198,8 +198,8 @@ pub(crate) mod sql {
             None => stmt.query_map([], row_to_session),
         }
         .map_err(|e| e.to_string())?
-        .filter_map(|r| r.ok())
-        .collect();
+        .collect::<rusqlite::Result<Vec<_>>>()
+        .map_err(|e| e.to_string())?;
 
         Ok(rows)
     }

@@ -76,7 +76,7 @@ test('local sidereal time stays within [0h, 24h) at every longitude', () => {
 test('a target transits at altitude 90° − |latitude − declination|, its highest point', () => {
     for (const [name, site] of Object.entries(SITES)) {
         for (const dec of range(-80, 80, 20)) {
-            const transit = A.findTargetTransit(YEAR_START_JD, YEAR_START_JD + 1, 6, dec, site.longitude);
+            const transit = A.findTargetTransit(YEAR_START_JD, YEAR_START_JD + 1, 6, site.longitude);
             const alt = A.getAltitude(transit, 6, dec, site.latitude, site.longitude);
             assert.ok(Math.abs(alt - (90 - Math.abs(site.latitude - dec))) < 0.01, `${name} dec=${dec}: ${alt}`);
             for (const offset of [-30 * MINUTE, 30 * MINUTE]) {

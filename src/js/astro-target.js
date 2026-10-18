@@ -301,7 +301,7 @@ function getNoonToNoonWindow(dateStr, timezone, isDST) {
  * @param {number} longitude - Observer longitude (degrees, West is negative)
  * @returns {number|null} JD when target transits, or null if not found
  */
-function findTargetTransit(startJD, endJD, raHours, dec, longitude) {
+function findTargetTransit(startJD, endJD, raHours, longitude) {
     // Transit: LST == RA. LST advances 24 sidereal hours per sidereal day,
     // i.e. 1 solar day advances LST by 24/0.9972695663 hours. Compute the
     // first transit at/after startJD directly — no scanning.
@@ -326,7 +326,7 @@ function findTargetTransit(startJD, endJD, raHours, dec, longitude) {
  * @returns {Object} { altitude: degrees, jd: when }
  */
 function getPeakAltitude(startJD, endJD, raHours, decDeg, latitude, longitude) {
-    const transitJD = findTargetTransit(startJD, endJD, raHours, decDeg, longitude);
+    const transitJD = findTargetTransit(startJD, endJD, raHours, longitude);
     if (transitJD !== null) return { altitude: 90 - Math.abs(latitude - decDeg), jd: transitJD };
     const startAltitude = getAltitude(startJD, raHours, decDeg, latitude, longitude);
     const endAltitude = getAltitude(endJD, raHours, decDeg, latitude, longitude);
@@ -343,7 +343,7 @@ function getPeakAltitude(startJD, endJD, raHours, decDeg, latitude, longitude) {
  */
 function getTransitHour(midnightJD, raHours, longitude) {
     // A sidereal day is shorter than a solar day, so a transit always falls within it
-    return (findTargetTransit(midnightJD, midnightJD + 1, raHours, null, longitude) - midnightJD) * 24;
+    return (findTargetTransit(midnightJD, midnightJD + 1, raHours, longitude) - midnightJD) * 24;
 }
 
 /**
