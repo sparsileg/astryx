@@ -54,14 +54,15 @@ const BestMonths = {
                     notVisibleCount++;
                 }
 
-                // Call progress callback
-                if (progressCallback) {
-                    progressCallback(results.length, totalTargets, target.object);
-                }
-
-                // Yield to event loop periodically so UI can repaint — no DB write here,
-                // only the final bulk write persists results
-                if (results.length % 100 === 0) {
+                // Report progress and yield to the event loop periodically so
+                // the UI can repaint; between yields nothing paints, so
+                // progress isn't reported there (Issue #318). No DB write
+                // here, only the final bulk write persists results. The
+                // callback may return a promise, awaited before going on
+                if (results.length % APP_CONFIG.BEST_MONTHS_PROGRESS_EVERY === 0 || results.length === totalTargets) {
+                    if (progressCallback) {
+                        await progressCallback(results.length, totalTargets, target.object);
+                    }
                     await new Promise(resolve => setTimeout(resolve, 0));
                 }
             }
@@ -158,6 +159,16 @@ const BestMonths = {
 
 
     /**
+     * Seconds left in a run, from the time taken so far (Issue #318)
+     * @param {number} elapsedMs - since the run started
+     * @param {number} done - targets calculated so far, across every location
+     * @param {number} total - targets in the whole run, across every location
+     */
+    remainingSeconds(elapsedMs, done, total) {
+        return Math.round(elapsedMs / done * (total - done) / 1000);
+    },
+
+    /**
      * Calculate best months for all saved locations sequentially
      */
     async calculateBestMonthsForAllLocations(minAltitude, minDarkHours, progressCallback) {
@@ -208,14 +219,17 @@ const BestMonths = {
                     (processed, total, targetName) => {
                         // Target-level progress callback
                         if (progressCallback) {
-                            progressCallback({
+                            return progressCallback({
                                 phase: 'target',
                                 currentLocation: locationName,
                                 locationIndex: i + 1,
                                 totalLocations: totalLocations,
                                 processedTargets: processed,
                                 totalTargets: total,
-                                currentTarget: targetName
+                                currentTarget: targetName,
+                                // Across every location, for the estimate (Issue #318)
+                                runProcessed: i * total + processed,
+                                runTotal: totalLocations * total
                             });
                         }
                     }

@@ -291,23 +291,23 @@ const REFERENCE_CASES = [
 
     // --- astro-target.js ---
     {
-        name: 'isTargetVisibleDuringWindow: circumpolar target stays visible',
-        actual: () => isTargetVisibleDuringWindow(
+        name: 'scanVisibility: circumpolar target stays visible',
+        actual: () => scanVisibility(
             dateToJD(new Date(Date.UTC(2026, 5, 21, 4, 0, 0))),
             dateToJD(new Date(Date.UTC(2026, 5, 22, 4, 0, 0))),
             12, 80, 39.291, -78.197, 20
-        ),
+        ).visible,
         expected: true,
         tolerance: 0,
         source: 'geometric identity (dec=80° at lat=39.3° never dips below ~29° altitude, always ≥ 20° min)'
     },
     {
-        name: 'isTargetVisibleDuringWindow: target never rises above horizon',
-        actual: () => isTargetVisibleDuringWindow(
+        name: 'scanVisibility: target never rises above horizon',
+        actual: () => scanVisibility(
             dateToJD(new Date(Date.UTC(2026, 5, 21, 4, 0, 0))),
             dateToJD(new Date(Date.UTC(2026, 5, 22, 4, 0, 0))),
             12, -80, 39.291, -78.197, 0
-        ),
+        ).visible,
         expected: false,
         tolerance: 0,
         source: 'geometric identity (dec=-80° at lat=39.3° peaks at ~-29° altitude, never above 0°)'

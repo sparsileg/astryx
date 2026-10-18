@@ -15,7 +15,7 @@
 const APP_CONFIG = {
     APP_NAME: 'Astryx',
     APP_TITLE: 'Astryx - Astrophotography Planning Tool',
-    APP_VERSION: '1.96.5',
+    APP_VERSION: '1.96.6',
     DB_NAME: 'astryx-db',
     DB_VERSION: 8,
     TARGET_DATA_PATH: './data/',
@@ -35,11 +35,16 @@ const APP_CONFIG = {
     MOON_SEARCH_MAX_STEPS: 2880,
     MOON_RISE_SET_EXTENSION_DAYS: 1, // search past a noon-to-noon window for the missing rise or set
     TARGET_SEARCH_STEP_SIZE: 1/1440,
+    // Closest moon approach: every this many search steps first, then every
+    // step around the closest of those (#317)
+    MOON_SEPARATION_COARSE_STEPS: 10,
     DARK_HOURS_STEP_MINUTES: 10,  // sampling step for hours-above-altitude in darkness
     // Raised when a change to the calculation makes stored Best Months out of
     // date; locations calculated with an earlier one are recalculated at
     // startup (Issue #304: dark hours counted one sample too many)
     BEST_MONTHS_VERSION: 2,
+    // Best Months reports progress and lets the page repaint after this many targets (#318)
+    BEST_MONTHS_PROGRESS_EVERY: 100,
 
     // DSS background image cache duration in ms
     DSS_CACHE_DURATION: 15 * 24 * 60 * 60 * 1000,
@@ -68,6 +73,8 @@ const APP_CONFIG = {
     TOOLTIP_POINTER_OFFSET_PX: 12, // gap between the pointer and its tooltip
     DROPDOWN_EDGE_MARGIN_PX: 8, // gap kept between an open dropdown menu and the edge it would cross
     MAX_SEARCH_RESULTS: 101, // maximum search results you can set
+    SEARCH_DEBOUNCE_MS: 300, // wait after the last keystroke in a search box before searching (#314, #334)
+    PROJECT_TARGET_SEARCH_LIMIT: 10, // matches listed under the project dialog's target search (#314)
     DEFAULT_MIN_SIZE: 4.0,   // target filter arc minutes
     DEFAULT_MAX_MAG: 14.5,   // target filter magnitude
     FILTER_MIN_SIZE_RANGE: [0.1, 999], // Settings bounds for Min Target Size, arcmin (#329)

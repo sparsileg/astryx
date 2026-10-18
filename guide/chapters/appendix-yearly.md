@@ -13,8 +13,9 @@ time zone and daylight saving time for that date.
 
 ## The Line
 
-The line is the target's highest altitude between dusk and dawn, checked
-once a minute. On nights with no astronomical darkness, as happens in summer
+The line is the target's highest altitude between dusk and dawn: its
+altitude as it crosses the meridian if that happens in the dark, otherwise
+the higher of its altitudes at dusk and at dawn. On nights with no astronomical darkness, as happens in summer
 at high latitudes, it's the target's altitude at local midnight instead.
 
 The **Peak altitude** in the summary line is the highest point of the line

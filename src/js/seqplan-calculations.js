@@ -487,9 +487,7 @@ const SeqPlanCalculations = {
             const prefix = new Uint16Array(steps + 2);
             for (let i = 0; i <= steps; i++) {
                 const jd = startJD + i * step;
-                const altitude = getAltitude(jd, target.ra, target.dec, latitude, longitude);
-                const azimuth = getAzimuth(jd, target.ra, target.dec, latitude, longitude);
-                const visible = isAboveHorizon(altitude, azimuth, session.minAltitude, horizonArray);
+                const visible = isVisibleAt(jd, target.ra, target.dec, latitude, longitude, session.minAltitude, horizonArray);
                 prefix[i + 1] = prefix[i] + (visible ? 1 : 0);
             }
             visibleBefore.set(target.targetId, prefix);
@@ -540,18 +538,12 @@ const SeqPlanCalculations = {
         let isValid = true;
 
         // Is the target actually valid at the moment its assigned window starts?
-        const altAtStart = getAltitude(target.imagingStartJD, target.ra, target.dec,
-                                        location.latitude, location.longitude);
-        const azAtStart = getAzimuth(target.imagingStartJD, target.ra, target.dec,
-                                      location.latitude, location.longitude);
-        const validAtStart = isAboveHorizon(altAtStart, azAtStart, minAlt, horizonArray);
+        const validAtStart = isVisibleAt(target.imagingStartJD, target.ra, target.dec,
+                                         location.latitude, location.longitude, minAlt, horizonArray);
 
         // Is it still valid at the moment its assigned window ends?
-        const altAtEnd = getAltitude(target.imagingEndJD, target.ra, target.dec,
-                                      location.latitude, location.longitude);
-        const azAtEnd = getAzimuth(target.imagingEndJD, target.ra, target.dec,
-                                    location.latitude, location.longitude);
-        const validAtEnd = isAboveHorizon(altAtEnd, azAtEnd, minAlt, horizonArray);
+        const validAtEnd = isVisibleAt(target.imagingEndJD, target.ra, target.dec,
+                                       location.latitude, location.longitude, minAlt, horizonArray);
 
         if (validAtStart && validAtEnd) {
             // Boundaries are fine. Any mid-window dip (e.g. a transient
@@ -629,8 +621,7 @@ const SeqPlanCalculations = {
         let violationStart = null;
 
         while (jd <= endJD) {
-            const altitude = getAltitude(jd, raHours, decDeg, latitude, longitude);
-            const azimuth = getAzimuth(jd, raHours, decDeg, latitude, longitude);
+            const { altitude, azimuth } = getAltAz(jd, raHours, decDeg, latitude, longitude);
 
             const aboveMinAlt = altitude >= minAltitude;
             const aboveHorizon = isAboveHorizon(altitude, azimuth, minAltitude, horizonArray);

@@ -209,6 +209,23 @@ async function expectSettingsRejected(page, message, field, before) {
     assert.deepStrictEqual(await savedSettings(page), before, 'nothing saved after a reload');
 }
 
+// Imaging Log projects 'Proj A'… with two sessions each; the first is
+// Completed and in a program, so the Program Progress report links to it
+const seedImagingLog = (page, count) => page.evaluate(async n => {
+    const ids = [];
+    for (let i = 0; i < n; i++) {
+        const project = await ImagingLogManager.createProject({
+            name: `Proj ${String.fromCharCode(65 + i)}`, targetDesignations: [`M ${i + 1}`], status: i === 0 ? 'Completed' : 'Planning',
+        });
+        for (const date of ['2026-09-01', '2026-09-02']) {
+            await ImagingLogManager.createSession({ projectId: project.id, date, filter: 'L', subLength: 300, usedExposures: 10 });
+        }
+        ids.push(project.id);
+    }
+    await ImagingLogManager.createProgram({ name: 'Prog', targetDesignations: ['M 1'] });
+    return ids;
+}, count);
+
 // ---------------------------------------------------------------------------
 // Checks
 // ---------------------------------------------------------------------------
@@ -421,7 +438,7 @@ const CHECKS = [
             await calculateBestMonths(page, 'Test Site');
             const before = await bestMonthsSnapshot(page, 'Test Site');
             const result = await page.evaluate(([alt, dark]) => BestMonths.calculateBestMonths('Test Site', alt, dark, (done, total) => {
-                if (done === Math.floor(total / 2)) BestMonths.cancelCalculation();
+                if (done >= total / 2) BestMonths.cancelCalculation();
             }), [60, MIN_DARK_HOURS]);
             assert.strictEqual(result.cancelled, true);
             assert.strictEqual(await page.evaluate(() => BestMonths.isCalculating), false, 'still calculating');
@@ -658,6 +675,98 @@ const CHECKS = [
             await toast(page, 'success', 'deleted');
             await reload(page);
             assert.deepStrictEqual(Object.keys(await page.evaluate(() => DataManager.getLocations())), []);
+        },
+    },
+    {
+        issue: 314, name: 'Imaging Log: the project dialog\'s target search lists at most its limit, once typing pauses',
+        run: async page => {
+            await openView(page, 'imaging-log');
+            await page.evaluate(() => ImagingLogView.showProjectModal());
+            await page.locator('#project-target-search').pressSequentially('ng');
+            assert.strictEqual(await page.locator('.target-search-result').count(), 0, 'searched before typing paused');
+            await page.waitForTimeout(await page.evaluate(() => APP_CONFIG.SEARCH_DEBOUNCE_MS) + SETTLE_MS);
+            assert.strictEqual(await page.locator('.target-search-result').count(), await page.evaluate(() => APP_CONFIG.PROJECT_TARGET_SEARCH_LIMIT));
+        },
+    },
+    {
+        issue: 334, name: 'Imaging Log: the project list reads projects and sessions once, however many projects',
+        run: async page => {
+            await seedImagingLog(page, 5);
+            await openView(page, 'imaging-log');
+            const reads = await page.evaluate(async () => {
+                const getAll = DBManager.getAll;
+                let count = 0;
+                DBManager.getAll = (...args) => { count++; return getAll.apply(DBManager, args); };
+                try { await ImagingLogView.renderProjectList(); } finally { DBManager.getAll = getAll; }
+                return count;
+            });
+            assert.strictEqual(reads, 2);
+            // The list hides Completed projects at first
+            assert.strictEqual(await page.locator('.project-card').count(), 4);
+            assert.strictEqual(await page.locator('.project-card-meta span', { hasText: 'Sessions: 2' }).count(), 4, 'each card\'s sessions');
+            assert.strictEqual(await page.locator('.project-card-meta', { hasText: 'L: 1.7h' }).count(), 4, 'each card\'s integration');
+        },
+    },
+    {
+        issue: 334, name: 'Imaging Log: typing in the project search renders once, for the final text',
+        run: async page => {
+            await seedImagingLog(page, 5);
+            await openView(page, 'imaging-log');
+            await page.evaluate(() => {
+                const render = ImagingLogView.renderProjectList;
+                window.projectRenders = 0;
+                ImagingLogView.renderProjectList = function (...args) { window.projectRenders++; return render.apply(this, args); };
+            });
+            await page.locator('#imaging-log-project-search').pressSequentially('Proj C');
+            await page.waitForTimeout(await page.evaluate(() => APP_CONFIG.SEARCH_DEBOUNCE_MS) + SETTLE_MS);
+            assert.strictEqual(await page.evaluate(() => window.projectRenders), 1);
+            assert.deepStrictEqual(await page.locator('.project-card-title').allInnerTexts().then(t => t.map(s => s.replace('🔗', '').trim())), ['Proj C']);
+        },
+    },
+    {
+        issue: 334, name: 'Imaging Log: a project link in Program Progress opens the Projects tab with its sessions shown',
+        run: async page => {
+            const [id] = await seedImagingLog(page, 3);
+            await openView(page, 'imaging-log');
+            await page.locator('#imaging-log-project-search').fill('Proj B');
+            await page.click('.imaging-log-tab-btn[data-tab="reports"]');
+            await page.click('#report-program-progress summary');
+            await page.click(`[data-action="navigate-to-project"][data-project-id="${id}"]`);
+            await page.waitForSelector(`#project-sessions-${id}.expanded`);
+            assert.ok(await page.isVisible(`.project-card[data-project-id="${id}"]`), 'project shown');
+            assert.strictEqual(await page.inputValue('#imaging-log-project-search'), '', 'search cleared');
+            assert.ok(await page.isVisible(`#add-session-btn-${id}`), 'Add Session shown');
+        },
+    },
+    {
+        issue: 318, name: 'Best Months: All Locations progress shows a name with & and < literally, with the time remaining, and a full bar reading Saving results while it saves',
+        run: async page => {
+            const name = 'A&B <test>';
+            await openAdminItem(page, 'manage-locations');
+            await fillLocation(page, name, 'Test Site');
+            await toast(page, 'success', name);
+            await page.waitForFunction(() => !BestMonths.isCalculating, null, { timeout: BEST_MONTHS_MS });
+            // What the progress shows when the save starts
+            await page.evaluate(() => {
+                const write = DataManager.bulkUpdateTargets.bind(DataManager);
+                DataManager.bulkUpdateTargets = targets => {
+                    window.atSave = {
+                        width: document.querySelector('#best-months-progress-bar').style.width,
+                        eta: document.querySelector('.best-months-progress-eta').textContent,
+                    };
+                    return write(targets);
+                };
+            });
+            await openAdminItem(page, 'calculate-best-months');
+            await pickDropdown(page, 'best-months-location', 'All Locations');
+            await page.click('#best-months-calculate');
+            const detail = page.locator('#best-months-progress-text .best-months-progress-detail');
+            await detail.filter({ hasText: 'Processing' }).waitFor();
+            assert.strictEqual(await page.textContent('.best-months-progress-title'), `Location 1 of 1: ${name}`);
+            assert.match(await page.textContent('.best-months-progress-eta'), /^Est\. remaining: \d+(m \d+)?s$/);
+            assert.strictEqual(await page.locator('#best-months-progress-text test').count(), 0, 'name read as HTML');
+            await page.waitForFunction(() => !BestMonths.isCalculating, null, { timeout: BEST_MONTHS_MS });
+            assert.deepStrictEqual(await page.evaluate(() => window.atSave), { width: '100%', eta: 'Saving results...' });
         },
     },
 ];

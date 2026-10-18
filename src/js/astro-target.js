@@ -12,34 +12,6 @@
  */
 
 /**
- * Check if target is visible above minimum altitude (and horizon if provided)
- * during observation window
- * @param {number} duskJD - Dusk Julian Date
- * @param {number} dawnJD - Dawn Julian Date
- * @param {number} raHours - Target right ascension (hours)
- * @param {number} decDeg - Target declination (degrees)
- * @param {number} latitude - Observer latitude (degrees)
- * @param {number} longitude - Observer longitude (degrees, West is negative)
- * @param {number} minAltitude - Minimum altitude threshold (degrees)
- * @param {Array|null} horizonArray - Horizon profile, or null for none
- * @returns {boolean} True if target is visible above minimum altitude
- */
-function isTargetVisibleDuringWindow(duskJD, dawnJD, raHours, decDeg, latitude, longitude, minAltitude, horizonArray = null) {
-    const stepSize = APP_CONFIG.TARGET_SEARCH_STEP_SIZE;
-    const steps = Math.ceil((dawnJD - duskJD) / stepSize);
-
-    for (let i = 0; i <= steps; i++) {
-        const testJD = duskJD + i * stepSize;
-        const altitude = getAltitude(testJD, raHours, decDeg, latitude, longitude);
-        const azimuth = getAzimuth(testJD, raHours, decDeg, latitude, longitude);
-        if (isAboveHorizon(altitude, azimuth, minAltitude, horizonArray)) {
-            return true;
-        }
-    }
-    return false;
-}
-
-/**
  * Find when target rises above minimum altitude (and horizon if provided) within search window
  * General-purpose version with explicit start/end times
  * @param {number} startJD - Search window start (Julian Date)
@@ -57,15 +29,11 @@ function findTargetRise(startJD, endJD, raHours, decDeg, latitude, longitude, mi
     let jd = startJD;
 
     // Check initial visibility
-    const startAltitude = getAltitude(startJD, raHours, decDeg, latitude, longitude);
-    const startAzimuth = getAzimuth(startJD, raHours, decDeg, latitude, longitude);
-    let prevVisible = isAboveHorizon(startAltitude, startAzimuth, minAltitude, horizonArray);
+    let prevVisible = isVisibleAt(startJD, raHours, decDeg, latitude, longitude, minAltitude, horizonArray);
 
     // Search through window for crossing from not visible to visible
     while (jd <= endJD) {
-        const altitude = getAltitude(jd, raHours, decDeg, latitude, longitude);
-        const azimuth = getAzimuth(jd, raHours, decDeg, latitude, longitude);
-        const isVisible = isAboveHorizon(altitude, azimuth, minAltitude, horizonArray);
+        const isVisible = isVisibleAt(jd, raHours, decDeg, latitude, longitude, minAltitude, horizonArray);
 
         // Detect crossing from not visible to visible
         if (!prevVisible && isVisible) {
@@ -85,15 +53,11 @@ function findTargetSet(startJD, endJD, raHours, decDeg, latitude, longitude, min
     let lastSetJD = null; // Track the LAST set time
 
     // Check initial visibility
-    const startAltitude = getAltitude(startJD, raHours, decDeg, latitude, longitude);
-    const startAzimuth = getAzimuth(startJD, raHours, decDeg, latitude, longitude);
-    let prevVisible = isAboveHorizon(startAltitude, startAzimuth, minAltitude, horizonArray);
+    let prevVisible = isVisibleAt(startJD, raHours, decDeg, latitude, longitude, minAltitude, horizonArray);
 
     // Search through entire window, tracking the LAST set time
     while (jd <= endJD) {
-        const altitude = getAltitude(jd, raHours, decDeg, latitude, longitude);
-        const azimuth = getAzimuth(jd, raHours, decDeg, latitude, longitude);
-        const isVisible = isAboveHorizon(altitude, azimuth, minAltitude, horizonArray);
+        const isVisible = isVisibleAt(jd, raHours, decDeg, latitude, longitude, minAltitude, horizonArray);
 
         // Detect crossing from visible to not visible
         if (prevVisible && !isVisible) {
@@ -105,9 +69,7 @@ function findTargetSet(startJD, endJD, raHours, decDeg, latitude, longitude, min
     }
 
     // Check if target is still visible at end of window
-    const endAltitude = getAltitude(endJD, raHours, decDeg, latitude, longitude);
-    const endAzimuth = getAzimuth(endJD, raHours, decDeg, latitude, longitude);
-    const visibleAtEnd = isAboveHorizon(endAltitude, endAzimuth, minAltitude, horizonArray);
+    const visibleAtEnd = isVisibleAt(endJD, raHours, decDeg, latitude, longitude, minAltitude, horizonArray);
 
     // If visible at end, any earlier set was temporary (obstruction) - return null
     if (visibleAtEnd) {
@@ -119,6 +81,60 @@ function findTargetSet(startJD, endJD, raHours, decDeg, latitude, longitude, min
         Log.debug(`  No set found - target stays invisible throughout`);
     }
     return lastSetJD; // Return the LAST set time found
+}
+
+/**
+ * One pass over a window giving what findTargetRise, findTargetSet and
+ * findVisibilityDip give, from the same samples, and whether the target is
+ * visible at any of them (Issue #315)
+ * @param {number} startJD - Search window start (Julian Date)
+ * @param {number} endJD - Search window end (Julian Date)
+ * @param {number} raHours - Target right ascension (hours)
+ * @param {number} decDeg - Target declination (degrees)
+ * @param {number} latitude - Observer latitude (degrees)
+ * @param {number} longitude - Observer longitude (degrees)
+ * @param {number} minAltitude - Minimum altitude threshold (degrees)
+ * @param {Array} horizonArray - Optional horizon profile
+ * @returns {{riseJD:number|null, setJD:number|null,
+ *   dip:{dipStartJD:number, dipEndJD:number}|null, visible:boolean}}
+ */
+function scanVisibility(startJD, endJD, raHours, decDeg, latitude, longitude, minAltitude, horizonArray = null) {
+    const stepSize = APP_CONFIG.TARGET_SEARCH_STEP_SIZE;
+    const isVisible = jd => isVisibleAt(jd, raHours, decDeg, latitude, longitude, minAltitude, horizonArray);
+
+    const visibleAtStart = isVisible(startJD);
+    let prevVisible = visibleAtStart;
+    let visible = false;
+    let riseJD = null;
+    let lastSetJD = null;
+    let dipStartJD = null;
+    let dipEndJD = null;
+
+    for (let jd = startJD; jd <= endJD; jd += stepSize) {
+        const isVisibleNow = jd === startJD ? visibleAtStart : isVisible(jd);
+        if (isVisibleNow) visible = true;
+
+        if (!prevVisible && isVisibleNow) {
+            // First rise; the first rise after the first set ends a dip
+            if (riseJD === null) riseJD = jd;
+            if (dipStartJD !== null && dipEndJD === null) dipEndJD = jd;
+        } else if (prevVisible && !isVisibleNow) {
+            lastSetJD = jd;
+            if (dipStartJD === null) dipStartJD = jd;
+        }
+        prevVisible = isVisibleNow;
+    }
+
+    // As findTargetSet: still up at the end, an earlier set was an obstruction.
+    // As findVisibilityDip: a dip only between visible start and end.
+    const visibleAtEnd = isVisible(endJD);
+    const hasDip = visibleAtStart && visibleAtEnd && dipStartJD !== null && dipEndJD !== null;
+    return {
+        riseJD,
+        setJD: visibleAtEnd ? null : lastSetJD,
+        dip: hasDip ? { dipStartJD, dipEndJD } : null,
+        visible,
+    };
 }
 
 /**
@@ -140,10 +156,7 @@ function findTargetSet(startJD, endJD, raHours, decDeg, latitude, longitude, min
 function findNightVisibility(duskJD, raHours, decDeg, latitude, longitude, minAltitude, horizonArray = null) {
     const stepSize = APP_CONFIG.TARGET_SEARCH_STEP_SIZE;
     const searchDays = 1;
-    const isVisible = jd => isAboveHorizon(
-        getAltitude(jd, raHours, decDeg, latitude, longitude),
-        getAzimuth(jd, raHours, decDeg, latitude, longitude),
-        minAltitude, horizonArray);
+    const isVisible = jd => isVisibleAt(jd, raHours, decDeg, latitude, longitude, minAltitude, horizonArray);
 
     const upAtDusk = isVisible(duskJD);
     let riseJD = null;
@@ -196,9 +209,7 @@ function findAltitudeCrossings(startJD, endJD, raHours, decDeg, latitude, longit
     let prevVisible = null;
 
     for (let jd = startJD; jd <= endJD; jd += stepSize) {
-        const altitude = getAltitude(jd, raHours, decDeg, latitude, longitude);
-        const azimuth = getAzimuth(jd, raHours, decDeg, latitude, longitude);
-        const isVisible = isAboveHorizon(altitude, azimuth, minAltitude, horizonArray);
+        const isVisible = isVisibleAt(jd, raHours, decDeg, latitude, longitude, minAltitude, horizonArray);
         if (prevVisible === false && isVisible) rises.push(jd);
         if (prevVisible === true && !isVisible) sets.push(jd);
         prevVisible = isVisible;
@@ -229,13 +240,9 @@ function findAltitudeCrossings(startJD, endJD, raHours, decDeg, latitude, longit
 function findVisibilityDip(startJD, endJD, raHours, decDeg, latitude, longitude, minAltitude, horizonArray = null) {
     const stepSize = APP_CONFIG.TARGET_SEARCH_STEP_SIZE;
 
-    const startAltitude = getAltitude(startJD, raHours, decDeg, latitude, longitude);
-    const startAzimuth = getAzimuth(startJD, raHours, decDeg, latitude, longitude);
-    const visibleAtStart = isAboveHorizon(startAltitude, startAzimuth, minAltitude, horizonArray);
+    const visibleAtStart = isVisibleAt(startJD, raHours, decDeg, latitude, longitude, minAltitude, horizonArray);
 
-    const endAltitude = getAltitude(endJD, raHours, decDeg, latitude, longitude);
-    const endAzimuth = getAzimuth(endJD, raHours, decDeg, latitude, longitude);
-    const visibleAtEnd = isAboveHorizon(endAltitude, endAzimuth, minAltitude, horizonArray);
+    const visibleAtEnd = isVisibleAt(endJD, raHours, decDeg, latitude, longitude, minAltitude, horizonArray);
 
     if (!visibleAtStart || !visibleAtEnd) {
         return null;
@@ -247,9 +254,7 @@ function findVisibilityDip(startJD, endJD, raHours, decDeg, latitude, longitude,
     let dipEndJD = null;
 
     while (jd <= endJD) {
-        const altitude = getAltitude(jd, raHours, decDeg, latitude, longitude);
-        const azimuth = getAzimuth(jd, raHours, decDeg, latitude, longitude);
-        const isVisible = isAboveHorizon(altitude, azimuth, minAltitude, horizonArray);
+        const isVisible = isVisibleAt(jd, raHours, decDeg, latitude, longitude, minAltitude, horizonArray);
 
         if (prevVisible && !isVisible && dipStartJD === null) {
             dipStartJD = jd;
@@ -305,6 +310,27 @@ function findTargetTransit(startJD, endJD, raHours, dec, longitude) {
     if (dh < 0) dh += 24;
     const transitJD = startJD + (dh / 24) * SIDEREAL_DAY_RATIO;
     return transitJD <= endJD ? transitJD : null;
+}
+
+/**
+ * A target's highest altitude in a window and when it is reached (Issue #317).
+ * Altitude rises until upper transit and falls after it, so the peak is the
+ * culmination altitude when transit falls in the window, otherwise the higher
+ * end of the window. The window must be shorter than a sidereal day.
+ * @param {number} startJD - Window start (normally astronomical dusk)
+ * @param {number} endJD - Window end (normally astronomical dawn)
+ * @param {number} raHours - Target right ascension (hours)
+ * @param {number} decDeg - Target declination (degrees)
+ * @param {number} latitude - Observer latitude (degrees)
+ * @param {number} longitude - Observer longitude (degrees, West is negative)
+ * @returns {Object} { altitude: degrees, jd: when }
+ */
+function getPeakAltitude(startJD, endJD, raHours, decDeg, latitude, longitude) {
+    const transitJD = findTargetTransit(startJD, endJD, raHours, decDeg, longitude);
+    if (transitJD !== null) return { altitude: 90 - Math.abs(latitude - decDeg), jd: transitJD };
+    const startAltitude = getAltitude(startJD, raHours, decDeg, latitude, longitude);
+    const endAltitude = getAltitude(endJD, raHours, decDeg, latitude, longitude);
+    return startAltitude >= endAltitude ? { altitude: startAltitude, jd: startJD } : { altitude: endAltitude, jd: endJD };
 }
 
 /**

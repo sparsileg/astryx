@@ -1712,11 +1712,15 @@
           </div>
 
           <!-- Progress indicator (hidden initially) -->
-          <div id="best-months-progress" style="display: none; margin-top: 1.5rem;">
-            <div style="background: var(--input-bg); border-radius: 8px; height: 24px; overflow: hidden; margin-bottom: 0.5rem;">
-              <div id="best-months-progress-bar" style="background: var(--primary-color); height: 100%; width: 0%; transition: width 0.3s;"></div>
+          <div id="best-months-progress">
+            <div class="best-months-progress-track">
+              <div id="best-months-progress-bar"></div>
             </div>
-            <p id="best-months-progress-text" style="color: var(--text-secondary); font-size: 0.9rem; text-align: center;"></p>
+            <p id="best-months-progress-text">
+              <span class="best-months-progress-title"></span>
+              <span class="best-months-progress-detail"></span>
+              <span class="best-months-progress-eta"></span>
+            </p>
           </div>
 
           <!-- Results (hidden initially) -->

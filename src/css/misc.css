@@ -94,3 +94,46 @@
     outline: 2px solid var(--primary-color);
     outline-offset: 2px;
 }
+
+/* Calculate Best Months progress; its text is three lines, each shown only
+   when set (Issue #318) */
+#best-months-progress {
+    display: none;
+    margin-top: 1.5rem;
+}
+
+.best-months-progress-track {
+    background: var(--input-bg);
+    border-radius: 8px;
+    height: 24px;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+}
+
+#best-months-progress-bar {
+    background: var(--primary-color);
+    height: 100%;
+    width: 0%;
+}
+
+#best-months-progress-text {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+#best-months-progress-text span {
+    display: block;
+}
+
+#best-months-progress-text span:empty {
+    display: none;
+}
+
+.best-months-progress-title {
+    font-weight: bold;
+}
+
+.best-months-progress-eta {
+    font-size: 0.9em;
+}
