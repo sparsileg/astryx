@@ -7,8 +7,14 @@ import { spawn } from 'node:child_process';
 const require = createRequire(process.env.PLAYWRIGHT_DIR + '/');
 const { chromium } = require('playwright');
 
-const PORT = 1420;
+// Not 1420: `just dev` serves there, and this run must test its own src.
+// Each UI script has its own port (checks.mjs 1430), so they can run at once
+const PORT = 1431;
 const URL = `http://localhost:${PORT}`;
+
+async function portInUse() {
+    try { await fetch(URL); return true; } catch { return false; }
+}
 
 async function waitForServer() {
     for (let i = 0; i < 50; i++) {
@@ -18,6 +24,10 @@ async function waitForServer() {
     throw new Error('server did not start');
 }
 
+if (await portInUse()) {
+    console.log(`Port ${PORT} is already in use; stop whatever serves it and run again`);
+    process.exit(1);
+}
 // npx runs serve as a child process; give both their own process group and
 // stop the group, or serve outlives the run and keeps the port
 const server = spawn('npx', ['serve', 'src', '--listen', String(PORT)], { stdio: 'ignore', detached: true });

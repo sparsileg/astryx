@@ -10,7 +10,9 @@ import { mkdirSync } from 'node:fs';
 const require = createRequire(process.env.PLAYWRIGHT_DIR + '/');
 const { chromium } = require('playwright');
 
-const PORT = 1420;
+// Not 1420: `just dev` serves there, and this run must test its own src.
+// Each UI script has its own port (checks.mjs 1430), so they can run at once
+const PORT = 1433;
 const APP_URL = `http://localhost:${PORT}`;
 const OUT_DIR = process.env.SHOT_DIR ?? 'guide/images';
 const ONLY = process.argv.slice(2);
@@ -19,6 +21,10 @@ const DSS_MS = 8000;
 // A winter night when Orion is well placed
 const SHOT_TIME = '2026-12-14T20:00:00-05:00';
 const TIME_ZONE = 'America/New_York';
+
+async function portInUse() {
+    try { await fetch(APP_URL); return true; } catch { return false; }
+}
 
 async function waitForServer() {
     for (let i = 0; i < 50; i++) {
@@ -333,6 +339,10 @@ if (unknown.length) {
     process.exit(2);
 }
 
+if (await portInUse()) {
+    console.log(`Port ${PORT} is already in use; stop whatever serves it and run again`);
+    process.exit(1);
+}
 mkdirSync(OUT_DIR, { recursive: true });
 const server = spawn('npx', ['serve', 'src', '--listen', String(PORT)], { stdio: 'ignore', detached: true });
 try {
