@@ -14,7 +14,18 @@ const HtmlUtils = {
         const div = document.createElement('div');
         div.textContent = String(text);
         return div.innerHTML;
-    }
+    },
+
+    /**
+     * Escape a string for an HTML attribute value in double or single
+     * quotes, as well as for text content: & < > " ' (Issue #337)
+     */
+    escapeAttr(text) {
+        if (text === null || text === undefined) return '';
+        return String(text).replace(/[&<>"']/g, c => HtmlUtils.ATTR_ENTITIES[c]);
+    },
+
+    ATTR_ENTITIES: { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }
 };
 
 // ----------------------------------------------------------------------

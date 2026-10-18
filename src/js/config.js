@@ -15,7 +15,7 @@
 const APP_CONFIG = {
     APP_NAME: 'Astryx',
     APP_TITLE: 'Astryx - Astrophotography Planning Tool',
-    APP_VERSION: '1.96.4',
+    APP_VERSION: '1.96.5',
     DB_NAME: 'astryx-db',
     DB_VERSION: 8,
     TARGET_DATA_PATH: './data/',
@@ -145,6 +145,7 @@ const APP_CONFIG = {
     SEQ_PLAN_HANDOVER_STEP_PERCENT: 1,        // Step when searching for the best handover between targets
     SEQ_PLAN_MAX_REORDER_TARGETS: 3,          // Up to this, every target order is tried (orders grow as n!); above it, targets are scheduled earliest deadline first
     SEQ_PLAN_REGENERATE_DELAY_MS: 1000,       // Wait after the last input change before rebuilding the plan
+    SEQ_PLAN_RECALCULATE_DELAY_MS: 1000,      // Wait after the last overhead change before recalculating the plan in its current order
     SEQ_PLAN_DEFAULT_EXPOSURE_S: 300,         // Exposure a target starts with until one is typed for it (issue #264)
     SEQ_PLAN_EXPOSURE_INPUT_DELAY_MS: 300,    // Wait after the last keystroke in an exposure field before recalculating
     SEQ_PLAN_MAX_EARLY_START_MINUTES: 60,     // A Custom start may be up to this long before astronomical dusk

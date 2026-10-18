@@ -172,7 +172,8 @@ buttons and the Observability section.
 ## Doing Something With the Results
 
 The two buttons in the Results card's header act on every target in the
-list, not only the ones you can see:
+list, not only the ones you can see. They're hidden when no targets match
+the filters:
 
 - **Send to Optimizer** hands the list to the [Target
   Optimizer](target-optimizer.md), which picks

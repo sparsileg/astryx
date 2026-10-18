@@ -20,6 +20,11 @@ const YearlyObservabilityView = {
         container.innerHTML = '';
         container.appendChild(content);
 
+        // The template's label reads 35°; start from Settings' Min Altitude,
+        // which getYearlyInputs reads from the label (Issue #333)
+        const yoLabel = document.getElementById('yo-min-alt-label');
+        if (yoLabel) yoLabel.textContent = `${SettingsManager.getGlobalMinAltitude()}°`;
+
         // Render from cache if available (pre-calculated before navigation) — no blink
         const cached = this.lastGraphData;
         if (cached) {
@@ -31,7 +36,8 @@ const YearlyObservabilityView = {
             }
             if (typeof VisibilityTargets !== 'undefined' && !VisibilityTargets.currentTarget) {
                 const defaultTarget = DataManager.getTargets().find(t => t.object === APP_CONFIG.DEFAULT_TARGET);
-                if (defaultTarget) VisibilityTargets.currentTarget = defaultTarget;
+                // Through setCurrentTarget, so this view holds it too (Issue #333)
+                if (defaultTarget) VisibilityTargets.setCurrentTarget(defaultTarget);
             }
             setTimeout(() => this.calculateYearly(), 0);
         }

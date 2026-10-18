@@ -507,10 +507,10 @@ const ToDoView = {
 
                 return `
         <span class="todo-target-item">
-            <a href="#" class="todo-target-link${pinnedClass}" data-target-id="${info.target.object}">
-                ${icon}${pinIcon}${displayName} - Rise: ${info.riseTime}, Set: ${info.setTime}
+            <a href="#" class="todo-target-link${pinnedClass}" data-target-id="${HtmlUtils.escapeAttr(info.target.object)}">
+                ${icon}${pinIcon}${HtmlUtils.escapeHtml(displayName)} - Rise: ${info.riseTime}, Set: ${info.setTime}
             </a>
-            <button class="btn-remove-todo" data-target-id="${info.target.object}">
+            <button class="btn-remove-todo" data-target-id="${HtmlUtils.escapeAttr(info.target.object)}">
                 Remove
             </button>
         </span>
@@ -536,10 +536,10 @@ const ToDoView = {
 
                 return `
         <span class="todo-target-item">
-            <a href="#" class="todo-target-link${pinnedClass}" data-target-id="${info.target.object}">
-                ${icon}${pinIcon}${displayName} - Rise: ${info.riseTime}, Set: ${info.setTime}
+            <a href="#" class="todo-target-link${pinnedClass}" data-target-id="${HtmlUtils.escapeAttr(info.target.object)}">
+                ${icon}${pinIcon}${HtmlUtils.escapeHtml(displayName)} - Rise: ${info.riseTime}, Set: ${info.setTime}
             </a>
-            <button class="btn-remove-todo" data-target-id="${info.target.object}">
+            <button class="btn-remove-todo" data-target-id="${HtmlUtils.escapeAttr(info.target.object)}">
                 Remove
             </button>
         </span>
@@ -930,10 +930,10 @@ const ToDoView = {
 
                 return `
                     <span class="todo-target-item">
-                        <a href="#" class="todo-target-link${pinnedClass}" data-target-id="${target.object}">
-                            ${icon}${pinIcon}${displayName}
+                        <a href="#" class="todo-target-link${pinnedClass}" data-target-id="${HtmlUtils.escapeAttr(target.object)}">
+                            ${icon}${pinIcon}${HtmlUtils.escapeHtml(displayName)}
                         </a>
-                        <button class="btn-remove-todo" data-target-id="${target.object}">
+                        <button class="btn-remove-todo" data-target-id="${HtmlUtils.escapeAttr(target.object)}">
                             Remove
                         </button>
                     </span>

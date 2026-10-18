@@ -21,7 +21,8 @@ const OptimizerView = {
     currentResults: null,
     totalEvaluated: 0,
 
-    // The Date, Start, and Source of the last run, restored on entry
+    // The Date, Start, and Source of the last run, restored on entry, and
+    // the location and Min Altitude it ran for (Issue #332)
     resultsInputs: null,
 
     /**
@@ -38,9 +39,10 @@ const OptimizerView = {
 
         // Show the results of the last run as they were left (cards removed
         // with ✕ stay removed), with the inputs that produced them; otherwise
-        // run now (Issue #99)
+        // run now (Issue #99). A run for another location or Min Altitude is
+        // out of date, so it runs again with the same inputs (Issue #332).
         this.restoreResultsInputs();
-        if (this.currentResults && this.currentResults.length > 0) {
+        if (this.currentResults && this.currentResults.length > 0 && this.resultsCurrent()) {
             if (this.displayMode === 'combinations' && this.currentCombos) {
                 this.renderCombinations(this.currentCombos);
             } else {
@@ -51,6 +53,14 @@ const OptimizerView = {
         }
 
         console.log('Target Optimizer initialized');
+    },
+
+    /**
+     * Whether the last run was for the location and Min Altitude now in use (Issue #332)
+     */
+    resultsCurrent() {
+        return this.resultsInputs?.locationName === SettingsManager.getSelectedLocation()
+            && this.resultsInputs?.minAltitude === SettingsManager.getGlobalMinAltitude();
     },
 
     /**
@@ -194,7 +204,9 @@ const OptimizerView = {
             date,
             startLabel,
             customStartTime,
-            sourceLabel
+            sourceLabel,
+            locationName: SettingsManager.getSelectedLocation(),
+            minAltitude: SettingsManager.getGlobalMinAltitude()
         };
 
         const locationName = SettingsManager.getSelectedLocation();
@@ -352,9 +364,9 @@ const OptimizerView = {
                     <div class="optimizer-candidate-body">
                         <div class="optimizer-candidate-line1" style="justify-content: space-between;">
                             <div style="display: flex; flex-wrap: wrap; gap: 0.25rem; align-items: baseline;">
-                                <span class="opt-name">${target.name}</span>
-                                ${commonDisplay ? `<span class="opt-sep">·</span><span class="opt-meta">${commonDisplay}</span>` : ''}
-                                <span class="opt-sep">·</span><span class="opt-meta">${typeDisplay}</span>
+                                <span class="opt-name">${HtmlUtils.escapeHtml(target.name)}</span>
+                                ${commonDisplay ? `<span class="opt-sep">·</span><span class="opt-meta">${HtmlUtils.escapeHtml(commonDisplay)}</span>` : ''}
+                                <span class="opt-sep">·</span><span class="opt-meta">${HtmlUtils.escapeHtml(typeDisplay)}</span>
                                 <span class="opt-sep">·</span><span class="opt-meta">Min/Max Size: ${target.sizeMin ? target.sizeMin + '′' : '—'}/${target.sizeMax ? target.sizeMax + '′' : '—'}</span>
                             </div>
                             <div style="display: flex; gap: 0.25rem; flex-shrink: 0;">
@@ -494,8 +506,8 @@ const OptimizerView = {
                     const commonDisplay = t.common ? t.common.split(',')[0].trim() : '';
                     targetsHtml += `
                         <div class="optimizer-combo-target">
-                            <span class="opt-name">${t.name}</span>
-                            ${commonDisplay ? `<span class="opt-sep">·</span><span class="opt-meta">${commonDisplay}</span>` : ''}
+                            <span class="opt-name">${HtmlUtils.escapeHtml(t.name)}</span>
+                            ${commonDisplay ? `<span class="opt-sep">·</span><span class="opt-meta">${HtmlUtils.escapeHtml(commonDisplay)}</span>` : ''}
                             <span class="opt-sep">·</span><span class="opt-meta">Window: ${windowStart} – ${windowEnd} (${t.windowHours.toFixed(1)}h)</span>
                             <span class="opt-sep">·</span><span class="opt-meta">Peak: ${t.peakAltitude.toFixed(1)}°</span>
                             <span class="opt-sep">·</span><span class="opt-meta">Score: ${t.scores.composite}</span>
@@ -579,7 +591,7 @@ const OptimizerView = {
         for (const candidate of combo.targets) {
             const target = DataManager.getTargets().find(t => t.object === candidate.id);
             if (!target) continue;
-            await DataManager.pinTarget({ ...target, name: target.object });
+            await DataManager.pinTarget(DataManager.pinnedRecord(target));
             pinned_count++;
         }
 
@@ -617,7 +629,7 @@ const OptimizerView = {
             return;
         }
 
-        await DataManager.pinTarget({ ...target, name: target.object });
+        await DataManager.pinTarget(DataManager.pinnedRecord(target));
         UIManager.markDataChanged();
         VisibilityTargets.updatePinnedDisplay();
         UIManager.showToast(`${candidate.name} pinned`, 'success');

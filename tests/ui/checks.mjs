@@ -129,6 +129,29 @@ const hasBestMonths = (page, name) => page.evaluate(n => UIManager.locationHasBe
 const holdsAnyBestMonths = (page, name) => page.evaluate(async n => (await DBManager.getAll(APP_CONFIG.STORES.TARGETS))
     .some(t => DataManager.PER_LOCATION_FIELDS.some(f => t[f]?.[n] !== undefined)), name);
 
+const openView = async (page, view) => {
+    await page.click(`.nav-item[data-view="${view}"]`);
+    await page.waitForTimeout(SETTLE_MS);
+};
+
+const pinTargets = (page, ...names) => page.evaluate(async list => {
+    for (const name of list) await DataManager.pinTarget(DataManager.pinnedRecord(DataManager.getTarget(name)));
+}, names);
+
+// An Open-Meteo answer for every hour from two days back to nine days ahead, in the browser's zone
+function forecastJson() {
+    const time = [];
+    const day = new Date();
+    day.setDate(day.getDate() - 2);
+    for (let d = 0; d < 12; d++, day.setDate(day.getDate() + 1)) {
+        const date = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`;
+        for (let h = 0; h < 24; h++) time.push(`${date}T${String(h).padStart(2, '0')}:00`);
+    }
+    const values = value => time.map(() => value);
+    return { hourly: { time, cloudcover: values(20), cloudcover_low: values(10), cloudcover_mid: values(10),
+        cloudcover_high: values(10), windspeed_10m: values(5), temperature_2m: values(10), dewpoint_2m: values(2) } };
+}
+
 async function openEquipmentTab(page, tab) {
     await openAdminItem(page, 'manage-equipment');
     if (tab) await page.click(`[data-tab="${tab}"]`);
@@ -474,7 +497,7 @@ const CHECKS = [
                     await ToDoManager.addToToDoList(t.object);
                 }
                 const [m31] = DataManager.searchTargets('M 31');
-                await DataManager.pinTarget({ name: m31.object, ra: m31.ra, dec: m31.dec, common: m31.common ?? '' });
+                await DataManager.pinTarget(DataManager.pinnedRecord(m31));
             });
             await page.click('.nav-item[data-view="todo"]');
             await page.waitForTimeout(SETTLE_MS);
@@ -490,6 +513,151 @@ const CHECKS = [
                 assert.ok(drawn.some(t => t.startsWith('M 45')), `${sort}: unpinned label`);
                 assert.ok(!drawn.some(t => t.startsWith('📌 M 45')), `${sort}: unpinned target marked`);
             }
+        },
+    },
+    {
+        issue: 327, name: 'Tutorials: one click on Resume starts the in-progress tutorial once, and Start starts Getting Started once',
+        run: async page => {
+            // Three tutorials left partway, as exit() leaves them, each updating the menu
+            for (const id of ['admin-tools', 'backup-restore', 'daily-visibility']) {
+                await page.evaluate(async t => {
+                    await TutorialEngine._saveProgress(t, 1, false);
+                    UIManager.updateTutorialMenuItems(await TutorialManager.findInProgressTutorial());
+                }, id);
+                await page.waitForTimeout(SETTLE_MS);
+            }
+            await page.evaluate(() => {
+                window.__started = [];
+                TutorialEngine.start = id => window.__started.push(id);
+            });
+            await page.click('#system-menu-btn');
+            await page.click('#resume-tutorial-item');
+            assert.deepStrictEqual(await page.evaluate(() => [...window.__started]), ['daily-visibility']);
+            await page.click('#system-menu-btn');
+            await page.click('[data-action="start-tutorial"]');
+            assert.deepStrictEqual(await page.evaluate(() => [...window.__started]), ['daily-visibility', 'getting-started']);
+        },
+    },
+    {
+        issue: 327, name: 'Tutorials: Resume from another view asks for the click into the tutorial\'s view, then returns to the saved step',
+        run: async page => {
+            // Sequence Planner tutorial left at its Observation Date step, Target Selection showing
+            await page.evaluate(async () => {
+                const saved = TUTORIAL_REGISTRY.tutorials['sequence-planner'].steps.findIndex(s => s.id === 'date');
+                await TutorialEngine._saveProgress('sequence-planner', saved, false);
+                UIManager.updateTutorialMenuItems(await TutorialManager.findInProgressTutorial());
+            });
+            await page.waitForTimeout(SETTLE_MS);
+            await page.click('#system-menu-btn');
+            await page.click('#resume-tutorial-item');
+            await page.waitForSelector('.tutorial-callout-title:text-is("Open Sequence Planner")');
+            await page.click('#sidebar-sequence-planner');
+            await page.waitForSelector('.tutorial-callout-title:text-is("Observation Date")');
+            assert.ok(await page.isVisible('#seq-plan-date'), 'on the Sequence Planner');
+        },
+    },
+    {
+        issue: 328, name: 'Target Selection: no matches hides Create Imaging Program and Send to Optimizer',
+        run: async page => {
+            await openView(page, 'target-select');
+            assert.ok(await page.isVisible('#send-to-optimizer-btn'), 'Send shown with results');
+            // The To Do List is empty in a fresh profile
+            await page.click('input[name="target-filter-scope"][value="todo"]');
+            await page.waitForTimeout(SETTLE_MS);
+            assert.strictEqual(await page.textContent('#target-filter-results-count'), 'No targets match filters');
+            assert.ok(await page.isHidden('#send-to-optimizer-btn'), 'Send to Optimizer hidden');
+            assert.ok(await page.isHidden('#create-imaging-program-btn'), 'Create Imaging Program hidden');
+            assert.strictEqual(await page.evaluate(() => TargetFilter.allResults.length), 0, 'previous results kept');
+        },
+    },
+    {
+        issue: 308, name: 'Daily Visibility: a forecast that arrives late never replaces the newer location\'s strip',
+        run: async page => {
+            await addLocations(page, 'Test Site', 'Dark Site');
+            await selectLocation(page, 'Test Site');
+            const held = {};
+            await page.route('**/api.open-meteo.com/**', route => {
+                held[new globalThis.URL(route.request().url()).searchParams.get('latitude')] = route;
+            });
+            await openView(page, 'daily-visibility');
+            await page.waitForFunction(() => document.getElementById('timeline-container'));
+            assert.ok(held[SITES['Test Site'].latitude], 'Test Site forecast requested');
+            await selectLocation(page, 'Dark Site');
+            assert.ok(held[SITES['Dark Site'].latitude], 'Dark Site forecast requested');
+            await held[SITES['Dark Site'].latitude].fulfill({ json: forecastJson() });
+            await page.waitForSelector('#timeline-container .cloud-cover-strip');
+            await held[SITES['Test Site'].latitude].fulfill({ status: 500 });
+            await page.waitForTimeout(SETTLE_MS);
+            assert.strictEqual(await page.locator('#timeline-container .cloud-unavailable').count(), 0, 'late Test Site answer shown');
+            assert.strictEqual(await page.locator('#timeline-container .cloud-cover-strip').count(), 1);
+        },
+    },
+    {
+        issue: 330, name: 'Sequence Planner: exposures typed in two rows quickly are both kept; unpinning all empties the plan',
+        run: async page => {
+            await addLocations(page, 'Test Site');
+            await selectLocation(page, 'Test Site');
+            await pinTargets(page, 'M 31', 'M 45');
+            await openView(page, 'seqplan');
+            await page.waitForSelector('[id="exposure-M 45"]');
+            await page.fill('[id="exposure-M 31"]', '120');
+            await page.fill('[id="exposure-M 45"]', '180');
+            await page.waitForFunction(() => SettingsManager.getSeqPlanExposure('M 31') === 120 && SettingsManager.getSeqPlanExposure('M 45') === 180)
+                .catch(async () => assert.fail(`exposures kept: ${await page.evaluate(() => [SettingsManager.getSeqPlanExposure('M 31'), SettingsManager.getSeqPlanExposure('M 45')])}`));
+
+            await page.evaluate(async () => {
+                for (const pin of DataManager.getPinnedTargets().slice()) await DataManager.unpinTarget(pin.name);
+            });
+            await page.waitForTimeout(await page.evaluate(() => APP_CONFIG.SEQ_PLAN_REGENERATE_DELAY_MS) + SETTLE_MS);
+            assert.strictEqual(await page.evaluate(() => SeqPlanView.calculatedResults.length), 0, 'unpinned targets still planned');
+            assert.strictEqual((await page.textContent('#seq-plan-results')).trim(), '', 'old plan still shown');
+            assert.strictEqual((await page.textContent('#seq-plan-target-list')).trim(), 'No plan');
+        },
+    },
+    {
+        issue: 333, name: 'Yearly Observability: a reload uses the catalogue\'s record and Settings\' Min Altitude',
+        run: async page => {
+            await addLocations(page, 'Test Site');
+            await selectLocation(page, 'Test Site');
+            await page.evaluate(async () => {
+                SettingsManager.settings.globalMinAltitude = 20;
+                await SettingsManager.saveSettings();
+                // Saved the old way: the whole record, with a Best Month that has since changed
+                const m31 = DataManager.getTarget('M 31');
+                localStorage.setItem('lastSelectedTarget', JSON.stringify({ ...m31, bestMonth: { 'Test Site': 1 } }));
+            });
+            // A goto that only changes the hash doesn't reload
+            await page.evaluate(() => { location.hash = '#yearly-observability'; });
+            await untilReady(page, () => page.reload());
+            await page.waitForTimeout(SETTLE_MS);
+            assert.strictEqual(await page.locator('.toast-error').count(), 0, 'error toast');
+            assert.strictEqual(await page.textContent('#yo-min-alt-label'), '20°');
+            assert.ok(await page.evaluate(() => YearlyObservabilityView.currentTarget === DataManager.getTarget('M 31')), 'a stale copy');
+            assert.ok(await page.evaluate(() => localStorage.getItem('lastSelectedTarget') === null), 'old key kept');
+        },
+    },
+    {
+        issue: 337, name: 'A location named with quotes and HTML characters shows literally and can be edited and deleted',
+        run: async page => {
+            const name = 'A "q" & <b>';
+            await openAdminItem(page, 'manage-locations');
+            await fillLocation(page, name, 'Test Site');
+            await toast(page, 'success', name);
+            await openAdminItem(page, 'manage-locations');
+            assert.ok(await page.locator('#modal strong', { hasText: name }).isVisible(), 'name shown literally');
+            await page.click('#modal button[data-action="edit"]');
+            assert.strictEqual(await page.inputValue('#manage-location-name'), name);
+            await page.fill('#manage-elevation', '300');
+            await page.click('#modal-save-btn');
+            await modalClosed(page);
+            assert.strictEqual(await page.evaluate(n => DataManager.getLocation(n)?.elevation, name), 300, 'edit saved');
+
+            page.answers.push(true);
+            await openAdminItem(page, 'manage-locations');
+            await page.click('#modal button[data-action="delete"]');
+            await toast(page, 'success', 'deleted');
+            await reload(page);
+            assert.deepStrictEqual(Object.keys(await page.evaluate(() => DataManager.getLocations())), []);
         },
     },
 ];

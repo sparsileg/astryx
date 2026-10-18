@@ -258,7 +258,7 @@ const ImagingLogView = {
                         <div class="project-card-title">
                     ${HtmlUtils.escapeHtml(project.name)}
                     ${project.publishedLink
-                        ? `<a href="${HtmlUtils.escapeHtml(project.publishedLink)}" target="_blank" rel="noopener noreferrer"
+                        ? `<a href="${HtmlUtils.escapeAttr(project.publishedLink)}" target="_blank" rel="noopener noreferrer"
                               title="View published image" class="project-published-link" data-action="noop">🔗</a>`
                         : `<span title="Edit project to add published image link" class="project-published-link-inactive">🔗</span>`
                     }
@@ -470,7 +470,7 @@ const ImagingLogView = {
 
             html += `
                 <div class="target-search-result"
-                     data-action="add-target-to-project" data-target-id="${HtmlUtils.escapeHtml(target.object)}">
+                     data-action="add-target-to-project" data-target-id="${HtmlUtils.escapeAttr(target.object)}">
                     ${HtmlUtils.escapeHtml(displayName)}
                 </div>
             `;
@@ -550,7 +550,7 @@ const ImagingLogView = {
                 <div class="selected-target-item">
                     <span>${HtmlUtils.escapeHtml(displayName)}${alsoText}</span>
                     <button class="btn-danger btn-sm"
-                            data-action="remove-target-from-project" data-target-id="${HtmlUtils.escapeHtml(designation)}">
+                            data-action="remove-target-from-project" data-target-id="${HtmlUtils.escapeAttr(designation)}">
                         Remove
                     </button>
                 </div>
@@ -1232,7 +1232,7 @@ const ImagingLogView = {
                     <div style="flex: 1;">
                         <div class="project-card-title">
                             ${HtmlUtils.escapeHtml(program.name)}
-                            ${isPattern ? `<span style="color: var(--text-secondary); font-size: 0.85em; margin-left: 0.5rem;">(${program.catalogPrefix} 1-${program.maxNumber})</span>` : ''}
+                            ${isPattern ? `<span style="color: var(--text-secondary); font-size: 0.85em; margin-left: 0.5rem;">(${HtmlUtils.escapeHtml(program.catalogPrefix)} 1-${program.maxNumber})</span>` : ''}
                         </div>
                     </div>
                     <div class="project-card-actions">
@@ -1717,7 +1717,7 @@ const ImagingLogView = {
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
                         <strong style="font-size: 1.05rem;">
                             ${HtmlUtils.escapeHtml(program.name)}
-                            ${isPattern ? `<span style="color: var(--text-secondary); font-size: 0.85em; margin-left: 0.5rem;">(${program.catalogPrefix} 1-${program.maxNumber})</span>` : ''}
+                            ${isPattern ? `<span style="color: var(--text-secondary); font-size: 0.85em; margin-left: 0.5rem;">(${HtmlUtils.escapeHtml(program.catalogPrefix)} 1-${program.maxNumber})</span>` : ''}
                         </strong>
                         <span class="project-status-badge ${progress.imaged === progress.total && progress.total > 0 ? 'status-completed' : 'status-acquiring-data'}">
                             ${progress.imaged === 0 ? 'Not Started' : progress.imaged === progress.total && progress.total > 0 ? 'Complete' : 'Started'}

@@ -38,6 +38,11 @@ textarea {
     border-bottom: 1px solid var(--border-color);
 }
 
+/* .menu-item's display: flex would override the hidden attribute (Issue #327) */
+.menu-item[hidden] {
+    display: none;
+}
+
 .menu-item:last-child {
     border-bottom: none;
 }

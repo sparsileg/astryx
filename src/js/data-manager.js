@@ -392,6 +392,14 @@ const DataManager = {
     },
 
     /**
+     * The fields a pin keeps for a catalogue target: its name and position,
+     * never a copy of the whole record (Issue #332)
+     */
+    pinnedRecord(target) {
+        return { name: target.object, ra: target.ra, dec: target.dec, common: target.common ?? '' };
+    },
+
+    /**
      * Pin a target
      */
     async pinTarget(target) {
