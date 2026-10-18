@@ -9,7 +9,8 @@ const SeqPlanView = {
     calculatedResults: [],
     skippedTargets: [],
     debounceTimer: null,
-    exposureInputTimer: null,
+    recalculateTimer: null,     // its own timer, so it can't cancel a pending regenerate (Issue #330)
+    _exposureTimers: {},        // one per target row (Issue #330)
     isInitializing: false,
     resizeListenerAdded: false,
     _resizeObserver: null,
@@ -86,6 +87,9 @@ const SeqPlanView = {
 
         if (pinned.length === 0) {
             UIManager.showToast('No pinned targets. Please pin targets first.', 'warning');
+            // Nothing left to plan; the unpinned targets' plan goes too (Issue #330)
+            this.currentTargets = [];
+            this.clearPlan();
             return;
         }
 
@@ -450,18 +454,43 @@ const SeqPlanView = {
             clearTimeout(this.debounceTimer);
         }
         this.debounceTimer = setTimeout(() => {
+            this.debounceTimer = null;
             this.generatePlan();
         }, APP_CONFIG.SEQ_PLAN_REGENERATE_DELAY_MS);
+    },
+
+    /**
+     * Remove the plan from the screen: results, timeline and target rows.
+     * Used when there's nothing to plan, or no plan could be made, so the
+     * screen never keeps a plan its controls no longer act on (Issue #330)
+     */
+    clearPlan() {
+        this.calculatedResults = [];
+        this.skippedTargets = [];
+        const resultsDiv = document.getElementById('seq-plan-results');
+        if (resultsDiv) resultsDiv.innerHTML = '';
+        const targetList = document.getElementById('seq-plan-target-list');
+        if (targetList) {
+            targetList.classList.remove('seq-plan-target-grid');
+            targetList.innerHTML = '<p class="seq-plan-no-plan">No plan</p>';
+        }
+        const totalImages = document.getElementById('seq-plan-total-images');
+        if (totalImages) totalImages.textContent = '';
+        if (SeqPlanTimeline.ctx) SeqPlanTimeline.clear();
     },
 
     /**
      * Generate imaging plan
      */
     async generatePlan() {
+        // Every return before the render below resets it, or the sliders
+        // and exposure boxes stop responding (Issue #330)
         this.isInitializing = true;
 
         // Validate inputs
         if (!this.validateInputs()) {
+            this.isInitializing = false;
+            this.clearPlan();
             return;
         }
 
@@ -473,10 +502,14 @@ const SeqPlanView = {
         const plan = SeqPlanCalculations.buildPlan(this.currentTargets, this.currentSession);
         if (!plan) {
             UIManager.showToast('No astronomical night at this location/date', 'error');
+            this.isInitializing = false;
+            this.clearPlan();
             return;
         }
         if (plan.results.length === 0) {
             UIManager.showToast('None of the pinned targets is above the minimum altitude long enough tonight', 'error');
+            this.isInitializing = false;
+            this.clearPlan();
             return;
         }
         this.calculatedResults = plan.results;
@@ -547,6 +580,8 @@ const SeqPlanView = {
         return {
             date: date,
             location: location,
+            // Location records don't hold their own name (Issue #330)
+            locationName,
             minAltitude: parseInt(this._getDropdownValue('seq-plan-min-altitude-menu', '35')),
             startTimeMode: this._getDropdownValue('seq-plan-start-time-menu', 'dusk'),
             customStartTime: TimeInput.value(document.getElementById('seq-plan-custom-time')),
@@ -587,7 +622,7 @@ const SeqPlanView = {
 
             rows += `
                 <tr>
-                    <td>${target.name}</td>
+                    <td>${HtmlUtils.escapeHtml(target.name)}</td>
                     <td>${typeLabel}</td>
                     <td>${startTime}</td>
                     <td>${endTime}</td>
@@ -666,7 +701,7 @@ const SeqPlanView = {
             // Main imaging entry (full window)
             html += `
             <p style="margin-bottom: 0.5rem;">
-                <strong>${index + 1}. <a href="#" class="block-link" data-action="show-target-detail" data-target-id="${target.targetId}">${target.name}</a></strong> •
+                <strong>${index + 1}. <a href="#" class="block-link" data-action="show-target-detail" data-target-id="${HtmlUtils.escapeAttr(target.targetId)}">${HtmlUtils.escapeHtml(target.name)}</a></strong> •
                 Start: ${this._localTime(targetStartTime)} •
                 End: ${this._localTime(targetEndTime)} (${target.imagingMinutes.toFixed(0)}m) •
                 ${target.exposureCount} × ${target.exposureTime}s${flipWarning}
@@ -695,7 +730,7 @@ const SeqPlanView = {
 
                         html += `
             <p style="margin-bottom: 0.5rem; margin-left: 0rem;">
-                <span style="color: var(--error-color);">⚠ ${target.name} • Altitude constraint</span> •
+                <span style="color: var(--error-color);">⚠ ${HtmlUtils.escapeHtml(target.name)} • Altitude constraint</span> •
                 Start: ${this._localTime(violationStart)} •
                 End: ${this._localTime(violationEnd)} (${violationMinutes.toFixed(0)}m)
             </p>
@@ -711,7 +746,7 @@ const SeqPlanView = {
 
                         html += `
             <p style="margin-bottom: 0.5rem; margin-left: 0rem;">
-                <span style="color: var(--error-color);">⚠ ${target.name} • Altitude constraint</span> •
+                <span style="color: var(--error-color);">⚠ ${HtmlUtils.escapeHtml(target.name)} • Altitude constraint</span> •
                 Start: ${this._localTime(violationStart)} •
                 End: ${this._localTime(violationEnd)} (${violationMinutes.toFixed(0)}m)
             </p>
@@ -731,7 +766,7 @@ const SeqPlanView = {
 
                     html += `
             <p style="margin-bottom: 0.5rem; margin-left: 0rem;">
-                <span style="color: var(--error-color);">⚠ ${target.name} • Horizon constraint</span> •
+                <span style="color: var(--error-color);">⚠ ${HtmlUtils.escapeHtml(target.name)} • Horizon constraint</span> •
                 Start: ${this._localTime(violationStart)} •
                 End: ${this._localTime(violationEnd)} (${violationMinutes.toFixed(0)}m)
             </p>
@@ -788,11 +823,11 @@ const SeqPlanView = {
                     <button class="seq-plan-move-up" title="Move up">&#8963;</button>
                     <button class="seq-plan-move-down" title="Move down">&#8964;</button>
                 </div>
-                <div class="seq-plan-target-name">${target.name}</div>
+                <div class="seq-plan-target-name">${HtmlUtils.escapeHtml(target.name)}</div>
                 <div style="display: flex; align-items: center; gap: 0.3rem;">
                     <input type="number"
                         class="seq-plan-exposure-input"
-                        id="exposure-${target.targetId}"
+                        id="exposure-${HtmlUtils.escapeAttr(target.targetId)}"
                         value="${target.exposureTime}"
                         min="1">
                     <span style="font-size: 0.85rem; color: var(--text-secondary);">sec</span>
@@ -800,13 +835,13 @@ const SeqPlanView = {
                 <div>
                     <input type="range"
                            class="seq-plan-slider"
-                           id="slider-${target.targetId}"
+                           id="slider-${HtmlUtils.escapeAttr(target.targetId)}"
                            min="0"
                            max="100"
                            step="1"
                            value="${target.allocatedPercent.toFixed(0)}">
                 </div>
-                <div class="seq-plan-allocation-value" id="value-${target.targetId}">
+                <div class="seq-plan-allocation-value" id="value-${HtmlUtils.escapeAttr(target.targetId)}">
                     ${target.allocatedPercent.toFixed(0)}% • ${target.exposureCount} × ${target.exposureTime}s
                 </div>
             `;
@@ -865,12 +900,14 @@ const SeqPlanView = {
                 });
             }
 
-            // Exposure time: recalculate once typing pauses
+            // Exposure time: recalculate once typing pauses. Each row has its
+            // own timer, so typing in the next row doesn't drop this one (Issue #330)
             const exposureInput = document.getElementById(`exposure-${target.targetId}`);
             if (exposureInput) {
                 exposureInput.addEventListener('input', (e) => {
-                    clearTimeout(this.exposureInputTimer);
-                    this.exposureInputTimer = setTimeout(() => {
+                    clearTimeout(this._exposureTimers[target.targetId]);
+                    this._exposureTimers[target.targetId] = setTimeout(() => {
+                        delete this._exposureTimers[target.targetId];
                         this.handleExposureChange(target.targetId, parseFloat(e.target.value));
                     }, APP_CONFIG.SEQ_PLAN_EXPOSURE_INPUT_DELAY_MS);
                 });
@@ -1053,12 +1090,13 @@ const SeqPlanView = {
      * Recalculate plan without re-optimizing (for overhead setting changes)
      */
     debouncedRecalculate() {
-        if (this.debounceTimer) {
-            clearTimeout(this.debounceTimer);
-        }
-        this.debounceTimer = setTimeout(() => {
+        clearTimeout(this.recalculateTimer);
+        this.recalculateTimer = setTimeout(() => {
+            this.recalculateTimer = null;
+            // A pending regenerate reads these settings too, and replaces the plan (Issue #330)
+            if (this.debounceTimer) return;
             this.recalculateWithoutOptimization();
-        }, 1000);
+        }, APP_CONFIG.SEQ_PLAN_RECALCULATE_DELAY_MS);
     },
 
     /**
@@ -1167,7 +1205,7 @@ const SeqPlanView = {
             },
             content: [
                 { text: `${target.name} — Sequence Plan`, style: 'title' },
-                { text: `${TimeUtils.formatDisplayDate(session.date)}  •  ${session.location.name || ''}`, style: 'subtitle' },
+                { text: `${TimeUtils.formatDisplayDate(session.date)}  •  ${session.locationName ?? ''}`, style: 'subtitle' },
                 {
                     table: {
                         headerRows: 1,
@@ -1225,7 +1263,9 @@ const SeqPlanView = {
             this._resizeObserver.disconnect();
             this._resizeObserver = null;
         }
-        clearTimeout(this.exposureInputTimer);
-        this.exposureInputTimer = null;
+        Object.values(this._exposureTimers).forEach(clearTimeout);
+        this._exposureTimers = {};
+        clearTimeout(this.recalculateTimer);
+        this.recalculateTimer = null;
     }
 };

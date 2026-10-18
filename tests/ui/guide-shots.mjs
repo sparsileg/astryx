@@ -78,7 +78,7 @@ async function seedToDo(page) {
             if (target) await ToDoManager.addToToDoList(target.object);
         }
         const [pin] = DataManager.searchTargets('M 42');
-        await DataManager.pinTarget({ name: pin.object, ra: pin.ra, dec: pin.dec, common: pin.common ?? '' });
+        await DataManager.pinTarget(DataManager.pinnedRecord(pin));
     }, TODO_NAMES);
 }
 
@@ -117,7 +117,7 @@ async function pinTargets(page, names) {
         for (const pinned of DataManager.getPinnedTargets().slice()) await DataManager.unpinTarget(pinned.name);
         for (const name of list) {
             const [t] = DataManager.searchTargets(name);
-            await DataManager.pinTarget({ name: t.object, ra: t.ra, dec: t.dec, common: t.common ?? '' });
+            await DataManager.pinTarget(DataManager.pinnedRecord(t));
         }
     }, names);
 }

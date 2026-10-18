@@ -31,6 +31,11 @@ summary line, and the first three result cards.
 The night always ends at astronomical dawn. The Optimizer uses the location
 chosen in the sidebar and the Min Altitude from Settings.
 
+When you come back to the Optimizer, it shows the results as you left
+them, with any cards you removed still gone. If you've changed the
+location or the Min Altitude since, it ranks the targets again for the new
+ones.
+
 A Custom time is in your location's local time. It can be up to 60
 minutes before dusk; Astryx uses it as you typed it and warns you it's
 before dusk. Later times, such as 01:00, mean that time after midnight. A

@@ -7,6 +7,8 @@ const VisibilityTargets = {
     searchTimeout: null,
     searchActive: false,
     currentTarget: null, // Track the selected target
+    LAST_TARGET_KEY: 'lastSelectedTargetRef',       // { name, ra, dec, common } (Issue #333)
+    OLD_LAST_TARGET_KEY: 'lastSelectedTarget',      // the whole record, read once to migrate
 
     /**
      * Initialize target functionality
@@ -165,21 +167,63 @@ const VisibilityTargets = {
             YearlyObservabilityView.currentTarget = target;
         }
 
-        // Save last selected target (save full target object)
-        localStorage.setItem('lastSelectedTarget', JSON.stringify(target));
+        // Save its name and position only, never a copy of the record, so
+        // a restart finds the catalogue's current values (Issue #333)
+        localStorage.setItem(this.LAST_TARGET_KEY, JSON.stringify({
+            name: target.object, ra: target.ra, dec: target.dec, common: target.common ?? ''
+        }));
 
         // Update sidebar current target display
         UIManager.updateSidebarCurrentTarget(target.object);
     },
 
     /**
+     * The catalogue's current record for a saved { name, ra, dec, common },
+     * or those saved fields when it's no longer in the catalogue
+     * @returns {{ target: Object, limited: boolean }}
+     */
+    _resolveSaved(saved) {
+        const fullTarget = DataManager.getTarget(saved.name)
+            ?? DataManager.searchTargets(saved.name).find(t => t.object === saved.name);
+        if (fullTarget) return { target: fullTarget, limited: false };
+        return {
+            target: { object: saved.name, ra: saved.ra, dec: saved.dec, common: saved.common ?? '' },
+            limited: true
+        };
+    },
+
+    /**
+     * Point the current target at the catalogue's newest record, after the
+     * targets are reloaded (a Best Months run or an import) (Issue #333)
+     */
+    refreshCurrentTarget() {
+        const current = this.currentTarget;
+        if (!current) return;
+        this.setCurrentTarget(this._resolveSaved({ ...current, name: current.object }).target);
+    },
+
+    /**
      * Load last selected target
      */
     loadLastTarget() {
-        const lastTarget = localStorage.getItem('lastSelectedTarget');
+        // Before Issue #333 the whole record was saved under the old key; keep its name and position
+        const oldTarget = localStorage.getItem(this.OLD_LAST_TARGET_KEY);
+        if (oldTarget) {
+            try {
+                const old = JSON.parse(oldTarget);
+                localStorage.setItem(this.LAST_TARGET_KEY, JSON.stringify({
+                    name: old.object, ra: old.ra, dec: old.dec, common: old.common ?? ''
+                }));
+            } catch (e) {
+                console.error('Failed to read the old last target:', e);
+            }
+            localStorage.removeItem(this.OLD_LAST_TARGET_KEY);
+        }
+
+        const lastTarget = localStorage.getItem(this.LAST_TARGET_KEY);
         if (lastTarget) {
             try {
-                this.setCurrentTarget(JSON.parse(lastTarget));
+                this.setCurrentTarget(this._resolveSaved(JSON.parse(lastTarget)).target);
 
                 // Restore search box and re-run the last search if there was one
                 const targetNameInput = document.getElementById('target-name');
@@ -217,32 +261,7 @@ const VisibilityTargets = {
      * Use a pinned target
      */
     usePinned(target) {
-        // Try to get full details from database first
-        const fullTarget = DataManager.getTarget(target.name);
-
-        let targetToSelect;
-        let limited = false;
-
-        if (fullTarget) {
-            targetToSelect = fullTarget;
-        } else {
-            // Fallback: search for it
-            const searchResults = DataManager.searchTargets(target.name);
-            const found = searchResults.find(t => t.object === target.name);
-
-            if (found) {
-                targetToSelect = found;
-            } else {
-                // Last resort: use the limited pinned data
-                targetToSelect = {
-                    object: target.name,
-                    ra: target.ra,
-                    dec: target.dec,
-                    common: target.common || ''
-                };
-                limited = true;
-            }
-        }
+        const { target: targetToSelect, limited } = this._resolveSaved(target);
 
         // Views that show the current target switch to it at once, for
         // comparing pinned targets; elsewhere it opens in the detail modal
@@ -282,7 +301,7 @@ const VisibilityTargets = {
                   : target.name;
 
             chip.innerHTML = `
-                <span class="sidebar-pinned-chip-name">${label}</span>
+                <span class="sidebar-pinned-chip-name">${HtmlUtils.escapeHtml(label)}</span>
                 <button class="sidebar-pinned-chip-remove">×</button>
             `;
 

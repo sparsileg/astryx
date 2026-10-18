@@ -77,6 +77,12 @@
    row's exposure sits right after it; the slider takes the rest of the width,
    rem so it scales with the font size (Issue #99).
    Columns: move buttons, name, exposure, slider, allocation */
+/* Target rows' placeholder when there's no plan (Issue #330) */
+.seq-plan-no-plan {
+    color: var(--text-secondary);
+    text-align: center;
+}
+
 .seq-plan-target-grid {
     display: grid;
     grid-template-columns: 1.875rem max-content 7.25rem minmax(12.5rem, 1fr) 11.25rem;

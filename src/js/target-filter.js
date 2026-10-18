@@ -464,8 +464,8 @@ const TargetFilter = {
             const checkboxesHTML = this.filters.catalog.available
                   .map(catalog => `
                     <div class="astryx-dropdown-item">
-                        <input type="checkbox" id="catalog-${catalog}" value="${catalog}">
-                        <label for="catalog-${catalog}">${catalog}</label>
+                        <input type="checkbox" id="catalog-${HtmlUtils.escapeAttr(catalog)}" value="${HtmlUtils.escapeAttr(catalog)}">
+                        <label for="catalog-${HtmlUtils.escapeAttr(catalog)}">${HtmlUtils.escapeHtml(catalog)}</label>
                     </div>
                 `).join('');
 
@@ -486,8 +486,8 @@ const TargetFilter = {
                     const displayName = OBJECT_TYPES[type] || type;
                     return `
                         <div class="astryx-dropdown-item">
-                            <input type="checkbox" id="type-${type}" value="${type}">
-                            <label for="type-${type}">${displayName}</label>
+                            <input type="checkbox" id="type-${HtmlUtils.escapeAttr(type)}" value="${HtmlUtils.escapeAttr(type)}">
+                            <label for="type-${HtmlUtils.escapeAttr(type)}">${HtmlUtils.escapeHtml(displayName)}</label>
                         </div>
                     `;
                 }).join('');
@@ -829,6 +829,10 @@ const TargetFilter = {
         if (results.length === 0) {
             countDiv.textContent = 'No targets match filters';
             resultsDiv.innerHTML = '<div style="padding: 1rem; text-align: center; color: var(--text-secondary);">No results found</div>';
+            // Drop the previous results, which both buttons read (Issue #328)
+            this.allResults = [];
+            this.displayedCount = 0;
+            this.updateImagingProgramButton();
             return;
         }
 
@@ -856,9 +860,6 @@ const TargetFilter = {
 
         this.loadMoreResults(); // Display initial batch
         this.attachScrollListener(); // for lazy loading
-        this.updateImagingProgramButton(); // Update Create button
-
-        // Update Create Imaging Program button
         this.updateImagingProgramButton();
 
         // Attach click handler (do this after updating button state)
@@ -923,14 +924,14 @@ const TargetFilter = {
             resultDiv.innerHTML = `
             <div class="target-result-row">
                 <div class="target-result-left">
-                    <span class="target-name">${target.object}</span>
+                    <span class="target-name">${HtmlUtils.escapeHtml(target.object)}</span>
                     <span class="target-result-badges">${badgesHtml}</span>
                 </div>
-                <div class="target-result-secondary">${typeDisplay}</div>
+                <div class="target-result-secondary">${HtmlUtils.escapeHtml(typeDisplay)}</div>
             </div>
             <div class="target-result-row">
-                <div class="target-result-secondary">${commonNameDisplay}</div>
-                <div class="target-result-secondary">${constellation}</div>
+                <div class="target-result-secondary">${HtmlUtils.escapeHtml(commonNameDisplay)}</div>
+                <div class="target-result-secondary">${HtmlUtils.escapeHtml(constellation)}</div>
             </div>
            `;
 
@@ -986,13 +987,16 @@ const TargetFilter = {
     },
 
     /**
-     * Update the Create Imaging Program button visibility and state
+     * Update the Create Imaging Program button visibility and state, and
+     * show Send to Optimizer only when there are results to send (Issue #328)
      */
     updateImagingProgramButton() {
+        const resultCount = this.allResults.length;
+        const sendButton = document.getElementById('send-to-optimizer-btn');
+        if (sendButton) sendButton.hidden = resultCount === 0;
+
         const button = document.getElementById('create-imaging-program-btn');
         if (!button) return;
-
-        const resultCount = this.allResults.length;
 
         if (resultCount === 0) {
             // No results - hide button

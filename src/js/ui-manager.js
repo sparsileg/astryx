@@ -264,35 +264,15 @@ const UIManager = {
 
     /**
      * Show/hide Resume Tutorial menu item based on in-progress tutorial.
-     * Wires up start and resume actions.
+     * The clicks are handled once, in handleSystemAction (Issue #327).
      * @param {Object|null} inProgressTutorial - tutorial object or null
      */
     updateTutorialMenuItems(inProgressTutorial) {
+        this._inProgressTutorial = inProgressTutorial;
         const resumeItem = document.getElementById('resume-tutorial-item');
         if (resumeItem) {
-            if (inProgressTutorial) {
-                resumeItem.style.display = '';
-                resumeItem.title = `Resume: ${inProgressTutorial.title}`;
-            } else {
-                resumeItem.style.display = 'none';
-            }
-        }
-
-        // Wire start-tutorial action
-        const startItem = document.querySelector('[data-action="start-tutorial"]');
-        if (startItem) {
-            startItem.addEventListener('click', () => {
-                TutorialEngine.start('getting-started');
-                this.closeSystemMenu();
-            });
-        }
-
-        // Wire resume-tutorial action
-        if (resumeItem && inProgressTutorial) {
-            resumeItem.addEventListener('click', () => {
-                TutorialEngine.start(inProgressTutorial.id);
-                this.closeSystemMenu();
-            });
+            resumeItem.hidden = !inProgressTutorial;
+            resumeItem.title = inProgressTutorial ? `Resume: ${inProgressTutorial.title}` : '';
         }
     },
 
@@ -334,6 +314,13 @@ const UIManager = {
             break;
         case 'tutorials':
             // Submenu is populated dynamically — no action needed here
+            break;
+        case 'start-tutorial':
+            TutorialEngine.start('getting-started');
+            break;
+        case 'resume-tutorial':
+            // Read when clicked, so it's always the current in-progress one (Issue #327)
+            if (this._inProgressTutorial) TutorialEngine.start(this._inProgressTutorial.id);
             break;
         case 'help':
             this.openUserGuide();
@@ -568,7 +555,7 @@ const UIManager = {
         const zoneList = document.getElementById('manage-time-zone-list');
         if (zoneList) {
             zoneList.innerHTML = Intl.supportedValuesOf('timeZone')
-                .map(zone => `<option value="${HtmlUtils.escapeHtml(zone)}"></option>`).join('');
+                .map(zone => `<option value="${HtmlUtils.escapeAttr(zone)}"></option>`).join('');
         }
         document.getElementById('manage-time-zone').value = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
@@ -622,8 +609,8 @@ const UIManager = {
                             </small>
                         </div>
                         <div style="display: flex; gap: 0.5rem;">
-                            <button class="btn-sm btn-secondary" data-location="${HtmlUtils.escapeHtml(name)}" data-action="edit">Edit</button>
-                            <button class="btn-sm btn-danger" data-location="${HtmlUtils.escapeHtml(name)}" data-action="delete">Delete</button>
+                            <button class="btn-sm btn-secondary" data-location="${HtmlUtils.escapeAttr(name)}" data-action="edit">Edit</button>
+                            <button class="btn-sm btn-danger" data-location="${HtmlUtils.escapeAttr(name)}" data-action="delete">Delete</button>
                         </div>
                     `;
 
@@ -1671,7 +1658,7 @@ const UIManager = {
             if (parsed.errors.length > 0) {
                 const statusDiv = modalBody.querySelector('#import-status');
                 if (statusDiv) {
-                    statusDiv.innerHTML = `<pre style="white-space: pre-wrap; color: var(--error-color);">${parsed.errors.join('\n')}</pre>`;
+                    statusDiv.innerHTML = `<pre style="white-space: pre-wrap; color: var(--error-color);">${HtmlUtils.escapeHtml(parsed.errors.join('\n'))}</pre>`;
                 }
             }
 
@@ -1836,12 +1823,7 @@ const UIManager = {
                 await DataManager.unpinTarget(target.object);
                 this.showToast(`Unpinned ${target.object}`, 'success');
             } else {
-                await DataManager.pinTarget({
-                    name: target.object,
-                    ra: target.ra,
-                    dec: target.dec,
-                    common: target.common ?? ''
-                });
+                await DataManager.pinTarget(DataManager.pinnedRecord(target));
                 this.showToast(`Pinned ${target.object}`, 'success');
             }
             this.markDataChanged();
@@ -2136,7 +2118,8 @@ const UIManager = {
             if (!VisibilityTargets.currentTarget) {
                 // Fall back to default target
                 const defaultTarget = DataManager.getTargets().find(t => t.object === APP_CONFIG.DEFAULT_TARGET);
-                if (defaultTarget) VisibilityTargets.currentTarget = defaultTarget;
+                // Through setCurrentTarget, so every view holds it (Issue #333)
+                if (defaultTarget) VisibilityTargets.setCurrentTarget(defaultTarget);
             }
         }
 
@@ -2185,7 +2168,8 @@ const UIManager = {
             }
             if (!VisibilityTargets.currentTarget) {
                 const defaultTarget = DataManager.getTargets().find(t => t.object === APP_CONFIG.DEFAULT_TARGET);
-                if (defaultTarget) VisibilityTargets.currentTarget = defaultTarget;
+                // Through setCurrentTarget, so every view holds it (Issue #333)
+                if (defaultTarget) VisibilityTargets.setCurrentTarget(defaultTarget);
             }
         }
 
@@ -2232,7 +2216,7 @@ const UIManager = {
                                 Multiplier: ${tel.multiplier}x
                             </div>
                         </div>
-                        <button class="btn-sm btn-danger" data-action="delete-telescope" data-name="${HtmlUtils.escapeHtml(name)}">Delete</button>
+                        <button class="btn-sm btn-danger" data-action="delete-telescope" data-name="${HtmlUtils.escapeAttr(name)}">Delete</button>
                     </div>
                 </div>
             `;
@@ -2359,7 +2343,7 @@ const UIManager = {
                                 Pixel Size: ${sensor.pixelSizeX} × ${sensor.pixelSizeY} µm
                             </div>
                         </div>
-                        <button class="btn-sm btn-danger" data-action="delete-sensor" data-name="${HtmlUtils.escapeHtml(name)}">Delete</button>
+                        <button class="btn-sm btn-danger" data-action="delete-sensor" data-name="${HtmlUtils.escapeAttr(name)}">Delete</button>
                     </div>
                 </div>
             `;
@@ -2468,7 +2452,7 @@ const UIManager = {
                 <div class="info-card" style="padding: 1rem; margin-bottom: 0.75rem;">
                     <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
                         <strong style="color: var(--primary-color); font-size: 1.05rem;">${HtmlUtils.escapeHtml(name)}</strong>
-                        <button class="btn-sm btn-danger" data-action="delete-filter" data-name="${HtmlUtils.escapeHtml(name)}">Delete</button>
+                        <button class="btn-sm btn-danger" data-action="delete-filter" data-name="${HtmlUtils.escapeAttr(name)}">Delete</button>
                     </div>
                 </div>
             `;

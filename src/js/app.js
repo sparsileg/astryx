@@ -65,9 +65,15 @@ const App = {
             // Setup routing
             this.setupRouter();
 
-            // Views showing stored target data re-render when it changes
-            document.addEventListener('targets-updated', () => this.refreshTargetDataView());
+            // Views showing stored target data re-render when it changes. The
+            // targets were reloaded either way, so the current target becomes
+            // the new record (Issue #333)
+            document.addEventListener('targets-updated', () => {
+                VisibilityTargets.refreshCurrentTarget();
+                this.refreshTargetDataView();
+            });
             document.addEventListener('best-months-updated', (e) => {
+                VisibilityTargets.refreshCurrentTarget();
                 if (e.detail.locationName === SettingsManager.getSelectedLocation()) {
                     this.refreshTargetDataView();
                 }

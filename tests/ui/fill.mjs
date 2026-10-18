@@ -40,7 +40,7 @@ async function chooseLocationAndPinnedTargets(page) {
     await page.evaluate(async () => {
         for (const name of ['M 31', 'M 42', 'M 45']) {
             const [t] = DataManager.searchTargets(name);
-            await DataManager.pinTarget({ name: t.object, ra: t.ra, dec: t.dec, common: t.common ?? '' });
+            await DataManager.pinTarget(DataManager.pinnedRecord(t));
         }
     });
 }

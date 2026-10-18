@@ -11,6 +11,8 @@ const DailyVisibilityView = {
     _resizeObserver: null,
     _lastWindValues: null,
     _openMeteoCache: null,
+    _openMeteoInFlight: null,   // { key, promise }, shared by quick date steps (Issue #308)
+    _cloudRequestId: 0,         // the newest timeline's request owns the strip (Issue #308)
 
     /**
      * Render the skyglow view
@@ -83,6 +85,8 @@ const DailyVisibilityView = {
      */
     destroy() {
         this.currentData = null;
+        // A forecast arriving after leaving the view is dropped (Issue #308)
+        this._cloudRequestId++;
         this._lastWindValues = null;
         if (this._resizeObserver) {
             this._resizeObserver.disconnect();
@@ -135,18 +139,24 @@ const DailyVisibilityView = {
         if (cache && cache.key === cacheKey && (now - cache.fetchedAt) < ONE_HOUR) {
             json = cache.data;
         } else {
-            try {
+            // One request per location while it's in flight, however many dates ask (Issue #308)
+            if (this._openMeteoInFlight?.key !== cacheKey) {
                 const url = APP_CONFIG.APIS.OPEN_METEO
                     .replace('{LAT}', latitude)
                     .replace('{LON}', longitude);
-                const response = await fetch(url);
-                if (!response.ok) return null;
-                json = await response.json();
-                this._openMeteoCache = { key: cacheKey, data: json, fetchedAt: now };
-            } catch (e) {
-                console.warn('Weather fetch failed:', e);
-                return null;
+                const promise = fetch(url)
+                    .then(response => response.ok ? response.json() : null)
+                    .catch(e => {
+                        console.warn('Weather fetch failed:', e);
+                        return null;
+                    });
+                this._openMeteoInFlight = { key: cacheKey, promise };
             }
+            const inFlight = this._openMeteoInFlight;
+            json = await inFlight.promise;
+            if (this._openMeteoInFlight === inFlight) this._openMeteoInFlight = null;
+            if (!json) return null;
+            this._openMeteoCache = { key: cacheKey, data: json, fetchedAt: now };
         }
 
         // Slice noon-to-noon window for requested date
@@ -701,8 +711,11 @@ const DailyVisibilityView = {
             if (location) {
                 const duskPct = timelineData.jdToTimelinePercent(timelineData.duskJD) ?? 50;
                 const dawnPct = timelineData.jdToTimelinePercent(timelineData.dawnJD) ?? 50;
+                const requestId = ++this._cloudRequestId;
                 this.fetchCloudData(location.latitude, location.longitude, data.date)
                     .then(cloudData => {
+                        // A newer timeline has been drawn since; its own request fills the strip (Issue #308)
+                        if (requestId !== this._cloudRequestId) return;
                         if (cloudData) {
                             cloudData.duskPct = duskPct;
                             cloudData.dawnPct = dawnPct;

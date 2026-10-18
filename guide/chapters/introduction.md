@@ -28,7 +28,9 @@ Every tutorial is listed under **Tutorials** in the system menu. Each one
 walks you through a single view in a few minutes, and when it finishes it
 offers to start the next. If you take them in order, you'll have seen
 everything Astryx does. If you leave a tutorial partway through, **Resume
-Tutorial** in the system menu picks up where you stopped.
+Tutorial** in the system menu picks up where you stopped. It first asks
+you to open the tutorial's view, or the menu or dialog you were in, so you
+can resume from anywhere in Astryx.
 
 Hold the pointer over a control and a tooltip explains what it does.
 

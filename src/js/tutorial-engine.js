@@ -12,6 +12,7 @@ const TutorialEngine = {
     _highlightEl: null,
     _panelEl: null,
     _clickHandler: null,
+    _resumeTo: null,
 
     // -------------------------------------------------------------------------
     // Public API
@@ -32,7 +33,10 @@ const TutorialEngine = {
         this._currentTutorial = tutorial;
 
         const progress = await this._loadProgress(tutorialId);
-        this._currentStepIndex = (progress && !progress.completed) ? progress.currentStep : 0;
+        const saved = (progress && !progress.completed) ? progress.currentStep : 0;
+        const { index, resumeTo } = this._resumePlan(tutorial, saved);
+        this._currentStepIndex = index;
+        this._resumeTo = resumeTo;
 
         this._showStep(this._currentStepIndex);
     },
@@ -44,13 +48,17 @@ const TutorialEngine = {
         const tutorial = this._currentTutorial;
         if (this._currentStepIndex >= tutorial.steps.length) {
             this._complete();
-        } else {
+            return;
+        }
+        const show = () => {
+            this._takeResumeJump();
             this._saveProgress(tutorial.id, this._currentStepIndex, false);
-            if (delayed) {
-                setTimeout(() => this._showStep(this._currentStepIndex), 600);
-            } else {
-                this._showStep(this._currentStepIndex);
-            }
+            this._showStep(this._currentStepIndex);
+        };
+        if (delayed) {
+            setTimeout(show, 600);
+        } else {
+            show();
         }
     },
 
@@ -59,12 +67,54 @@ const TutorialEngine = {
     },
 
     async exit() {
-        await this._saveProgress(this._currentTutorial.id, this._currentStepIndex, false);
+        // Issue #327: exiting from the way-in step of a resume keeps the step it was resuming
+        await this._saveProgress(this._currentTutorial.id, this._resumeTo ?? this._currentStepIndex, false);
         this._teardown();
         this._currentTutorial = null;
         this._currentStepIndex = 0;
+        this._resumeTo = null;
         const inProgressTutorial = await TutorialManager.findInProgressTutorial();
         UIManager.updateTutorialMenuItems(inProgressTutorial);
+    },
+
+    // -------------------------------------------------------------------------
+    // Resuming (Issue #327)
+    // -------------------------------------------------------------------------
+
+    /** A click that gets the user to a view or the system menu from anywhere in the app. */
+    _isWayIn(step) {
+        return step.waitFor === 'click' && (step.target === '#system-menu-btn' || (step.target ?? '').startsWith('#sidebar-'));
+    },
+
+    /** The step's control is on screen, or it has none to need. */
+    _stepReady(step) {
+        return !step.target || this._findTarget(step.target) !== null;
+    },
+
+    /**
+     * Where a resumed tutorial starts. The saved step may need a view or a
+     * dialog the user isn't on, so it starts at the last way-in step before
+     * it and returns to the saved step after that click (_takeResumeJump).
+     * With no way-in step, a saved step whose control isn't showing restarts
+     * the tutorial.
+     */
+    _resumePlan(tutorial, saved) {
+        if (saved === 0) return { index: 0, resumeTo: null };
+        const wayIn = tutorial.steps.slice(0, saved + 1).findLastIndex(step => this._isWayIn(step));
+        if (wayIn === saved) return { index: saved, resumeTo: null };
+        if (wayIn >= 0) return { index: wayIn, resumeTo: saved };
+        return { index: this._stepReady(tutorial.steps[saved]) ? saved : 0, resumeTo: null };
+    },
+
+    /**
+     * After the way-in step of a resume: back to the saved step if its control
+     * is now showing, otherwise on through the steps that open its tab or dialog.
+     */
+    _takeResumeJump() {
+        if (this._resumeTo === null) return;
+        const to = this._resumeTo;
+        this._resumeTo = null;
+        if (this._stepReady(this._currentTutorial.steps[to])) this._currentStepIndex = to;
     },
 
     // -------------------------------------------------------------------------

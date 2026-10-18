@@ -170,7 +170,7 @@ const ImagingLogActivityView = {
                     const level = day ? levelFor(day.totalSeconds) : 0;
                     const tooltip = this.buildTooltip(dateStr, day);
                     const unused = day?.hasUnprocessedSession ? ' activity-cell-unused' : '';
-                    cellsHtml += `<div class="activity-cell activity-level-${level}${unused}" style="grid-column:${week + 1};grid-row:${dow + 1};" data-tooltip="${HtmlUtils.escapeHtml(tooltip)}"></div>`;
+                    cellsHtml += `<div class="activity-cell activity-level-${level}${unused}" style="grid-column:${week + 1};grid-row:${dow + 1};" data-tooltip="${HtmlUtils.escapeAttr(tooltip)}"></div>`;
                 }
 
                 cursor.setUTCDate(cursor.getUTCDate() + 1);

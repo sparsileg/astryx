@@ -11,8 +11,11 @@ the best plan it can as soon as it opens; you can then adjust it.
 
 Open **Sequence Planner** in the sidebar. It plans the targets under
 **Pinned Targets** (see [Introduction](introduction.md)); with none pinned,
-Astryx says "No pinned targets. Please pin targets first." From top to
-bottom, the view has four cards:
+Astryx says "No pinned targets. Please pin targets first." When no plan can
+be made, because nothing is pinned, the night has no astronomical darkness,
+or no pinned target is high enough for long enough, the planner clears the
+old plan and Target Allocation reads "No plan". From top to bottom, the
+view has four cards:
 
 - **Session Settings**: the night, the place, and how long your rig takes
   for autofocus, meridian flips, guide calibration, and dithering. Click
