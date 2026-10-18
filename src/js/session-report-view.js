@@ -210,8 +210,7 @@ const SessionReportView = {
         if (context && context.telescopeName && context.sensorName) {
             const tel = context.telescope;
             const sen = context.sensor;
-            const pixelSizeUm = (sen && sen.pixelSizeX != null && sen.pixelSizeY != null) ? (sen.pixelSizeX + sen.pixelSizeY) / 2 : null;
-            const pixelScale = (tel && tel.focalLength && pixelSizeUm) ? (206.265 * pixelSizeUm / tel.focalLength) : null;
+            const pixelScale = this._plateScale(tel, sen);
             return `<p class="session-report-note-small"><strong>${HtmlUtils.escapeHtml(context.telescopeName)}</strong> / <strong>${HtmlUtils.escapeHtml(context.sensorName)}</strong>${pixelScale != null ? ` (${pixelScale.toFixed(2)}"/px)` : ''} <span style="color:var(--text-secondary)">— from Astryx imaging-log session this night</span></p>`;
         }
 
@@ -227,8 +226,7 @@ const SessionReportView = {
 
         const tel = telescopes[telNames[0]];
         const sen = sensors[senNames[0]];
-        const pixelSizeUm = (sen && sen.pixelSizeX != null && sen.pixelSizeY != null) ? (sen.pixelSizeX + sen.pixelSizeY) / 2 : null;
-        const pixelScale = (tel && tel.focalLength && pixelSizeUm) ? (206.265 * pixelSizeUm / tel.focalLength) : null;
+        const pixelScale = this._plateScale(tel, sen);
 
         return `<p class="session-report-note-small"><strong>${HtmlUtils.escapeHtml(telNames[0])}</strong> / <strong>${HtmlUtils.escapeHtml(senNames[0])}</strong>${pixelScale != null ? ` (${pixelScale.toFixed(2)}"/px)` : ''} <span style="color:var(--text-secondary)">— no matching imaging-log session; only one rig configured</span></p>`;
         },
@@ -800,23 +798,9 @@ const SessionReportView = {
             // Dither amplitude (added in this report) — now also converted
             // to imaging-sensor pixels when a matched telescope/sensor is
             // available (Issue #255 follow-up).
-            const allDithers = phd2.sessions.flatMap(s => s.ditherEvents).filter(d => d.dxPx !== null);
-            if (allDithers.length > 0) {
-                const pixelScale = (phd2.equipment && phd2.equipment.pixelScale) || 1;
-                const mags = allDithers.map(d => Math.sqrt(d.dxPx ** 2 + d.dyPx ** 2));
-                const meanPx = mags.reduce((a, b) => a + b, 0) / mags.length;
-                const maxPx = Math.max(...mags);
-                const meanArcsec = meanPx * pixelScale;
-                const maxArcsec = maxPx * pixelScale;
-
-                let imagingNote = '';
-                const imagingScale = this._imagingPixelScale(context);
-                if (imagingScale) {
-                    imagingNote = ` — imaging sensor: mean ${(meanArcsec / imagingScale).toFixed(2)}px, max ${(maxArcsec / imagingScale).toFixed(2)}px`;
-                }
-
-                html += `<p class="session-report-note-small">Dither amplitude: mean ${meanPx.toFixed(2)}px (${meanArcsec.toFixed(1)}"), max ${maxPx.toFixed(2)}px (${maxArcsec.toFixed(1)}"), n=${allDithers.length} — guide camera pixels${imagingNote}</p>`;
-
+            const amplitudeText = this._ditherAmplitudeText(context, phd2);
+            if (amplitudeText) {
+                html += `<p class="session-report-note-small">${amplitudeText}</p>`;
                 html += this._buildDitherBiasNote(phd2);
             }
 
@@ -885,7 +869,7 @@ const SessionReportView = {
                 </tr>`;
                 }
                 html += `</tbody></table>`;
-                html += this._buildCalibrationAnalysisNote(context, phd2);
+                html += this._buildCalibrationAnalysisNote(phd2);
             }
 
             return html;
@@ -918,23 +902,43 @@ const SessionReportView = {
             return `Pier side (guide sessions while imaging): East ${avg(byPier.East)} (n=${byPier.East.length}) • West ${avg(byPier.West)} (n=${byPier.West.length})${excludedNote}`;
         },
 
-        // Guide-camera arcsec -> imaging-sensor pixels needs the imaging
-        // plate scale, derived the same way FOVCalculations does
-        // (pixelSize/1000/effectiveFocalLength * 206265). Uses the
-        // telescope/sensor matched via the imaging-log session for this
-        // night (context.telescope/context.sensor, set in
-        // log-analysis-view.js's night-matching) — returns null on
-        // unmatched nights rather than guessing equipment. Assumes no
-        // reducer/barlow (multiplier 1) since that isn't tracked per
-        // imaging-log session.
+        // Imaging-sensor plate scale ("/px) on the night, from the matched
+        // imaging-log session's telescope and sensor (context.telescope/
+        // context.sensor, set in log-analysis-view.js's night-matching) —
+        // null on unmatched nights rather than guessing equipment.
         _imagingPixelScale(context) {
-            if (!context || !context.telescope || !context.sensor) return null;
-            const t = context.telescope, s = context.sensor;
-            if (t.focalLength == null || s.pixelSizeX == null || s.pixelSizeY == null) return null;
-            const multiplier = t.multiplier || 1;
-            const effectiveFocalLength = t.focalLength * multiplier;
-            const avgPixelSizeUm = (s.pixelSizeX + s.pixelSizeY) / 2;
-            return (avgPixelSizeUm / 1000 / effectiveFocalLength) * 206265; // arcsec/px
+            return context ? this._plateScale(context.telescope, context.sensor) : null;
+        },
+
+        // Plate scale ("/px) through the telescope's reducer or Barlow, as the
+        // Viewfinder works it out; null without the figures. The equipment
+        // line and the dither conversion both use it (Issue #336)
+        _plateScale(tel, sen) {
+            if (!tel || !sen || !tel.focalLength || sen.pixelSizeX == null || sen.pixelSizeY == null) return null;
+            const effectiveFocalLength = FOVCalculations.getEffectiveFocalLength(tel.focalLength, tel.multiplier ?? 1);
+            return FOVCalculations.getResolution((sen.pixelSizeX + sen.pixelSizeY) / 2, effectiveFocalLength);
+        },
+
+        // Dither amplitude in guide-camera pixels and arcseconds, and in
+        // imaging-sensor pixels when the night's telescope and sensor are
+        // known (Issue #255 follow-up); null with no measured dithers.
+        // Shared with the PDF (Issue #336)
+        _ditherAmplitudeText(context, phd2) {
+            const allDithers = phd2.sessions.flatMap(s => s.ditherEvents).filter(d => d.dxPx !== null);
+            if (allDithers.length === 0) return null;
+            const pixelScale = (phd2.equipment && phd2.equipment.pixelScale) || 1;
+            const mags = allDithers.map(d => Math.sqrt(d.dxPx ** 2 + d.dyPx ** 2));
+            const meanPx = mags.reduce((a, b) => a + b, 0) / mags.length;
+            const maxPx = Math.max(...mags);
+            const meanArcsec = meanPx * pixelScale;
+            const maxArcsec = maxPx * pixelScale;
+
+            let imagingNote = '';
+            const imagingScale = this._imagingPixelScale(context);
+            if (imagingScale) {
+                imagingNote = ` — imaging sensor: mean ${(meanArcsec / imagingScale).toFixed(2)}px, max ${(maxArcsec / imagingScale).toFixed(2)}px`;
+            }
+            return `Dither amplitude: mean ${meanPx.toFixed(2)}px (${meanArcsec.toFixed(1)}"), max ${maxPx.toFixed(2)}px (${maxArcsec.toFixed(1)}"), n=${allDithers.length} — guide camera pixels${imagingNote}`;
         },
 
         // Per-session dither directional bias (Issue #255 follow-up): sums
@@ -952,6 +956,12 @@ const SessionReportView = {
         // net displacement against the random-walk expectation
         // meanMag * sqrt(n)), not corpus-validated.
         _buildDitherBiasNote(phd2) {
+            const text = this._ditherBiasText(phd2);
+            return text ? `<p class="session-report-note-small">${text}</p>` : '';
+        },
+
+        // The dither direction note's text, or null. Shared with the PDF (Issue #336)
+        _ditherBiasText(phd2) {
             const rows = [];
             for (const s of phd2.sessions) {
                 const dithers = (s.ditherEvents || []).filter(d => d.dxPx !== null);
@@ -985,8 +995,8 @@ const SessionReportView = {
                     rows.push(`session ${s.num}: well-mixed (net ${netMag.toFixed(1)}px over ${dithers.length} dithers)`);
                 }
             }
-            if (rows.length === 0) return '';
-            return `<p class="session-report-note-small">Dither direction (RA/Dec via this session's calibration axis angles — approximate, assumes exact axis orthogonality): ${rows.join('; ')}.</p>`;
+            if (rows.length === 0) return null;
+            return `Dither direction (RA/Dec via this session's calibration axis angles — approximate, assumes exact axis orthogonality): ${rows.join('; ')}.`;
         },
 
         // -------------------------------------------------------------------------
@@ -1040,23 +1050,31 @@ const SessionReportView = {
         // not yet corpus-validated the way threshold-calibration.md's other
         // figures are — revisit once more nights have been analyzed.
         _buildSnrDarknessNote(context, phd2) {
-            if (!context || !context.location || !context.asiairParsed || !context.asiairParsed.date) return '';
-            if (typeof getSunPosition === 'undefined' || typeof getAltitude === 'undefined' || typeof dateToJD === 'undefined') return '';
+            const note = this._snrDarknessNote(context, phd2);
+            if (!note) return '';
+            return `<p class="session-report-note-small${note.warning ? ' session-report-tier-warning' : ''}">${note.text}</p>`;
+        },
+
+        // The SNR vs darkness note as { text, warning }, or null. Shared
+        // with the PDF (Issue #336)
+        _snrDarknessNote(context, phd2) {
+            if (!context || !context.location || !context.asiairParsed || !context.asiairParsed.date) return null;
+            if (typeof getSunPosition === 'undefined' || typeof getAltitude === 'undefined' || typeof dateToJD === 'undefined') return null;
             const location = context.location;
             const dateParts = context.asiairParsed.date.split('-');
-            if (dateParts.length !== 3) return '';
+            if (dateParts.length !== 3) return null;
 
             const localNoon = new Date(parseInt(dateParts[0], 10), parseInt(dateParts[1], 10) - 1, parseInt(dateParts[2], 10), 12, 0, 0);
             const isDST = (typeof SettingsManager !== 'undefined') ? SettingsManager.isDSTOnDate(localNoon, location) : false;
             const duskJD = (typeof findAstronomicalDusk !== 'undefined') ? findAstronomicalDusk(localNoon, location.latitude, location.longitude, location.timezone, isDST) : null;
             const dawnJD = (typeof findNextAstronomicalDawn !== 'undefined') ? findNextAstronomicalDawn(localNoon, location.latitude, location.longitude, location.timezone, isDST) : null;
-            if (duskJD == null || dawnJD == null) return '';
+            if (duskJD == null || dawnJD == null) return null;
 
             const eligible = phd2.sessions.filter(s =>
                 s.stats && s.stats.avgSnr != null &&
                 s.frames.length >= Phd2LogParser.THRESHOLDS.SHORT_SESSION
             );
-            if (eligible.length < 3) return '';
+            if (eligible.length < 3) return null;
 
             const points = [];
             for (const s of eligible) {
@@ -1069,11 +1087,11 @@ const SessionReportView = {
                 const sunAlt = getAltitude(midJD, sunPos.ra, sunPos.dec, location.latitude, location.longitude);
                 points.push({ session: s, sunAlt, snr: s.stats.avgSnr });
             }
-            if (points.length < 3) return '';
+            if (points.length < 3) return null;
 
             const DEEP_NIGHT_SUN_ALT = -25; // comfortably below the -18° astronomical threshold
             const deepNight = points.filter(p => p.sunAlt <= DEEP_NIGHT_SUN_ALT);
-            if (deepNight.length < 2) return '';
+            if (deepNight.length < 2) return null;
 
             const snrValues = deepNight.map(p => p.snr).sort((a, b) => a - b);
             const mid = Math.floor(snrValues.length / 2);
@@ -1087,11 +1105,11 @@ const SessionReportView = {
                   : '';
 
             if (anomalous.length === 0) {
-                return `<p class="session-report-note-small">SNR tracked darkness normally across the night (deep-night median ${medianSnr.toFixed(1)}, no sessions deviating).${twilightNote}</p>`;
+                return { text: `SNR tracked darkness normally across the night (deep-night median ${medianSnr.toFixed(1)}, no sessions deviating).${twilightNote}`, warning: false };
             }
 
             const list = anomalous.map(p => `session ${p.session.num} (SNR ${p.snr.toFixed(1)} vs deep-night median ${medianSnr.toFixed(1)})`).join(', ');
-            return `<p class="session-report-note-small session-report-tier-warning">SNR dropped well below the deep-night median independent of dusk/dawn proximity — possible transient cloud, haze, or dew: ${list}.${twilightNote}</p>`;
+            return { text: `SNR dropped well below the deep-night median independent of dusk/dawn proximity — possible transient cloud, haze, or dew: ${list}.${twilightNote}`, warning: true };
         },
 
         // Calibration narrative: orthogonality magnitude/change, West/North
@@ -1102,9 +1120,16 @@ const SessionReportView = {
         //
         // First-pass thresholds (ORTHO_ELEVATED_DEG, ORTHO_CHANGE_DEG,
         // RATE_SWING_PCT, DEC_EXPLAINS_DEG), not yet corpus-validated.
-        _buildCalibrationAnalysisNote(context, phd2) {
+        _buildCalibrationAnalysisNote(phd2) {
+            const notes = this._calibrationNotes(phd2);
+            if (notes.length === 0) return '';
+            return `<ul class="session-report-notes">${notes.map(n => `<li>${HtmlUtils.escapeHtml(n)}</li>`).join('')}</ul>`;
+        },
+
+        // The calibration notes as plain text lines. Shared with the PDF (Issue #336)
+        _calibrationNotes(phd2) {
             const cals = phd2.calibrations;
-            if (!cals || cals.length === 0) return '';
+            if (!cals || cals.length === 0) return [];
             const notes = [];
 
             const decFor = (cal) => {
@@ -1158,12 +1183,11 @@ const SessionReportView = {
 
             for (const c of cals) {
                 if (c.starLostDuringCalibration > 0) {
-                    notes.push(`${c.starLostDuringCalibration} star-lost event(s) during the calibration starting ${HtmlUtils.escapeHtml(String(c.startedAt))} — the guide star was lost and reacquired mid-calibration, which can produce a less reliable rate/orthogonality measurement.`);
+                    notes.push(`${c.starLostDuringCalibration} star-lost event(s) during the calibration starting ${c.startedAt} — the guide star was lost and reacquired mid-calibration, which can produce a less reliable rate/orthogonality measurement.`);
                 }
             }
 
-            if (notes.length === 0) return '';
-            return `<ul class="session-report-notes">${notes.map(n => `<li>${n}</li>`).join('')}</ul>`;
+            return notes;
         },
 
         // -------------------------------------------------------------------------

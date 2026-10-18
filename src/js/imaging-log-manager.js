@@ -273,31 +273,55 @@ const ImagingLogManager = {
      * Handles case-insensitive matching, flexible spacing, and suffixes
      */
     matchesPattern(targetDesignation, catalogPrefix, maxNumber) {
-        if (!targetDesignation || !catalogPrefix) return false;
+        return this.patternNumber(targetDesignation, catalogPrefix, maxNumber) !== null;
+    },
+
+    /**
+     * The catalogue number a designation has in a pattern program, or null:
+     * "NGC 5194", "NGC5194" and "NGC 5194A" are all 5194, and a number above
+     * the program's maximum doesn't belong to it (Issue #306)
+     */
+    patternNumber(targetDesignation, catalogPrefix, maxNumber) {
+        if (!targetDesignation || !catalogPrefix) return null;
 
         // Normalize: remove spaces, convert to uppercase for comparison
         const normalizedTarget = targetDesignation.replace(/\s+/g, '').toUpperCase();
         const normalizedPrefix = catalogPrefix.replace(/\s+/g, '').toUpperCase();
+        if (!normalizedTarget.startsWith(normalizedPrefix)) return null;
 
-        // Check if target starts with the catalog prefix
-        if (!normalizedTarget.startsWith(normalizedPrefix)) {
-            return false;
-        }
-
-        // Extract the numeric part (and optional suffix)
-        const afterPrefix = normalizedTarget.substring(normalizedPrefix.length);
-
-        // Match pattern: digits followed by optional suffix (letters)
-        const match = afterPrefix.match(/^(\d+)([A-Z]*)$/);
-        if (!match) return false;
+        // Digits followed by an optional suffix (letters)
+        const match = normalizedTarget.substring(normalizedPrefix.length).match(/^(\d+)[A-Z]*$/);
+        if (!match) return null;
 
         const number = parseInt(match[1], 10);
+        return number >= 1 && number <= maxNumber ? number : null;
+    },
 
-        if (number < 1) {
-            return false;
-        }
-
-        return true;
+    /**
+     * A pattern program's matches among projects, each catalogue number once:
+     * number -> the designations that gave it, primary or from the target's
+     * Other field (Issue #306)
+     * @returns {Map<number, Set<string>>}
+     */
+    patternMatches(program, projects) {
+        const byNumber = new Map();
+        const add = designation => {
+            const number = this.patternNumber(designation, program.catalogPrefix, program.maxNumber);
+            if (number === null) return;
+            if (!byNumber.has(number)) byNumber.set(number, new Set());
+            byNumber.get(number).add(designation);
+        };
+        projects.forEach(project => {
+            project.targetDesignations.forEach(designation => {
+                add(designation);
+                // Always check Other field for additional alternate designations
+                const target = DataManager.getTarget(designation);
+                if (target && target.other) {
+                    target.other.split(',').map(d => d.trim()).filter(d => d.length > 0).forEach(add);
+                }
+            });
+        });
+        return byNumber;
     },
 
     // ============================================================================
@@ -430,26 +454,7 @@ const ImagingLogManager = {
 
         // Pattern-based program - calculate dynamically from projects
         if (this.isProgramPatternBased(program)) {
-            const matchedDesignations = new Set();
-            allProjects.forEach(project => {
-                project.targetDesignations.forEach(designation => {
-                    // Check primary designation
-                    if (this.matchesPattern(designation, program.catalogPrefix, program.maxNumber)) {
-                        matchedDesignations.add(designation);
-                    }
-                    // Always check Other field for additional alternate designations
-                    const target = DataManager.getTarget(designation);
-                    if (target && target.other) {
-                        const otherDesignations = target.other.split(',').map(d => d.trim()).filter(d => d.length > 0);
-                        otherDesignations.forEach(other => {
-                            if (this.matchesPattern(other, program.catalogPrefix, program.maxNumber)) {
-                                matchedDesignations.add(other);
-                            }
-                        });
-                    }
-                });
-            });
-            const imagedCount = matchedDesignations.size;
+            const imagedCount = this.patternMatches(program, allProjects).size;
             return {
                 total: program.maxNumber,
                 imaged: imagedCount,

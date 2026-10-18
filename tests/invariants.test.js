@@ -23,7 +23,7 @@ const A = get(context, `({
     getHorizonElevationAtAzimuth, getSunPosition, getMoonPhase, getNightMoonPhase, calculateMoonRiseSet,
     findAstronomicalDusk, findNextAstronomicalDawn, findTargetRise, findTargetSet, findNightVisibility,
     findTargetTransit, isTargetVisibleDuringWindow, findSolarMidnight, getTransitHour, getNightSamples, getHoursAboveAltitude,
-    STEP: APP_CONFIG.TARGET_SEARCH_STEP_SIZE, DARK_STEP_MINUTES: APP_CONFIG.DARK_HOURS_STEP_MINUTES
+    STEP: APP_CONFIG.TARGET_SEARCH_STEP_SIZE
 })`);
 
 const MINUTE = 1 / 1440;
@@ -207,34 +207,71 @@ test('transit hour puts the target on the meridian, within a day of midnight', (
     }
 });
 
-test('hours above altitude count the night samples a direct altitude check finds', () => {
-    const stepHours = A.DARK_STEP_MINUTES / 60;
+// The minutes of a night a target is at or above minAltitude, by a direct
+// altitude check each minute: { totalHours, longestHours }
+function minuteScan(site, dusk, dawn, ra, dec, minAltitude) {
+    let total = 0, run = 0, longest = 0;
+    const minutes = Math.round((dawn - dusk) * 1440);
+    for (let m = 0; m < minutes; m++) {
+        const jd = dusk + (m + 0.5) / 1440;
+        if (A.getAltitude(jd, ra, dec, site.latitude, site.longitude) >= minAltitude) {
+            total++; run++; longest = Math.max(longest, run);
+        } else {
+            run = 0;
+        }
+    }
+    return { totalHours: total / 60, longestHours: longest / 60 };
+}
+
+// Issue #304: counting whole samples credited up to a step (10 min) too much
+test('hours above altitude match a minute-by-minute check, to the minute', () => {
     for (const [name, site] of Object.entries(SITES)) {
         for (const date of datesOf2026(61)) {
             const { dusk, dawn } = night(site, date);
+            if (dusk === null || dawn === null) continue;
             const samples = A.getNightSamples(dusk, dawn, site.longitude);
             for (const [ra, dec] of [[0.7, 41], [5.6, -5], [12.5, -60], [21, 44]]) {
                 for (const minAltitude of [0, 30]) {
-                    const above = [];
-                    if (dusk !== null && dawn !== null) {
-                        for (let jd = dusk; jd <= dawn; jd += A.DARK_STEP_MINUTES / 1440) {
-                            above.push(A.getAltitude(jd, ra, dec, site.latitude, site.longitude) >= minAltitude);
-                        }
-                    }
-                    let longest = 0;
-                    let run = 0;
-                    for (const up of above) {
-                        run = up ? run + 1 : 0;
-                        longest = Math.max(longest, run);
-                    }
                     const hours = A.getHoursAboveAltitude(samples, ra, dec, site.latitude, minAltitude);
+                    const scan = minuteScan(site, dusk, dawn, ra, dec, minAltitude);
                     const label = `${name} ${date.toDateString()} ra=${ra} min=${minAltitude}`;
-                    assert.ok(Math.abs(hours.totalHours - above.filter(Boolean).length * stepHours) < 1e-9, `${label} total`);
-                    assert.ok(Math.abs(hours.longestHours - longest * stepHours) < 1e-9, `${label} longest`);
+                    assert.ok(Math.abs(hours.totalHours - scan.totalHours) < 1 / 60, `${label} total ${hours.totalHours} vs ${scan.totalHours}`);
+                    assert.ok(Math.abs(hours.longestHours - scan.longestHours) < 1 / 60, `${label} longest ${hours.longestHours} vs ${scan.longestHours}`);
                 }
             }
         }
     }
+});
+
+test('a target up all night gets exactly the night\'s length in dark hours (Issue #304)', () => {
+    // At the equator the pole sits on the horizon, so it isn't up all night there
+    for (const [name, site] of Object.entries(SITES).filter(([, site]) => Math.abs(site.latitude) >= 10)) {
+        for (const date of datesOf2026(30)) {
+            const { dusk, dawn } = night(site, date);
+            if (dusk === null || dawn === null) continue;
+            const samples = A.getNightSamples(dusk, dawn, site.longitude);
+            // Near the pole of the site's hemisphere: always above altitude 0
+            const hours = A.getHoursAboveAltitude(samples, 0, site.latitude >= 0 ? 89.9 : -89.9, site.latitude, 0);
+            const label = `${name} ${date.toDateString()}`;
+            assert.ok(Math.abs(hours.totalHours - (dawn - dusk) * 24) < 1 / 3600, `${label}: ${hours.totalHours} h of ${(dawn - dusk) * 24}`);
+            assert.strictEqual(hours.longestHours, hours.totalHours, label);
+        }
+    }
+});
+
+test('no target up for under 2 hours of darkness passes the 2-hour test (Issue #304)', () => {
+    const site = SITES.home;
+    const { dusk, dawn } = night(site, new Date(2026, 9, 16));
+    const samples = A.getNightSamples(dusk, dawn, site.longitude);
+    const minDark = 2;
+    const wrong = [];
+    for (let ra = 0; ra < 24; ra += 0.01) {
+        const scan = minuteScan(site, dusk, dawn, ra, 0, 30);
+        const hours = A.getHoursAboveAltitude(samples, ra, 0, site.latitude, 30);
+        // A minute either side of 2 h is too close for a minute scan to call
+        if (scan.longestHours < minDark - 1 / 60 && hours.longestHours >= minDark) wrong.push(ra.toFixed(2));
+    }
+    assert.deepStrictEqual(wrong, []);
 });
 
 test('rise and set land on the minimum-altitude crossing', () => {

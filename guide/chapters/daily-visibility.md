@@ -46,7 +46,9 @@ the coming one.
 ## The Timeline
 
 The timeline runs from noon on the date you chose to noon the next day.
-The hours are labeled along the top, in your location's local time.
+The hours are labeled along the top, in your location's local time. On
+the night the clocks change, an hour repeats (autumn) or is skipped
+(spring), so each label stays over its clock time.
 
 ### The Sky
 

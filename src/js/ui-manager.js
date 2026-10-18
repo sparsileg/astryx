@@ -69,10 +69,10 @@ const UIManager = {
             );
             SeqPlanTimeline.render(events, SeqPlanView.currentSession.sessionStartJD, SeqPlanView.currentSession.sessionEndJD, SeqPlanView.currentSession);
         }
-        // Re-render To Do rise time chart if it's currently displayed
+        // Re-render the To Do chart if it's displayed, in its current sort
         const todoRiseChart = document.getElementById('todo-rise-chart');
         if (todoRiseChart && typeof ToDoView !== 'undefined' && ToDoView.riseTimeData) {
-            ToDoView.renderRiseTimeChart();
+            ToDoView.renderToDoList();
         }
     },
 
@@ -1543,12 +1543,12 @@ const UIManager = {
      * Calculate Best Months, one location at a time, for the selected
      * location and every location calculated before, wherever targets lack
      * them: after a catalogue update or import only some or none have them
-     * (Issue #339)
+     * (Issue #339). Those calculated an older way are redone too (Issue #304).
      */
     async calculateMissingBestMonths() {
         const names = [SettingsManager.getSelectedLocation(), ...SettingsManager.getBestMonthsLocations()];
-        const missing = [...new Set(names)].filter(name =>
-            name && DataManager.getLocation(name) && !this.locationHasBestMonths(name));
+        const missing = [...new Set(names)].filter(name => name && DataManager.getLocation(name) &&
+            (!this.locationHasBestMonths(name) || !SettingsManager.bestMonthsCurrent(name)));
         for (const name of missing) {
             await this.autoCalculateBestMonths(name);
         }

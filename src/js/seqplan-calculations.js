@@ -37,7 +37,9 @@ const SeqPlanCalculations = {
     },
 
     /**
-     * Check if meridian flip occurs during target imaging window
+     * Check if meridian flip occurs during target imaging window. The flip
+     * is at transit + offset, so that moment must be in the window, wherever
+     * the transit itself falls (Issue #305)
      * @param {number} transitJD - Pre-calculated transit time (JD)
      * @param {number} startJD - Window start (Julian Date)
      * @param {number} endJD - Window end (Julian Date)
@@ -46,10 +48,6 @@ const SeqPlanCalculations = {
      */
     checkMeridianFlip(transitJD, startJD, endJD, offsetMinutes) {
         if (!transitJD) {
-            return null;
-        }
-
-        if (transitJD < startJD || transitJD > endJD) {
             return null;
         }
 
@@ -94,8 +92,10 @@ const SeqPlanCalculations = {
             }
 
             const targetEndJD = currentJD + (allocatedMinutes / 1440);
+            // The transit nearest the session, even just outside it, as
+            // Marathon scheduling uses (Issue #305)
             const flipJD = this.checkMeridianFlip(
-                target.transitJD, currentJD, targetEndJD,
+                target.nearestTransitJD, currentJD, targetEndJD,
                 session.meridianFlipOffset
             );
 

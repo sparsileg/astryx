@@ -321,26 +321,31 @@ function getTransitHour(midnightJD, raHours, longitude) {
 }
 
 /**
- * A night sampled every DARK_HOURS_STEP_MINUTES from dusk to dawn, held as
- * the cosine and sine of local sidereal time at each sample. Shared by every
- * target on that night, so getHoursAboveAltitude needs no trig per sample.
+ * A night sampled about every DARK_HOURS_STEP_MINUTES from dusk to dawn,
+ * held as the cosine and sine of local sidereal time at each sample. Shared
+ * by every target on that night, so getHoursAboveAltitude needs no trig per
+ * sample.
  * @param {number|null} duskJD - Astronomical dusk, or null for no darkness
  * @param {number|null} dawnJD - Astronomical dawn, or null for no darkness
  * @param {number} longitude - Observer longitude (degrees, West is negative)
- * @returns {Object} { cosLST: number[], sinLST: number[] }, empty without darkness
+ * @returns {Object} { cosLST: number[], sinLST: number[], stepHours: the
+ *   hours between samples }, empty without darkness
  */
 function getNightSamples(duskJD, dawnJD, longitude) {
     const cosLST = [];
     const sinLST = [];
-    if (duskJD !== null && dawnJD !== null) {
-        const step = APP_CONFIG.DARK_HOURS_STEP_MINUTES / 1440;
-        for (let jd = duskJD; jd <= dawnJD; jd += step) {
-            const lst = hoursToRadians(getLST(jd, longitude));
-            cosLST.push(Math.cos(lst));
-            sinLST.push(Math.sin(lst));
-        }
+    if (duskJD === null || dawnJD === null) return { cosLST, sinLST, stepHours: 0 };
+
+    // The night in equal slices of about DARK_HOURS_STEP_MINUTES, sampled at
+    // both ends of each, dusk and dawn included (Issue #304)
+    const count = Math.max(1, Math.round((dawnJD - duskJD) * 1440 / APP_CONFIG.DARK_HOURS_STEP_MINUTES));
+    const width = (dawnJD - duskJD) / count;
+    for (let i = 0; i <= count; i++) {
+        const lst = hoursToRadians(getLST(duskJD + i * width, longitude));
+        cosLST.push(Math.cos(lst));
+        sinLST.push(Math.sin(lst));
     }
-    return { cosLST, sinLST };
+    return { cosLST, sinLST, stepHours: width * 24 };
 }
 
 /**
@@ -365,20 +370,37 @@ function getHoursAboveAltitude(samples, raHours, decDeg, latitude, minAltitude) 
     const cosRA = Math.cos(ra);
     const sinRA = Math.sin(ra);
     const sinMin = Math.sin(degreesToRadians(minAltitude));
-    const stepHours = APP_CONFIG.DARK_HOURS_STEP_MINUTES / 60;
+    const { stepHours } = samples;
 
+    // How far above minAltitude the target is at sample i (in sin(alt))
+    const above = i => a + b * (samples.cosLST[i] * cosRA + samples.sinLST[i] * sinRA) - sinMin;
+
+    // Each slice counts the part of it the target is up, its rise or set
+    // found between the slice's two samples, so a run is measured to the
+    // minute rather than to the step (Issue #304: counting whole samples
+    // gave up to a step too much, and an all-night target more than the night)
     let totalHours = 0;
     let longestHours = 0;
     let currentHours = 0;
-    for (let i = 0; i < samples.cosLST.length; i++) {
-        const cosHA = samples.cosLST[i] * cosRA + samples.sinLST[i] * sinRA;
-        if (a + b * cosHA >= sinMin) {
+    let start = samples.cosLST.length > 0 ? above(0) : -1;
+    for (let i = 1; i < samples.cosLST.length; i++) {
+        const end = above(i);
+        if (start >= 0 && end >= 0) {
             totalHours += stepHours;
             currentHours += stepHours;
-            longestHours = Math.max(longestHours, currentHours);
-        } else {
+        } else if (start >= 0) {
+            // Sets in this slice: the run ends here
+            const part = stepHours * start / (start - end);
+            totalHours += part;
+            longestHours = Math.max(longestHours, currentHours + part);
             currentHours = 0;
+        } else if (end >= 0) {
+            // Rises in this slice: a run starts here
+            currentHours = stepHours * end / (end - start);
+            totalHours += currentHours;
         }
+        longestHours = Math.max(longestHours, currentHours);
+        start = end;
     }
     return { totalHours, longestHours };
 }

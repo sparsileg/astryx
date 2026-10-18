@@ -137,9 +137,7 @@ const SessionReportPdf = {
 
     _equipmentText(context) {
         if (context && context.telescopeName && context.sensorName) {
-            const tel = context.telescope, sen = context.sensor;
-            const pixelSizeUm = (sen && sen.pixelSizeX != null && sen.pixelSizeY != null) ? (sen.pixelSizeX + sen.pixelSizeY) / 2 : null;
-            const pixelScale = (tel && tel.focalLength && pixelSizeUm) ? (206.265 * pixelSizeUm / tel.focalLength) : null;
+            const pixelScale = SessionReportView._plateScale(context.telescope, context.sensor);
             return `${context.telescopeName} / ${context.sensorName}${pixelScale != null ? ` (${pixelScale.toFixed(2)}"/px)` : ''} — from Astryx imaging-log session this night`;
         }
         if (typeof DataManager === 'undefined' || !DataManager.getTelescopes || !DataManager.getSensors) return '';
@@ -148,9 +146,7 @@ const SessionReportPdf = {
         const telNames = Object.keys(telescopes);
         const senNames = Object.keys(sensors);
         if (telNames.length !== 1 || senNames.length !== 1) return '';
-        const tel = telescopes[telNames[0]], sen = sensors[senNames[0]];
-        const pixelSizeUm = (sen && sen.pixelSizeX != null && sen.pixelSizeY != null) ? (sen.pixelSizeX + sen.pixelSizeY) / 2 : null;
-        const pixelScale = (tel && tel.focalLength && pixelSizeUm) ? (206.265 * pixelSizeUm / tel.focalLength) : null;
+        const pixelScale = SessionReportView._plateScale(telescopes[telNames[0]], sensors[senNames[0]]);
         return `${telNames[0]} / ${senNames[0]}${pixelScale != null ? ` (${pixelScale.toFixed(2)}"/px)` : ''} — no matching imaging-log session; only one rig configured`;
     },
 
@@ -424,13 +420,11 @@ const SessionReportPdf = {
             const pierText = SessionReportView._pierSideText(fs, phd2);
             if (pierText) content.push({ text: pierText, style: 'sectionNote' });
 
-            const allDithers = phd2.sessions.flatMap(s => s.ditherEvents).filter(d => d.dxPx !== null);
-            if (allDithers.length > 0) {
-                const pixelScale = (phd2.equipment && phd2.equipment.pixelScale) || 1;
-                const mags = allDithers.map(d => Math.sqrt(d.dxPx ** 2 + d.dyPx ** 2));
-                const meanPx = mags.reduce((a, b) => a + b, 0) / mags.length;
-                const maxPx = Math.max(...mags);
-                content.push({ text: `Dither amplitude: mean ${meanPx.toFixed(2)}px (${(meanPx * pixelScale).toFixed(1)}"), max ${maxPx.toFixed(2)}px (${(maxPx * pixelScale).toFixed(1)}"), n=${allDithers.length}`, style: 'sectionNote' });
+            const amplitudeText = SessionReportView._ditherAmplitudeText(context, phd2);
+            if (amplitudeText) {
+                content.push({ text: amplitudeText, style: 'sectionNote' });
+                const biasText = SessionReportView._ditherBiasText(phd2);
+                if (biasText) content.push({ text: biasText, style: 'sectionNote' });
             }
 
             if (typeof SessionRecommendations !== 'undefined') {
@@ -470,12 +464,14 @@ const SessionReportPdf = {
                     ]);
                     // Same inline annotation as the screen (Issue #255)
                     if (s.frames.length < Phd2LogParser.THRESHOLDS.SHORT_SESSION && !s.incomplete) {
-                        body.push(['', { text: `Short session (${s.frames.length} frame${s.frames.length === 1 ? '' : 's'}) — likely an autofocus interruption or guider restart.`, colSpan: 8, color: colors.subtitleText, fontSize: 7.5 }, {}, {}, {}, {}, {}, {}, {}]);
+                        body.push(['', { text: `Short session (${s.frames.length} frame${s.frames.length === 1 ? '' : 's'}) — likely an autofocus interruption or guider restart; excluded from SNR/darkness trend below.`, colSpan: 8, color: colors.subtitleText, fontSize: 7.5 }, {}, {}, {}, {}, {}, {}, {}]);
                     }
                 }
                 content.push({ table: { headerRows: 1, widths: [18, 95, 35, 40, 40, 82, 40, 40, 38], body }, layout: tableLayout, margin: [0, 0, 0, 8] });
                 const d15Text = SessionReportView._d15ConsolidatedText(fs);
                 if (d15Text) content.push({ text: d15Text, style: 'sectionNote', color: colors.warning });
+                const snrNote = SessionReportView._snrDarknessNote(context, phd2);
+                if (snrNote) content.push({ text: snrNote.text, style: 'sectionNote', ...(snrNote.warning ? { color: colors.warning } : {}) });
             }
 
             if (phd2.calibrations.length > 0) {
@@ -494,6 +490,8 @@ const SessionReportPdf = {
                     ]);
                 }
                 content.push({ table: { headerRows: 1, widths: [100, 80, 80, 80, 60], body }, layout: tableLayout, margin: [0, 0, 0, 8] });
+                const calibrationNotes = SessionReportView._calibrationNotes(phd2);
+                if (calibrationNotes.length > 0) content.push({ ul: calibrationNotes, style: 'sectionNote' });
             }
         }
 

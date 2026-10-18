@@ -15,7 +15,7 @@
 const APP_CONFIG = {
     APP_NAME: 'Astryx',
     APP_TITLE: 'Astryx - Astrophotography Planning Tool',
-    APP_VERSION: '1.96.3',
+    APP_VERSION: '1.96.4',
     DB_NAME: 'astryx-db',
     DB_VERSION: 8,
     TARGET_DATA_PATH: './data/',
@@ -36,6 +36,10 @@ const APP_CONFIG = {
     MOON_RISE_SET_EXTENSION_DAYS: 1, // search past a noon-to-noon window for the missing rise or set
     TARGET_SEARCH_STEP_SIZE: 1/1440,
     DARK_HOURS_STEP_MINUTES: 10,  // sampling step for hours-above-altitude in darkness
+    // Raised when a change to the calculation makes stored Best Months out of
+    // date; locations calculated with an earlier one are recalculated at
+    // startup (Issue #304: dark hours counted one sample too many)
+    BEST_MONTHS_VERSION: 2,
 
     // DSS background image cache duration in ms
     DSS_CACHE_DURATION: 15 * 24 * 60 * 60 * 1000,

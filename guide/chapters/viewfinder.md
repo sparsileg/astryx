@@ -53,7 +53,7 @@ to calculate field of view."
 | Resolution | How much sky each pixel covers, in arcseconds per pixel. |
 | Target Size | About how many pixels the target spans on your sensor, from its catalog size. |
 | Dawes Limit | The finest detail the telescope's aperture can separate, in arcseconds (116 ÷ aperture in mm). |
-| Field Coverage | How much of the field's area the target fills. Shown only when the target's size is known. |
+| Field Coverage | How much of the field's area the target fills, as the oval or circle drawn for it. Shown only when the target's size is known. |
 
 If the target is large for your field, Astryx tells you so: when it spans
 more than 70% of the field's shorter side, or fills more than half its

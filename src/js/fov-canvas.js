@@ -147,6 +147,12 @@ const FOVCanvas = {
      * Setup drag event listeners on canvas for larger mode
      */
     setupDragListeners(onDragCallback) {
+        // Once per canvas: Wider reloads its image on every telescope, sensor
+        // or Sky Image change, and only the latest callback runs (Issue #331)
+        this._onDrag = onDragCallback;
+        if (this._dragListenersOn === this.canvas) return;
+        this._dragListenersOn = this.canvas;
+
         this.canvas.addEventListener('mousedown', (e) => {
             if (!this.dragBox) return;
             const rect = this.canvas.getBoundingClientRect();
@@ -167,7 +173,7 @@ const FOVCanvas = {
                     this.dragBox.x = mx - this.dragOffsetX;
                     this.dragBox.y = my - this.dragOffsetY;
                     this.clampDragBox();
-                    if (onDragCallback) onDragCallback();
+                    if (this._onDrag) this._onDrag();
                 };
 
                 const onMouseUp = () => {
@@ -275,7 +281,7 @@ const FOVCanvas = {
         this.ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
         this.ctx.fill();
 
-        // Draw layered outline: dark outer, white middle, yellow dashed center
+        // Layered outline: dark outer, yellow dashed center (the gaps show the dark outer)
         // Dark outer
         this.ctx.beginPath();
         this.ctx.ellipse(centerX, centerY, radiusX, radiusY, Math.PI / 4, 0, 2 * Math.PI);
@@ -284,15 +290,7 @@ const FOVCanvas = {
         this.ctx.setLineDash([]);
         this.ctx.stroke();
 
-        // Black middle
-        this.ctx.beginPath();
-        this.ctx.ellipse(centerX, centerY, radiusX, radiusY, Math.PI / 4, 0, 2 * Math.PI);
-        this.ctx.strokeStyle = '#000000';
-        this.ctx.lineWidth = 3;
-        this.ctx.setLineDash([]);
-        this.ctx.stroke();
-
-        // Yellow dashed center (black gaps show white beneath)
+        // Yellow dashed center
         this.ctx.beginPath();
         this.ctx.ellipse(centerX, centerY, radiusX, radiusY, Math.PI / 4, 0, 2 * Math.PI);
         this.ctx.strokeStyle = 'rgba(255, 255, 0, 0.9)';
@@ -314,22 +312,10 @@ const FOVCanvas = {
         const cy = y + height / 2;
         const angle = (this.dragBoxAngle || 0) * Math.PI / 180;
 
-        // Semi-transparent overlay outside the box — use clipping to cut out rotated box shape
+        // Semi-transparent overlay outside the box: the canvas with the
+        // rotated box punched out by the even-odd fill rule
         this.ctx.save();
         this.ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
-        this.ctx.beginPath();
-        // Full canvas rect
-        this.ctx.rect(0, 0, this.canvas.width, this.canvas.height);
-
-        // Subtract rotated box using even-odd rule
-        this.ctx.translate(cx, cy);
-        this.ctx.rotate(angle);
-        this.ctx.rect(-width / 2, -height / 2, width, height);
-        this.ctx.restore();
-        this.ctx.save();
-        this.ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
-
-        // Redraw using evenOdd fill rule to punch out the box shape
         this.ctx.beginPath();
         this.ctx.rect(0, 0, this.canvas.width, this.canvas.height);
         this.ctx.save();

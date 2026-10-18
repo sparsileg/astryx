@@ -93,6 +93,10 @@ the sidebar when you save the change, and each other location when you
 choose it. Until then, Target Details shows the altitude they were
 calculated with under **Criteria**, and the new one beside it.
 
+When an Astryx update changes how Best Months are worked out, Astryx
+recalculates every location that has them the next time it starts, the
+location in the sidebar first.
+
 ## Targets with No Best Month
 
 A target has no Best Month from a location when:
