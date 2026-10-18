@@ -61,17 +61,8 @@ const YearlyObservabilityCalculations = {
             let observabilityScore = 0;
 
             if (duskJD && dawnJD) {
-                // Calculate peak altitude during darkness
-                const step = 1 / 1440; // 1 minute in JD
-                let maxAltitude = -999;
-
-                for (let jd = duskJD; jd <= dawnJD; jd += step) {
-                    const altitude = getAltitude(jd, inputs.ra, inputs.dec, inputs.latitude, inputs.longitude);
-                    if (altitude > maxAltitude) {
-                        maxAltitude = altitude;
-                    }
-                }
-
+                // Peak altitude during darkness (Issue #317: found directly, not scanned)
+                const maxAltitude = getPeakAltitude(duskJD, dawnJD, inputs.ra, inputs.dec, inputs.latitude, inputs.longitude).altitude;
                 targetAltitude = maxAltitude;
 
                 // If target never rises above horizon, score is 0

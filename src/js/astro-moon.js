@@ -221,17 +221,37 @@ function getNightMoonPhase(duskJD, dawnJD) {
 function getMinMoonSeparation(startJD, endJD, raHours, decDeg, latitude, longitude, minAltitude) {
     const stepSize = APP_CONFIG.TARGET_SEARCH_STEP_SIZE;
     const steps = Math.ceil((endJD - startJD) / stepSize);
+    const coarse = APP_CONFIG.MOON_SEPARATION_COARSE_STEPS;
     let minSeparation = null;
+    let minIndex = null;
 
-    for (let i = 0; i <= steps; i++) {
+    // Sample i of the 1-step grid from startJD, endJD included
+    const consider = i => {
         const jd = Math.min(startJD + i * stepSize, endJD);
-        if (getAltitude(jd, raHours, decDeg, latitude, longitude) < minAltitude) continue;
+        if (getAltitude(jd, raHours, decDeg, latitude, longitude) < minAltitude) return;
         const moonPos = getMoonPosition(jd);
         const separation = getAngularSeparation(raHours, decDeg, moonPos.ra, moonPos.dec);
         if (minSeparation === null || separation < minSeparation) {
             minSeparation = separation;
+            minIndex = i;
         }
+    };
+
+    // Issue #317: every coarse-th sample, then every sample either side of
+    // the closest. The moon moves about 0.1° in a coarse step.
+    for (let i = 0; i < steps; i += coarse) consider(i);
+    consider(steps);
+
+    if (minSeparation === null) {
+        // A stretch above minAltitude shorter than the coarse step can fall
+        // between coarse samples: then every sample
+        if (getPeakAltitude(startJD, endJD, raHours, decDeg, latitude, longitude).altitude < minAltitude) return null;
+        for (let i = 0; i <= steps; i++) consider(i);
+        return minSeparation;
     }
+
+    const center = minIndex;
+    for (let i = Math.max(0, center - coarse); i <= Math.min(steps, center + coarse); i++) consider(i);
     return minSeparation;
 }
 

@@ -9,6 +9,7 @@ const ImagingLogView = {
     currentSessionId: null,
     expandedProjectIds: new Set(),
     selectedTargets: [],
+    _projectListRenderId: 0, // Issue #334: a render overtaken by a newer one is dropped
 
     /**
      * Initialize view
@@ -44,9 +45,14 @@ const ImagingLogView = {
         // Search input
         const searchInput = document.getElementById('imaging-log-project-search');
         if (searchInput) {
-            searchInput.addEventListener('input', () => this.renderProjectList());
+            // Issue #334: render once typing pauses
+            searchInput.addEventListener('input', () => {
+                clearTimeout(this._projectSearchTimeout);
+                this._projectSearchTimeout = setTimeout(() => this.renderProjectList(), APP_CONFIG.SEARCH_DEBOUNCE_MS);
+            });
             // Issue #99: ✕ empties the search and shows the list again
             document.getElementById('imaging-log-project-search-clear')?.addEventListener('click', () => {
+                clearTimeout(this._projectSearchTimeout);
                 searchInput.value = '';
                 searchInput.focus();
                 this.renderProjectList();
@@ -170,7 +176,14 @@ const ImagingLogView = {
         }
 
         const expandedProjects = this.expandedProjectIds;
-        const projects = await ImagingLogManager.getAllProjects();
+        // Issue #334: every project and session read once, not per card
+        const renderId = ++this._projectListRenderId;
+        const [projects, sessions] = await Promise.all([
+            ImagingLogManager.getAllProjects(),
+            ImagingLogManager.getAllSessions(),
+        ]);
+        if (renderId !== this._projectListRenderId) return;
+        const sessionsByProject = ImagingLogManager.groupSessionsByProject(sessions);
 
         // Apply filters
         const searchQuery = document.getElementById('imaging-log-project-search')?.value.toLowerCase() || '';
@@ -210,12 +223,9 @@ const ImagingLogView = {
             return;
         }
 
-        let html = '';
-        for (const project of filteredProjects) {
-            html += await this.renderProjectCard(project);
-        }
-
-        container.innerHTML = html;
+        container.innerHTML = filteredProjects
+            .map(project => this.renderProjectCard(project, sessionsByProject.get(project.id) ?? []))
+            .join('');
 
         // Restore expanded state
         expandedProjects.forEach(projectId => {
@@ -232,18 +242,15 @@ const ImagingLogView = {
     },
 
     /**
-     * Render a single project card
+     * Render a single project card from its sessions
      */
-    async renderProjectCard(project) {
-        // Get integration time
-        const integrationTime = await ImagingLogManager.getIntegrationTimeByFilter(project.id);
+    renderProjectCard(project, sessions) {
+        const integrationTime = ImagingLogManager.integrationTimeByFilter(sessions);
         const integrationHTML = Object.entries(integrationTime)
               .filter(([filter, seconds]) => seconds > 0)
               .map(([filter, seconds]) => `${filter}: ${this.formatIntegrationTime(seconds)}`)
               .join(' &nbsp; ');
 
-        // Get sessions
-        const sessions = await ImagingLogManager.getSessionsForProject(project.id);
         sessions.sort((a, b) => new Date(a.date) - new Date(b.date));
 
         const statusClass = this.getStatusClass(project.status);
@@ -423,8 +430,11 @@ const ImagingLogView = {
         // Set up target search
         const searchInput = document.getElementById('project-target-search');
         if (searchInput) {
+            // Issue #314: search once typing pauses
             searchInput.addEventListener('input', (e) => {
-                this.searchTargetsForProject(e.target.value);
+                clearTimeout(this._projectTargetSearchTimeout);
+                const query = e.target.value;
+                this._projectTargetSearchTimeout = setTimeout(() => this.searchTargetsForProject(query), APP_CONFIG.SEARCH_DEBOUNCE_MS);
             });
         }
         if (projectId) {
@@ -454,29 +464,26 @@ const ImagingLogView = {
             return;
         }
 
-        const results = DataManager.searchTargets(query, 10);
+        const results = DataManager.searchTargets(query, APP_CONFIG.PROJECT_TARGET_SEARCH_LIMIT);
 
         if (results.length === 0) {
-            resultsContainer.innerHTML = '<p style="padding: 0.5rem; color: var(--text-secondary);">No results</p>';
+            resultsContainer.innerHTML = '<p class="target-search-empty">No results</p>';
             resultsContainer.style.display = 'block';
             return;
         }
 
-        let html = '';
-        results.forEach(target => {
+        resultsContainer.innerHTML = results.map(target => {
             const displayName = target.common
                   ? `${target.object} (${target.common})`
                   : target.object;
 
-            html += `
+            return `
                 <div class="target-search-result"
                      data-action="add-target-to-project" data-target-id="${HtmlUtils.escapeAttr(target.object)}">
                     ${HtmlUtils.escapeHtml(displayName)}
                 </div>
             `;
-        });
-
-        resultsContainer.innerHTML = html;
+        }).join('');
         resultsContainer.style.display = 'block';
 
         if (!resultsContainer._listenerAttached) {
@@ -501,6 +508,7 @@ const ImagingLogView = {
         this.selectedTargets.push(targetDesignation);
         this.renderSelectedTargets();
 
+        clearTimeout(this._projectTargetSearchTimeout);
         const searchInput = document.getElementById('project-target-search');
         if (searchInput) searchInput.value = '';
 
@@ -1614,11 +1622,11 @@ const ImagingLogView = {
         }
 
         let html = '';
+        // Issue #334: projects read once, not per program
+        const projects = (await ImagingLogManager.getAllProjects()).filter(p => p.status === 'Completed');
 
         for (const program of programs) {
             const progress = await ImagingLogManager.getProgramProgress(program.id, true);
-            const allProjects = await ImagingLogManager.getAllProjects();
-            const projects = allProjects.filter(p => p.status === 'Completed');
             const isPattern = ImagingLogManager.isProgramPatternBased(program);
 
             const imagedTargets = new Set();
@@ -1755,6 +1763,8 @@ const ImagingLogView = {
             container.innerHTML = '<p style="color: var(--text-secondary);">No projects created yet.</p>';
             return;
         }
+        // Issue #334: sessions read once, not per project
+        const sessionsByProject = ImagingLogManager.groupSessionsByProject(await ImagingLogManager.getAllSessions());
         const statuses = ['Planning', 'Acquiring Data', 'Acquisition Complete', 'Processing', 'Completed'];
         const grouped = {};
 
@@ -1769,11 +1779,7 @@ const ImagingLogView = {
             if (projectList.length === 0) continue;
             const totalTargets = projectList.reduce((sum, p) => sum + p.targetDesignations.length, 0);
 
-            let totalSessions = 0;
-            for (const project of projectList) {
-                const sessions = await ImagingLogManager.getSessionsForProject(project.id);
-                totalSessions += sessions.length;
-            }
+            const totalSessions = projectList.reduce((sum, p) => sum + (sessionsByProject.get(p.id)?.length ?? 0), 0);
             const statusClass = this.getStatusClass(status);
             html += `
             <tr>
@@ -1825,7 +1831,10 @@ const ImagingLogView = {
      * Navigate to a specific project
      */
     async navigateToProject(projectId) {
-        this.switchTab('projects');
+        // Issue #334: show every project, render once, then open this one's sessions
+        clearTimeout(this._projectSearchTimeout);
+        const searchInput = document.getElementById('imaging-log-project-search');
+        if (searchInput) searchInput.value = '';
 
         const statusMenu = document.getElementById('imaging-log-status-menu');
         const statusLabel = document.getElementById('imaging-log-status-label');
@@ -1838,37 +1847,28 @@ const ImagingLogView = {
             }
         }
 
-        await this.renderProjectList();
+        await this.switchTab('projects');
 
-        setTimeout(() => {
-            const projectCard = document.querySelector(`[data-project-id="${projectId}"]`);
-            if (projectCard) {
-                projectCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        const projectCard = document.querySelector(`.project-card[data-project-id="${projectId}"]`);
+        if (projectCard) {
+            projectCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-                projectCard.style.transition = 'background-color 0.3s';
-                projectCard.style.backgroundColor = 'var(--primary-color)';
-                projectCard.style.opacity = '0.8';
+            projectCard.style.transition = 'background-color 0.3s';
+            projectCard.style.backgroundColor = 'var(--primary-color)';
+            projectCard.style.opacity = '0.8';
 
-                setTimeout(() => {
-                    projectCard.style.backgroundColor = '';
-                    projectCard.style.opacity = '';
-                }, 1500);
+            setTimeout(() => {
+                projectCard.style.backgroundColor = '';
+                projectCard.style.opacity = '';
+            }, 1500);
 
-                const sessionsContainer = document.getElementById(`project-sessions-${projectId}`);
-                const chevron = document.getElementById(`chevron-${projectId}`);
-                const addButton = document.getElementById(`add-session-btn-${projectId}`);
-
-                if (sessionsContainer && sessionsContainer.style.display === 'none') {
-                    sessionsContainer.style.display = 'block';
-                    if (chevron) chevron.classList.add('expanded');
-                    if (addButton) addButton.style.display = 'inline-block';
-                } else {
-                    Log.debug('Sessions already visible or container not found');
-                }
-            } else {
-                Log.debug('Project card NOT found!');
+            const sessionsContainer = document.getElementById(`project-sessions-${projectId}`);
+            if (sessionsContainer && !sessionsContainer.classList.contains('expanded')) {
+                this.toggleProjectSessions(projectId);
             }
-        }, 200);
+        } else {
+            Log.debug('Project card NOT found!');
+        }
     }
 
 };

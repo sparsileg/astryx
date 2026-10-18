@@ -35,9 +35,7 @@ const SeqPlanOptimizer = {
 
             // A target dipping behind an obstruction and back still counts as
             // up at the end, so only a target down at the end has set
-            const endAltitude = getAltitude(session.sessionEndJD, target.ra, target.dec, latitude, longitude);
-            const endAzimuth = getAzimuth(session.sessionEndJD, target.ra, target.dec, latitude, longitude);
-            const upAtEnd = isAboveHorizon(endAltitude, endAzimuth, session.minAltitude, horizonArray);
+            const upAtEnd = isVisibleAt(session.sessionEndJD, target.ra, target.dec, latitude, longitude, session.minAltitude, horizonArray);
 
             // Find when target sets below minimum altitude
             const setJD = upAtEnd ? null : findTargetSet(

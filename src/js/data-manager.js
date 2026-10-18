@@ -250,46 +250,31 @@ const DataManager = {
     },
 
     /**
-     * Search targets by query
+     * Search targets by query, in catalogue order, stopping at `limit` matches
      */
-    searchTargets(query) {
+    searchTargets(query, limit = Infinity) {
         const lowerQuery = query.toLowerCase().trim();
 
-        // Check if query is catalog+number without space (e.g., "M31", "NGC7000")
-        // Pattern: letters followed by numbers with no space
-        const catalogPattern = /^([A-Za-z]+)(\d+)$/;
-        const match = lowerQuery.match(catalogPattern);
-
-        // Create spaced version if pattern matches (e.g., "m31" → "m 31")
+        // Catalogue + number without a space ("m31", "ngc7000") also matches the spaced form ("m 31")
+        const match = lowerQuery.match(/^([a-z]+)(\d+)$/);
         const spacedQuery = match ? `${match[1]} ${match[2]}` : null;
 
-        return this.targetDatabase.filter(target => {
-            const objectLower = target.object.toLowerCase();
-            const commonLower = target.common ? target.common.toLowerCase() : '';
-            const otherLower = target.other ? target.other.toLowerCase() : '';
+        // For catalogue-style queries, skip the other field to avoid
+        // returning unrelated objects that merely reference this designation
+        const isCatalogueQuery = !!match || /^[a-z]+\s+\d+$/.test(lowerQuery);
+        const matches = text => text.includes(lowerQuery) || (spacedQuery !== null && text.includes(spacedQuery));
 
-            // Search with original query
-            // For catalogue-style queries, skip the other field to avoid
-            // returning unrelated objects that merely reference this designation
-            const isCatalogueQuery = !!match || /^[a-z]+\s+\d+$/i.test(lowerQuery);
-
-            // Search with original query
-            const matchesOriginal =
-                  objectLower.includes(lowerQuery) ||
-                  commonLower.includes(lowerQuery) ||
-                  (!isCatalogueQuery && otherLower.includes(lowerQuery));
-
-            // Also search with spaced version if it exists
-            const matchesSpaced = spacedQuery && (
-                objectLower.includes(spacedQuery) ||
-                    commonLower.includes(spacedQuery) ||
-                    (!isCatalogueQuery && otherLower.includes(spacedQuery))
-            );
-
-            return matchesOriginal || matchesSpaced;
-        }).filter((target, index, arr) =>
-            arr.findIndex(t => t.object === target.object) === index
-        );
+        // Issue #314: one pass, no de-duplication (object is the primary key in both backends)
+        const results = [];
+        for (const target of this.targetDatabase) {
+            if (matches(target.object.toLowerCase()) ||
+                (target.common && matches(target.common.toLowerCase())) ||
+                (!isCatalogueQuery && target.other && matches(target.other.toLowerCase()))) {
+                results.push(target);
+                if (results.length >= limit) break;
+            }
+        }
+        return results;
     },
 
     /**

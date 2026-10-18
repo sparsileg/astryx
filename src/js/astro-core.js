@@ -231,6 +231,20 @@ function getAltitude(jd, raHours, decDeg, latitude, longitude) {
  * @returns {number} Azimuth in degrees (0° = North, 90° = East, 180° = South, 270° = West)
  */
 function getAzimuth(jd, raHours, decDeg, latitude, longitude) {
+    return getAltAz(jd, raHours, decDeg, latitude, longitude).azimuth;
+}
+
+/**
+ * Altitude and azimuth together, from one sidereal time and one set of sines
+ * (Issue #315). The same numbers as getAltitude and getAzimuth.
+ * @param {number} jd - Julian Date
+ * @param {number} raHours - Right ascension in hours
+ * @param {number} decDeg - Declination in degrees
+ * @param {number} latitude - Observer's latitude in degrees
+ * @param {number} longitude - Observer's longitude in degrees (West is negative)
+ * @returns {Object} { altitude, azimuth } in degrees (azimuth 0° = North, 90° = East)
+ */
+function getAltAz(jd, raHours, decDeg, latitude, longitude) {
     const lst = getLST(jd, longitude);
     let hourAngle = lst - raHours;
 
@@ -240,11 +254,14 @@ function getAzimuth(jd, raHours, decDeg, latitude, longitude) {
     const h = hoursToRadians(hourAngle);
     const d = degreesToRadians(decDeg);
     const phi = degreesToRadians(latitude);
+    const sinD = Math.sin(d);
+    const sinPhi = Math.sin(phi);
+    const cosPhi = Math.cos(phi);
 
-    const sinAlt = Math.sin(d) * Math.sin(phi) + Math.cos(d) * Math.cos(phi) * Math.cos(h);
+    const sinAlt = sinD * sinPhi + Math.cos(d) * cosPhi * Math.cos(h);
     const alt = Math.asin(Math.max(-1, Math.min(1, sinAlt)));
 
-    const cosAz = (Math.sin(d) - Math.sin(alt) * Math.sin(phi)) / (Math.cos(alt) * Math.cos(phi));
+    const cosAz = (sinD - Math.sin(alt) * sinPhi) / (Math.cos(alt) * cosPhi);
     let azimuth = Math.acos(Math.max(-1, Math.min(1, cosAz)));
 
     // Adjust azimuth based on hour angle
@@ -253,7 +270,7 @@ function getAzimuth(jd, raHours, decDeg, latitude, longitude) {
     }
 
     // Due north with a tiny positive hour angle comes out as 360; keep [0, 360)
-    return radiansToDegrees(azimuth) % 360;
+    return { altitude: radiansToDegrees(alt), azimuth: radiansToDegrees(azimuth) % 360 };
 }
 
 /**
@@ -340,6 +357,28 @@ function isAboveHorizon(altitude, azimuth, minAltitude, horizonArray) {
     }
 
     return true;
+}
+
+/**
+ * isAboveHorizon at an instant, computing azimuth only when a horizon
+ * profile needs it (Issue #315)
+ * @param {number} jd - Julian Date
+ * @param {number} raHours - Right ascension in hours
+ * @param {number} decDeg - Declination in degrees
+ * @param {number} latitude - Observer's latitude in degrees
+ * @param {number} longitude - Observer's longitude in degrees (West is negative)
+ * @param {number} minAltitude - Minimum altitude constraint in degrees
+ * @param {Array|null} horizonArray - Array of {azimuth, elevation} points, or null for none
+ * @returns {boolean} True if target is visible
+ */
+function isVisibleAt(jd, raHours, decDeg, latitude, longitude, minAltitude, horizonArray) {
+    if (!horizonArray || horizonArray.length === 0) {
+        // No profile is a flat horizon at 0°, as in isAboveHorizon
+        const altitude = getAltitude(jd, raHours, decDeg, latitude, longitude);
+        return altitude >= minAltitude && altitude >= 0;
+    }
+    const { altitude, azimuth } = getAltAz(jd, raHours, decDeg, latitude, longitude);
+    return isAboveHorizon(altitude, azimuth, minAltitude, horizonArray);
 }
 
 // ----------------------------------------------------------------------

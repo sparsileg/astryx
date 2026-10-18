@@ -22,7 +22,7 @@ const A = get(context, `({
     dateToJD, jdToDate, getLST, getAltitude, getAzimuth, getAngularSeparation,
     getHorizonElevationAtAzimuth, getSunPosition, getMoonPhase, getNightMoonPhase, calculateMoonRiseSet,
     findAstronomicalDusk, findNextAstronomicalDawn, findTargetRise, findTargetSet, findNightVisibility,
-    findTargetTransit, isTargetVisibleDuringWindow, findSolarMidnight, getTransitHour, getNightSamples, getHoursAboveAltitude,
+    findTargetTransit, scanVisibility, findSolarMidnight, getTransitHour, getNightSamples, getHoursAboveAltitude,
     STEP: APP_CONFIG.TARGET_SEARCH_STEP_SIZE
 })`);
 
@@ -186,9 +186,9 @@ test('circumpolar targets never set and never-rising targets never rise', () => 
         const end = start + 1;
         for (const ra of [0, 6, 12, 18]) {
             assert.strictEqual(A.findTargetSet(start, end, ra, circumpolar, site.latitude, site.longitude, 0), null, `${name} circumpolar ra=${ra}`);
-            assert.ok(A.isTargetVisibleDuringWindow(start, end, ra, circumpolar, site.latitude, site.longitude, 0), `${name} circumpolar ra=${ra}`);
+            assert.ok(A.scanVisibility(start, end, ra, circumpolar, site.latitude, site.longitude, 0).visible, `${name} circumpolar ra=${ra}`);
             assert.strictEqual(A.findTargetRise(start, end, ra, neverRises, site.latitude, site.longitude, 0), null, `${name} never rises ra=${ra}`);
-            assert.ok(!A.isTargetVisibleDuringWindow(start, end, ra, neverRises, site.latitude, site.longitude, 0), `${name} never rises ra=${ra}`);
+            assert.ok(!A.scanVisibility(start, end, ra, neverRises, site.latitude, site.longitude, 0).visible, `${name} never rises ra=${ra}`);
         }
     }
 });

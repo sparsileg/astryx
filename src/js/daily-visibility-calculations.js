@@ -81,10 +81,8 @@ const DailyVisibilityCalculations = {
         const { riseJD, setJD } = findNightVisibility(duskJD, ra, dec,
                                                       latitude, longitude, minAltitude, horizonArray);
         // No rise and no set: either always up or never up
-        const neverRises = riseJD === null && setJD === null && !isAboveHorizon(
-            getAltitude(duskJD, ra, dec, latitude, longitude),
-            getAzimuth(duskJD, ra, dec, latitude, longitude),
-            minAltitude, horizonArray);
+        const neverRises = riseJD === null && setJD === null &&
+              !isVisibleAt(duskJD, ra, dec, latitude, longitude, minAltitude, horizonArray);
 
         // Every rise and set on the noon-to-noon timeline, which can include
         // the next morning's rise as well as the night's (Issue #279)
@@ -112,12 +110,10 @@ const DailyVisibilityCalculations = {
             let blockedSteps = 0;
 
             while (jd <= setJD) {
-                const altitude = getAltitude(jd, ra, dec, latitude, longitude);
-                const azimuth = getAzimuth(jd, ra, dec, latitude, longitude);
+                const { altitude, azimuth } = getAltAz(jd, ra, dec, latitude, longitude);
 
                 // Check if blocked: above min altitude but below horizon
-                const horizonElevation = getHorizonElevationAtAzimuth(azimuth, horizonArray);
-                if (altitude >= minAltitude && altitude < horizonElevation) {
+                if (altitude >= minAltitude && altitude < getHorizonElevationAtAzimuth(azimuth, horizonArray)) {
                     blockedSteps++;
                 }
 

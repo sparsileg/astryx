@@ -179,6 +179,19 @@ const ImagingLogManager = {
         return await DBManager.getAll(APP_CONFIG.STORES.IMAGING_SESSIONS);
     },
 
+    /**
+     * Sessions grouped by project, from one read of every session (Issue #334)
+     * @returns {Map<number, Object[]>} projectId → its sessions
+     */
+    groupSessionsByProject(sessions) {
+        const byProject = new Map();
+        sessions.forEach(session => {
+            if (!byProject.has(session.projectId)) byProject.set(session.projectId, []);
+            byProject.get(session.projectId).push(session);
+        });
+        return byProject;
+    },
+
     // ============================================================================
     // Programs
     // ============================================================================
@@ -346,10 +359,9 @@ const ImagingLogManager = {
     // ============================================================================
 
     /**
-     * Get integration time by filter for a project
+     * Integration time by filter for a project's sessions
      */
-    async getIntegrationTimeByFilter(projectId) {
-        const sessions = await this.getSessionsForProject(projectId);
+    integrationTimeByFilter(sessions) {
         const timeByFilter = {};
 
         sessions.forEach(session => {

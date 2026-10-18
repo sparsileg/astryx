@@ -570,24 +570,13 @@ const DailyVisibilityView = {
             }
         }
 
-        // Peak altitude, sampled at 1-minute intervals within the observation window
-        let maxAltitude = -999;
-        let maxAltitudeJD = null;
-        if (hasCoords) {
-            const oneMinute = 1 / 1440;
-            for (let currentJD = data.duskJD; currentJD <= data.dawnJD; currentJD += oneMinute) {
-                const altitude = getAltitude(currentJD, targetRA, targetDEC, latitude, longitude);
-                if (altitude > maxAltitude) {
-                    maxAltitude = altitude;
-                    maxAltitudeJD = currentJD;
-                }
-            }
-        }
+        // Peak altitude within the observation window (Issue #317: found directly, not scanned)
+        const peak = hasCoords && data.duskJD && data.dawnJD ? getPeakAltitude(data.duskJD, data.dawnJD, targetRA, targetDEC, latitude, longitude) : null;
 
-        if (maxAltitudeJD) {
-            const peakTimeStr = TimeUtils.formatLocalTime(jdToDate(maxAltitudeJD), data);
+        if (peak) {
+            const peakTimeStr = TimeUtils.formatLocalTime(jdToDate(peak.jd), data);
 
-            rows.push(['Peak altitude', `${maxAltitude.toFixed(1)}° at ${peakTimeStr}`]);
+            rows.push(['Peak altitude', `${peak.altitude.toFixed(1)}° at ${peakTimeStr}`]);
         } else {
             rows.push(['Peak altitude', 'N/A']);
         }

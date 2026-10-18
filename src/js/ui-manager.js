@@ -952,10 +952,9 @@ const UIManager = {
         const calculateBtn = modalBody.querySelector('[data-action="calculate"]');
         const cancelBtn = modalBody.querySelector('[data-action="cancel-calc"]');
         const progressDiv = modalBody.querySelector('#best-months-progress');
-        const progressBar = modalBody.querySelector('#best-months-progress-bar');
-        const progressText = modalBody.querySelector('#best-months-progress-text');
         const resultsDiv = modalBody.querySelector('#best-months-results');
 
+        this.showBestMonthsProgress(modalBody, 0, {});
         if (calculateBtn) calculateBtn.style.display = 'none';
         if (cancelBtn) cancelBtn.style.display = 'inline-block';
         if (progressDiv) progressDiv.style.display = 'block';
@@ -979,48 +978,53 @@ const UIManager = {
     },
 
     /**
+     * Set the Best Months progress bar and its three lines of text; a line
+     * left out is hidden. Names are set as text (Issue #318)
+     * @param {number} fraction - of the bar filled, 0 to 1
+     */
+    showBestMonthsProgress(modalBody, fraction, { title = '', detail = '', eta = '' }) {
+        const bar = modalBody.querySelector('#best-months-progress-bar');
+        const text = modalBody.querySelector('#best-months-progress-text');
+        if (bar) bar.style.width = Math.round(fraction * 100) + '%';
+        if (!text) return;
+        text.querySelector('.best-months-progress-title').textContent = title;
+        text.querySelector('.best-months-progress-detail').textContent = detail;
+        text.querySelector('.best-months-progress-eta').textContent = eta;
+    },
+
+    /**
+     * Resolve once the page has painted; at once in a hidden tab, where no
+     * frame comes (Issue #318)
+     */
+    afterPaint() {
+        if (document.hidden) return Promise.resolve();
+        return new Promise(resolve => requestAnimationFrame(() => setTimeout(resolve, 0)));
+    },
+
+    /** "Est. remaining: 45s" or "Est. remaining: 2m 5s" */
+    formatRemaining(seconds) {
+        const time = seconds < 60 ? `${seconds}s` : `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
+        return `Est. remaining: ${time}`;
+    },
+
+    /**
      * Calculate best months for single location
      */
     async calculateForSingleLocation(modalBody, locationName, minAltitude, minDarkHours) {
         const calculateBtn = modalBody.querySelector('[data-action="calculate"]');
         const cancelBtn = modalBody.querySelector('[data-action="cancel-calc"]');
         const progressDiv = modalBody.querySelector('#best-months-progress');
-        const progressBar = modalBody.querySelector('#best-months-progress-bar');
-        const progressText = modalBody.querySelector('#best-months-progress-text');
         const resultsDiv = modalBody.querySelector('#best-months-results');
 
-        // Track timing for estimation
         const startTime = Date.now();
-        let estimatedTimeText = '';
-
-        // Progress callback
         const progressCallback = (processed, total, targetName) => {
-            const percent = Math.round((processed / total) * 100);
-            if (progressBar) progressBar.style.width = percent + '%';
-
-            // Calculate time estimation after processing at least 10 targets
-            if (processed >= 10) {
-                const elapsedMs = Date.now() - startTime;
-                const avgTimePerTarget = elapsedMs / processed;
-                const remainingTargets = total - processed;
-                const estimatedRemainingMs = avgTimePerTarget * remainingTargets;
-
-                // Format estimated time
-                const estimatedSeconds = Math.round(estimatedRemainingMs / 1000);
-                if (estimatedSeconds < 60) {
-                    estimatedTimeText = `Estimated time: ${estimatedSeconds}s`;
-                } else {
-                    const minutes = Math.floor(estimatedSeconds / 60);
-                    const seconds = estimatedSeconds % 60;
-                    estimatedTimeText = `Estimated time: ${minutes}m ${seconds}s`;
-                }
-            } else {
-                estimatedTimeText = 'Calculating estimate...';
-            }
-
-            if (progressText) {
-                progressText.innerHTML = `Processing ${processed}/${total}: ${targetName}<br><span style="font-size: 0.9em; color: var(--text-secondary);">${estimatedTimeText}</span>`;
-            }
+            const saving = processed === total;
+            this.showBestMonthsProgress(modalBody, processed / total, {
+                detail: `Processing ${processed}/${total}: ${targetName}`,
+                eta: saving ? 'Saving results...' : this.formatRemaining(BestMonths.remainingSeconds(Date.now() - startTime, processed, total)),
+            });
+            // Issue #318: paint the full bar before the save, which blocks painting
+            if (saving) return this.afterPaint();
         };
 
         const result = await BestMonths.calculateBestMonths(
@@ -1066,54 +1070,24 @@ const UIManager = {
         const calculateBtn = modalBody.querySelector('[data-action="calculate"]');
         const cancelBtn = modalBody.querySelector('[data-action="cancel-calc"]');
         const progressDiv = modalBody.querySelector('#best-months-progress');
-        const progressBar = modalBody.querySelector('#best-months-progress-bar');
-        const progressText = modalBody.querySelector('#best-months-progress-text');
         const resultsDiv = modalBody.querySelector('#best-months-results');
 
         const startTime = Date.now();
-
-        // Progress callback for all-locations mode
         const progressCallback = (progress) => {
+            const title = `Location ${progress.locationIndex} of ${progress.totalLocations}: ${progress.currentLocation}`;
             if (progress.phase === 'location') {
-                // Just started a new location
-                if (progressText) {
-                    progressText.innerHTML = `
-                        <strong>Location ${progress.locationIndex} of ${progress.totalLocations}: ${progress.currentLocation}</strong><br>
-                        <span style="font-size: 0.9em; color: var(--text-secondary);">Initializing...</span>
-                    `;
-                }
-                if (progressBar) progressBar.style.width = '0%';
+                this.showBestMonthsProgress(modalBody, 0, { title, eta: 'Initializing...' });
             } else if (progress.phase === 'target') {
-                // Processing targets within current location
-                const percent = Math.round((progress.processedTargets / progress.totalTargets) * 100);
-                if (progressBar) progressBar.style.width = percent + '%';
-
-                // Calculate time estimation
-                let estimatedTimeText = '';
-                if (progress.processedTargets >= 10) {
-                    const elapsedMs = Date.now() - startTime;
-                    const avgTimePerTarget = elapsedMs / progress.processedTargets;
-                    const remainingTargets = (progress.totalTargets - progress.processedTargets) +
-                          ((progress.totalLocations - progress.locationIndex) * progress.totalTargets);
-                    const estimatedRemainingMs = avgTimePerTarget * remainingTargets;
-
-                    const estimatedSeconds = Math.round(estimatedRemainingMs / 1000);
-                    if (estimatedSeconds < 60) {
-                        estimatedTimeText = `Est. total time: ${estimatedSeconds}s`;
-                    } else {
-                        const minutes = Math.floor(estimatedSeconds / 60);
-                        const seconds = estimatedSeconds % 60;
-                        estimatedTimeText = `Est. total time: ${minutes}m ${seconds}s`;
-                    }
-                }
-
-                if (progressText) {
-                    progressText.innerHTML = `
-                        <strong>Location ${progress.locationIndex} of ${progress.totalLocations}: ${progress.currentLocation}</strong><br>
-                        Processing ${progress.processedTargets}/${progress.totalTargets}: ${progress.currentTarget}<br>
-                        <span style="font-size: 0.9em; color: var(--text-secondary);">${estimatedTimeText}</span>
-                    `;
-                }
+                // Issue #318: estimated from the count across every location
+                const elapsedMs = Date.now() - startTime;
+                const saving = progress.processedTargets === progress.totalTargets;
+                this.showBestMonthsProgress(modalBody, progress.processedTargets / progress.totalTargets, {
+                    title,
+                    detail: `Processing ${progress.processedTargets}/${progress.totalTargets}: ${progress.currentTarget}`,
+                    eta: saving ? 'Saving results...' : this.formatRemaining(BestMonths.remainingSeconds(elapsedMs, progress.runProcessed, progress.runTotal)),
+                });
+                // Issue #318: paint the full bar before the save, which blocks painting
+                if (saving) return this.afterPaint();
             }
         };
 

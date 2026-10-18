@@ -72,7 +72,7 @@ const VisibilityTargets = {
 
         this.searchTimeout = setTimeout(() => {
             this.search(query);
-        }, 300);
+        }, APP_CONFIG.SEARCH_DEBOUNCE_MS);
     },
 
     /**

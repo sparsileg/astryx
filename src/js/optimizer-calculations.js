@@ -79,14 +79,13 @@ const OptimizerCalculations = {
         const eliminated = [];
 
         for (const candidate of candidates) {
-            // Find rise/set times above minimum altitude within session window
-            const riseJD = findTargetRise(
-                sessionStartJD, sessionEndJD,
-                candidate.ra, candidate.dec,
-                location.latitude, location.longitude,
-                minAltitude, location.horizon
-            );
-            const setJD = findTargetSet(
+            // Rise, set, dip and visibility above minimum altitude within the
+            // session window, from one pass (Issue #315). The dip is a
+            // below-min-alt stretch between two visible segments (Issue #251):
+            // riseJD/setJD only represent a single window and silently drop
+            // the earlier segment in this case. Flag-only: display note, do
+            // not fold into windowHours or scoring (see #251 discussion).
+            const { riseJD, setJD, dip: visibilityDip, visible: isVisible } = scanVisibility(
                 sessionStartJD, sessionEndJD,
                 candidate.ra, candidate.dec,
                 location.latitude, location.longitude,
@@ -94,13 +93,6 @@ const OptimizerCalculations = {
             );
 
             // Hard elimination: check if target is visible at all during session
-            const isVisible = isTargetVisibleDuringWindow(
-                sessionStartJD, sessionEndJD,
-                candidate.ra, candidate.dec,
-                location.latitude, location.longitude,
-                minAltitude, location.horizon
-            );
-
             if (!isVisible) {
                 eliminated.push({ ...candidate, eliminationReason: 'Never rises above minimum altitude and horizon' });
                 continue;
@@ -124,17 +116,6 @@ const OptimizerCalculations = {
                 sessionStartJD, sessionEndJD,
                 candidate.ra, candidate.dec,
                 location.longitude
-            );
-
-            // Below-min-alt dip between two visible segments (Issue #251) —
-            // riseJD/setJD above only represent a single window and silently
-            // drop the earlier segment in this case. Flag-only: display note,
-            // do not fold into windowHours or scoring (see #251 discussion).
-            const visibilityDip = findVisibilityDip(
-                sessionStartJD, sessionEndJD,
-                candidate.ra, candidate.dec,
-                location.latitude, location.longitude,
-                minAltitude, location.horizon
             );
 
             // Find true peak altitude by scanning the visible window
