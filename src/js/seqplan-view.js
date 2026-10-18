@@ -19,7 +19,7 @@ const SeqPlanView = {
      * Initialize Sequence Planner view
      */
     async init() {
-        console.log('Initializing Sequence Planner view');
+        Log.debug('Initializing Sequence Planner view');
         // Load pinned targets
         await this.loadPinnedTargets();
         // Populate dropdowns
@@ -76,7 +76,7 @@ const SeqPlanView = {
 
         // Auto-generate plan
         this.debouncedGenerate();
-        console.log('Sequence Planner initialized');
+        Log.debug('Sequence Planner initialized');
     },
 
     /**
@@ -268,7 +268,7 @@ const SeqPlanView = {
         );
         this._setDropdownValue(
             'seq-plan-flip-pause-menu', 'seq-plan-flip-pause-label',
-            SettingsManager.getSetting('seqPlanMeridianFlipPause', 4)
+            SettingsManager.getSetting('seqPlanMeridianFlipPause', APP_CONFIG.SEQ_PLAN_DEFAULT_FLIP_PAUSE_MINUTES)
         );
         this._setDropdownValue(
             'seq-plan-flip-duration-menu', 'seq-plan-flip-duration-label',

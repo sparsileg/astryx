@@ -87,8 +87,8 @@ pub(crate) mod sql {
                 }))
             })
             .map_err(|e| e.to_string())?
-            .filter_map(|r| r.ok())
-            .collect();
+            .collect::<rusqlite::Result<Vec<_>>>()
+            .map_err(|e| e.to_string())?;
 
         Ok(rows)
     }

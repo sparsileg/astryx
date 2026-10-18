@@ -206,7 +206,7 @@ test('Peak altitude is the culmination altitude when transit is in the window, e
         assert.ok(peak.altitude >= scanned - 1e-9, `${where}: ${peak.altitude} below ${scanned}`);
         assert.ok(peak.jd >= dusk && peak.jd <= dawn, where);
         assert.ok(Math.abs(astro.getAltitude(peak.jd, ra, dec, latitude, longitude) - peak.altitude) < 0.001, `${where}: altitude at its time`);
-        if (astro.findTargetTransit(dusk, dawn, ra, dec, longitude) !== null) {
+        if (astro.findTargetTransit(dusk, dawn, ra, longitude) !== null) {
             assert.strictEqual(peak.altitude, 90 - Math.abs(latitude - dec), where);
             // Near the zenith altitude changes fast even at transit: at most 15° an hour
             assert.ok(peak.altitude - scanned <= MAX_ALTITUDE_PER_MINUTE, `${where}: ${peak.altitude} vs ${scanned}`);

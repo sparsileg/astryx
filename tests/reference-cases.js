@@ -347,7 +347,7 @@ const REFERENCE_CASES = [
             const endJD = startJD + 1;
             const testJD = startJD + 0.3;
             const lstAtTest = getLST(testJD, -78.197);
-            const transitJD = findTargetTransit(startJD, endJD, lstAtTest, 0, -78.197);
+            const transitJD = findTargetTransit(startJD, endJD, lstAtTest, -78.197);
             return (transitJD - testJD) * 1440;
         },
         expected: 0,

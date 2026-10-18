@@ -26,12 +26,11 @@ const SeqPlanOptimizer = {
                 session.sessionStartJD,
                 session.sessionEndJD,
                 target.ra,
-                target.dec,
                 longitude
             );
 
             // The transit nearest the middle of the session, even outside it
-            const nearestTransitJD = findTargetTransit(midJD - 0.5, midJD + 0.5, target.ra, target.dec, longitude);
+            const nearestTransitJD = findTargetTransit(midJD - 0.5, midJD + 0.5, target.ra, longitude);
 
             // A target dipping behind an obstruction and back still counts as
             // up at the end, so only a target down at the end has set

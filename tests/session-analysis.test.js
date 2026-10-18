@@ -112,7 +112,7 @@ test('Meridian Flip Verification uses the location\'s clock, not the computer\'s
     const flipMs = Date.UTC(2025, 9, 24, 8, 21, 1);
     const centerJD = dateToJD(new Date(pauseMs));
     const coords = parsed.runs[0].coords;
-    const transitMs = jdToDate(findTargetTransit(centerJD - 0.25, centerJD + 0.25, coords.raHours, coords.decDeg, location.longitude)).getTime();
+    const transitMs = jdToDate(findTargetTransit(centerJD - 0.25, centerJD + 0.25, coords.raHours, location.longitude)).getTime();
 
     assert.strictEqual(derived.xS, (transitMs - pauseMs) / 1000);
     assert.strictEqual(derived.yS, (flipMs - transitMs) / 1000);

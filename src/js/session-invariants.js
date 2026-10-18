@@ -99,7 +99,7 @@ const SessionInvariants = {
     // generous by design.
     _checkI1(fusedSession, asiairParsed) {
         if (fusedSession.kind !== 'science') return null;
-        const overheadBudget = (APP_CONFIG.LOG_ANALYSIS && APP_CONFIG.LOG_ANALYSIS.SUB_CYCLE_OVERHEAD_S) || 23;
+        const overheadBudget = APP_CONFIG.LOG_ANALYSIS.SUB_CYCLE_OVERHEAD_S;
         let worstBlock = null;
         let worstDeltaS = 0;
 
@@ -142,7 +142,7 @@ const SessionInvariants = {
         const unaccountedS = fusedSession.coverage.unaccountedSeconds;
         if (unaccountedS == null) return null;
         const pct = unaccountedS / wallClockS;
-        const toleranceFraction = (APP_CONFIG.LOG_ANALYSIS && APP_CONFIG.LOG_ANALYSIS.WALL_CLOCK_UNACCOUNTED_FRACTION) || 0.05;
+        const toleranceFraction = APP_CONFIG.LOG_ANALYSIS.WALL_CLOCK_UNACCOUNTED_FRACTION;
         const acqNote = fusedSession.coverage.acquisitionSeconds > 0
             ? `, ${fusedSession.coverage.acquisitionSeconds.toFixed(0)}s target-acquisition time excluded`
             : '';
@@ -281,7 +281,7 @@ const SessionInvariants = {
 
     _checkI6(fusedSession, phd2Parsed) {
         if (!phd2Parsed) return null;
-        const toleranceFraction = (APP_CONFIG.LOG_ANALYSIS && APP_CONFIG.LOG_ANALYSIS.FRAME_DURATION_TOLERANCE_FRACTION) || 0.15;
+        const toleranceFraction = APP_CONFIG.LOG_ANALYSIS.FRAME_DURATION_TOLERANCE_FRACTION;
         // Short sessions (below the already-established SHORT_SESSION
         // frame count) are excluded — caught during validation on
         // 2025-12-21 session 28 (54 frames, 128s actual vs 108s expected,
@@ -290,7 +290,7 @@ const SessionInvariants = {
         // which is a much larger fraction of a short session's total
         // duration than a long one's. Not a bug in the reconciliation
         // itself, just not a meaningful check at this scale.
-        const shortSessionFrames = (APP_CONFIG.PHD2_GUIDE_THRESHOLDS && APP_CONFIG.PHD2_GUIDE_THRESHOLDS.SHORT_SESSION) || 100;
+        const shortSessionFrames = APP_CONFIG.PHD2_GUIDE_THRESHOLDS.SHORT_SESSION;
         let worst = null;
 
         for (const session of phd2Parsed.sessions) {

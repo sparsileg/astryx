@@ -319,27 +319,18 @@ const SessionFusion = {
     // night median" as an explicitly open question; this implementation
     // resolves it as relative-to-night-median, since that's what the
     // design doc's own worked example used to characterize the marginal
-    // band in the first place. Multipliers below are tuned to reproduce
-    // that specific validated band, not picked arbitrarily — see delivery
-    // notes for the actual reproduction check.
-    // ELR.p3-2: re-pointed at APP_CONFIG.LOG_ANALYSIS. Falls back to the
-    // original p3-1 local defaults if the config block isn't present
-    // (e.g. this file loaded standalone without config.js), rather than
-    // throwing on a missing APP_CONFIG.
-    get MARGINAL_MULTIPLIER() {
-        return (typeof APP_CONFIG !== 'undefined' && APP_CONFIG.LOG_ANALYSIS)
-            ? APP_CONFIG.LOG_ANALYSIS.TIER_MARGINAL_MULTIPLIER : 1.2;
-    },
-    get REJECT_MULTIPLIER() {
-        return (typeof APP_CONFIG !== 'undefined' && APP_CONFIG.LOG_ANALYSIS)
-            ? APP_CONFIG.LOG_ANALYSIS.TIER_REJECT_MULTIPLIER : 2.0;
-    },
+    // band in the first place. The multipliers (APP_CONFIG.LOG_ANALYSIS
+    // TIER_*_MULTIPLIER) are tuned to reproduce that specific validated
+    // band, not picked arbitrarily — see delivery notes for the actual
+    // reproduction check.
 
     _applyTiering(subs) {
         const settledRms = subs
             .filter(s => s.guide && s.guide.rmsTotal !== null)
             .map(s => s.guide.rmsTotal);
         const nightMedian = this._median(settledRms);
+        const marginalMultiplier = APP_CONFIG.LOG_ANALYSIS.TIER_MARGINAL_MULTIPLIER;
+        const rejectMultiplier = APP_CONFIG.LOG_ANALYSIS.TIER_REJECT_MULTIPLIER;
 
         for (const sub of subs) {
             const reasons = [];
@@ -367,15 +358,15 @@ const SessionFusion = {
             }
 
             const rms = sub.guide.rmsTotal;
-            if (sub.aborted || rms > nightMedian * this.REJECT_MULTIPLIER) {
+            if (sub.aborted || rms > nightMedian * rejectMultiplier) {
                 sub.tier = 'reject';
-                if (rms > nightMedian * this.REJECT_MULTIPLIER) {
-                    reasons.push(`RMS ${rms.toFixed(2)}" exceeds ${this.REJECT_MULTIPLIER}x night median (${nightMedian.toFixed(2)}")`);
+                if (rms > nightMedian * rejectMultiplier) {
+                    reasons.push(`RMS ${rms.toFixed(2)}" exceeds ${rejectMultiplier}x night median (${nightMedian.toFixed(2)}")`);
                 }
-            } else if (!sub.settledAtStart || sub.guideFailureCount > 0 || rms > nightMedian * this.MARGINAL_MULTIPLIER) {
+            } else if (!sub.settledAtStart || sub.guideFailureCount > 0 || rms > nightMedian * marginalMultiplier) {
                 sub.tier = 'marginal';
-                if (rms > nightMedian * this.MARGINAL_MULTIPLIER) {
-                    reasons.push(`RMS ${rms.toFixed(2)}" exceeds ${this.MARGINAL_MULTIPLIER}x night median (${nightMedian.toFixed(2)}")`);
+                if (rms > nightMedian * marginalMultiplier) {
+                    reasons.push(`RMS ${rms.toFixed(2)}" exceeds ${marginalMultiplier}x night median (${nightMedian.toFixed(2)}")`);
                 }
             } else {
                 sub.tier = 'clean';
@@ -424,7 +415,7 @@ const SessionFusion = {
         // guide-star-swap sub dominates the pooled figure. Caught during
         // validation: an earlier version without this exclusion produced
         // 2.80" for 2026-07-23 against the already-validated 0.97" figure.
-        const criticalRms = (APP_CONFIG.PHD2_GUIDE_THRESHOLDS && APP_CONFIG.PHD2_GUIDE_THRESHOLDS.RMS_CRITICAL) || 4.0;
+        const criticalRms = APP_CONFIG.PHD2_GUIDE_THRESHOLDS.RMS_CRITICAL;
 
         for (const sub of subs) {
             byTier[sub.tier] = (byTier[sub.tier] || 0) + 1;

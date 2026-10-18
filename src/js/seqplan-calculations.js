@@ -70,14 +70,13 @@ const SeqPlanCalculations = {
      */
     calculateExposureCounts(targets, session) {
         const totalMinutes = (session.sessionEndJD - session.sessionStartJD) * 24 * 60;
-        const netMinutes = totalMinutes;
 
         let currentJD = session.sessionStartJD;
 
         const results = [];
 
         for (const target of targets) {
-            const allocatedMinutes = netMinutes * (target.allocatedPercent / 100);
+            const allocatedMinutes = totalMinutes * (target.allocatedPercent / 100);
 
             let targetOverhead = session.calibrationDuration; // Initial calibration
 

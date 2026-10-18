@@ -54,16 +54,6 @@ const TimeUtils = {
     },
 
     /**
-     * Convert input local time to JD for calculations
-     */
-    inputTimeToJD(obsDate, timeString, timezone, isDSTActive) {
-        const dateTime = new Date(`${obsDate}T${timeString}:00`);
-        const offsetHours = isDSTActive ? timezone + 1 : timezone;
-        const utcDate = new Date(dateTime.getTime() - offsetHours * 3600000);
-        return dateToJD(utcDate);
-    },
-
-    /**
      * JD of a local wall-clock instant at a given location, independent of
      * the browser/OS timezone. Every astro calculation that needs "noon on
      * date X" or "midnight on date X" at a specific observing location

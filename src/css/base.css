@@ -435,6 +435,7 @@ textarea {
 
 .toast-info {
     background: var(--primary-color);
+    color: var(--on-primary-color);
 }
 
 .toast-success {
@@ -443,6 +444,7 @@ textarea {
 
 .toast-warning {
     background: var(--warning-color);
+    color: var(--on-warning-color);
 }
 
 .toast-error {

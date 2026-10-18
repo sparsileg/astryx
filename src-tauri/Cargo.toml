@@ -1,6 +1,6 @@
 [package]
 name = "astryx"
-version = "1.96.6"
+version = "1.97.0"
 description = "Astrophotography planning and imaging session analysis"
 authors = ["sparsile"]
 license = "MIT"

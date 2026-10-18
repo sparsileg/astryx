@@ -622,7 +622,7 @@ const AsiairLogParser = {
 
     _extractExposureFromLine(line) {
         const m = line.match(/Exposure ([\d.]+)s/);
-        return m ? parseFloat(m[1]) : 300;
+        return m ? parseFloat(m[1]) : APP_CONFIG.LOG_ANALYSIS.ASIAIR_DEFAULT_EXPOSURE_S;
     },
 
     // ms-aware variant (#230 item 3) — used only by the new run/block/event
@@ -631,7 +631,7 @@ const AsiairLogParser = {
     // still feeds the byte-identical legacy pipeline in parse().
     _extractExposureFromLineMs(line) {
         const m = line.match(/Exposure ([\d.]+)(m?s)\b/);
-        if (!m) return 300;
+        if (!m) return APP_CONFIG.LOG_ANALYSIS.ASIAIR_DEFAULT_EXPOSURE_S;
         const value = parseFloat(m[1]);
         return m[2] === 'ms' ? value / 1000 : value;
     },
@@ -909,7 +909,7 @@ const AsiairLogParser = {
             const nextStart = (i + 1 < allSubs.length) ? allSubs[i + 1].startedAt : runEndedAt;
             if (!nextStart || !sub.startedAt || !sub.exposureS) continue;
             const elapsedS = (nextStart - sub.startedAt) / 1000;
-            if (elapsedS < sub.exposureS * 0.9) {
+            if (elapsedS < sub.exposureS * APP_CONFIG.LOG_ANALYSIS.ASIAIR_ABORTED_SUB_FRACTION) {
                 sub.aborted = true;
             }
         }

@@ -356,10 +356,4 @@ const BackupManagerTauri = {
         }
         await invoke('restore_stores', { restore });
     },
-
-    // ── Not used in Tauri (web-only file input pattern) ───────────────────────
-
-    async readRestoreFile(file) {
-        // Not used — Tauri reads via fs plugin directly
-    },
 };

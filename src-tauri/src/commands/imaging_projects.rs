@@ -55,8 +55,8 @@ pub(crate) mod sql {
         let ids: Vec<i64> = stmt
             .query_map([], |row| row.get(0))
             .map_err(|e| e.to_string())?
-            .filter_map(|r| r.ok())
-            .collect();
+            .collect::<rusqlite::Result<Vec<_>>>()
+            .map_err(|e| e.to_string())?;
 
         let mut projects = Vec::new();
         for id in ids {
@@ -99,9 +99,9 @@ pub(crate) mod sql {
         let designations: Vec<serde_json::Value> = stmt
             .query_map(rusqlite::params![pid], |row| row.get::<_, String>(0))
             .map_err(|e| e.to_string())?
-            .filter_map(|r| r.ok())
-            .map(serde_json::Value::String)
-            .collect();
+            .map(|r| r.map(serde_json::Value::String))
+            .collect::<rusqlite::Result<_>>()
+            .map_err(|e| e.to_string())?;
 
         Ok(Some(serde_json::json!({
             "id":                 pid,

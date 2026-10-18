@@ -4,33 +4,72 @@
     "corpus_dir": "Point --corpus-dir at the flat folder these filenames live in (e.g. ~/Documents/TestLogs) -- all paths below are bare filenames, no subfolders.",
     "expected_values_source": "subs / settled_guide_rms / drops are copied directly from corpus-index.md's Imaging sessions table. rms_tolerance defaults to 0.02\" if not given.",
     "invariants_caveat": "expected_failed_invariants is empty for every night below -- run the harness once, review which invariant failures show up, and populate these once you've decided which are known/acceptable (e.g. 2026-06-05's mixed exposure lengths) vs. real regressions.",
-    "meridian_verification_caveat": "buildMeridianVerification now runs (astro-core.js/astro-target.js are loaded), but still needs a context.location -- not wired into this manifest/harness yet, so it'll return [] for every night regardless. Flagged separately, not fixed here.",
-    "new_nights_2026_10_08": "2026-08-09 to 2026-10-06 were added 2026-10-08 with expected values recorded from the analysis code's own output that day (not from corpus-index.md), as a regression baseline."
+    "meridian_verification_caveat": "Meridian Flip Verification needs each night's location: the night's \"location\" if it has one, else \"_default_location\", both naming an entry in \"_locations\" (copied from the Imaging Log's locations). Every night is at 113 Pier except 2026-02-03 to 02-06 at Crawford. (Issue #338)",
+    "new_nights_2026_10_08": "2026-08-09 to 2026-10-06 were added 2026-10-08 with expected values recorded from the analysis code's own output that day (not from corpus-index.md), as a regression baseline.",
+    "recorded_values": "tier_counts, recommendations and meridian_verification are recorded from the analysis code's own output with --record (Issue #338). Re-record only after a deliberate change, and review the diff."
   },
+  "_locations": {
+    "113 Pier": {
+      "name": "113 Pier",
+      "latitude": 39.296739,
+      "longitude": -78.198136,
+      "timezone": -5,
+      "timeZone": "America/New_York"
+    },
+    "Crawford": {
+      "name": "Crawford",
+      "latitude": 38.705211,
+      "longitude": -107.640097,
+      "timezone": -7,
+      "timeZone": "America/Denver"
+    }
+  },
+  "_default_location": "113 Pier",
   "2025-10-23_calibration": {
     "asiair_file": "Autorun_Log_2025-10-23_194936.txt",
     "phd2_file": null,
-    "expected": {}
+    "expected": {
+      "tier_counts": {},
+      "recommendations": [],
+      "meridian_verification": []
+    }
   },
   "2025-11-18_calibration": {
     "asiair_file": "Autorun_Log_2025-11-18_081759.txt",
     "phd2_file": null,
-    "expected": {}
+    "expected": {
+      "tier_counts": {},
+      "recommendations": [],
+      "meridian_verification": []
+    }
   },
   "2026-02-04_calibration": {
     "asiair_file": "Autorun_Log_2026-02-04_144918.txt",
     "phd2_file": null,
-    "expected": {}
+    "location": "Crawford",
+    "expected": {
+      "tier_counts": {},
+      "recommendations": [],
+      "meridian_verification": []
+    }
   },
   "2026-03-10_calibration": {
     "asiair_file": "Autorun_Log_2026-03-10_063916.txt",
     "phd2_file": null,
-    "expected": {}
+    "expected": {
+      "tier_counts": {},
+      "recommendations": [],
+      "meridian_verification": []
+    }
   },
   "2026-06-20_calibration": {
     "asiair_file": "Autorun_Log_2026-06-20_213945.txt",
     "phd2_file": null,
-    "expected": {}
+    "expected": {
+      "tier_counts": {},
+      "recommendations": [],
+      "meridian_verification": []
+    }
   },
   "2025-10-23": {
     "_targets": "IC405, NGC281, NGC7023",
@@ -40,7 +79,83 @@
       "subs": 104,
       "settled_guide_rms": 1.2,
       "drops": 10,
-      "expected_failed_invariants": []
+      "expected_failed_invariants": [],
+      "tier_counts": {
+        "clean": 98,
+        "marginal": 6
+      },
+      "recommendations": [
+        {
+          "group": "behavior",
+          "setting": "Sub Gap",
+          "observed": "1.0s (n=54, clean blocks, no dither between)",
+          "recommended": "5.0s",
+          "changeNeeded": true
+        },
+        {
+          "group": "behavior",
+          "setting": "Dither Duration",
+          "observed": "25.7s (n=30, clean blocks only)",
+          "recommended": "25.0s",
+          "changeNeeded": false
+        },
+        {
+          "group": "sequencePlanning",
+          "setting": "AF Duration",
+          "observed": "2.05m avg (n=20)",
+          "recommended": "3m",
+          "changeNeeded": false
+        },
+        {
+          "group": "sequencePlanning",
+          "setting": "Guide Calibration Duration",
+          "observed": "3.52m avg (n=2)",
+          "recommended": "4m",
+          "changeNeeded": false
+        },
+        {
+          "group": "sequencePlanning",
+          "setting": "Flip Duration",
+          "observed": "0.83m avg (n=1)",
+          "recommended": "1m",
+          "changeNeeded": false
+        },
+        {
+          "group": "phd2",
+          "setting": "Search Region",
+          "observed": "50px",
+          "recommended": "smaller than 50px",
+          "changeNeeded": true
+        },
+        {
+          "group": "phd2",
+          "setting": "Star Mass Tolerance",
+          "observed": "50%; star lost to a mass change in 1 session(s)",
+          "recommended": "50% (as configured)",
+          "changeNeeded": false
+        },
+        {
+          "group": "phd2",
+          "setting": "Guide Star Selection",
+          "observed": "7 near-edge-lock finding(s) this session",
+          "recommended": "Prefer a brighter, more isolated guide star further from the sensor edge on future nights with this target/field.",
+          "changeNeeded": true
+        }
+      ],
+      "meridian_verification": [
+        {
+          "setting": "Flip Pause",
+          "observed": "3m12s",
+          "astryxSetting": "4m0s",
+          "delta": "-0m48s"
+        },
+        {
+          "setting": "Flip Offset",
+          "observed": "2m0s",
+          "astryxSetting": "0m0s",
+          "delta": "2m0s"
+        }
+      ]
     }
   },
   "2025-11-17": {
@@ -51,7 +166,85 @@
       "subs": 110,
       "settled_guide_rms": 1.18,
       "drops": 14,
-      "expected_failed_invariants": []
+      "expected_failed_invariants": [],
+      "tier_counts": {
+        "clean": 86,
+        "marginal": 18,
+        "reject": 1,
+        "unknown": 5
+      },
+      "recommendations": [
+        {
+          "group": "behavior",
+          "setting": "Sub Gap",
+          "observed": "1.0s (n=40, clean blocks, no dither between)",
+          "recommended": "5.0s",
+          "changeNeeded": true
+        },
+        {
+          "group": "behavior",
+          "setting": "Dither Duration",
+          "observed": "20.9s (n=28, clean blocks only)",
+          "recommended": "25.0s",
+          "changeNeeded": true
+        },
+        {
+          "group": "sequencePlanning",
+          "setting": "AF Duration",
+          "observed": "2.23m avg (n=21)",
+          "recommended": "3m",
+          "changeNeeded": false
+        },
+        {
+          "group": "sequencePlanning",
+          "setting": "Guide Calibration Duration",
+          "observed": "2.37m avg (n=3)",
+          "recommended": "3m",
+          "changeNeeded": false
+        },
+        {
+          "group": "sequencePlanning",
+          "setting": "Flip Duration",
+          "observed": "1.35m avg (n=2)",
+          "recommended": "2m",
+          "changeNeeded": false
+        },
+        {
+          "group": "phd2",
+          "setting": "Search Region",
+          "observed": "50px",
+          "recommended": "smaller than 50px",
+          "changeNeeded": true
+        },
+        {
+          "group": "phd2",
+          "setting": "Star Mass Tolerance",
+          "observed": "50%; star lost to a mass change in 1 session(s)",
+          "recommended": "50% (as configured)",
+          "changeNeeded": false
+        },
+        {
+          "group": "phd2",
+          "setting": "Guide Star Selection",
+          "observed": "6 near-edge-lock finding(s) this session",
+          "recommended": "Prefer a brighter, more isolated guide star further from the sensor edge on future nights with this target/field.",
+          "changeNeeded": true
+        }
+      ],
+      "meridian_verification": [
+        {
+          "setting": "Flip Pause",
+          "observed": "3m54s",
+          "astryxSetting": "4m0s",
+          "delta": "-0m6s"
+        },
+        {
+          "setting": "Flip Offset",
+          "observed": "1m59s",
+          "astryxSetting": "0m0s",
+          "delta": "1m59s"
+        }
+      ]
     }
   },
   "2025-11-23": {
@@ -62,7 +255,90 @@
       "subs": 164,
       "settled_guide_rms": 1.13,
       "drops": 2,
-      "expected_failed_invariants": []
+      "expected_failed_invariants": [],
+      "tier_counts": {
+        "clean": 86,
+        "marginal": 17,
+        "reject": 1
+      },
+      "recommendations": [
+        {
+          "group": "behavior",
+          "setting": "Sub Gap",
+          "observed": "1.0s (n=43, clean blocks, no dither between)",
+          "recommended": "5.0s",
+          "changeNeeded": true
+        },
+        {
+          "group": "behavior",
+          "setting": "Dither Duration",
+          "observed": "20.2s (n=25, clean blocks only)",
+          "recommended": "25.0s",
+          "changeNeeded": true
+        },
+        {
+          "group": "sequencePlanning",
+          "setting": "AF Duration",
+          "observed": "2.16m avg (n=21)",
+          "recommended": "3m",
+          "changeNeeded": false
+        },
+        {
+          "group": "sequencePlanning",
+          "setting": "Guide Calibration Duration",
+          "observed": "2.37m avg (n=4)",
+          "recommended": "3m",
+          "changeNeeded": false
+        },
+        {
+          "group": "sequencePlanning",
+          "setting": "Flip Duration",
+          "observed": "1.32m avg (n=2)",
+          "recommended": "2m",
+          "changeNeeded": false
+        },
+        {
+          "group": "phd2",
+          "setting": "Search Region",
+          "observed": "50px",
+          "recommended": "smaller than 50px",
+          "changeNeeded": true
+        },
+        {
+          "group": "phd2",
+          "setting": "Star Mass Tolerance",
+          "observed": "50%; star lost to a mass change in 1 session(s)",
+          "recommended": "50% (as configured)",
+          "changeNeeded": false
+        },
+        {
+          "group": "phd2",
+          "setting": "Guide Star Selection",
+          "observed": "10 near-edge-lock finding(s) this session",
+          "recommended": "Prefer a brighter, more isolated guide star further from the sensor edge on future nights with this target/field.",
+          "changeNeeded": true
+        }
+      ],
+      "meridian_verification": [
+        {
+          "setting": "Flip Pause",
+          "observed": "4m0s",
+          "astryxSetting": "4m0s",
+          "delta": "0m0s"
+        },
+        {
+          "setting": "Wait for a sub",
+          "observed": "1m33s",
+          "astryxSetting": "—",
+          "delta": "—"
+        },
+        {
+          "setting": "Flip Offset",
+          "observed": "2m0s",
+          "astryxSetting": "0m0s",
+          "delta": "2m0s"
+        }
+      ]
     }
   },
   "2025-12-16": {
@@ -73,7 +349,51 @@
       "subs": 94,
       "settled_guide_rms": 1.27,
       "drops": 86,
-      "expected_failed_invariants": []
+      "expected_failed_invariants": [],
+      "tier_counts": {
+        "marginal": 5,
+        "clean": 43,
+        "reject": 3,
+        "unknown": 3
+      },
+      "recommendations": [
+        {
+          "group": "behavior",
+          "setting": "Sub Gap",
+          "observed": "1.0s (n=26, clean blocks, no dither between)",
+          "recommended": "5.0s",
+          "changeNeeded": true
+        },
+        {
+          "group": "behavior",
+          "setting": "Dither Duration",
+          "observed": "27.0s (n=13, clean blocks only)",
+          "recommended": "25.0s",
+          "changeNeeded": false
+        },
+        {
+          "group": "sequencePlanning",
+          "setting": "AF Duration",
+          "observed": "2.06m avg (n=11)",
+          "recommended": "3m",
+          "changeNeeded": false
+        },
+        {
+          "group": "phd2",
+          "setting": "Search Region",
+          "observed": "50px",
+          "recommended": "50px (as configured)",
+          "changeNeeded": false
+        },
+        {
+          "group": "phd2",
+          "setting": "Star Mass Tolerance",
+          "observed": "50%; star lost to a mass change in 8 session(s)",
+          "recommended": "higher than 50%",
+          "changeNeeded": true
+        }
+      ],
+      "meridian_verification": []
     }
   },
   "2025-12-20": {
@@ -86,6 +406,90 @@
       "drops": 352,
       "expected_failed_invariants": [
         "I3"
+      ],
+      "tier_counts": {
+        "clean": 40,
+        "reject": 6,
+        "marginal": 12,
+        "unknown": 6
+      },
+      "recommendations": [
+        {
+          "group": "behavior",
+          "setting": "Sub Gap",
+          "observed": "1.0s (n=22, clean blocks, no dither between)",
+          "recommended": "5.0s",
+          "changeNeeded": true
+        },
+        {
+          "group": "behavior",
+          "setting": "Dither Duration",
+          "observed": "21.4s (n=10, clean blocks only)",
+          "recommended": "25.0s",
+          "changeNeeded": true
+        },
+        {
+          "group": "sequencePlanning",
+          "setting": "AF Duration",
+          "observed": "2.13m avg (n=14)",
+          "recommended": "3m",
+          "changeNeeded": false
+        },
+        {
+          "group": "sequencePlanning",
+          "setting": "Flip Duration",
+          "observed": "1.57m avg (n=1)",
+          "recommended": "2m",
+          "changeNeeded": false
+        },
+        {
+          "group": "phd2",
+          "setting": "Search Region",
+          "observed": "50px",
+          "recommended": "smaller than 50px",
+          "changeNeeded": true
+        },
+        {
+          "group": "phd2",
+          "setting": "Star Mass Tolerance",
+          "observed": "50%; star lost to a mass change in 29 session(s)",
+          "recommended": "higher than 50%",
+          "changeNeeded": true
+        },
+        {
+          "group": "phd2",
+          "setting": "Guide Star Selection",
+          "observed": "29 near-edge-lock finding(s) this session",
+          "recommended": "Prefer a brighter, more isolated guide star further from the sensor edge on future nights with this target/field.",
+          "changeNeeded": true
+        },
+        {
+          "group": "phd2",
+          "setting": "Calibration Timing",
+          "observed": "1 calibration finding(s) this session",
+          "recommended": "Calibrate nearer the target's declination and away from twilight/low-altitude conditions.",
+          "changeNeeded": true
+        }
+      ],
+      "meridian_verification": [
+        {
+          "setting": "Flip Pause",
+          "observed": "4m0s",
+          "astryxSetting": "4m0s",
+          "delta": "0m0s"
+        },
+        {
+          "setting": "Wait for a sub",
+          "observed": "1m33s",
+          "astryxSetting": "—",
+          "delta": "—"
+        },
+        {
+          "setting": "Flip Offset",
+          "observed": "1m46s",
+          "astryxSetting": "0m0s",
+          "delta": "1m46s"
+        }
       ]
     }
   },
@@ -97,51 +501,403 @@
       "subs": 140,
       "settled_guide_rms": 1.23,
       "drops": 22,
-      "expected_failed_invariants": []
+      "expected_failed_invariants": [],
+      "tier_counts": {
+        "clean": 83,
+        "marginal": 16,
+        "reject": 1
+      },
+      "recommendations": [
+        {
+          "group": "behavior",
+          "setting": "Sub Gap",
+          "observed": "1.0s (n=38, clean blocks, no dither between)",
+          "recommended": "5.0s",
+          "changeNeeded": true
+        },
+        {
+          "group": "behavior",
+          "setting": "Dither Duration",
+          "observed": "22.3s (n=24, clean blocks only)",
+          "recommended": "25.0s",
+          "changeNeeded": false
+        },
+        {
+          "group": "sequencePlanning",
+          "setting": "AF Duration",
+          "observed": "2.05m avg (n=22)",
+          "recommended": "3m",
+          "changeNeeded": false
+        },
+        {
+          "group": "sequencePlanning",
+          "setting": "Guide Calibration Duration",
+          "observed": "1.85m avg (n=3)",
+          "recommended": "2m",
+          "changeNeeded": false
+        },
+        {
+          "group": "sequencePlanning",
+          "setting": "Flip Duration",
+          "observed": "1.52m avg (n=2)",
+          "recommended": "2m",
+          "changeNeeded": false
+        },
+        {
+          "group": "phd2",
+          "setting": "Search Region",
+          "observed": "25px",
+          "recommended": "smaller than 25px",
+          "changeNeeded": true
+        },
+        {
+          "group": "phd2",
+          "setting": "Star Mass Tolerance",
+          "observed": "50%; star lost to a mass change in 3 session(s)",
+          "recommended": "higher than 50%",
+          "changeNeeded": true
+        },
+        {
+          "group": "phd2",
+          "setting": "Guide Star Selection",
+          "observed": "16 near-edge-lock finding(s) this session",
+          "recommended": "Prefer a brighter, more isolated guide star further from the sensor edge on future nights with this target/field.",
+          "changeNeeded": true
+        }
+      ],
+      "meridian_verification": [
+        {
+          "setting": "Flip Pause",
+          "observed": "3m55s",
+          "astryxSetting": "4m0s",
+          "delta": "-0m5s"
+        },
+        {
+          "setting": "Flip Offset",
+          "observed": "2m0s",
+          "astryxSetting": "0m0s",
+          "delta": "2m0s"
+        }
+      ]
     }
   },
   "2026-02-03": {
-    "_targets": "C49, NGC1333",
     "asiair_file": "Autorun_Log_2026-02-03_201817.txt",
     "phd2_file": "PHD2_GuideLog_2026-02-03_200708.txt",
+    "location": "Crawford",
+    "_targets": "C49, NGC1333",
     "expected": {
       "subs": 53,
       "settled_guide_rms": 1.02,
       "drops": 13,
-      "expected_failed_invariants": []
+      "expected_failed_invariants": [],
+      "tier_counts": {
+        "clean": 46,
+        "reject": 2,
+        "marginal": 5
+      },
+      "recommendations": [
+        {
+          "group": "behavior",
+          "setting": "Sub Gap",
+          "observed": "2.7s (n=23, clean blocks, no dither between)",
+          "recommended": "5.0s",
+          "changeNeeded": true
+        },
+        {
+          "group": "behavior",
+          "setting": "Dither Duration",
+          "observed": "28.7s (n=14, clean blocks only)",
+          "recommended": "25.0s",
+          "changeNeeded": true
+        },
+        {
+          "group": "sequencePlanning",
+          "setting": "Guide Calibration Duration",
+          "observed": "1.85m avg (n=1)",
+          "recommended": "2m",
+          "changeNeeded": false
+        },
+        {
+          "group": "sequencePlanning",
+          "setting": "Flip Duration",
+          "observed": "1.38m avg (n=1)",
+          "recommended": "2m",
+          "changeNeeded": false
+        },
+        {
+          "group": "phd2",
+          "setting": "Search Region",
+          "observed": "50px",
+          "recommended": "smaller than 50px",
+          "changeNeeded": true
+        },
+        {
+          "group": "phd2",
+          "setting": "Star Mass Tolerance",
+          "observed": "50%; star lost to a mass change in 1 session(s)",
+          "recommended": "50% (as configured)",
+          "changeNeeded": false
+        },
+        {
+          "group": "phd2",
+          "setting": "Guide Star Selection",
+          "observed": "1 near-edge-lock finding(s) this session",
+          "recommended": "Prefer a brighter, more isolated guide star further from the sensor edge on future nights with this target/field.",
+          "changeNeeded": true
+        }
+      ],
+      "meridian_verification": [
+        {
+          "setting": "Flip Pause",
+          "observed": "4m0s",
+          "astryxSetting": "4m0s",
+          "delta": "0m0s"
+        },
+        {
+          "setting": "Wait for a sub",
+          "observed": "0m3s",
+          "astryxSetting": "—",
+          "delta": "—"
+        },
+        {
+          "setting": "Flip Offset",
+          "observed": "2m2s",
+          "astryxSetting": "0m0s",
+          "delta": "2m2s"
+        }
+      ]
     }
   },
   "2026-02-04": {
-    "_targets": "C49",
     "asiair_file": "Autorun_Log_2026-02-04_192008.txt",
     "phd2_file": "PHD2_GuideLog_2026-02-04_191427.txt",
+    "location": "Crawford",
+    "_targets": "C49",
     "expected": {
       "subs": 60,
       "settled_guide_rms": 1.39,
       "drops": 0,
-      "expected_failed_invariants": []
+      "expected_failed_invariants": [],
+      "tier_counts": {
+        "clean": 43,
+        "marginal": 16,
+        "reject": 1
+      },
+      "recommendations": [
+        {
+          "group": "behavior",
+          "setting": "Sub Gap",
+          "observed": "1.0s (n=24, clean blocks, no dither between)",
+          "recommended": "5.0s",
+          "changeNeeded": true
+        },
+        {
+          "group": "behavior",
+          "setting": "Dither Duration",
+          "observed": "30.3s (n=12, clean blocks only)",
+          "recommended": "25.0s",
+          "changeNeeded": true
+        },
+        {
+          "group": "sequencePlanning",
+          "setting": "Guide Calibration Duration",
+          "observed": "1.95m avg (n=1)",
+          "recommended": "2m",
+          "changeNeeded": false
+        },
+        {
+          "group": "sequencePlanning",
+          "setting": "Flip Duration",
+          "observed": "1.38m avg (n=1)",
+          "recommended": "2m",
+          "changeNeeded": false
+        },
+        {
+          "group": "phd2",
+          "setting": "Search Region",
+          "observed": "50px",
+          "recommended": "50px (as configured)",
+          "changeNeeded": false
+        },
+        {
+          "group": "phd2",
+          "setting": "Star Mass Tolerance",
+          "observed": "50%",
+          "recommended": "50% (as configured)",
+          "changeNeeded": false
+        }
+      ],
+      "meridian_verification": [
+        {
+          "setting": "Flip Pause",
+          "observed": "2m19s",
+          "astryxSetting": "4m0s",
+          "delta": "-1m41s"
+        },
+        {
+          "setting": "Flip Offset",
+          "observed": "1m58s",
+          "astryxSetting": "0m0s",
+          "delta": "1m58s"
+        }
+      ]
     }
   },
   "2026-02-05": {
-    "_targets": "C49",
     "asiair_file": "Autorun_Log_2026-02-05_193628.txt",
     "phd2_file": "PHD2_GuideLog_2026-02-05_193127.txt",
+    "location": "Crawford",
+    "_targets": "C49",
     "expected": {
       "subs": 60,
       "settled_guide_rms": 1.03,
       "drops": 0,
-      "expected_failed_invariants": []
+      "expected_failed_invariants": [],
+      "tier_counts": {
+        "clean": 52,
+        "marginal": 8
+      },
+      "recommendations": [
+        {
+          "group": "behavior",
+          "setting": "Sub Gap",
+          "observed": "1.0s (n=31, clean blocks, no dither between)",
+          "recommended": "5.0s",
+          "changeNeeded": true
+        },
+        {
+          "group": "behavior",
+          "setting": "Dither Duration",
+          "observed": "28.5s (n=15, clean blocks only)",
+          "recommended": "25.0s",
+          "changeNeeded": true
+        },
+        {
+          "group": "sequencePlanning",
+          "setting": "Guide Calibration Duration",
+          "observed": "1.82m avg (n=1)",
+          "recommended": "2m",
+          "changeNeeded": false
+        },
+        {
+          "group": "sequencePlanning",
+          "setting": "Flip Duration",
+          "observed": "1.38m avg (n=1)",
+          "recommended": "2m",
+          "changeNeeded": false
+        },
+        {
+          "group": "phd2",
+          "setting": "Search Region",
+          "observed": "50px",
+          "recommended": "50px (as configured)",
+          "changeNeeded": false
+        },
+        {
+          "group": "phd2",
+          "setting": "Star Mass Tolerance",
+          "observed": "50%",
+          "recommended": "50% (as configured)",
+          "changeNeeded": false
+        }
+      ],
+      "meridian_verification": [
+        {
+          "setting": "Flip Pause",
+          "observed": "3m15s",
+          "astryxSetting": "4m0s",
+          "delta": "-0m45s"
+        },
+        {
+          "setting": "Flip Offset",
+          "observed": "2m0s",
+          "astryxSetting": "0m0s",
+          "delta": "2m0s"
+        }
+      ]
     }
   },
   "2026-02-06": {
-    "_targets": "C49",
     "asiair_file": "Autorun_Log_2026-02-06_204044.txt",
     "phd2_file": "PHD2_GuideLog_2026-02-06_203448.txt",
+    "location": "Crawford",
+    "_targets": "C49",
     "expected": {
       "subs": 27,
       "settled_guide_rms": 0.97,
       "drops": 74,
-      "expected_failed_invariants": []
+      "expected_failed_invariants": [],
+      "tier_counts": {
+        "clean": 22,
+        "marginal": 4,
+        "reject": 1
+      },
+      "recommendations": [
+        {
+          "group": "behavior",
+          "setting": "Sub Gap",
+          "observed": "1.0s (n=12, clean blocks, no dither between)",
+          "recommended": "5.0s",
+          "changeNeeded": true
+        },
+        {
+          "group": "behavior",
+          "setting": "Dither Duration",
+          "observed": "28.8s (n=6, clean blocks only)",
+          "recommended": "25.0s",
+          "changeNeeded": true
+        },
+        {
+          "group": "sequencePlanning",
+          "setting": "Guide Calibration Duration",
+          "observed": "1.82m avg (n=1)",
+          "recommended": "2m",
+          "changeNeeded": false
+        },
+        {
+          "group": "sequencePlanning",
+          "setting": "Flip Duration",
+          "observed": "1.38m avg (n=1)",
+          "recommended": "2m",
+          "changeNeeded": false
+        },
+        {
+          "group": "phd2",
+          "setting": "Search Region",
+          "observed": "50px",
+          "recommended": "smaller than 50px",
+          "changeNeeded": true
+        },
+        {
+          "group": "phd2",
+          "setting": "Star Mass Tolerance",
+          "observed": "50%; star lost to a mass change in 7 session(s)",
+          "recommended": "higher than 50%",
+          "changeNeeded": true
+        },
+        {
+          "group": "phd2",
+          "setting": "Guide Star Selection",
+          "observed": "2 near-edge-lock finding(s) this session",
+          "recommended": "Prefer a brighter, more isolated guide star further from the sensor edge on future nights with this target/field.",
+          "changeNeeded": true
+        }
+      ],
+      "meridian_verification": [
+        {
+          "setting": "Flip Pause",
+          "observed": "2m6s",
+          "astryxSetting": "4m0s",
+          "delta": "-1m54s"
+        },
+        {
+          "setting": "Flip Offset",
+          "observed": "2m55s",
+          "astryxSetting": "0m0s",
+          "delta": "2m55s"
+        }
+      ]
     }
   },
   "2026-03-09": {
@@ -152,7 +908,90 @@
       "subs": 91,
       "settled_guide_rms": 1.16,
       "drops": 0,
-      "expected_failed_invariants": []
+      "expected_failed_invariants": [],
+      "tier_counts": {
+        "reject": 2,
+        "clean": 76,
+        "marginal": 13
+      },
+      "recommendations": [
+        {
+          "group": "behavior",
+          "setting": "Sub Gap",
+          "observed": "1.0s (n=36, clean blocks, no dither between)",
+          "recommended": "5.0s",
+          "changeNeeded": true
+        },
+        {
+          "group": "behavior",
+          "setting": "Dither Duration",
+          "observed": "20.7s (n=23, clean blocks only)",
+          "recommended": "25.0s",
+          "changeNeeded": true
+        },
+        {
+          "group": "sequencePlanning",
+          "setting": "AF Duration",
+          "observed": "2.08m avg (n=17)",
+          "recommended": "3m",
+          "changeNeeded": false
+        },
+        {
+          "group": "sequencePlanning",
+          "setting": "Guide Calibration Duration",
+          "observed": "2.02m avg (n=1)",
+          "recommended": "3m",
+          "changeNeeded": false
+        },
+        {
+          "group": "sequencePlanning",
+          "setting": "Flip Duration",
+          "observed": "0.85m avg (n=1)",
+          "recommended": "1m",
+          "changeNeeded": false
+        },
+        {
+          "group": "phd2",
+          "setting": "Search Region",
+          "observed": "50px",
+          "recommended": "smaller than 50px",
+          "changeNeeded": true
+        },
+        {
+          "group": "phd2",
+          "setting": "Star Mass Tolerance",
+          "observed": "50%",
+          "recommended": "50% (as configured)",
+          "changeNeeded": false
+        },
+        {
+          "group": "phd2",
+          "setting": "Guide Star Selection",
+          "observed": "4 near-edge-lock finding(s) this session",
+          "recommended": "Prefer a brighter, more isolated guide star further from the sensor edge on future nights with this target/field.",
+          "changeNeeded": true
+        }
+      ],
+      "meridian_verification": [
+        {
+          "setting": "Flip Pause",
+          "observed": "4m0s",
+          "astryxSetting": "4m0s",
+          "delta": "0m0s"
+        },
+        {
+          "setting": "Wait for a sub",
+          "observed": "0m30s",
+          "astryxSetting": "—",
+          "delta": "—"
+        },
+        {
+          "setting": "Flip Offset",
+          "observed": "1m58s",
+          "astryxSetting": "0m0s",
+          "delta": "1m58s"
+        }
+      ]
     }
   },
   "2026-03-19": {
@@ -163,7 +1002,77 @@
       "subs": 145,
       "settled_guide_rms": 1.12,
       "drops": 0,
-      "expected_failed_invariants": []
+      "expected_failed_invariants": [],
+      "tier_counts": {
+        "clean": 68,
+        "marginal": 16,
+        "reject": 1
+      },
+      "recommendations": [
+        {
+          "group": "behavior",
+          "setting": "Sub Gap",
+          "observed": "1.4s (n=36, clean blocks, no dither between)",
+          "recommended": "5.0s",
+          "changeNeeded": true
+        },
+        {
+          "group": "behavior",
+          "setting": "Dither Duration",
+          "observed": "24.0s (n=26, clean blocks only)",
+          "recommended": "25.0s",
+          "changeNeeded": false
+        },
+        {
+          "group": "sequencePlanning",
+          "setting": "AF Duration",
+          "observed": "2.01m avg (n=15)",
+          "recommended": "3m",
+          "changeNeeded": false
+        },
+        {
+          "group": "sequencePlanning",
+          "setting": "Guide Calibration Duration",
+          "observed": "1.88m avg (n=1)",
+          "recommended": "2m",
+          "changeNeeded": false
+        },
+        {
+          "group": "sequencePlanning",
+          "setting": "Flip Duration",
+          "observed": "0.85m avg (n=1)",
+          "recommended": "1m",
+          "changeNeeded": false
+        },
+        {
+          "group": "phd2",
+          "setting": "Search Region",
+          "observed": "50px",
+          "recommended": "50px (as configured)",
+          "changeNeeded": false
+        },
+        {
+          "group": "phd2",
+          "setting": "Star Mass Tolerance",
+          "observed": "50%",
+          "recommended": "50% (as configured)",
+          "changeNeeded": false
+        }
+      ],
+      "meridian_verification": [
+        {
+          "setting": "Flip Pause",
+          "observed": "1m59s",
+          "astryxSetting": "4m0s",
+          "delta": "-2m1s"
+        },
+        {
+          "setting": "Flip Offset",
+          "observed": "2m4s",
+          "astryxSetting": "0m0s",
+          "delta": "2m4s"
+        }
+      ]
     }
   },
   "2026-04-17": {
@@ -176,6 +1085,83 @@
       "drops": 24,
       "expected_failed_invariants": [
         "I3"
+      ],
+      "tier_counts": {
+        "clean": 53,
+        "reject": 3,
+        "marginal": 9
+      },
+      "recommendations": [
+        {
+          "group": "behavior",
+          "setting": "Sub Gap",
+          "observed": "1.0s (n=39, clean blocks, dither-every-sub — isolated by subtracting mean dither duration)",
+          "recommended": "5.0s",
+          "changeNeeded": true
+        },
+        {
+          "group": "behavior",
+          "setting": "Dither Duration",
+          "observed": "20.4s (n=51, clean blocks only)",
+          "recommended": "25.0s",
+          "changeNeeded": true
+        },
+        {
+          "group": "sequencePlanning",
+          "setting": "AF Duration",
+          "observed": "2.03m avg (n=12)",
+          "recommended": "3m",
+          "changeNeeded": false
+        },
+        {
+          "group": "sequencePlanning",
+          "setting": "Guide Calibration Duration",
+          "observed": "1.90m avg (n=1)",
+          "recommended": "2m",
+          "changeNeeded": false
+        },
+        {
+          "group": "sequencePlanning",
+          "setting": "Flip Duration",
+          "observed": "0.87m avg (n=1)",
+          "recommended": "1m",
+          "changeNeeded": false
+        },
+        {
+          "group": "phd2",
+          "setting": "Search Region",
+          "observed": "50px",
+          "recommended": "smaller than 50px",
+          "changeNeeded": true
+        },
+        {
+          "group": "phd2",
+          "setting": "Star Mass Tolerance",
+          "observed": "50%; star lost to a mass change in 2 session(s)",
+          "recommended": "higher than 50%",
+          "changeNeeded": true
+        },
+        {
+          "group": "phd2",
+          "setting": "Guide Star Selection",
+          "observed": "1 near-edge-lock finding(s) this session",
+          "recommended": "Prefer a brighter, more isolated guide star further from the sensor edge on future nights with this target/field.",
+          "changeNeeded": true
+        }
+      ],
+      "meridian_verification": [
+        {
+          "setting": "Flip Pause",
+          "observed": "3m24s",
+          "astryxSetting": "4m0s",
+          "delta": "-0m36s"
+        },
+        {
+          "setting": "Flip Offset",
+          "observed": "2m0s",
+          "astryxSetting": "0m0s",
+          "delta": "2m0s"
+        }
       ]
     }
   },
@@ -184,7 +1170,10 @@
     "asiair_file": "Autorun_Log_2026-04-21_171718.txt",
     "phd2_file": null,
     "expected": {
-      "subs": 1
+      "subs": 1,
+      "tier_counts": {},
+      "recommendations": [],
+      "meridian_verification": []
     }
   },
   "2026-05-09": {
@@ -195,7 +1184,83 @@
       "subs": 118,
       "settled_guide_rms": 0.94,
       "drops": 0,
-      "expected_failed_invariants": []
+      "expected_failed_invariants": [],
+      "tier_counts": {
+        "clean": 48,
+        "marginal": 10
+      },
+      "recommendations": [
+        {
+          "group": "behavior",
+          "setting": "Sub Gap",
+          "observed": "1.0s (n=34, clean blocks, dither-every-sub — isolated by subtracting mean dither duration)",
+          "recommended": "5.0s",
+          "changeNeeded": true
+        },
+        {
+          "group": "behavior",
+          "setting": "Dither Duration",
+          "observed": "20.2s (n=47, clean blocks only)",
+          "recommended": "25.0s",
+          "changeNeeded": true
+        },
+        {
+          "group": "sequencePlanning",
+          "setting": "AF Duration",
+          "observed": "2.03m avg (n=11)",
+          "recommended": "3m",
+          "changeNeeded": false
+        },
+        {
+          "group": "sequencePlanning",
+          "setting": "Guide Calibration Duration",
+          "observed": "1.90m avg (n=1)",
+          "recommended": "2m",
+          "changeNeeded": false
+        },
+        {
+          "group": "sequencePlanning",
+          "setting": "Flip Duration",
+          "observed": "0.85m avg (n=1)",
+          "recommended": "1m",
+          "changeNeeded": false
+        },
+        {
+          "group": "phd2",
+          "setting": "Search Region",
+          "observed": "50px",
+          "recommended": "smaller than 50px",
+          "changeNeeded": true
+        },
+        {
+          "group": "phd2",
+          "setting": "Star Mass Tolerance",
+          "observed": "50%",
+          "recommended": "50% (as configured)",
+          "changeNeeded": false
+        },
+        {
+          "group": "phd2",
+          "setting": "Guide Star Selection",
+          "observed": "2 near-edge-lock finding(s) this session",
+          "recommended": "Prefer a brighter, more isolated guide star further from the sensor edge on future nights with this target/field.",
+          "changeNeeded": true
+        }
+      ],
+      "meridian_verification": [
+        {
+          "setting": "Flip Pause",
+          "observed": "3m51s",
+          "astryxSetting": "4m0s",
+          "delta": "-0m9s"
+        },
+        {
+          "setting": "Flip Offset",
+          "observed": "2m0s",
+          "astryxSetting": "0m0s",
+          "delta": "2m0s"
+        }
+      ]
     }
   },
   "2026-05-11": {
@@ -210,7 +1275,90 @@
         "I3",
         "I6"
       ],
-      "rms_tolerance": 0.06
+      "rms_tolerance": 0.06,
+      "tier_counts": {
+        "clean": 24,
+        "reject": 13,
+        "marginal": 20
+      },
+      "recommendations": [
+        {
+          "group": "behavior",
+          "setting": "Sub Gap",
+          "observed": "1.2s (n=13, clean blocks, dither-every-sub — isolated by subtracting mean dither duration)",
+          "recommended": "5.0s",
+          "changeNeeded": true
+        },
+        {
+          "group": "behavior",
+          "setting": "Dither Duration",
+          "observed": "22.7s (n=18, clean blocks only)",
+          "recommended": "25.0s",
+          "changeNeeded": false
+        },
+        {
+          "group": "sequencePlanning",
+          "setting": "AF Duration",
+          "observed": "2.10m avg (n=8)",
+          "recommended": "3m",
+          "changeNeeded": false
+        },
+        {
+          "group": "sequencePlanning",
+          "setting": "Guide Calibration Duration",
+          "observed": "1.75m avg (n=1)",
+          "recommended": "2m",
+          "changeNeeded": false
+        },
+        {
+          "group": "sequencePlanning",
+          "setting": "Flip Duration",
+          "observed": "0.87m avg (n=1)",
+          "recommended": "1m",
+          "changeNeeded": false
+        },
+        {
+          "group": "phd2",
+          "setting": "Search Region",
+          "observed": "50px",
+          "recommended": "smaller than 50px",
+          "changeNeeded": true
+        },
+        {
+          "group": "phd2",
+          "setting": "Star Mass Tolerance",
+          "observed": "50%; star lost to a mass change in 104 session(s)",
+          "recommended": "higher than 50%",
+          "changeNeeded": true
+        },
+        {
+          "group": "phd2",
+          "setting": "Guide Star Selection",
+          "observed": "38 near-edge-lock finding(s) this session",
+          "recommended": "Prefer a brighter, more isolated guide star further from the sensor edge on future nights with this target/field.",
+          "changeNeeded": true
+        }
+      ],
+      "meridian_verification": [
+        {
+          "setting": "Flip Pause",
+          "observed": "4m0s",
+          "astryxSetting": "4m0s",
+          "delta": "0m0s"
+        },
+        {
+          "setting": "Wait for a sub",
+          "observed": "0m55s",
+          "astryxSetting": "—",
+          "delta": "—"
+        },
+        {
+          "setting": "Flip Offset",
+          "observed": "1m59s",
+          "astryxSetting": "0m0s",
+          "delta": "1m59s"
+        }
+      ]
     }
   },
   "2026-06-05": {
@@ -223,6 +1371,84 @@
       "drops": 262,
       "expected_failed_invariants": [
         "I3"
+      ],
+      "tier_counts": {
+        "clean": 173,
+        "reject": 3,
+        "marginal": 56,
+        "unknown": 13
+      },
+      "recommendations": [
+        {
+          "group": "behavior",
+          "setting": "Sub Gap",
+          "observed": "1.0s (n=129, clean blocks, dither-every-sub — isolated by subtracting mean dither duration)",
+          "recommended": "5.0s (not updated: 2 clean samples, minimum 5)",
+          "changeNeeded": true
+        },
+        {
+          "group": "behavior",
+          "setting": "Dither Duration",
+          "observed": "22.1s (n=165, clean blocks only)",
+          "recommended": "25.0s",
+          "changeNeeded": false
+        },
+        {
+          "group": "sequencePlanning",
+          "setting": "AF Duration",
+          "observed": "2.15m avg (n=15)",
+          "recommended": "3m",
+          "changeNeeded": false
+        },
+        {
+          "group": "sequencePlanning",
+          "setting": "Guide Calibration Duration",
+          "observed": "1.98m avg (n=3)",
+          "recommended": "2m",
+          "changeNeeded": false
+        },
+        {
+          "group": "sequencePlanning",
+          "setting": "Flip Duration",
+          "observed": "0.92m avg (n=1)",
+          "recommended": "1m",
+          "changeNeeded": false
+        },
+        {
+          "group": "phd2",
+          "setting": "Search Region",
+          "observed": "25px",
+          "recommended": "smaller than 25px",
+          "changeNeeded": true
+        },
+        {
+          "group": "phd2",
+          "setting": "Star Mass Tolerance",
+          "observed": "50%; star lost to a mass change in 17 session(s)",
+          "recommended": "higher than 50%",
+          "changeNeeded": true
+        },
+        {
+          "group": "phd2",
+          "setting": "Guide Star Selection",
+          "observed": "27 near-edge-lock finding(s) this session",
+          "recommended": "Prefer a brighter, more isolated guide star further from the sensor edge on future nights with this target/field.",
+          "changeNeeded": true
+        }
+      ],
+      "meridian_verification": [
+        {
+          "setting": "Flip Pause",
+          "observed": "2m9s",
+          "astryxSetting": "4m0s",
+          "delta": "-1m51s"
+        },
+        {
+          "setting": "Flip Offset",
+          "observed": "1m59s",
+          "astryxSetting": "0m0s",
+          "delta": "1m59s"
+        }
       ]
     }
   },
@@ -236,6 +1462,83 @@
       "drops": 293,
       "expected_failed_invariants": [
         "I3"
+      ],
+      "tier_counts": {
+        "clean": 45,
+        "marginal": 6,
+        "reject": 4
+      },
+      "recommendations": [
+        {
+          "group": "behavior",
+          "setting": "Sub Gap",
+          "observed": "1.0s (n=33, clean blocks, dither-every-sub — isolated by subtracting mean dither duration)",
+          "recommended": "5.0s",
+          "changeNeeded": true
+        },
+        {
+          "group": "behavior",
+          "setting": "Dither Duration",
+          "observed": "21.3s (n=44, clean blocks only)",
+          "recommended": "25.0s",
+          "changeNeeded": true
+        },
+        {
+          "group": "sequencePlanning",
+          "setting": "AF Duration",
+          "observed": "2.01m avg (n=9)",
+          "recommended": "3m",
+          "changeNeeded": false
+        },
+        {
+          "group": "sequencePlanning",
+          "setting": "Guide Calibration Duration",
+          "observed": "1.90m avg (n=1)",
+          "recommended": "2m",
+          "changeNeeded": false
+        },
+        {
+          "group": "sequencePlanning",
+          "setting": "Flip Duration",
+          "observed": "1.05m avg (n=1)",
+          "recommended": "2m",
+          "changeNeeded": false
+        },
+        {
+          "group": "phd2",
+          "setting": "Search Region",
+          "observed": "50px",
+          "recommended": "smaller than 50px",
+          "changeNeeded": true
+        },
+        {
+          "group": "phd2",
+          "setting": "Star Mass Tolerance",
+          "observed": "50%; star lost to a mass change in 22 session(s)",
+          "recommended": "higher than 50%",
+          "changeNeeded": true
+        },
+        {
+          "group": "phd2",
+          "setting": "Guide Star Selection",
+          "observed": "7 near-edge-lock finding(s) this session",
+          "recommended": "Prefer a brighter, more isolated guide star further from the sensor edge on future nights with this target/field.",
+          "changeNeeded": true
+        }
+      ],
+      "meridian_verification": [
+        {
+          "setting": "Flip Pause",
+          "observed": "0m58s",
+          "astryxSetting": "4m0s",
+          "delta": "-3m2s"
+        },
+        {
+          "setting": "Flip Offset",
+          "observed": "1m59s",
+          "astryxSetting": "0m0s",
+          "delta": "1m59s"
+        }
       ]
     }
   },
@@ -247,7 +1550,89 @@
       "subs": 115,
       "settled_guide_rms": 0.94,
       "drops": 0,
-      "expected_failed_invariants": []
+      "expected_failed_invariants": [],
+      "tier_counts": {
+        "clean": 49,
+        "marginal": 6
+      },
+      "recommendations": [
+        {
+          "group": "behavior",
+          "setting": "Sub Gap",
+          "observed": "1.0s (n=34, clean blocks, dither-every-sub — isolated by subtracting mean dither duration)",
+          "recommended": "5.0s",
+          "changeNeeded": true
+        },
+        {
+          "group": "behavior",
+          "setting": "Dither Duration",
+          "observed": "20.5s (n=48, clean blocks only)",
+          "recommended": "25.0s",
+          "changeNeeded": true
+        },
+        {
+          "group": "sequencePlanning",
+          "setting": "AF Duration",
+          "observed": "2.07m avg (n=10)",
+          "recommended": "3m",
+          "changeNeeded": false
+        },
+        {
+          "group": "sequencePlanning",
+          "setting": "Guide Calibration Duration",
+          "observed": "2.00m avg (n=1)",
+          "recommended": "2m",
+          "changeNeeded": false
+        },
+        {
+          "group": "sequencePlanning",
+          "setting": "Flip Duration",
+          "observed": "0.85m avg (n=1)",
+          "recommended": "1m",
+          "changeNeeded": false
+        },
+        {
+          "group": "phd2",
+          "setting": "Search Region",
+          "observed": "50px",
+          "recommended": "smaller than 50px",
+          "changeNeeded": true
+        },
+        {
+          "group": "phd2",
+          "setting": "Star Mass Tolerance",
+          "observed": "50%",
+          "recommended": "50% (as configured)",
+          "changeNeeded": false
+        },
+        {
+          "group": "phd2",
+          "setting": "Guide Star Selection",
+          "observed": "3 near-edge-lock finding(s) this session",
+          "recommended": "Prefer a brighter, more isolated guide star further from the sensor edge on future nights with this target/field.",
+          "changeNeeded": true
+        }
+      ],
+      "meridian_verification": [
+        {
+          "setting": "Flip Pause",
+          "observed": "4m0s",
+          "astryxSetting": "4m0s",
+          "delta": "0m0s"
+        },
+        {
+          "setting": "Wait for a sub",
+          "observed": "2m24s",
+          "astryxSetting": "—",
+          "delta": "—"
+        },
+        {
+          "setting": "Flip Offset",
+          "observed": "2m1s",
+          "astryxSetting": "0m0s",
+          "delta": "2m1s"
+        }
+      ]
     }
   },
   "2026-07-23": {
@@ -260,6 +1645,83 @@
       "drops": 33,
       "expected_failed_invariants": [
         "I1"
+      ],
+      "tier_counts": {
+        "clean": 48,
+        "marginal": 4,
+        "reject": 9
+      },
+      "recommendations": [
+        {
+          "group": "behavior",
+          "setting": "Sub Gap",
+          "observed": "1.0s (n=37, clean blocks, dither-every-sub — isolated by subtracting mean dither duration)",
+          "recommended": "5.0s",
+          "changeNeeded": true
+        },
+        {
+          "group": "behavior",
+          "setting": "Dither Duration",
+          "observed": "21.2s (n=47, clean blocks only)",
+          "recommended": "25.0s",
+          "changeNeeded": true
+        },
+        {
+          "group": "sequencePlanning",
+          "setting": "AF Duration",
+          "observed": "2.09m avg (n=11)",
+          "recommended": "3m",
+          "changeNeeded": false
+        },
+        {
+          "group": "sequencePlanning",
+          "setting": "Guide Calibration Duration",
+          "observed": "1.93m avg (n=1)",
+          "recommended": "2m",
+          "changeNeeded": false
+        },
+        {
+          "group": "sequencePlanning",
+          "setting": "Flip Duration",
+          "observed": "0.87m avg (n=1)",
+          "recommended": "1m",
+          "changeNeeded": false
+        },
+        {
+          "group": "phd2",
+          "setting": "Search Region",
+          "observed": "50px",
+          "recommended": "smaller than 50px",
+          "changeNeeded": true
+        },
+        {
+          "group": "phd2",
+          "setting": "Star Mass Tolerance",
+          "observed": "50%; star lost to a mass change in 1 session(s)",
+          "recommended": "50% (as configured)",
+          "changeNeeded": false
+        },
+        {
+          "group": "phd2",
+          "setting": "Guide Star Selection",
+          "observed": "2 guide-star-swap, 3 near-edge-lock finding(s) this session",
+          "recommended": "Prefer a brighter, more isolated guide star further from the sensor edge on future nights with this target/field.",
+          "changeNeeded": true
+        }
+      ],
+      "meridian_verification": [
+        {
+          "setting": "Flip Pause",
+          "observed": "3m42s",
+          "astryxSetting": "4m0s",
+          "delta": "-0m18s"
+        },
+        {
+          "setting": "Flip Offset",
+          "observed": "2m0s",
+          "astryxSetting": "0m0s",
+          "delta": "2m0s"
+        }
       ]
     }
   },
@@ -273,6 +1735,83 @@
       "drops": 10,
       "expected_failed_invariants": [
         "I6"
+      ],
+      "tier_counts": {
+        "marginal": 32,
+        "clean": 113,
+        "reject": 4
+      },
+      "recommendations": [
+        {
+          "group": "behavior",
+          "setting": "Sub Gap",
+          "observed": "1.0s (n=40, clean blocks, no dither between)",
+          "recommended": "5.0s",
+          "changeNeeded": true
+        },
+        {
+          "group": "behavior",
+          "setting": "Dither Duration",
+          "observed": "18.8s (n=52, clean blocks only)",
+          "recommended": "25.0s",
+          "changeNeeded": true
+        },
+        {
+          "group": "sequencePlanning",
+          "setting": "AF Duration",
+          "observed": "2.09m avg (n=12)",
+          "recommended": "3m",
+          "changeNeeded": false
+        },
+        {
+          "group": "sequencePlanning",
+          "setting": "Guide Calibration Duration",
+          "observed": "2.95m avg (n=1)",
+          "recommended": "3m",
+          "changeNeeded": false
+        },
+        {
+          "group": "sequencePlanning",
+          "setting": "Flip Duration",
+          "observed": "0.87m avg (n=1)",
+          "recommended": "1m",
+          "changeNeeded": false
+        },
+        {
+          "group": "phd2",
+          "setting": "Search Region",
+          "observed": "50px",
+          "recommended": "smaller than 50px",
+          "changeNeeded": true
+        },
+        {
+          "group": "phd2",
+          "setting": "Star Mass Tolerance",
+          "observed": "50%; star lost to a mass change in 1 session(s)",
+          "recommended": "50% (as configured)",
+          "changeNeeded": false
+        },
+        {
+          "group": "phd2",
+          "setting": "Guide Star Selection",
+          "observed": "4 near-edge-lock finding(s) this session",
+          "recommended": "Prefer a brighter, more isolated guide star further from the sensor edge on future nights with this target/field.",
+          "changeNeeded": true
+        }
+      ],
+      "meridian_verification": [
+        {
+          "setting": "Flip Pause",
+          "observed": "3m44s",
+          "astryxSetting": "4m0s",
+          "delta": "-0m16s"
+        },
+        {
+          "setting": "Flip Offset",
+          "observed": "2m0s",
+          "astryxSetting": "0m0s",
+          "delta": "2m0s"
+        }
       ]
     }
   },
@@ -284,7 +1823,89 @@
       "subs": 66,
       "settled_guide_rms": 0.75,
       "drops": 0,
-      "expected_failed_invariants": []
+      "expected_failed_invariants": [],
+      "tier_counts": {
+        "clean": 57,
+        "marginal": 9
+      },
+      "recommendations": [
+        {
+          "group": "behavior",
+          "setting": "Sub Gap",
+          "observed": "1.2s (n=17, clean blocks, no dither between)",
+          "recommended": "5.0s",
+          "changeNeeded": true
+        },
+        {
+          "group": "behavior",
+          "setting": "Dither Duration",
+          "observed": "13.0s (n=26, clean blocks only)",
+          "recommended": "25.0s",
+          "changeNeeded": true
+        },
+        {
+          "group": "sequencePlanning",
+          "setting": "AF Duration",
+          "observed": "1.89m avg (n=12)",
+          "recommended": "2m",
+          "changeNeeded": false
+        },
+        {
+          "group": "sequencePlanning",
+          "setting": "Guide Calibration Duration",
+          "observed": "1.77m avg (n=1)",
+          "recommended": "2m",
+          "changeNeeded": false
+        },
+        {
+          "group": "sequencePlanning",
+          "setting": "Flip Duration",
+          "observed": "0.85m avg (n=1)",
+          "recommended": "1m",
+          "changeNeeded": false
+        },
+        {
+          "group": "phd2",
+          "setting": "Search Region",
+          "observed": "50px",
+          "recommended": "smaller than 50px",
+          "changeNeeded": true
+        },
+        {
+          "group": "phd2",
+          "setting": "Star Mass Tolerance",
+          "observed": "50%",
+          "recommended": "50% (as configured)",
+          "changeNeeded": false
+        },
+        {
+          "group": "phd2",
+          "setting": "Guide Star Selection",
+          "observed": "6 near-edge-lock finding(s) this session",
+          "recommended": "Prefer a brighter, more isolated guide star further from the sensor edge on future nights with this target/field.",
+          "changeNeeded": true
+        }
+      ],
+      "meridian_verification": [
+        {
+          "setting": "Flip Pause",
+          "observed": "4m0s",
+          "astryxSetting": "4m0s",
+          "delta": "0m0s"
+        },
+        {
+          "setting": "Wait for a sub",
+          "observed": "2m1s",
+          "astryxSetting": "—",
+          "delta": "—"
+        },
+        {
+          "setting": "Flip Offset",
+          "observed": "1m59s",
+          "astryxSetting": "0m0s",
+          "delta": "1m59s"
+        }
+      ]
     }
   },
   "2026-08-23": {
@@ -297,6 +1918,89 @@
       "drops": 499,
       "expected_failed_invariants": [
         "I3"
+      ],
+      "tier_counts": {
+        "clean": 37,
+        "marginal": 17,
+        "reject": 1
+      },
+      "recommendations": [
+        {
+          "group": "behavior",
+          "setting": "Sub Gap",
+          "observed": "1.1s (n=13, clean blocks, no dither between)",
+          "recommended": "5.0s",
+          "changeNeeded": true
+        },
+        {
+          "group": "behavior",
+          "setting": "Dither Duration",
+          "observed": "13.6s (n=18, clean blocks only)",
+          "recommended": "25.0s",
+          "changeNeeded": true
+        },
+        {
+          "group": "sequencePlanning",
+          "setting": "AF Duration",
+          "observed": "1.90m avg (n=10)",
+          "recommended": "2m",
+          "changeNeeded": false
+        },
+        {
+          "group": "sequencePlanning",
+          "setting": "Guide Calibration Duration",
+          "observed": "2.58m avg (n=1)",
+          "recommended": "3m",
+          "changeNeeded": false
+        },
+        {
+          "group": "sequencePlanning",
+          "setting": "Flip Duration",
+          "observed": "0.85m avg (n=1)",
+          "recommended": "1m",
+          "changeNeeded": false
+        },
+        {
+          "group": "phd2",
+          "setting": "Search Region",
+          "observed": "50px",
+          "recommended": "smaller than 50px",
+          "changeNeeded": true
+        },
+        {
+          "group": "phd2",
+          "setting": "Star Mass Tolerance",
+          "observed": "50%; star lost to a mass change in 45 session(s)",
+          "recommended": "higher than 50%",
+          "changeNeeded": true
+        },
+        {
+          "group": "phd2",
+          "setting": "Guide Star Selection",
+          "observed": "7 near-edge-lock finding(s) this session",
+          "recommended": "Prefer a brighter, more isolated guide star further from the sensor edge on future nights with this target/field.",
+          "changeNeeded": true
+        }
+      ],
+      "meridian_verification": [
+        {
+          "setting": "Flip Pause",
+          "observed": "4m0s",
+          "astryxSetting": "4m0s",
+          "delta": "0m0s"
+        },
+        {
+          "setting": "Wait for a sub",
+          "observed": "0m16s",
+          "astryxSetting": "—",
+          "delta": "—"
+        },
+        {
+          "setting": "Flip Offset",
+          "observed": "1m58s",
+          "astryxSetting": "0m0s",
+          "delta": "1m58s"
+        }
       ]
     }
   },
@@ -308,7 +2012,90 @@
       "subs": 72,
       "settled_guide_rms": 0.83,
       "drops": 0,
-      "expected_failed_invariants": []
+      "expected_failed_invariants": [],
+      "tier_counts": {
+        "clean": 58,
+        "marginal": 13,
+        "reject": 1
+      },
+      "recommendations": [
+        {
+          "group": "behavior",
+          "setting": "Sub Gap",
+          "observed": "3.2s (n=14, clean blocks, no dither between)",
+          "recommended": "5.0s",
+          "changeNeeded": true
+        },
+        {
+          "group": "behavior",
+          "setting": "Dither Duration",
+          "observed": "11.7s (n=27, clean blocks only)",
+          "recommended": "25.0s",
+          "changeNeeded": true
+        },
+        {
+          "group": "sequencePlanning",
+          "setting": "AF Duration",
+          "observed": "1.85m avg (n=15)",
+          "recommended": "2m",
+          "changeNeeded": false
+        },
+        {
+          "group": "sequencePlanning",
+          "setting": "Guide Calibration Duration",
+          "observed": "2.58m avg (n=1)",
+          "recommended": "3m",
+          "changeNeeded": false
+        },
+        {
+          "group": "sequencePlanning",
+          "setting": "Flip Duration",
+          "observed": "0.83m avg (n=1)",
+          "recommended": "1m",
+          "changeNeeded": false
+        },
+        {
+          "group": "phd2",
+          "setting": "Search Region",
+          "observed": "50px",
+          "recommended": "smaller than 50px",
+          "changeNeeded": true
+        },
+        {
+          "group": "phd2",
+          "setting": "Star Mass Tolerance",
+          "observed": "50%",
+          "recommended": "50% (as configured)",
+          "changeNeeded": false
+        },
+        {
+          "group": "phd2",
+          "setting": "Guide Star Selection",
+          "observed": "2 near-edge-lock finding(s) this session",
+          "recommended": "Prefer a brighter, more isolated guide star further from the sensor edge on future nights with this target/field.",
+          "changeNeeded": true
+        }
+      ],
+      "meridian_verification": [
+        {
+          "setting": "Flip Pause",
+          "observed": "4m0s",
+          "astryxSetting": "4m0s",
+          "delta": "0m0s"
+        },
+        {
+          "setting": "Wait for a sub",
+          "observed": "2m45s",
+          "astryxSetting": "—",
+          "delta": "—"
+        },
+        {
+          "setting": "Flip Offset",
+          "observed": "1m59s",
+          "astryxSetting": "0m0s",
+          "delta": "1m59s"
+        }
+      ]
     }
   },
   "2026-10-05": {
@@ -319,7 +2106,89 @@
       "subs": 100,
       "settled_guide_rms": 1.07,
       "drops": 0,
-      "expected_failed_invariants": []
+      "expected_failed_invariants": [],
+      "tier_counts": {
+        "clean": 83,
+        "marginal": 17
+      },
+      "recommendations": [
+        {
+          "group": "behavior",
+          "setting": "Sub Gap",
+          "observed": "1.2s (n=35, clean blocks, no dither between)",
+          "recommended": "5.0s",
+          "changeNeeded": true
+        },
+        {
+          "group": "behavior",
+          "setting": "Dither Duration",
+          "observed": "15.2s (n=39, clean blocks only)",
+          "recommended": "25.0s",
+          "changeNeeded": true
+        },
+        {
+          "group": "sequencePlanning",
+          "setting": "AF Duration",
+          "observed": "1.93m avg (n=19)",
+          "recommended": "2m",
+          "changeNeeded": false
+        },
+        {
+          "group": "sequencePlanning",
+          "setting": "Guide Calibration Duration",
+          "observed": "1.76m avg (n=2)",
+          "recommended": "2m",
+          "changeNeeded": false
+        },
+        {
+          "group": "sequencePlanning",
+          "setting": "Flip Duration",
+          "observed": "0.85m avg (n=1)",
+          "recommended": "1m",
+          "changeNeeded": false
+        },
+        {
+          "group": "phd2",
+          "setting": "Search Region",
+          "observed": "50px",
+          "recommended": "smaller than 50px",
+          "changeNeeded": true
+        },
+        {
+          "group": "phd2",
+          "setting": "Star Mass Tolerance",
+          "observed": "50%",
+          "recommended": "50% (as configured)",
+          "changeNeeded": false
+        },
+        {
+          "group": "phd2",
+          "setting": "Guide Star Selection",
+          "observed": "9 near-edge-lock finding(s) this session",
+          "recommended": "Prefer a brighter, more isolated guide star further from the sensor edge on future nights with this target/field.",
+          "changeNeeded": true
+        }
+      ],
+      "meridian_verification": [
+        {
+          "setting": "Flip Pause",
+          "observed": "4m0s",
+          "astryxSetting": "4m0s",
+          "delta": "0m0s"
+        },
+        {
+          "setting": "Wait for a sub",
+          "observed": "1m2s",
+          "astryxSetting": "—",
+          "delta": "—"
+        },
+        {
+          "setting": "Flip Offset",
+          "observed": "2m0s",
+          "astryxSetting": "0m0s",
+          "delta": "2m0s"
+        }
+      ]
     }
   },
   "2026-10-06": {
@@ -330,7 +2199,84 @@
       "subs": 100,
       "settled_guide_rms": 1.37,
       "drops": 3,
-      "expected_failed_invariants": []
+      "expected_failed_invariants": [],
+      "tier_counts": {
+        "clean": 72,
+        "marginal": 26,
+        "reject": 2
+      },
+      "recommendations": [
+        {
+          "group": "behavior",
+          "setting": "Sub Gap",
+          "observed": "1.1s (n=29, clean blocks, no dither between)",
+          "recommended": "5.0s",
+          "changeNeeded": true
+        },
+        {
+          "group": "behavior",
+          "setting": "Dither Duration",
+          "observed": "13.9s (n=35, clean blocks only)",
+          "recommended": "25.0s",
+          "changeNeeded": true
+        },
+        {
+          "group": "sequencePlanning",
+          "setting": "AF Duration",
+          "observed": "1.94m avg (n=20)",
+          "recommended": "2m",
+          "changeNeeded": false
+        },
+        {
+          "group": "sequencePlanning",
+          "setting": "Guide Calibration Duration",
+          "observed": "1.79m avg (n=4)",
+          "recommended": "2m",
+          "changeNeeded": false
+        },
+        {
+          "group": "sequencePlanning",
+          "setting": "Flip Duration",
+          "observed": "0.83m avg (n=2)",
+          "recommended": "1m",
+          "changeNeeded": false
+        },
+        {
+          "group": "phd2",
+          "setting": "Search Region",
+          "observed": "50px",
+          "recommended": "smaller than 50px",
+          "changeNeeded": true
+        },
+        {
+          "group": "phd2",
+          "setting": "Star Mass Tolerance",
+          "observed": "50%; star lost to a mass change in 1 session(s)",
+          "recommended": "50% (as configured)",
+          "changeNeeded": false
+        },
+        {
+          "group": "phd2",
+          "setting": "Guide Star Selection",
+          "observed": "12 near-edge-lock finding(s) this session",
+          "recommended": "Prefer a brighter, more isolated guide star further from the sensor edge on future nights with this target/field.",
+          "changeNeeded": true
+        }
+      ],
+      "meridian_verification": [
+        {
+          "setting": "Flip Pause",
+          "observed": "2m57s",
+          "astryxSetting": "4m0s",
+          "delta": "-1m3s"
+        },
+        {
+          "setting": "Flip Offset",
+          "observed": "1m59s",
+          "astryxSetting": "0m0s",
+          "delta": "1m59s"
+        }
+      ]
     }
   }
 }

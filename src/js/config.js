@@ -15,7 +15,7 @@
 const APP_CONFIG = {
     APP_NAME: 'Astryx',
     APP_TITLE: 'Astryx - Astrophotography Planning Tool',
-    APP_VERSION: '1.96.6',
+    APP_VERSION: '1.97.0',
     DB_NAME: 'astryx-db',
     DB_VERSION: 8,
     TARGET_DATA_PATH: './data/',
@@ -30,9 +30,6 @@ const APP_CONFIG = {
     SIDEBAR_MAX_WIDTH_REM: 30,
 
     // Calculation constants
-    TIMELINE_EXTENSION_HOURS: 1/24,
-    MOON_SEARCH_STEP_SIZE: 1/1440,
-    MOON_SEARCH_MAX_STEPS: 2880,
     MOON_RISE_SET_EXTENSION_DAYS: 1, // search past a noon-to-noon window for the missing rise or set
     TARGET_SEARCH_STEP_SIZE: 1/1440,
     // Closest moon approach: every this many search steps first, then every
@@ -61,6 +58,13 @@ const APP_CONFIG = {
     // tallest the view may be, in percent of the window height
     FOV_DSS_FRAME_PIXELS: 1200,
     FOV_VIEW_MAX_HEIGHT_VH: 70,
+    // Viewfinder: suggest a shorter focal length when the target spans more
+    // than this percent of the field width or covers more than this percent
+    // of its area, chosen so the target would span this fraction of the
+    // field's smaller side (#338)
+    FOV_LARGE_TARGET_WIDTH_PCT: 70,
+    FOV_LARGE_TARGET_AREA_PCT: 50,
+    FOV_SUGGESTED_TARGET_FRACTION: 0.7,
 
     // Number of the top-ranked targets used to generate combinations
     TOP_RANKED_TARGETS: 37,
@@ -73,6 +77,14 @@ const APP_CONFIG = {
     TOOLTIP_POINTER_OFFSET_PX: 12, // gap between the pointer and its tooltip
     DROPDOWN_EDGE_MARGIN_PX: 8, // gap kept between an open dropdown menu and the edge it would cross
     MAX_SEARCH_RESULTS: 101, // maximum search results you can set
+    // Target Selection results (#338): the first batch shown, each batch
+    // added on scrolling, the most kept, whether they're shuffled, and the
+    // most an imaging program can be created from
+    FILTER_INITIAL_RESULTS_BATCH: 15,
+    FILTER_LAZY_LOAD_BATCH_SIZE: 15,
+    FILTER_MAX_TOTAL_RESULTS: 20000,
+    FILTER_RANDOMIZE_RESULTS: true,
+    FILTER_MAX_IMAGING_PROGRAM_TARGETS: 199,
     SEARCH_DEBOUNCE_MS: 300, // wait after the last keystroke in a search box before searching (#314, #334)
     PROJECT_TARGET_SEARCH_LIMIT: 10, // matches listed under the project dialog's target search (#314)
     DEFAULT_MIN_SIZE: 4.0,   // target filter arc minutes
@@ -125,6 +137,7 @@ const APP_CONFIG = {
     BACKUP_REMINDER_INTERVAL_DAYS: 7,   // default reminder interval (days)
     BACKUP_REMINDER_AMBER_DAYS: 7,      // sidebar indicator turns amber after this many days
     BACKUP_REMINDER_RED_DAYS: 14,       // sidebar indicator turns orange/red after this many days
+    BACKUP_RESTORE_AGE_WARNING_DAYS: [30, 90, 180], // restore dialog: an older backup is marked age-30, age-90, age-180 (#338)
 
     // Settings left out when the restore dialog compares a backup with current
     // data: bookkeeping and machine-specific values, not user data (issue #249)
@@ -155,7 +168,8 @@ const APP_CONFIG = {
     SEQ_PLAN_RECALCULATE_DELAY_MS: 1000,      // Wait after the last overhead change before recalculating the plan in its current order
     SEQ_PLAN_DEFAULT_EXPOSURE_S: 300,         // Exposure a target starts with until one is typed for it (issue #264)
     SEQ_PLAN_EXPOSURE_INPUT_DELAY_MS: 300,    // Wait after the last keystroke in an exposure field before recalculating
-    SEQ_PLAN_MAX_EARLY_START_MINUTES: 60,     // A Custom start may be up to this long before astronomical dusk
+    SEQ_PLAN_MAX_EARLY_START_MINUTES: 60,
+    SEQ_PLAN_DEFAULT_FLIP_PAUSE_MINUTES: 4,   // Meridian Flip Pause until one is set; Log Analysis checks flips against it too (#338)     // A Custom start may be up to this long before astronomical dusk
 
     // External data APIs
     APIS: {
@@ -331,6 +345,47 @@ const APP_CONFIG = {
         // doc's own worked example (2026-07-23: images 35-42 all reject).
         TIER_MARGINAL_MULTIPLIER: 1.2,
         TIER_REJECT_MULTIPLIER: 2.0,
+
+        // Detector thresholds (session-detectors.js, Issue #338). Sources
+        // are given where threshold-calibration.md has one; the rest are
+        // first-pass values from the detector's own design.
+        STAR_SWAP_MASS_FRACTION: 0.85,        // D1: frame star mass below this fraction of the session median (§9)
+        STAR_SWAP_MIN_DISPLACEMENT_PX: 8,     // D1: ... with a displacement above this (§9)
+        STAR_SWAP_MIN_FRAMES: 5,              // D1: fewer such frames than this is not a swap (§9)
+        CLOUD_WINDOW_S: 300,                  // D2: window the guide-failure density is counted over
+        CLOUD_MIN_FAILURES: 3,                // D2: guide failures in one window that flag it
+        CLOUD_COOLING_SEARCH_MIN: 30,         // D2: look this far either side of a window for a cooling reversal (AF runs about hourly)
+        CADENCE_IRREGULAR_FACTOR: 1.5,        // D7: a frame interval over this multiple of the guide exposure is irregular (§10)
+        ORTHOGONALITY_OUTLIER_DEG: 3.5,       // D10: just outside the corpus range of -3.40° to 2.40°
+        AF_DURATION_OUTLIER_FACTOR: 1.5,      // D11: an AF cycle over this multiple of AF_DURATION_TYPICAL_S is slow
+        AF_STAR_SIZE_GROWTH_FACTOR: 1.3,      // D11: last third's mean achieved star size over the first third's by this factor
+        STAR_NUMBER_DECLINE_FRACTION: 0.6,    // D12: last plate-solve star count below this fraction of the first
+        FOCUS_DRIFT_MIN_POINTS: 5,            // D13: successful AF cycles needed to fit focus against temperature
+        // D15: lock position within this many pixels of the sensor edge.
+        // Corpus (511 sessions): min 17px, p5 54px, p10 64px, p25 92px,
+        // median 155px; 100px sits between p5 and p10, near the 105px
+        // where both D1 star-swap sessions locked.
+        EDGE_DISTANCE_FLAG_PX: 100,
+
+        // Combined Report notes (session-report-view.js, Issue #338). First-
+        // pass values, not yet corpus-validated like the ones above.
+        DITHER_BIAS_FRACTION: 0.5,            // net dither drift over this fraction of a random walk's expected distance is a bias
+        SNR_DEEP_NIGHT_SUN_ALT_DEG: -25,      // guide SNR compared only with the Sun this low, well below -18° astronomical twilight
+        SNR_ANOMALOUS_FRACTION: 0.75,         // deep-night guide SNR below this fraction of the deep-night median is flagged
+        CAL_ORTHO_ELEVATED_DEG: 1.0,          // calibration orthogonality error above this is noted
+        CAL_ORTHO_CHANGE_DEG: 0.5,            // ... as is a change between calibrations above this
+        CAL_RATE_SWING_PCT: 15,               // calibration rate change between calibrations, percent, that is noted
+        CAL_DEC_EXPLAINS_DEG: 15,             // a declination difference this large explains such a rate change
+
+        // Behavior recommendations (session-recommendations.js, Issue #338):
+        // a measured value further than this from the stored one suggests a change
+        SUB_GAP_CHANGE_S: 1,
+        DITHER_DURATION_CHANGE_S: 3,
+
+        // Log parsers (Issue #338)
+        PHD2_ERROR_CODE_WARNING_COUNT: 5,     // a PHD2 error code seen more often than this in a session is a warning, not info
+        ASIAIR_ABORTED_SUB_FRACTION: 0.9,     // a sub followed by the next start before this fraction of its exposure was cut short
+        ASIAIR_DEFAULT_EXPOSURE_S: 300,       // exposure assumed for a line that doesn't state one
     },
 };
 
