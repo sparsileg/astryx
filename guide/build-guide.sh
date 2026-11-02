@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Builds the Astryx User Guide PDF from the Markdown chapters.
 # Needs pandoc (3.x) and typst on the PATH.
-# Usage: ./build-guide.sh [output.pdf]   (default: ../src/help/astryx-guide.pdf)
+# Usage: ./build-guide.sh [output.pdf]   (default: build/astryx-guide.pdf)
 set -euo pipefail
 cd "$(dirname "$0")"
 
@@ -36,7 +36,7 @@ chapters=(
 )
 
 version=$(grep -oP "APP_VERSION:\s*'\K[^']+" ../src/js/config.js)
-output=${1:-../src/help/astryx-guide.pdf}
+output=${1:-build/astryx-guide.pdf}
 
 mkdir -p build "$(dirname "$output")"
 # The chapters often start a list on the line after a paragraph, with no

@@ -3,7 +3,6 @@
 pub mod backup;
 pub mod cli;
 pub mod filters;
-pub mod help;
 pub mod imaging_programs;
 pub mod imaging_projects;
 pub mod imaging_sessions;

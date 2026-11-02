@@ -76,8 +76,8 @@ instead of filtering each time.
 
 ## 3. Check the Night
 
-Click **Daily Visibility** on a Target Optimizer result card (see [Daily
-Visibility](daily-visibility.md)). Or click the
+For the individual target view, click **Daily Visibility** on a Target
+Optimizer result card (see [Daily Visibility](daily-visibility.md)). Or click the
 target's name under **Pinned Targets** in the sidebar, which makes it the
 Current Target and opens its details. Close them, then click **Daily
 Visibility** in the sidebar. The timeline runs from noon to noon:
@@ -161,8 +161,8 @@ session, learn from it:
 
 ::: why
 Log Analysis measures how long your camera actually takes between subs and
-how long each dither takes to settle. The Sequence Planner uses those
-measurements from then on, so its exposure counts match what your rig really
+how long each dither takes to settle. The Sequence Planner uses the average of
+those measurements over your last 20 nights, so its exposure counts match what your rig really
 does.
 :::
 

@@ -360,7 +360,7 @@
         {
           "group": "behavior",
           "setting": "Sub Gap",
-          "observed": "1.0s (n=26, clean blocks, no dither between)",
+          "observed": "1.0s (n=24, clean blocks, no dither between)",
           "recommended": "5.0s",
           "changeNeeded": true
         },
@@ -417,7 +417,7 @@
         {
           "group": "behavior",
           "setting": "Sub Gap",
-          "observed": "1.0s (n=22, clean blocks, no dither between)",
+          "observed": "1.0s (n=20, clean blocks, no dither between)",
           "recommended": "5.0s",
           "changeNeeded": true
         },
@@ -600,7 +600,7 @@
         {
           "group": "behavior",
           "setting": "Sub Gap",
-          "observed": "2.7s (n=23, clean blocks, no dither between)",
+          "observed": "1.1s (n=22, clean blocks, no dither between)",
           "recommended": "5.0s",
           "changeNeeded": true
         },
@@ -762,7 +762,7 @@
         {
           "group": "behavior",
           "setting": "Sub Gap",
-          "observed": "1.0s (n=31, clean blocks, no dither between)",
+          "observed": "1.0s (n=30, clean blocks, no dither between)",
           "recommended": "5.0s",
           "changeNeeded": true
         },
@@ -837,7 +837,7 @@
         {
           "group": "behavior",
           "setting": "Sub Gap",
-          "observed": "1.0s (n=12, clean blocks, no dither between)",
+          "observed": "1.0s (n=11, clean blocks, no dither between)",
           "recommended": "5.0s",
           "changeNeeded": true
         },
@@ -918,7 +918,7 @@
         {
           "group": "behavior",
           "setting": "Sub Gap",
-          "observed": "1.0s (n=36, clean blocks, no dither between)",
+          "observed": "1.0s (n=35, clean blocks, no dither between)",
           "recommended": "5.0s",
           "changeNeeded": true
         },
@@ -1012,7 +1012,7 @@
         {
           "group": "behavior",
           "setting": "Sub Gap",
-          "observed": "1.4s (n=36, clean blocks, no dither between)",
+          "observed": "1.1s (n=35, clean blocks, no dither between)",
           "recommended": "5.0s",
           "changeNeeded": true
         },
@@ -1095,7 +1095,7 @@
         {
           "group": "behavior",
           "setting": "Sub Gap",
-          "observed": "1.0s (n=39, clean blocks, dither-every-sub — isolated by subtracting mean dither duration)",
+          "observed": "1.0s (n=37, clean blocks, dither-every-sub — isolated by subtracting mean dither duration)",
           "recommended": "5.0s",
           "changeNeeded": true
         },
@@ -1193,7 +1193,7 @@
         {
           "group": "behavior",
           "setting": "Sub Gap",
-          "observed": "1.0s (n=34, clean blocks, dither-every-sub — isolated by subtracting mean dither duration)",
+          "observed": "1.0s (n=33, clean blocks, dither-every-sub — isolated by subtracting mean dither duration)",
           "recommended": "5.0s",
           "changeNeeded": true
         },
@@ -1285,7 +1285,7 @@
         {
           "group": "behavior",
           "setting": "Sub Gap",
-          "observed": "1.2s (n=13, clean blocks, dither-every-sub — isolated by subtracting mean dither duration)",
+          "observed": "1.2s (n=12, clean blocks, dither-every-sub — isolated by subtracting mean dither duration)",
           "recommended": "5.0s",
           "changeNeeded": true
         },
@@ -1472,7 +1472,7 @@
         {
           "group": "behavior",
           "setting": "Sub Gap",
-          "observed": "1.0s (n=33, clean blocks, dither-every-sub — isolated by subtracting mean dither duration)",
+          "observed": "1.0s (n=32, clean blocks, dither-every-sub — isolated by subtracting mean dither duration)",
           "recommended": "5.0s",
           "changeNeeded": true
         },
@@ -1559,7 +1559,7 @@
         {
           "group": "behavior",
           "setting": "Sub Gap",
-          "observed": "1.0s (n=34, clean blocks, dither-every-sub — isolated by subtracting mean dither duration)",
+          "observed": "1.0s (n=33, clean blocks, dither-every-sub — isolated by subtracting mean dither duration)",
           "recommended": "5.0s",
           "changeNeeded": true
         },
@@ -1655,7 +1655,7 @@
         {
           "group": "behavior",
           "setting": "Sub Gap",
-          "observed": "1.0s (n=37, clean blocks, dither-every-sub — isolated by subtracting mean dither duration)",
+          "observed": "1.0s (n=35, clean blocks, dither-every-sub — isolated by subtracting mean dither duration)",
           "recommended": "5.0s",
           "changeNeeded": true
         },
@@ -2022,7 +2022,7 @@
         {
           "group": "behavior",
           "setting": "Sub Gap",
-          "observed": "3.2s (n=14, clean blocks, no dither between)",
+          "observed": "1.0s (n=12, clean blocks, no dither between)",
           "recommended": "5.0s",
           "changeNeeded": true
         },

@@ -19,7 +19,7 @@ you image from: your backyard, a dark site, a star party field.
 3. Click **Save Location**.
 4. Choose the new location from the location list at the top of the sidebar.
 
-The first time you choose a location, Astryx works out the best month to
+The first time you choose a location, Astryx calculates the best month to
 image each target from there. A progress message shows how far it has got.
 This happens once per location, so a site you add later gets the same
 treatment the first time you choose it.
@@ -59,8 +59,8 @@ shows it.
 ### Horizon profile
 
 A horizon profile tells Astryx where your view of the sky is blocked. Without
-one, Astryx assumes a flat horizon all the way around, and a target counts as
-up as soon as it clears your minimum altitude.
+one, Astryx assumes a flat horizon all the way around, and a target is high
+enough to image as soon as it clears your minimum altitude.
 
 Enter the profile as one point per line: the azimuth (the compass direction,
 0 for north, 90 for east, 180 for south, 270 for west) and the height of the
@@ -82,6 +82,7 @@ so add more points where the skyline changes quickly.
 This is the same format as a Stellarium `horizon.txt` file, so if you've
 already made a Stellarium landscape for your site, you can paste its points
 in directly. Leave the box empty for a flat horizon.
+Astryx will automatically create a 4-point horizon that has no elevation.
 
 A target has to clear both the horizon profile and your minimum altitude.
 The horizon is used by Daily Visibility (which can switch it off), the
@@ -92,8 +93,8 @@ Yearly Observability use only the minimum altitude.
 You don't need special equipment to measure a horizon. On an Android
 phone, the AngleCam app works well: stand where your telescope sits, point
 the camera along the skyline, and it shows the compass direction and height
-of whatever is in the crosshairs. Note the height of the skyline every 15° or
-so of azimuth. A compass app and an inclinometer app do the same job on any
+of whatever is in the crosshairs. Note the height of the skyline whenever the
+elevation begins to change. A compass app and an inclinometer app do the same job on any
 phone. Ten minutes
 of work gives you a profile good enough to stop Astryx from scheduling a
 target that's behind your neighbor's oak tree.
@@ -132,7 +133,7 @@ Click **Save Telescope**.
 
 ::: tip
 If you use the same telescope with and without a reducer, save it twice,
-once for each setup: for example "Esprit 100" at 1.0 and "Esprit 100 + 0.79×"
+once for each setup: for example, naming it "Esprit 100" at 1.0 and "Esprit 100 + 0.79×"
 at 0.79. Then you can pick the configuration you'll actually use.
 :::
 
@@ -160,7 +161,7 @@ and Astryx says so when it asks. To keep the old values for past sessions,
 save the changed setup under a new name instead.
 
 A filter can't be added twice under the same name. Click **Delete** to remove
-an item. Anything recorded in an Imaging Log session can't be deleted.
+an item. Equipment mentioned in an Imaging Log session can't be deleted.
 
 ::: note
 Only the Viewfinder, the dust mote calculator in Utilities, and the Imaging
@@ -176,10 +177,10 @@ until you have a reason to change it. Open the system menu (≡), choose
 | Setting | Default | What it does |
 |:------|:---|:--------------|
 | DST Mode | Automatic | Automatic follows each location's time zone. **Always Active** and **Never Active** override it for every location; you shouldn't need them. |
-| Minimum Altitude | 35° | The lowest a target can be and still count as up. It's the starting value in Daily Visibility, Yearly Observability, and the Sequence Planner, and the value the Target Optimizer, To Do List, and Visibility filter use. Changing it means recalculating Best Months; Astryx offers to. |
+| Minimum Altitude | 35° | The lowest a target can be and still be high enough to image. It's the starting value in Daily Visibility, Yearly Observability, and the Sequence Planner, and the value the Target Optimizer, To Do List, and Visibility filter use. Changing it means recalculating Best Months; Astryx offers to. |
 | Date Format | Your computer's region | How dates are shown and typed: **mm/dd/yyyy**, **dd/mm/yyyy**, or **yyyy-mm-dd**. Astryx always stores dates as yyyy-mm-dd, so changing it changes only what you see. |
-| Min Target Size | 4.0′ | The starting minimum size, in arcminutes, for the Target Selection filters. |
-| Limiting Magnitude | 14.5 | The starting faintest magnitude for the Target Selection filters. |
+| Min Target Size | 4.0′ | The default minimum size, in arcminutes, for the Target Selection filters. Default value can be changed in the search view. |
+| Limiting Magnitude | 14.5 | The default faintest magnitude for the Target Selection filters. Default value can be changed in the search view. |
 | Automatic backups on change | On | Saves a backup a while after you change your data. |
 | Minutes before backup | 60 | How long after your last change the automatic backup waits. Each new change restarts the wait. |
 | Backup Folder | Not set | Where backups go. The web version always uses your browser's downloads folder. On the desktop app, until you choose a folder, automatic backups go to your Downloads folder and a manual backup asks where to save. |
