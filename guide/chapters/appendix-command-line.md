@@ -140,3 +140,21 @@ On Windows, run `analyze-logs` from Command Prompt or a batch file. The
 PowerShell that comes with Windows (version 5.1) treats what comes through
 `>` as text and damages the PDF.
 :::
+
+### Starting the Learned Values Over
+
+To make the learned Sub Gap and Dither Duration come from one night you
+trust, reset them and then analyze that night, discarding the report. On
+Linux:
+
+```
+#!/bin/bash
+ASTRYX="/usr/bin/astryx"
+LOGS="$HOME/logs"
+
+"$ASTRYX" reset-learned
+"$ASTRYX" analyze-logs "$LOGS/Autorun_Log_2025-10-23_202616.txt" "$LOGS/PHD2_GuideLog_2025-10-23_201657.txt" > /dev/null
+```
+
+Add more `analyze-logs` lines to learn from more nights. On Windows, put the
+same two tasks in a batch file and send the report to `NUL`.

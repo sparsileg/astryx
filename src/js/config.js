@@ -15,11 +15,12 @@
 const APP_CONFIG = {
     APP_NAME: 'Astryx',
     APP_TITLE: 'Astryx - Astrophotography Planning Tool',
-    APP_VERSION: '1.97.0',
+    APP_VERSION: '1.97.1',
     DB_NAME: 'astryx-db',
     DB_VERSION: 8,
     TARGET_DATA_PATH: './data/',
-    USER_GUIDE_PATH: 'help/astryx-guide.pdf',
+    // Served from astryx.tools rather than bundled, so it updates without an app release (issue #278)
+    USER_GUIDE_URL: 'https://astryx.tools/astryx_assets/astryx-guide.pdf',
     DEFAULT_THEME: 'dark',
     // Base text size (px) every rem follows; the sidebar offers MIN..MAX (issue #272)
     FONT_SIZE_DEFAULT_PX: 16,
@@ -248,6 +249,11 @@ const APP_CONFIG = {
     // (an unlogged pause, a plan change), so it's left out of the sub gap
     // measurement.
     ASIAIR_SUB_GAP_MAX_S: 90,
+
+    // A gap more than this many seconds above the night's median gap is an
+    // unlogged pause, not download overhead, so it's left out too; one
+    // such pause would otherwise pull the night's mean far up (issue #340)
+    ASIAIR_SUB_GAP_OUTLIER_S: 2,
 
     // The learned sub gap and dither duration are each the average of this
     // many nights, the most recent by date (issue #295)

@@ -64,6 +64,11 @@ Planner needs:
   exposure and the start of the next, and
 - the **dither duration**: how long a dither takes to settle.
 
+A gap that isn't the camera's own overhead is left out of the sub gap: one
+where the ASIAir re-targets between subs, or a pause more than a couple of
+seconds longer than the night's typical gap. One long pause would otherwise
+make every later plan count too few subs.
+
 Each stored figure is the average of your 20 most recent nights, to a
 tenth of a second, so a single unusual night doesn't throw it off. Most
 recent means by the night's date, not by when you analyzed it, so the

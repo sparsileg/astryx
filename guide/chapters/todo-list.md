@@ -15,7 +15,7 @@ controls:
 - **Date:** the night the list is worked out for. It starts at tonight
   each time you open the view. Every sort uses it: Rise Time and the charts
   show this night, and Best Month starts at the month before this date.
-  Type a date, click 📅 to pick one from a calendar, or use the arrows:
+  Type a date, click the calendar icon to pick one from a calendar, or use the arrows:
   ◀ and ▶ move one day, ◀◀ and ▶▶ move a week. Hold an arrow down to
   keep moving.
 - **Sort by:** chooses how the list is arranged: **Rise Time**, **Type**,

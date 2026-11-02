@@ -264,6 +264,14 @@ Keep the tag and `src-tauri/Cargo.toml`'s version in agreement — bump
 `Cargo.toml` first, commit, *then* tag. (See §2 for why a `-beta`/`-rc`
 tag specifically affects the Windows MSI build.)
 
+The User Guide PDF isn't part of the app. Help → User Guide opens
+`APP_CONFIG.USER_GUIDE_URL` on astryx.tools, served from the astryx-home
+repo (issue #278). `just guide` builds it to `guide/build/astryx-guide.pdf`
+(git-ignored); copy that to `~/github/astryx-home/astryx_assets/` and push
+astryx-home. Its pages show the version, so do this before tagging a
+release, and between releases only when the Guide changes: each push adds
+the whole ~10 MB file to astryx-home's history.
+
 ### Creating a release manually
 
 ```bash

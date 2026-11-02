@@ -344,3 +344,56 @@ test('the PDF has the screen\'s dither, SNR and calibration notes, and one plate
         SessionReportView._snrDarknessNote = _snrDarknessNote;
     }
 });
+
+// One run of 300 s subs, each starting the given gap (s) after the last ends.
+// before(i) adds lines in the gap ahead of sub i + 2, each given the time the
+// gap ends; ditherS is a settled dither of that length at the start of each gap.
+const gapNight = (gaps, { before = () => [], ditherS = 0 } = {}) => {
+    const stamp = ms => new Date(ms).toISOString().slice(0, 19).replace('T', ' ').replace(/-/g, '/');
+    const lines = [...runStart('2026/02/03 20:00:00')];
+    let t = Date.UTC(2026, 1, 3, 20, 1, 0);
+    lines.push(`${stamp(t)} Exposure 300.0s image 1#`);
+    gaps.forEach((gapS, i) => {
+        const end = t + 300000;
+        if (ditherS) {
+            lines.push(`${stamp(end)} [Guide] Dither`, `${stamp(end)} [Guide] Dither Settle`,
+                `${stamp(end + ditherS * 1000)} [Guide] Settle Done`);
+        }
+        t = end + gapS * 1000;
+        lines.push(...before(i).map(text => `${stamp(t)} ${text}`), `${stamp(t)} Exposure 300.0s image ${i + 2}#`);
+    });
+    lines.push(`${stamp(t + 301000)} [Autorun|End] Finish Autorun`);
+    return parse(lines);
+};
+const thirtyOnes = Array(30).fill(1);
+
+// Issue #340
+test('Sub Gap leaves out a pair with a Target RA line in its gap', () => {
+    const retarget = i => (i === 10 ? ['Target RA:6h33m8s DEC:+4°57\'0"'] : []);
+    for (const gapS of [37, 2]) {
+        const gaps = [...thirtyOnes];
+        gaps[10] = gapS;
+        const subGap = AsiairLogParser.measureSubGap(gapNight(gaps, { before: retarget }).runs);
+        assert.deepStrictEqual({ ...subGap }, { meanS: 1, n: 29, ditherEverySub: false }, `${gapS} s re-target`);
+    }
+});
+
+// Issue #340
+test('one long pause with no logged cause doesn\'t move the night\'s Sub Gap', () => {
+    const gaps = [...thirtyOnes, 15];
+    assert.deepStrictEqual({ ...AsiairLogParser.measureSubGap(gapNight(gaps).runs) },
+        { meanS: 1, n: 30, ditherEverySub: false });
+
+    // Spread within the margin is kept
+    const spread = [...thirtyOnes, 3, 3];
+    assert.deepStrictEqual({ ...AsiairLogParser.measureSubGap(gapNight(spread).runs) },
+        { meanS: 36 / 32, n: 32, ditherEverySub: false });
+});
+
+// Issue #340
+test('a rig that dithers every sub drops a long pause from its overhead', () => {
+    // Each gap is a 20 s dither plus 1 s of overhead, one with 15 s more
+    const gaps = [...Array(30).fill(21), 36];
+    assert.deepStrictEqual({ ...AsiairLogParser.measureSubGap(gapNight(gaps, { ditherS: 20 }).runs) },
+        { meanS: 1, n: 30, ditherEverySub: true });
+});

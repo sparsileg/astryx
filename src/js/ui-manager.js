@@ -208,22 +208,17 @@ const UIManager = {
     },
 
     /**
-     * Open the User Guide PDF: in a new browser tab on the web, in the
-     * system PDF viewer on desktop (the webview can't show PDFs)
+     * Open the User Guide PDF on astryx.tools: in a new browser tab on the
+     * web, in the system browser on desktop (the webview can't show PDFs)
      */
     async openUserGuide() {
-        const url = APP_CONFIG.USER_GUIDE_PATH;
+        const url = APP_CONFIG.USER_GUIDE_URL;
         if (typeof window.__TAURI__ === 'undefined') {
             window.open(url, '_blank');
             return;
         }
         try {
-            const response = await fetch(url);
-            if (!response.ok) {
-                throw new Error(`User Guide not found (${response.status})`);
-            }
-            const pdf = new Uint8Array(await response.arrayBuffer());
-            await window.__TAURI__.core.invoke('open_user_guide', pdf);
+            await window.__TAURI__.opener.openUrl(url);
         } catch (error) {
             this.showToast(`Could not open the User Guide: ${error.message ?? error}`, 'error');
         }

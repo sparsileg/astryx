@@ -173,8 +173,6 @@ pub fn run() {
             commands::tutorial_progress::get_tutorial_progress,
             commands::tutorial_progress::save_tutorial_progress,
             commands::tutorial_progress::delete_tutorial_progress,
-            // Help
-            commands::help::open_user_guide,
             // Command line
             commands::cli::get_cli_command,
             commands::cli::cli_write_stderr,

@@ -62,8 +62,14 @@
 #set par(justify: true, leading: 0.7em, spacing: 1.15em)
 #show raw: set text(font: "IBM Plex Mono", size: 0.88em)
 #show raw.where(block: true): block.with(fill: code-fill, inset: 9pt, radius: 3pt, width: 100%)
-// Underlined, so links don't rely on color alone (#291)
-#show link: it => underline(offset: 2pt, stroke: 0.6pt + link-color, text(fill: link-color, it))
+// Shaded and dot-underlined, so links don't rely on color alone (#291)
+#let link-fill = rgb("#d4e0f0")
+#show link: it => highlight(
+  fill: link-fill,
+  radius: 1.5pt,
+  extent: 1pt,
+  underline(offset: 2.5pt, stroke: (paint: link-color, thickness: 1pt, dash: "dotted"), text(fill: link-color, it)),
+)
 #set list(indent: 0.5em, spacing: 0.75em)
 #set enum(indent: 0.5em, spacing: 0.75em)
 

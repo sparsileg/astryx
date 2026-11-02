@@ -64,8 +64,8 @@ Start from your question and go to the view that answers it.
 Astryx was built by an imager who uses one-shot-color cameras and an ASIAir,
 and it works best for that kind of setup. If you image in mono, or control
 your rig with NINA, most of Astryx works just as well for you, but you may
-find gaps, particularly in the session details the Imaging Log records and
-in Log Analysis, which reads ASIAir and PHD2 logs.
+find gaps, particularly in the session details that the Imaging Log
+records, and in Log Analysis, which reads ASIAir and PHD2 logs.
 
 If you'd like Astryx to work better for mono or NINA imaging, please
 describe what you need, or what you can contribute, in an issue at
@@ -75,7 +75,7 @@ describe what you need, or what you can contribute, in an issue at
 
 Whether you use the browser version or the desktop app, everything you enter is stored on your own
 computer and nowhere else. No account is needed, and your targets, plans,
-and logs are never sent to a server.
+and logs are never sent to a remote server.
 
 That also means nobody else can recover your data if it's lost. Use
 **Backup** in the system menu regularly, or turn on automatic backups in
@@ -92,11 +92,13 @@ disk or a lost laptop.
 
 Astryx works without an internet connection, which makes it useful in the
 field. A few things need a connection when you use them: the weather
-forecast in Daily Visibility, the sky images in the Viewfinder, and the
+forecast in Daily Visibility, the sky images in the Viewfinder, the
 cloud and light-pollution websites that Utilities opens, and the Wikipedia
 links in a target's details. These send only your location's coordinates,
 or the target's position or name. Sky images you've
 already viewed are kept for about two weeks, so they still work offline.
+This guide opens from astryx.tools, so it needs a connection too; save a
+copy from there to read it offline.
 
 ## Moving Around
 
@@ -130,4 +132,4 @@ Click between your Pinned Targets to compare them.
 The system menu (≡) at the top of the sidebar holds **Settings**, [Admin
 Tools](admin-tools.md) (locations, equipment, and target database
 maintenance), [Backup and Restore](backup-restore.md), the tutorials, and
-**Help**, which opens this guide.
+**Help**, which opens this guide from astryx.tools.

@@ -793,6 +793,14 @@ const AsiairLogParser = {
     // corpus runs' coordinates appear at all is the slew line. This is
     // also where the corpus's only negative-DEC occurrences actually live
     // (2026-06-05's M12/M10 runs) — #230 item 3.
+    // Times of the run's "Target RA:" lines. Logged mid-run, one marks a
+    // re-target between two subs, so measureSubGap leaves that pair out
+    // (issue #340)
+    _extractRetargetTimes(lines) {
+        return lines.filter(line => line.includes('Target RA:'))
+            .map(line => this._parseTimestamp(line)).filter(Boolean);
+    },
+
     _extractCoords(lines) {
         const patterns = [
             /Target RA:(\d+)h(\d+)m(\d+)s\s+DEC:([+-]?\d+)°(\d+)'(\d+)"/,
@@ -950,6 +958,7 @@ const AsiairLogParser = {
             endReason: segment.endReason,
             blocks,
             events,
+            retargetTimes: this._extractRetargetTimes(lines),
         };
     },
 
@@ -1673,19 +1682,22 @@ const AsiairLogParser = {
      * Pairs of consecutive light subs in the same block, each gap measured
      * from the end of the first sub's own exposure. Pairs with different
      * exposures (a plan change), pairs with any other event between their
-     * starts (guide star lost, recovery, plate solve, mount), and gaps of
+     * starts (guide star lost, recovery, plate solve, mount), pairs with a
+     * "Target RA" line up to the second sub's start (a re-target, logged in
+     * the same second as that sub; issue #340), and gaps of
      * ASIAIR_SUB_GAP_MAX_S or more are left out. A gap with a cleanly settled dither counts only when no gap
-     * is dither-free (a rig that dithers every sub); the mean dither
-     * duration is then subtracted. A gap with an unsettled dither never
-     * counts.
+     * is dither-free (a rig that dithers every sub), less its dither's
+     * duration. A gap with an unsettled dither never counts. Of what's left,
+     * gaps more than ASIAIR_SUB_GAP_OUTLIER_S above the night's median are
+     * unlogged pauses and are dropped before the mean (issue #340).
      * @param {Array} runs - parse() runs
      * @param {Function} includeSub - (sub) => whether the sub may be used
      * @returns {{meanS: number, n: number, ditherEverySub: boolean}|null} null with no samples
      */
     measureSubGap(runs, includeSub = () => true) {
         const cleanGaps = [];
-        const ditheredGaps = [];
-        const ditherDurations = [];
+        // A dithered gap less its dither's duration
+        const ditheredOverheads = [];
         for (const run of runs.filter(r => r.kind === 'light')) {
             const dithers = run.events.filter(e => e.type === 'dither' && e.start && e.end);
             const otherEventTimes = run.events.filter(e => e.type !== 'dither')
@@ -1697,6 +1709,7 @@ const AsiairLogParser = {
                     if (a.exposureS !== b.exposureS) continue;
                     if (!includeSub(a) || !includeSub(b)) continue;
                     if (otherEventTimes.some(t => t >= a.startedAt && t < b.startedAt)) continue;
+                    if (run.retargetTimes.some(t => t > a.startedAt && t <= b.startedAt)) continue;
 
                     const windowStart = new Date(a.startedAt.getTime() + a.exposureS * 1000);
                     const windowEnd = b.startedAt;
@@ -1707,23 +1720,29 @@ const AsiairLogParser = {
                     if (dithersHere.length === 0) {
                         cleanGaps.push(gapS);
                     } else if (dithersHere.every(d => d.outcome === 'done')) {
-                        ditheredGaps.push(gapS);
-                        ditherDurations.push(dithersHere.reduce((sum, d) => sum + d.durationS, 0));
+                        ditheredOverheads.push(gapS - dithersHere.reduce((sum, d) => sum + d.durationS, 0));
                     }
                 }
             }
         }
 
         const mean = (values) => values.reduce((sum, v) => sum + v, 0) / values.length;
+        const median = (values) => {
+            const sorted = [...values].sort((x, y) => x - y);
+            const mid = Math.floor(sorted.length / 2);
+            return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+        };
+        const withoutPauses = (values) => {
+            const limit = median(values) + APP_CONFIG.ASIAIR_SUB_GAP_OUTLIER_S;
+            return values.filter(v => v <= limit);
+        };
         if (cleanGaps.length > 0) {
-            return { meanS: mean(cleanGaps), n: cleanGaps.length, ditherEverySub: false };
+            const kept = withoutPauses(cleanGaps);
+            return { meanS: mean(kept), n: kept.length, ditherEverySub: false };
         }
-        if (ditheredGaps.length > 0) {
-            return {
-                meanS: Math.max(0, mean(ditheredGaps) - mean(ditherDurations)),
-                n: ditheredGaps.length,
-                ditherEverySub: true,
-            };
+        if (ditheredOverheads.length > 0) {
+            const kept = withoutPauses(ditheredOverheads);
+            return { meanS: Math.max(0, mean(kept)), n: kept.length, ditherEverySub: true };
         }
         return null;
     },

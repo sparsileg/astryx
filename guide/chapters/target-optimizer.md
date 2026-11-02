@@ -114,8 +114,8 @@ horizon costs a target, open it in **Daily Visibility** and turn
 
 ## Best Combinations
 
-The Sequence Planner images one target at a time, so a long night can hold
-two or three targets, one after another. Click **Best Combinations** at the
+The Sequence Planner schedules targets one after another, so a long night
+can hold two or three of them. Click **Best Combinations** at the
 top of the results to see which ones share the night well. Click
 **Individual Targets** to go back to the cards.
 

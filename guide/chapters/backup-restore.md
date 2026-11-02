@@ -79,12 +79,19 @@ last backed up, or **never**. It turns amber after 7 days and orange
 after 14. When Astryx starts, and once a day while it's open, it also reminds you
 if your last backup is older than **Backup reminder every** in Settings.
 
+Where your data lives depends on which Astryx you use. The web version
+stores it in your browser, where it can be lost if the browser's cache or
+site data is cleared, or by another browser operation such as an update.
+The desktop app stores it in a database on your computer, where it can be
+lost if the disk fails, or for any number of other reasons. Either way, a
+backup is what gets it back.
+
 Click **Last backup** for **About Your Data Storage**, which explains why
 backups matter; its **Make a Backup** button opens the Backup dialog.
 
 ::: {.shot id="backup-storage-dialog"}
-About Your Data Storage, opened from Last backup at the bottom of the
-sidebar.
+About Your Data Storage in the web version, opened from Last backup at
+the bottom of the sidebar.
 :::
 
 ## Restoring a Backup
