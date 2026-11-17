@@ -18,6 +18,8 @@ const ACTION_MS = 10000;
 const TOAST_MS = 3000;
 const SETTLE_MS = 500;
 const BEST_MONTHS_MS = 60000;
+// Long enough for one mirror's tile timeout, then the next mirror
+const DSS_MS = 45000;
 const MIN_ALTITUDE = 35;
 const MIN_DARK_HOURS = 2;
 
@@ -225,6 +227,31 @@ const seedImagingLog = (page, count) => page.evaluate(async n => {
     await ImagingLogManager.createProgram({ name: 'Prog', targetDesignations: ['M 1'] });
     return ids;
 }, count);
+
+// Viewfinder on a target with a 480 mm telescope and a 4144 px sensor;
+// counts the sky survey tile requests to each mirror in page.tileRequests
+async function openViewfinder(page, target) {
+    page.tileRequests = {};
+    page.on('request', r => {
+        if (!/\/Norder\d+\/Dir\d+\/Npix\d+\.jpg$/.test(r.url())) return;
+        const host = new globalThis.URL(r.url()).host;
+        page.tileRequests[host] = (page.tileRequests[host] ?? 0) + 1;
+    });
+    await openEquipmentTab(page);
+    await saveTelescope(page, 'Test Refractor', 480);
+    await page.click('[data-tab="sensors"]');
+    await saveSensor(page, 'Test Sensor', 4144);
+    await page.click('#modal-close');
+    await page.evaluate(n => VisibilityTargets.changeCurrentTarget(DataManager.searchTargets(n)[0]), target);
+    await openView(page, 'fov');
+    await pickDropdown(page, 'fov-telescope', 'Test Refractor');
+    await pickDropdown(page, 'fov-sensor', 'Test Sensor');
+}
+
+// The canvas can still be read back (Snapshot): images from another origin would taint it
+const canvasReadable = page => page.evaluate(() => {
+    try { return FOVCanvas.canvas.toDataURL('image/jpeg').length > 1000; } catch { return false; }
+});
 
 // ---------------------------------------------------------------------------
 // Checks
@@ -767,6 +794,99 @@ const CHECKS = [
             assert.strictEqual(await page.locator('#best-months-progress-text test').count(), 0, 'name read as HTML');
             await page.waitForFunction(() => !BestMonths.isCalculating, null, { timeout: BEST_MONTHS_MS });
             assert.deepStrictEqual(await page.evaluate(() => window.atSave), { width: '100%', eta: 'Saving results...' });
+        },
+    },
+    {
+        issue: 342, name: 'Viewfinder: Actual and Wider show the DSS image built from mirror tiles, and Snapshot can read the canvas',
+        run: async page => {
+            await openViewfinder(page, 'M 42');
+            await page.waitForFunction(() => FOVCanvas.dssImage, null, { timeout: DSS_MS });
+            const mirrors = await page.evaluate(() => APP_CONFIG.APIS.DSS_HIPS_MIRRORS.map(m => new URL(m.url).host));
+            assert.deepStrictEqual(Object.keys(page.tileRequests), [mirrors[0]], 'tiles from the first mirror only');
+            assert.ok(await canvasReadable(page), 'canvas readable');
+            const size = await page.evaluate(() => [FOVCanvas.dssImage.naturalWidth, FOVCanvas.dssImage.naturalHeight]);
+            assert.strictEqual(size[0], size[1], 'Actual image is square');
+            await page.click('#fov-mode-toggle [data-mode="larger"]');
+            await page.waitForFunction(() => FOVCanvas.largeImage, null, { timeout: DSS_MS });
+            assert.ok(await canvasReadable(page), 'canvas readable in Wider');
+            const cached = await page.evaluate(async () => (await DBManager.getAll(APP_CONFIG.STORES.DSS_CACHE))
+                .map(e => e.id.endsWith(APP_CONFIG.DSS_LARGE_KEY_SUFFIX) ? 'Wider' : 'Actual').sort());
+            assert.deepStrictEqual(cached, ['Actual', 'Wider'], 'each image cached on its own tier');
+            assert.strictEqual(await page.locator('.toast-error').count(), 0, 'no error toast');
+        },
+    },
+    {
+        issue: 342, name: 'Viewfinder: with the first two mirrors down the image comes from the third, without a toast',
+        run: async page => {
+            const mirrors = await page.evaluate(() => APP_CONFIG.APIS.DSS_HIPS_MIRRORS);
+            for (const m of mirrors.slice(0, 2)) await page.route(`${m.url}/**`, route => route.abort());
+            await openViewfinder(page, 'M 31');
+            // The panel says which mirror it moved past
+            await page.locator('#fov-sky-loading-note', { hasText: `${mirrors[1].name} isn't answering, trying ${mirrors[2].name}…` })
+                .waitFor({ timeout: DSS_MS });
+            await page.waitForFunction(() => FOVCanvas.dssImage, null, { timeout: DSS_MS });
+            assert.ok(page.tileRequests[new globalThis.URL(mirrors[2].url).host] > 0, 'third mirror used');
+            assert.ok(await page.isHidden('#fov-sky-loading'), 'panel gone once the image is shown');
+            assert.strictEqual(await page.locator('.toast-error').count(), 0, 'no error toast');
+        },
+    },
+    {
+        issue: 342, name: 'Viewfinder: with every mirror down the toast says no sky survey server answered',
+        run: async page => {
+            await page.route(/\/Norder\d+\/Dir\d+\/Npix\d+\.jpg$/, route => route.abort());
+            await openViewfinder(page, 'M 42');
+            await page.locator('.toast-error', { hasText: 'no sky survey server answered' }).first().waitFor({ timeout: DSS_MS });
+            assert.strictEqual(await page.evaluate(() => FOVCanvas.dssImage), null, 'no image drawn');
+            assert.ok(await page.isHidden('#fov-sky-loading'), 'panel gone with the toast');
+        },
+    },
+    {
+        issue: 342, name: 'Viewfinder: while tiles download a panel counts them, then goes; a cached image shows no panel',
+        run: async page => {
+            // Hold every tile until released
+            const held = [];
+            let release = null;
+            const released = new Promise(resolve => { release = resolve; });
+            await page.route(/\/Norder\d+\/Dir\d+\/Npix\d+\.jpg$/, async route => {
+                held.push(route);
+                await released;
+                await route.continue();
+            });
+            await openViewfinder(page, 'M 42');
+            await page.locator('#fov-sky-loading-text', { hasText: /^Loading sky image… 0 of \d+ tiles$/ }).waitFor({ timeout: DSS_MS });
+            assert.ok(await page.isVisible('#fov-sky-loading'), 'panel shown');
+            assert.strictEqual(await page.evaluate(() => document.getElementById('fov-sky-loading-bar').style.width), '0%');
+            // Every text and bar width the panel shows from here on
+            await page.evaluate(() => {
+                window.panelStates = [];
+                const panel = document.getElementById('fov-sky-loading');
+                new MutationObserver(() => window.panelStates.push(
+                    `${document.getElementById('fov-sky-loading-text').textContent} | ${document.getElementById('fov-sky-loading-bar').style.width}`,
+                )).observe(panel, { subtree: true, childList: true, characterData: true, attributes: true });
+            });
+            const total = Number((await page.textContent('#fov-sky-loading-text')).match(/of (\d+) tiles/)[1]);
+            release();
+            await page.waitForFunction(() => FOVCanvas.dssImage, null, { timeout: DSS_MS });
+            assert.ok(await page.isHidden('#fov-sky-loading'), 'panel gone once the image is shown');
+            assert.strictEqual(held.length, total, 'one request per tile counted');
+            const states = await page.evaluate(() => window.panelStates);
+            assert.ok(states.includes(`Loading sky image… ${total} of ${total} tiles | 100%`), 'counted to the total with a full bar');
+            assert.ok(states.includes('Building image… | 100%'), 'then Building image');
+            const loaded = states.map(s => s.match(/… (\d+) of/)?.[1]).filter(Boolean).map(Number);
+            assert.deepStrictEqual(loaded, [...loaded].sort((a, b) => a - b), 'the count only goes up');
+
+            // The same frame again comes from the cache: no panel at any point
+            await page.evaluate(() => {
+                window.panelSeen = false;
+                new MutationObserver(() => {
+                    if (document.getElementById('fov-sky-loading')?.classList.contains('active')) window.panelSeen = true;
+                }).observe(document.getElementById('app'), { subtree: true, attributes: true, attributeFilter: ['class'] });
+                FOVCanvas.dssImage = null;
+            });
+            await page.uncheck('#fov-show-dss');
+            await page.check('#fov-show-dss');
+            await page.waitForFunction(() => FOVCanvas.dssImage, null, { timeout: DSS_MS });
+            assert.strictEqual(await page.evaluate(() => window.panelSeen), false, 'no panel for a cached image');
         },
     },
 ];

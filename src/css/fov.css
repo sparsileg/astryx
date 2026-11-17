@@ -138,6 +138,52 @@
     outline: 1px solid var(--border-color);
 }
 
+/* Over the canvas while a sky image downloads (Issue #342) */
+.fov-sky-loading {
+    display: none;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 18rem;
+    max-width: 90%;
+    padding: 0.75rem 1rem;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-color);
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+.fov-sky-loading.active {
+    display: block;
+}
+
+.fov-sky-loading-track {
+    background: var(--input-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    height: 8px;
+    margin-top: 0.5rem;
+    overflow: hidden;
+}
+
+#fov-sky-loading-bar {
+    background: var(--primary-color);
+    height: 100%;
+    width: 0%;
+}
+
+#fov-sky-loading-note {
+    color: var(--text-secondary);
+    margin-top: 0.5rem;
+}
+
+#fov-sky-loading-note:empty {
+    display: none;
+}
+
 .fov-moon-note {
     display: none;
     position: absolute;

@@ -75,7 +75,9 @@ Set the **Date** again before you click.
 
 **The Viewfinder's sky image doesn't load.** It needs an internet
 connection the first time you look at a target. Images you've seen
-recently are kept and work offline.
+recently are kept and work offline. Astryx tries five sky survey servers
+in turn; if your connection is fine, all five are down at once, so try
+again later.
 
 **The forecast strips say "Cloud forecast unavailable for this date".**
 The forecast covers today and the next four days only, and needs an

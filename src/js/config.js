@@ -15,7 +15,7 @@
 const APP_CONFIG = {
     APP_NAME: 'Astryx',
     APP_TITLE: 'Astryx - Astrophotography Planning Tool',
-    APP_VERSION: '1.97.1',
+    APP_VERSION: '1.98.0',
     DB_NAME: 'astryx-db',
     DB_VERSION: 8,
     TARGET_DATA_PATH: './data/',
@@ -58,6 +58,15 @@ const APP_CONFIG = {
     // Viewfinder: sky image pixels across the frame's long side, and the
     // tallest the view may be, in percent of the window height
     FOV_DSS_FRAME_PIXELS: 1200,
+    // DSS2 colour HiPS survey (Issue #342): tile side in pixels and deepest
+    // tile order, from the survey's properties file; how long one mirror gets
+    // to deliver a tile before the next is tried; quality of the built image;
+    // longest wait for the page to show "Building image" before building
+    DSS_HIPS_TILE_WIDTH: 512,
+    DSS_HIPS_MAX_ORDER: 9,
+    DSS_HIPS_TILE_TIMEOUT_MS: 15000,
+    DSS_HIPS_JPEG_QUALITY: 0.9,
+    DSS_HIPS_PAINT_WAIT_MS: 100,
     FOV_VIEW_MAX_HEIGHT_VH: 70,
     // Viewfinder: suggest a shorter focal length when the target spans more
     // than this percent of the field width or covers more than this percent
@@ -175,7 +184,15 @@ const APP_CONFIG = {
     // External data APIs
     APIS: {
         OPEN_METEO: 'https://api.open-meteo.com/v1/forecast?latitude={LAT}&longitude={LON}&hourly=cloudcover,cloudcover_low,cloudcover_mid,cloudcover_high,windspeed_10m,temperature_2m,dewpoint_2m&timezone=auto&past_days=1&forecast_days=7&wind_speed_unit=mph',
-        DSS: 'https://alasky.u-strasbg.fr/hips-image-services/hips2fits?hips=CDS/P/DSS2/color'
+        // Mirrors of the CDS/P/DSS2/color HiPS survey, tried in this order;
+        // the name is shown while a mirror that doesn't answer is skipped (Issue #342)
+        DSS_HIPS_MIRRORS: [
+            { name: 'ESA', url: 'https://skies.esac.esa.int/DSSColor' },
+            { name: 'MAST', url: 'https://stpubdata.s3.us-east-1.amazonaws.com/mast/skybackgrounds/DSSColor' },
+            { name: 'CSIRO', url: 'https://casda.csiro.au/hips/DSS2/color' },
+            { name: 'CDS', url: 'https://alasky.cds.unistra.fr/DSS/DSSColor' },
+            { name: 'China-VO', url: 'https://hips.china-vo.org/m/CDS_P_DSS2_color' }
+        ]
     },
 
     // Preferred catalog order for deduplication (Issue #54)

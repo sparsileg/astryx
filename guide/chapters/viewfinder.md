@@ -72,17 +72,23 @@ stars start to look square.
 ## The Sky Image
 
 With **DSS image** ticked, Astryx downloads a color image of the target's
-part of the sky from the Digitized Sky Survey (DSS2), through the CDS
-image service in Strasbourg, and shows it in your frame. The frame has your
-sensor's shape, long side across, and fills the width of the card. N marks
+part of the sky from the Digitized Sky Survey (DSS2) and shows it in your
+frame. It builds the image from the survey's tiles, which several
+observatories serve (ESA, NASA's MAST, CSIRO, CDS in Strasbourg and
+China-VO); when one doesn't answer, Astryx uses the next. While a new
+image downloads, a panel over the frame counts the tiles as they arrive,
+and says so when a server isn't answering and Astryx tries the next one.
+The frame has your sensor's shape, long side across, and fills the width
+of the card. N marks
 north: at the top until you turn the camera.
 
 Images are kept on your computer for a while, so a target you've looked at
 recently appears at once and works offline. An image you don't use again
 within 15 days is deleted, and a Wider image within 7 days; the
 next time you need it, Astryx downloads it again. Fetching a new one needs an
-internet connection; if it fails, Astryx says "Could not load DSS background image —
-check your internet connection."
+internet connection; if no server answers, Astryx says "Could not load the
+DSS sky image: no sky survey server answered. Check your internet
+connection, or try again later."
 
 Without the image, the canvas is black and shows only the frame and the
 **Target size**, **Full moon**, and **Crosshair** overlays. **Wider** needs
