@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- CSP kept in sync with src-tauri/tauri.conf.json app.security.csp — Issue #181 -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://api.open-meteo.com https://alasky.u-strasbg.fr; img-src 'self' data: blob:; font-src 'self' data:">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://api.open-meteo.com https://skies.esac.esa.int https://stpubdata.s3.us-east-1.amazonaws.com https://casda.csiro.au https://alasky.cds.unistra.fr https://hips.china-vo.org; img-src 'self' data: blob:; font-src 'self' data:">
     <title id="app-title"></title>
     <link rel="stylesheet" href="css/backup-restore.css">
     <link rel="stylesheet" href="css/base.css">
@@ -1057,6 +1057,11 @@
               </div>
               <div class="fov-canvas-wrap">
                 <canvas id="fov-canvas" width="600" height="600"></canvas>
+                <div id="fov-sky-loading" class="fov-sky-loading">
+                  <div id="fov-sky-loading-text"></div>
+                  <div class="fov-sky-loading-track"><div id="fov-sky-loading-bar"></div></div>
+                  <div id="fov-sky-loading-note"></div>
+                </div>
                 <div id="fov-moon-note" class="fov-moon-note">
                   Full moon outlined
                 </div>
@@ -2597,6 +2602,7 @@
       <script src="js/dss-cache.js"></script>
       <script src="js/fov-calculations.js"></script>
       <script src="js/fov-canvas.js"></script>
+      <script src="js/fov-hips.js"></script>
       <script src="js/fov-controller.js"></script>
       <script src="js/todo-view.js"></script>
       <script src="js/seqplan-calculations.js"></script>

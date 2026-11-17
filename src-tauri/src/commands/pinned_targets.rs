@@ -122,9 +122,17 @@ mod tests {
     #[test]
     fn a_row_that_cannot_be_read_is_an_error_not_dropped() {
         let conn = test_conn();
-        save_pinned_target(&conn, &json!({ "name": "M 42", "ra": 5.588, "dec": -5.391 })).unwrap();
+        save_pinned_target(
+            &conn,
+            &json!({ "name": "M 42", "ra": 5.588, "dec": -5.391 }),
+        )
+        .unwrap();
         // SQLite keeps a value of any type; a text ra can't be read as f64
-        conn.execute("INSERT INTO pinned_targets (name, ra, dec) VALUES ('M 31', 'bad', 0.0)", []).unwrap();
+        conn.execute(
+            "INSERT INTO pinned_targets (name, ra, dec) VALUES ('M 31', 'bad', 0.0)",
+            [],
+        )
+        .unwrap();
         assert!(get_all_pinned_targets(&conn).is_err());
     }
 

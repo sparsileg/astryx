@@ -311,7 +311,12 @@ const FOVView = {
         if (showDSSCheckbox) {
             showDSSCheckbox.addEventListener('change', async (e) => {
                 this.showDSS = e.target.checked;
-                if (!this.showDSS) FOVCanvas.dssImage = null;
+                if (!this.showDSS) {
+                    FOVCanvas.dssImage = null;
+                    // An image still downloading is no longer wanted
+                    this.dssRenderGeneration++;
+                    this.hideSkyLoading();
+                }
                 await this.calculate();
             });
         }
@@ -709,7 +714,46 @@ ${targetRows}
     notifyDSSRenderFailure(cacheKey) {
         if (this.lastDSSFailureToastKey === cacheKey) return;
         this.lastDSSFailureToastKey = cacheKey;
-        UIManager.showToast('Could not load DSS background image — check your internet connection.', 'error', 8000);
+        UIManager.showToast('Could not load the DSS sky image: no sky survey server answered. Check your internet connection, or try again later.', 'error', APP_CONFIG.TOAST_LONG_DURATION_MS);
+    },
+
+    /**
+     * Show the sky image progress panel over the canvas, at no tiles yet
+     */
+    showSkyLoading() {
+        const panel = document.getElementById('fov-sky-loading');
+        if (!panel) return;
+        document.getElementById('fov-sky-loading-text').textContent = 'Loading sky image…';
+        document.getElementById('fov-sky-loading-bar').style.width = '0%';
+        document.getElementById('fov-sky-loading-note').textContent = '';
+        panel.classList.add('active');
+    },
+
+    hideSkyLoading() {
+        document.getElementById('fov-sky-loading')?.classList.remove('active');
+    },
+
+    /**
+     * Progress handler for one image build; ignored once a newer image is wanted
+     */
+    skyLoadingProgress(generation) {
+        return event => {
+            if (generation !== this.dssRenderGeneration) return;
+            const text = document.getElementById('fov-sky-loading-text');
+            const bar = document.getElementById('fov-sky-loading-bar');
+            const note = document.getElementById('fov-sky-loading-note');
+            if (!text || !bar || !note) return;
+            if (event.building) {
+                text.textContent = 'Building image…';
+                bar.style.width = '100%';
+                note.textContent = '';
+            } else if (event.skipped) {
+                note.textContent = `${event.skipped} isn't answering, trying ${event.next}…`;
+            } else {
+                text.textContent = `Loading sky image… ${event.loaded} of ${event.total} tiles`;
+                bar.style.width = `${event.total ? 100 * event.loaded / event.total : 0}%`;
+            }
+        };
     },
 
     /**
@@ -726,6 +770,7 @@ ${targetRows}
         // paint the canvas — prevents rapid telescope switching from racing and showing
         // the wrong telescope's image.
         const myGeneration = ++this.dssRenderGeneration;
+        this.hideSkyLoading();
 
         const { raDeg, decDeg } = this.frameCenter();
         // A square covering the frame's diagonal, so the sky can turn inside
@@ -740,29 +785,17 @@ ${targetRows}
         if (myGeneration !== this.dssRenderGeneration) return;
 
         if (!dataUrl) {
-            const url = `${APP_CONFIG.APIS.DSS}` +
-                `&ra=${raDeg.toFixed(6)}&dec=${decDeg.toFixed(6)}` +
-                `&fov=${fovDeg.toFixed(6)}&width=${sizePx}&height=${sizePx}` +
-                `&projection=TAN&format=jpg`;
-
+            this.showSkyLoading();
             try {
-                const response = await fetch(url);
-                if (!response.ok) {
-                    console.warn('DSS fetch failed:', response.status);
-                    this.notifyDSSRenderFailure(cacheKey);
-                    return;
-                }
-                const blob = await response.blob();
-                dataUrl = await new Promise((resolve) => {
-                    const reader = new FileReader();
-                    reader.onload = () => resolve(reader.result);
-                    reader.readAsDataURL(blob);
-                });
+                dataUrl = await FOVHips.buildImage({ raDeg, decDeg, fovDeg, width: sizePx, height: sizePx },
+                    this.skyLoadingProgress(myGeneration));
                 await this.saveDSSToCache(cacheKey, dataUrl);
             } catch (e) {
-                console.warn('DSS fetch error:', e);
+                console.warn('DSS image failed:', e);
                 this.notifyDSSRenderFailure(cacheKey);
                 return;
+            } finally {
+                if (myGeneration === this.dssRenderGeneration) this.hideSkyLoading();
             }
         }
 
@@ -789,6 +822,7 @@ ${targetRows}
 
         // Generation guard (Issue #221) — see fetchAndRenderDSS for rationale.
         const myGeneration = ++this.dssRenderGeneration;
+        this.hideSkyLoading();
 
         // Centered on the current center, not the target, so each Wider →
         // drag → Actual moves one step across the sky
@@ -808,29 +842,17 @@ ${targetRows}
         if (myGeneration !== this.dssRenderGeneration) return;
 
         if (!dataUrl) {
-            const url = `${APP_CONFIG.APIS.DSS}` +
-                `&ra=${raDeg.toFixed(6)}&dec=${decDeg.toFixed(6)}` +
-                `&fov=${fovDeg.toFixed(6)}&width=${widthPx}&height=${heightPx}` +
-                `&projection=TAN&format=jpg`;
-
+            this.showSkyLoading();
             try {
-                const response = await fetch(url);
-                if (!response.ok) {
-                    console.warn('Large DSS fetch failed:', response.status);
-                    this.notifyDSSRenderFailure(cacheKey);
-                    return;
-                }
-                const blob = await response.blob();
-                dataUrl = await new Promise((resolve) => {
-                    const reader = new FileReader();
-                    reader.onload = () => resolve(reader.result);
-                    reader.readAsDataURL(blob);
-                });
+                dataUrl = await FOVHips.buildImage({ raDeg, decDeg, fovDeg, width: widthPx, height: heightPx },
+                    this.skyLoadingProgress(myGeneration));
                 await this.saveDSSLargeToCache(cacheKey, dataUrl);
             } catch (e) {
-                console.warn('Large DSS fetch error:', e);
+                console.warn('Wider DSS image failed:', e);
                 this.notifyDSSRenderFailure(cacheKey);
                 return;
+            } finally {
+                if (myGeneration === this.dssRenderGeneration) this.hideSkyLoading();
             }
         }
 
