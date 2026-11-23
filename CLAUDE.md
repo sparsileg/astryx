@@ -59,8 +59,12 @@ Builds, installers, and the GitHub Actions release workflow:
   - Both sides of each pair expose the same interface. A data change touches
     both, plus the Rust command and the schema.
 - **Targets are held in memory** (all ~14K). That's deliberate; keep it.
-- **Help pages** in `src/help/` are built MkDocs output. Their source is the
-  `astryx-data` repo; don't hand-edit the HTML here.
+- **User Guide** source is `guide/` (chapters in `guide/chapters/`, built with
+  `just guide`). The HTML in `src/help/` is old MkDocs output whose source was
+  removed from `astryx-data` in October 2026; don't edit it.
+- **Target database** (`src/data/astryx-targets-*.csv`, `targets-meta.json`)
+  is built in the `astryx-data` repo (`build.sh`, then `deploy.sh` copies it
+  here). Don't hand-edit it here.
 - **Tutorials:** definitions in `src/js/tutorials/`, registered in
   `tutorial-registry.js`, run by `tutorial-engine.js`, progress through
   `tutorial-manager.js`. Steps target elements by CSS selector. When a

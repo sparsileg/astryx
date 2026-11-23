@@ -1,6 +1,25 @@
 {
-    "filename": "astryx-targets-1795403520.csv",
-    "version": 1795403520,
-    "count": 14010,
-    "generated": "2026-11-23 03:12:01 UTC"
+    "filename": "astryx-targets-1795404695.csv",
+    "version": 1795404695,
+    "count": 14027,
+    "generated": "2026-11-23 03:31:35 UTC",
+    "catalogues": {
+        "NGC": 8228,
+        "IC": 4747,
+        "Sharpless": 313,
+        "Barnard": 169,
+        "LDN": 134,
+        "Messier": 110,
+        "Caldwell": 109,
+        "Abell": 108,
+        "Extra": 73,
+        "Arp": 19,
+        "Minor Planet": 13,
+        "Exotic": 4
+    },
+    "sources": {
+        "openngc": "v20231203",
+        "openngc_addendum": "v20231203",
+        "sac": "8.1 (2010-03-22)"
+    }
 }

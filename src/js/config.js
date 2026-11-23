@@ -15,7 +15,7 @@
 const APP_CONFIG = {
     APP_NAME: 'Astryx',
     APP_TITLE: 'Astryx - Astrophotography Planning Tool',
-    APP_VERSION: '1.98.0',
+    APP_VERSION: '1.98.1',
     DB_NAME: 'astryx-db',
     DB_VERSION: 8,
     TARGET_DATA_PATH: './data/',
@@ -526,6 +526,7 @@ const OBJECT_TYPES = {
     'LMCDN': 'Diffuse nebula in the LMC',
     'LMCGC': 'Globular cluster in the LMC',
     'LMCOC': 'Open cluster in the LMC',
+    'MPLAN': 'Minor planet',
     'MSTAR': 'Multiple stars',
     'NONEX': 'Nonexistent',
     'OPNCL': 'Open cluster',
