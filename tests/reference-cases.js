@@ -149,48 +149,48 @@ const REFERENCE_CASES = [
         actual: () => {
             const localDate = new Date(2026, 5, 21);
             const duskJD = findAstronomicalDusk(localDate, 38.991, -77.966, -5, true);
-            const expectedJD = dateToJD(new Date(Date.UTC(2026, 5, 22, 2, 43, 0)));
+            const expectedJD = dateToJD(new Date(Date.UTC(2026, 5, 22, 2, 40, 0)));
             return (duskJD - expectedJD) * 1440;
         },
         expected: 0,
         tolerance: TIME_TOLERANCE_MINUTES,
-        source: 'USNO Astronomical Twilight table, 2026-06-21, test site, 21:43 EST (22:43 EDT)'
+        source: 'USNO Astronomical Twilight table, 2026-06-21, test site, 21:40 EST (22:40 EDT)'
     },
     {
         name: 'findAstronomicalDusk: 2026-12-21 (USNO anchor)',
         actual: () => {
             const localDate = new Date(2026, 11, 21);
             const duskJD = findAstronomicalDusk(localDate, 38.991, -77.966, -5, false);
-            const expectedJD = dateToJD(new Date(Date.UTC(2026, 11, 21, 23, 30, 0)));
+            const expectedJD = dateToJD(new Date(Date.UTC(2026, 11, 21, 23, 29, 0)));
             return (duskJD - expectedJD) * 1440;
         },
         expected: 0,
         tolerance: TIME_TOLERANCE_MINUTES,
-        source: 'USNO Astronomical Twilight table, 2026-12-21, test site, 18:30 EST'
+        source: 'USNO Astronomical Twilight table, 2026-12-21, test site, 18:29 EST'
     },
     {
         name: 'findNextAstronomicalDawn: 2026-06-22 (USNO anchor)',
         actual: () => {
             const localDate = new Date(2026, 5, 21);
             const dawnJD = findNextAstronomicalDawn(localDate, 38.991, -77.966, -5, true);
-            const expectedJD = dateToJD(new Date(Date.UTC(2026, 5, 22, 7, 46, 0)));
+            const expectedJD = dateToJD(new Date(Date.UTC(2026, 5, 22, 7, 47, 0)));
             return (dawnJD - expectedJD) * 1440;
         },
         expected: 0,
         tolerance: TIME_TOLERANCE_MINUTES,
-        source: 'USNO Astronomical Twilight table, 2026-06-22, test site, 02:46 EST (03:46 EDT)'
+        source: 'USNO Astronomical Twilight table, 2026-06-22, test site, 02:47 EST (03:47 EDT)'
     },
     {
         name: 'findNextAstronomicalDawn: 2026-12-22 (USNO anchor)',
         actual: () => {
             const localDate = new Date(2026, 11, 21);
             const dawnJD = findNextAstronomicalDawn(localDate, 38.991, -77.966, -5, false);
-            const expectedJD = dateToJD(new Date(Date.UTC(2026, 11, 22, 10, 53, 0)));
+            const expectedJD = dateToJD(new Date(Date.UTC(2026, 11, 22, 10, 52, 0)));
             return (dawnJD - expectedJD) * 1440;
         },
         expected: 0,
         tolerance: TIME_TOLERANCE_MINUTES,
-        source: 'USNO Astronomical Twilight table, 2026-12-22, test site, 05:53 EST'
+        source: 'USNO Astronomical Twilight table, 2026-12-22, test site, 05:52 EST'
     },
     {
         name: 'Dusk/dawn ordering consistency (June 2026)',

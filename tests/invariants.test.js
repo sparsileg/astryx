@@ -207,20 +207,28 @@ test('transit hour puts the target on the meridian, within a day of midnight', (
     }
 });
 
-// The minutes of a night a target is at or above minAltitude, by a direct
-// altitude check each minute: { totalHours, longestHours }
+// Time steps of the direct check: a tenth of a minute, so its own error
+// (up to half a step at each rise or set, and at dawn) stays well inside
+// the minute the app is held to. Whole-minute steps could add up to more
+// than a minute on a night with a rise and a set.
+const SCAN_STEPS_PER_MINUTE = 10;
+
+// The hours of a night a target is at or above minAltitude, by a direct
+// altitude check every SCAN_STEPS_PER_MINUTE-th of a minute: { totalHours, longestHours }
 function minuteScan(site, dusk, dawn, ra, dec, minAltitude) {
     let total = 0, run = 0, longest = 0;
-    const minutes = Math.round((dawn - dusk) * 1440);
-    for (let m = 0; m < minutes; m++) {
-        const jd = dusk + (m + 0.5) / 1440;
+    const stepsPerDay = 1440 * SCAN_STEPS_PER_MINUTE;
+    const steps = Math.round((dawn - dusk) * stepsPerDay);
+    for (let m = 0; m < steps; m++) {
+        const jd = dusk + (m + 0.5) / stepsPerDay;
         if (A.getAltitude(jd, ra, dec, site.latitude, site.longitude) >= minAltitude) {
             total++; run++; longest = Math.max(longest, run);
         } else {
             run = 0;
         }
     }
-    return { totalHours: total / 60, longestHours: longest / 60 };
+    const stepsPerHour = 60 * SCAN_STEPS_PER_MINUTE;
+    return { totalHours: total / stepsPerHour, longestHours: longest / stepsPerHour };
 }
 
 // Issue #304: counting whole samples credited up to a step (10 min) too much

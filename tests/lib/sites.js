@@ -6,7 +6,7 @@
  */
 
 const SITES = {
-    // Mid-latitude reference site; US daylight saving
+    // Mid-latitude reference site (Sky Meadows State Park, Virginia); US daylight saving
     home:        { latitude: 38.991,  longitude: -77.966,  elevation: 233,  timezone: -5,  timeZone: 'America/New_York' },
     // Equator and prime meridian: zero values and the 0°/360° longitude wrap
     equator:     { latitude: 0,       longitude: 0,        elevation: 0,    timezone: 0,   timeZone: 'UTC' },

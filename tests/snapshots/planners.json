@@ -1,23 +1,23 @@
 {
   "seqplan home, two galaxies": {
-    "dusk": 2461329.50217,
-    "dawn": 2461329.913194,
-    "start": 2461329.50217,
-    "end": 2461329.90217,
+    "dusk": 2461329.501302,
+    "dawn": 2461329.912326,
+    "start": 2461329.501302,
+    "end": 2461329.901302,
     "targets": [
       {
         "id": "M31",
         "percent": 41,
         "subs": 44,
         "overhead": 5,
-        "start": 2461329.50217,
-        "end": 2461329.66617,
+        "start": 2461329.501302,
+        "end": 2461329.665302,
         "flip": null,
-        "transit": 2461329.678261,
+        "transit": 2461329.677621,
         "constraint": {
           "isValid": true,
-          "validStartJD": 2461329.50217,
-          "validEndJD": 2461329.66617,
+          "validStartJD": 2461329.501302,
+          "validEndJD": 2461329.665302,
           "violationType": null
         },
         "horizonViolations": []
@@ -27,14 +27,14 @@
         "percent": 59,
         "subs": 62,
         "overhead": 16,
-        "start": 2461329.66617,
-        "end": 2461329.90217,
-        "flip": 2461329.713664,
-        "transit": 2461329.713664,
+        "start": 2461329.665302,
+        "end": 2461329.901302,
+        "flip": 2461329.713024,
+        "transit": 2461329.713024,
         "constraint": {
           "isValid": true,
-          "validStartJD": 2461329.66617,
-          "validEndJD": 2461329.90217,
+          "validStartJD": 2461329.665302,
+          "validEndJD": 2461329.901302,
           "violationType": null
         },
         "horizonViolations": []
@@ -44,66 +44,66 @@
       [
         "calibration",
         "M31",
-        2461329.50217,
-        2461329.505642
+        2461329.501302,
+        2461329.504774
       ],
       [
         "imaging",
         "M31",
-        2461329.505642,
-        2461329.66617
+        2461329.504774,
+        2461329.665302
       ],
       [
         "calibration",
         "M33",
-        2461329.66617,
-        2461329.669642
+        2461329.665302,
+        2461329.668774
       ],
       [
         "imaging",
         "M33",
-        2461329.669642,
-        2461329.710886
+        2461329.668774,
+        2461329.710247
       ],
       [
         "flip",
         "M33",
-        2461329.710886,
-        2461329.715053
+        2461329.710247,
+        2461329.714413
       ],
       [
         "calibration",
         "M33",
-        2461329.715053,
-        2461329.718525
+        2461329.714413,
+        2461329.717885
       ],
       [
         "imaging",
         "M33",
-        2461329.718525,
-        2461329.903479
+        2461329.717885,
+        2461329.902839
       ]
     ]
   },
   "seqplan home, autumn trio": {
-    "dusk": 2461329.50217,
-    "dawn": 2461329.913194,
-    "start": 2461329.50217,
-    "end": 2461329.913194,
+    "dusk": 2461329.501302,
+    "dawn": 2461329.912326,
+    "start": 2461329.501302,
+    "end": 2461329.912326,
     "targets": [
       {
         "id": "M31",
         "percent": 24,
         "subs": 26,
         "overhead": 5,
-        "start": 2461329.50217,
-        "end": 2461329.600816,
+        "start": 2461329.501302,
+        "end": 2461329.599948,
         "flip": null,
-        "transit": 2461329.678261,
+        "transit": 2461329.677621,
         "constraint": {
           "isValid": true,
-          "validStartJD": 2461329.50217,
-          "validEndJD": 2461329.600816,
+          "validStartJD": 2461329.501302,
+          "validEndJD": 2461329.599948,
           "violationType": null
         },
         "horizonViolations": []
@@ -113,14 +113,14 @@
         "percent": 30,
         "subs": 33,
         "overhead": 5,
-        "start": 2461329.600816,
-        "end": 2461329.724123,
+        "start": 2461329.599948,
+        "end": 2461329.723255,
         "flip": null,
-        "transit": 2461329.523186,
+        "transit": 2461329.522546,
         "constraint": {
           "isValid": true,
-          "validStartJD": 2461329.600816,
-          "validEndJD": 2461329.724123,
+          "validStartJD": 2461329.599948,
+          "validEndJD": 2461329.723255,
           "violationType": null
         },
         "horizonViolations": []
@@ -130,14 +130,14 @@
         "percent": 46,
         "subs": 49,
         "overhead": 16,
-        "start": 2461329.724123,
-        "end": 2461329.913194,
-        "flip": 2461329.806161,
-        "transit": 2461329.806161,
+        "start": 2461329.723255,
+        "end": 2461329.912326,
+        "flip": 2461329.805521,
+        "transit": 2461329.805521,
         "constraint": {
           "isValid": true,
-          "validStartJD": 2461329.724123,
-          "validEndJD": 2461329.913194,
+          "validStartJD": 2461329.723255,
+          "validEndJD": 2461329.912326,
           "violationType": null
         },
         "horizonViolations": []
@@ -147,129 +147,129 @@
       [
         "calibration",
         "M31",
-        2461329.50217,
-        2461329.505642
+        2461329.501302,
+        2461329.504774
       ],
       [
         "imaging",
         "M31",
-        2461329.505642,
-        2461329.600816
+        2461329.504774,
+        2461329.599948
       ],
       [
         "calibration",
         "NGC7000",
-        2461329.600816,
-        2461329.604288
+        2461329.599948,
+        2461329.60342
       ],
       [
         "imaging",
         "NGC7000",
-        2461329.604288,
-        2461329.724123
+        2461329.60342,
+        2461329.723255
       ],
       [
         "calibration",
         "M45",
-        2461329.724123,
-        2461329.727595
+        2461329.723255,
+        2461329.726727
       ],
       [
         "imaging",
         "M45",
-        2461329.727595,
-        2461329.803383
+        2461329.726727,
+        2461329.802743
       ],
       [
         "flip",
         "M45",
-        2461329.803383,
-        2461329.80755
+        2461329.802743,
+        2461329.80691
       ],
       [
         "calibration",
         "M45",
-        2461329.80755,
-        2461329.811022
+        2461329.80691,
+        2461329.810382
       ],
       [
         "imaging",
         "M45",
-        2461329.811022,
-        2461329.916192
+        2461329.810382,
+        2461329.915552
       ]
     ]
   },
   "seqplan home, four targets, over the reorder limit": {
-    "dusk": 2461355.482205,
-    "dawn": 2461355.930556,
-    "start": 2461355.482205,
-    "end": 2461355.90651,
+    "dusk": 2461355.481771,
+    "dawn": 2461355.929688,
+    "start": 2461355.481771,
+    "end": 2461355.906771,
     "targets": [
       {
         "id": "M27",
-        "percent": 21.440263,
-        "subs": 24,
+        "percent": 21,
+        "subs": 23,
         "overhead": 5,
-        "start": 2461355.482205,
-        "end": 2461355.573177,
+        "start": 2461355.481771,
+        "end": 2461355.571021,
         "flip": null,
         "transit": null,
         "constraint": {
           "isValid": true,
-          "validStartJD": 2461355.482205,
-          "validEndJD": 2461355.573177,
+          "validStartJD": 2461355.481771,
+          "validEndJD": 2461355.571021,
           "violationType": null
         },
         "horizonViolations": []
       },
       {
         "id": "NGC7000",
-        "percent": 21.440263,
+        "percent": 21.483663,
         "subs": 24,
         "overhead": 5,
-        "start": 2461355.573177,
-        "end": 2461355.664149,
+        "start": 2461355.571021,
+        "end": 2461355.662326,
         "flip": null,
         "transit": null,
         "constraint": {
-          "isValid": false,
-          "validStartJD": 2461355.573177,
-          "validEndJD": 2461355.664149,
-          "violationType": "ends_late"
+          "isValid": true,
+          "validStartJD": 2461355.571021,
+          "validEndJD": 2461355.662326,
+          "violationType": null
         },
         "horizonViolations": []
       },
       {
         "id": "M31",
-        "percent": 34.69722,
-        "subs": 39,
+        "percent": 34.967322,
+        "subs": 40,
         "overhead": 5,
-        "start": 2461355.664149,
-        "end": 2461355.811372,
+        "start": 2461355.662326,
+        "end": 2461355.810938,
         "flip": null,
-        "transit": 2461355.60727,
+        "transit": 2461355.60663,
         "constraint": {
           "isValid": true,
-          "validStartJD": 2461355.664149,
-          "validEndJD": 2461355.811372,
+          "validStartJD": 2461355.662326,
+          "validEndJD": 2461355.810938,
           "violationType": null
         },
         "horizonViolations": []
       },
       {
         "id": "M42",
-        "percent": 22.422254,
+        "percent": 22.549015,
         "subs": 25,
         "overhead": 5,
-        "start": 2461355.811372,
-        "end": 2461355.90651,
+        "start": 2461355.810938,
+        "end": 2461355.906771,
         "flip": null,
-        "transit": 2461355.809882,
+        "transit": 2461355.809242,
         "constraint": {
           "isValid": true,
-          "validStartJD": 2461355.811372,
-          "validEndJD": 2461355.90651,
+          "validStartJD": 2461355.810938,
+          "validEndJD": 2461355.906771,
           "violationType": null
         },
         "horizonViolations": []
@@ -279,72 +279,72 @@
       [
         "calibration",
         "M27",
-        2461355.482205,
-        2461355.485677
+        2461355.481771,
+        2461355.485243
       ],
       [
         "imaging",
         "M27",
-        2461355.485677,
-        2461355.573177
+        2461355.485243,
+        2461355.571021
       ],
       [
         "calibration",
         "NGC7000",
-        2461355.573177,
-        2461355.576649
+        2461355.571021,
+        2461355.574493
       ],
       [
         "imaging",
         "NGC7000",
-        2461355.576649,
-        2461355.664149
+        2461355.574493,
+        2461355.662326
       ],
       [
         "calibration",
         "M31",
-        2461355.664149,
-        2461355.667622
+        2461355.662326,
+        2461355.665799
       ],
       [
         "imaging",
         "M31",
-        2461355.667622,
-        2461355.811372
+        2461355.665799,
+        2461355.810938
       ],
       [
         "calibration",
         "M42",
-        2461355.811372,
-        2461355.814844
+        2461355.810938,
+        2461355.81441
       ],
       [
         "imaging",
         "M42",
-        2461355.814844,
-        2461355.909134
+        2461355.81441,
+        2461355.9087
       ]
     ]
   },
   "seqplan home, blocked horizon": {
-    "dusk": 2461329.50217,
-    "dawn": 2461329.913194,
-    "start": 2461329.50217,
-    "end": 2461329.913194,
+    "dusk": 2461329.501302,
+    "dawn": 2461329.912326,
+    "start": 2461329.501302,
+    "end": 2461329.912326,
     "targets": [
       {
         "id": "M31",
         "percent": 31,
         "subs": 34,
         "overhead": 5,
-        "start": 2461329.50217,
-        "end": 2461329.629588,
+        "start": 2461329.501302,
+        "end": 2461329.62872,
         "flip": null,
-        "transit": 2461329.678261,
+        "transit": 2461329.677621,
         "constraint": {
           "isValid": true,
-          "validStartJD": 2461329.50217,
-          "validEndJD": 2461329.629588,
+          "validStartJD": 2461329.501302,
+          "validEndJD": 2461329.62872,
           "violationType": null
         },
         "horizonViolations": []
@@ -354,14 +354,14 @@
         "percent": 31,
         "subs": 34,
         "overhead": 5,
-        "start": 2461329.629588,
-        "end": 2461329.757005,
+        "start": 2461329.62872,
+        "end": 2461329.756137,
         "flip": null,
-        "transit": 2461329.551026,
+        "transit": 2461329.550386,
         "constraint": {
           "isValid": true,
-          "validStartJD": 2461329.629588,
-          "validEndJD": 2461329.757005,
+          "validStartJD": 2461329.62872,
+          "validEndJD": 2461329.756137,
           "violationType": null
         },
         "horizonViolations": []
@@ -371,14 +371,14 @@
         "percent": 38,
         "subs": 40,
         "overhead": 16,
-        "start": 2461329.757005,
-        "end": 2461329.913194,
-        "flip": 2461329.806161,
-        "transit": 2461329.806161,
+        "start": 2461329.756137,
+        "end": 2461329.912326,
+        "flip": 2461329.805521,
+        "transit": 2461329.805521,
         "constraint": {
           "isValid": true,
-          "validStartJD": 2461329.757005,
-          "validEndJD": 2461329.913194,
+          "validStartJD": 2461329.756137,
+          "validEndJD": 2461329.912326,
           "violationType": null
         },
         "horizonViolations": []
@@ -388,64 +388,64 @@
       [
         "calibration",
         "M31",
-        2461329.50217,
-        2461329.505642
+        2461329.501302,
+        2461329.504774
       ],
       [
         "imaging",
         "M31",
-        2461329.505642,
-        2461329.629588
+        2461329.504774,
+        2461329.62872
       ],
       [
         "calibration",
         "IC1396",
-        2461329.629588,
-        2461329.63306
+        2461329.62872,
+        2461329.632192
       ],
       [
         "imaging",
         "IC1396",
-        2461329.63306,
-        2461329.757005
+        2461329.632192,
+        2461329.756137
       ],
       [
         "calibration",
         "M45",
-        2461329.757005,
-        2461329.760477
+        2461329.756137,
+        2461329.759609
       ],
       [
         "imaging",
         "M45",
-        2461329.760477,
-        2461329.803383
+        2461329.759609,
+        2461329.802743
       ],
       [
         "flip",
         "M45",
-        2461329.803383,
-        2461329.80755
+        2461329.802743,
+        2461329.80691
       ],
       [
         "calibration",
         "M45",
-        2461329.80755,
-        2461329.811022
+        2461329.80691,
+        2461329.810382
       ],
       [
         "imaging",
         "M45",
-        2461329.811022,
-        2461329.916192
+        2461329.810382,
+        2461329.915552
       ]
     ]
   },
   "seqplan home, custom start after midnight": {
-    "dusk": 2461376.476128,
-    "dawn": 2461376.94401,
+    "dusk": 2461376.475694,
+    "dawn": 2461376.943142,
     "start": 2461376.770833,
-    "end": 2461376.854167,
+    "end": 2461376.853472,
     "targets": [
       {
         "id": "M42",
@@ -453,13 +453,13 @@
         "subs": 10,
         "overhead": 5,
         "start": 2461376.770833,
-        "end": 2461376.8125,
+        "end": 2461376.812153,
         "flip": null,
-        "transit": 2461376.752543,
+        "transit": 2461376.751903,
         "constraint": {
           "isValid": true,
           "validStartJD": 2461376.770833,
-          "validEndJD": 2461376.8125,
+          "validEndJD": 2461376.812153,
           "violationType": null
         },
         "horizonViolations": []
@@ -469,14 +469,14 @@
         "percent": 50,
         "subs": 10,
         "overhead": 5,
-        "start": 2461376.8125,
-        "end": 2461376.854167,
+        "start": 2461376.812153,
+        "end": 2461376.853472,
         "flip": null,
-        "transit": 2461376.677831,
+        "transit": 2461376.677191,
         "constraint": {
           "isValid": false,
-          "validStartJD": 2461376.8125,
-          "validEndJD": 2461376.854167,
+          "validStartJD": 2461376.812153,
+          "validEndJD": 2461376.853125,
           "violationType": "ends_late"
         },
         "horizonViolations": []
@@ -493,41 +493,41 @@
         "imaging",
         "M42",
         2461376.774306,
-        2461376.8125
+        2461376.812153
       ],
       [
         "calibration",
         "M45",
-        2461376.8125,
-        2461376.815972
+        2461376.812153,
+        2461376.815625
       ],
       [
         "imaging",
         "M45",
-        2461376.815972,
-        2461376.855864
+        2461376.815625,
+        2461376.855517
       ]
     ]
   },
   "seqplan home, autofocus and flip offset": {
-    "dusk": 2461329.50217,
-    "dawn": 2461329.913194,
-    "start": 2461329.50217,
-    "end": 2461329.884809,
+    "dusk": 2461329.501302,
+    "dawn": 2461329.912326,
+    "start": 2461329.501302,
+    "end": 2461329.883941,
     "targets": [
       {
         "id": "NGC7000",
         "percent": 51,
         "subs": 48,
         "overhead": 28,
-        "start": 2461329.50217,
-        "end": 2461329.697316,
-        "flip": 2461329.53013,
-        "transit": 2461329.523186,
+        "start": 2461329.501302,
+        "end": 2461329.696448,
+        "flip": 2461329.52949,
+        "transit": 2461329.522546,
         "constraint": {
           "isValid": true,
-          "validStartJD": 2461329.50217,
-          "validEndJD": 2461329.697316,
+          "validStartJD": 2461329.501302,
+          "validEndJD": 2461329.696448,
           "violationType": null
         },
         "horizonViolations": []
@@ -537,14 +537,14 @@
         "percent": 49,
         "subs": 48,
         "overhead": 15,
-        "start": 2461329.697316,
-        "end": 2461329.884809,
+        "start": 2461329.696448,
+        "end": 2461329.883941,
         "flip": null,
-        "transit": 2461329.678261,
+        "transit": 2461329.677621,
         "constraint": {
           "isValid": true,
-          "validStartJD": 2461329.697316,
-          "validEndJD": 2461329.884809,
+          "validStartJD": 2461329.696448,
+          "validEndJD": 2461329.883941,
           "violationType": null
         },
         "horizonViolations": []
@@ -554,146 +554,146 @@
       [
         "calibration",
         "NGC7000",
-        2461329.50217,
-        2461329.505642
+        2461329.501302,
+        2461329.504774
       ],
       [
         "autofocus",
         "NGC7000",
-        2461329.505642,
-        2461329.507031
+        2461329.504774,
+        2461329.506163
       ],
       [
         "imaging",
         "NGC7000",
-        2461329.507031,
-        2461329.527352
+        2461329.506163,
+        2461329.526713
       ],
       [
         "flip",
         "NGC7000",
-        2461329.527352,
-        2461329.531519
+        2461329.526713,
+        2461329.530879
       ],
       [
         "autofocus",
         "NGC7000",
-        2461329.531519,
-        2461329.532908
+        2461329.530879,
+        2461329.532268
       ],
       [
         "calibration",
         "NGC7000",
-        2461329.532908,
-        2461329.53638
+        2461329.532268,
+        2461329.53574
       ],
       [
         "imaging",
         "NGC7000",
-        2461329.53638,
-        2461329.579899
+        2461329.53574,
+        2461329.579259
       ],
       [
         "autofocus",
         "NGC7000",
-        2461329.579899,
-        2461329.581288
+        2461329.579259,
+        2461329.580648
       ],
       [
         "imaging",
         "NGC7000",
-        2461329.581288,
-        2461329.624806
+        2461329.580648,
+        2461329.624166
       ],
       [
         "autofocus",
         "NGC7000",
-        2461329.624806,
-        2461329.626195
+        2461329.624166,
+        2461329.625555
       ],
       [
         "imaging",
         "NGC7000",
-        2461329.626195,
-        2461329.669714
+        2461329.625555,
+        2461329.669074
       ],
       [
         "autofocus",
         "NGC7000",
-        2461329.669714,
-        2461329.671102
+        2461329.669074,
+        2461329.670463
       ],
       [
         "imaging",
         "NGC7000",
-        2461329.671102,
-        2461329.697316
+        2461329.670463,
+        2461329.696448
       ],
       [
         "calibration",
         "M31",
-        2461329.697316,
-        2461329.700788
+        2461329.696448,
+        2461329.69992
       ],
       [
         "autofocus",
         "M31",
-        2461329.700788,
-        2461329.702177
+        2461329.69992,
+        2461329.701309
       ],
       [
         "imaging",
         "M31",
-        2461329.702177,
-        2461329.745696
+        2461329.701309,
+        2461329.744828
       ],
       [
         "autofocus",
         "M31",
-        2461329.745696,
-        2461329.747084
+        2461329.744828,
+        2461329.746216
       ],
       [
         "imaging",
         "M31",
-        2461329.747084,
-        2461329.790603
+        2461329.746216,
+        2461329.789735
       ],
       [
         "autofocus",
         "M31",
-        2461329.790603,
-        2461329.791992
+        2461329.789735,
+        2461329.791124
       ],
       [
         "imaging",
         "M31",
-        2461329.791992,
-        2461329.83551
+        2461329.791124,
+        2461329.834642
       ],
       [
         "autofocus",
         "M31",
-        2461329.83551,
-        2461329.836899
+        2461329.834642,
+        2461329.836031
       ],
       [
         "imaging",
         "M31",
-        2461329.836899,
-        2461329.880418
+        2461329.836031,
+        2461329.87955
       ],
       [
         "autofocus",
         "M31",
-        2461329.880418,
-        2461329.881807
+        2461329.87955,
+        2461329.880939
       ],
       [
         "imaging",
         "M31",
-        2461329.881807,
-        2461329.885433
+        2461329.880939,
+        2461329.884565
       ]
     ]
   },
@@ -996,228 +996,228 @@
     ]
   },
   "seqplan home, Messier marathon": {
-    "dusk": 2461120.538194,
-    "dawn": 2461120.90625,
-    "start": 2461120.538194,
-    "end": 2461120.90625,
+    "dusk": 2461120.537326,
+    "dawn": 2461120.905816,
+    "start": 2461120.537326,
+    "end": 2461120.905816,
     "targets": [
       {
         "id": "M76",
-        "percent": 3.207547,
+        "percent": 3.203769,
         "subs": 9,
         "overhead": 5,
-        "start": 2461120.538194,
-        "end": 2461120.55,
+        "start": 2461120.537326,
+        "end": 2461120.549132,
         "flip": null,
         "transit": null,
         "constraint": {
           "isValid": true,
-          "validStartJD": 2461120.538194,
-          "validEndJD": 2461120.55,
+          "validStartJD": 2461120.537326,
+          "validEndJD": 2461120.549132,
           "violationType": null
         },
         "horizonViolations": []
       },
       {
         "id": "M34",
-        "percent": 3.207547,
+        "percent": 3.203769,
         "subs": 9,
         "overhead": 5,
-        "start": 2461120.55,
-        "end": 2461120.561806,
+        "start": 2461120.549132,
+        "end": 2461120.560938,
         "flip": null,
         "transit": null,
         "constraint": {
           "isValid": true,
-          "validStartJD": 2461120.55,
-          "validEndJD": 2461120.561806,
+          "validStartJD": 2461120.549132,
+          "validEndJD": 2461120.560938,
           "violationType": null
         },
         "horizonViolations": []
       },
       {
         "id": "M45",
-        "percent": 3.207547,
+        "percent": 3.203769,
         "subs": 9,
         "overhead": 5,
-        "start": 2461120.561806,
-        "end": 2461120.573611,
+        "start": 2461120.560938,
+        "end": 2461120.572743,
         "flip": null,
         "transit": null,
         "constraint": {
           "isValid": true,
-          "validStartJD": 2461120.561806,
-          "validEndJD": 2461120.573611,
+          "validStartJD": 2461120.560938,
+          "validEndJD": 2461120.572743,
           "violationType": null
         },
         "horizonViolations": []
       },
       {
         "id": "M41",
-        "percent": 3.207547,
+        "percent": 3.203769,
         "subs": 9,
         "overhead": 5,
-        "start": 2461120.573611,
-        "end": 2461120.585417,
+        "start": 2461120.572743,
+        "end": 2461120.584549,
         "flip": null,
         "transit": null,
         "constraint": {
           "isValid": true,
-          "validStartJD": 2461120.573611,
-          "validEndJD": 2461120.585417,
+          "validStartJD": 2461120.572743,
+          "validEndJD": 2461120.584549,
           "violationType": null
         },
         "horizonViolations": []
       },
       {
         "id": "M42",
-        "percent": 3.207547,
+        "percent": 3.203769,
         "subs": 9,
         "overhead": 5,
-        "start": 2461120.585417,
-        "end": 2461120.597222,
+        "start": 2461120.584549,
+        "end": 2461120.596354,
         "flip": null,
         "transit": null,
         "constraint": {
           "isValid": true,
-          "validStartJD": 2461120.585417,
-          "validEndJD": 2461120.597222,
+          "validStartJD": 2461120.584549,
+          "validEndJD": 2461120.596354,
           "violationType": null
         },
         "horizonViolations": []
       },
       {
         "id": "M103",
-        "percent": 3.207547,
+        "percent": 3.203769,
         "subs": 9,
         "overhead": 5,
-        "start": 2461120.597222,
-        "end": 2461120.609028,
+        "start": 2461120.596354,
+        "end": 2461120.60816,
         "flip": null,
         "transit": null,
         "constraint": {
           "isValid": true,
-          "validStartJD": 2461120.597222,
-          "validEndJD": 2461120.609028,
+          "validStartJD": 2461120.596354,
+          "validEndJD": 2461120.60816,
           "violationType": null
         },
         "horizonViolations": []
       },
       {
         "id": "M93",
-        "percent": 3.207547,
+        "percent": 3.203769,
         "subs": 9,
         "overhead": 5,
-        "start": 2461120.609028,
-        "end": 2461120.620833,
+        "start": 2461120.60816,
+        "end": 2461120.619965,
         "flip": null,
-        "transit": 2461120.543686,
+        "transit": 2461120.543046,
         "constraint": {
           "isValid": true,
-          "validStartJD": 2461120.609028,
-          "validEndJD": 2461120.620833,
+          "validStartJD": 2461120.60816,
+          "validEndJD": 2461120.619965,
           "violationType": null
         },
         "horizonViolations": []
       },
       {
         "id": "M78",
-        "percent": 3.207547,
+        "percent": 3.203769,
         "subs": 9,
         "overhead": 5,
-        "start": 2461120.620833,
-        "end": 2461120.632639,
+        "start": 2461120.619965,
+        "end": 2461120.631771,
         "flip": null,
         "transit": null,
         "constraint": {
           "isValid": true,
-          "validStartJD": 2461120.620833,
-          "validEndJD": 2461120.632639,
+          "validStartJD": 2461120.619965,
+          "validEndJD": 2461120.631771,
           "violationType": null
         },
         "horizonViolations": []
       },
       {
         "id": "M50",
-        "percent": 3.207547,
+        "percent": 3.203769,
         "subs": 9,
         "overhead": 5,
-        "start": 2461120.632639,
-        "end": 2461120.644444,
+        "start": 2461120.631771,
+        "end": 2461120.643576,
         "flip": null,
         "transit": null,
         "constraint": {
           "isValid": true,
-          "validStartJD": 2461120.632639,
-          "validEndJD": 2461120.644444,
+          "validStartJD": 2461120.631771,
+          "validEndJD": 2461120.643576,
           "violationType": null
         },
         "horizonViolations": []
       },
       {
         "id": "M47",
-        "percent": 3.207547,
+        "percent": 3.203769,
         "subs": 9,
         "overhead": 5,
-        "start": 2461120.644444,
-        "end": 2461120.65625,
+        "start": 2461120.643576,
+        "end": 2461120.655382,
         "flip": null,
-        "transit": 2461120.538284,
+        "transit": 2461120.537644,
         "constraint": {
           "isValid": true,
-          "validStartJD": 2461120.644444,
-          "validEndJD": 2461120.65625,
+          "validStartJD": 2461120.643576,
+          "validEndJD": 2461120.655382,
           "violationType": null
         },
         "horizonViolations": []
       },
       {
         "id": "M46",
-        "percent": 3.207547,
+        "percent": 3.203769,
         "subs": 9,
         "overhead": 5,
-        "start": 2461120.65625,
-        "end": 2461120.668056,
+        "start": 2461120.655382,
+        "end": 2461120.667188,
         "flip": null,
-        "transit": 2461120.542024,
+        "transit": 2461120.541384,
         "constraint": {
           "isValid": true,
-          "validStartJD": 2461120.65625,
-          "validEndJD": 2461120.668056,
+          "validStartJD": 2461120.655382,
+          "validEndJD": 2461120.667188,
           "violationType": null
         },
         "horizonViolations": []
       },
       {
         "id": "M1",
-        "percent": 3.207547,
+        "percent": 3.203769,
         "subs": 9,
         "overhead": 5,
-        "start": 2461120.668056,
-        "end": 2461120.679861,
+        "start": 2461120.667188,
+        "end": 2461120.678993,
         "flip": null,
         "transit": null,
         "constraint": {
           "isValid": true,
-          "validStartJD": 2461120.668056,
-          "validEndJD": 2461120.679861,
+          "validStartJD": 2461120.667188,
+          "validEndJD": 2461120.678993,
           "violationType": null
         },
         "horizonViolations": []
       },
       {
         "id": "M35",
-        "percent": 3.207547,
+        "percent": 3.203769,
         "subs": 9,
         "overhead": 5,
-        "start": 2461120.679861,
-        "end": 2461120.691667,
+        "start": 2461120.678993,
+        "end": 2461120.690799,
         "flip": null,
         "transit": null,
         "constraint": {
           "isValid": true,
-          "validStartJD": 2461120.679861,
-          "validEndJD": 2461120.691667,
+          "validStartJD": 2461120.678993,
+          "validEndJD": 2461120.690799,
           "violationType": null
         },
         "horizonViolations": []
@@ -1227,14 +1227,14 @@
         "percent": 4,
         "subs": 13,
         "overhead": 5,
-        "start": 2461120.691667,
-        "end": 2461120.706389,
+        "start": 2461120.690799,
+        "end": 2461120.705538,
         "flip": null,
         "transit": null,
         "constraint": {
           "isValid": true,
-          "validStartJD": 2461120.691667,
-          "validEndJD": 2461120.706389,
+          "validStartJD": 2461120.690799,
+          "validEndJD": 2461120.705538,
           "violationType": null
         },
         "horizonViolations": []
@@ -1244,31 +1244,31 @@
         "percent": 5,
         "subs": 17,
         "overhead": 5,
-        "start": 2461120.706389,
-        "end": 2461120.724792,
+        "start": 2461120.705538,
+        "end": 2461120.723963,
         "flip": null,
-        "transit": 2461120.564047,
+        "transit": 2461120.563407,
         "constraint": {
           "isValid": true,
-          "validStartJD": 2461120.706389,
-          "validEndJD": 2461120.724792,
+          "validStartJD": 2461120.705538,
+          "validEndJD": 2461120.723963,
           "violationType": null
         },
         "horizonViolations": []
       },
       {
         "id": "M67",
-        "percent": 7.207547,
+        "percent": 7.203769,
         "subs": 27,
         "overhead": 5,
-        "start": 2461120.724792,
-        "end": 2461120.751319,
+        "start": 2461120.723963,
+        "end": 2461120.750508,
         "flip": null,
-        "transit": 2461120.590225,
+        "transit": 2461120.589585,
         "constraint": {
           "isValid": true,
-          "validStartJD": 2461120.724792,
-          "validEndJD": 2461120.751319,
+          "validStartJD": 2461120.723963,
+          "validEndJD": 2461120.750508,
           "violationType": null
         },
         "horizonViolations": []
@@ -1278,65 +1278,65 @@
         "percent": 10,
         "subs": 39,
         "overhead": 5,
-        "start": 2461120.751319,
-        "end": 2461120.788125,
+        "start": 2461120.750508,
+        "end": 2461120.787357,
         "flip": null,
-        "transit": 2461120.58233,
+        "transit": 2461120.58169,
         "constraint": {
           "isValid": true,
-          "validStartJD": 2461120.751319,
-          "validEndJD": 2461120.788125,
+          "validStartJD": 2461120.750508,
+          "validEndJD": 2461120.787357,
           "violationType": null
         },
         "horizonViolations": []
       },
       {
         "id": "M95",
-        "percent": 11,
-        "subs": 43,
+        "percent": 10,
+        "subs": 39,
         "overhead": 5,
-        "start": 2461120.788125,
-        "end": 2461120.828611,
+        "start": 2461120.787357,
+        "end": 2461120.824206,
         "flip": null,
-        "transit": 2461120.667929,
+        "transit": 2461120.667289,
         "constraint": {
           "isValid": true,
-          "validStartJD": 2461120.788125,
-          "validEndJD": 2461120.828611,
+          "validStartJD": 2461120.787357,
+          "validEndJD": 2461120.824206,
           "violationType": null
         },
         "horizonViolations": []
       },
       {
         "id": "M65",
-        "percent": 10.207547,
-        "subs": 40,
+        "percent": 11,
+        "subs": 43,
         "overhead": 5,
-        "start": 2461120.828611,
-        "end": 2461120.866181,
+        "start": 2461120.824206,
+        "end": 2461120.86474,
         "flip": null,
-        "transit": 2461120.692445,
+        "transit": 2461120.691805,
         "constraint": {
           "isValid": true,
-          "validStartJD": 2461120.828611,
-          "validEndJD": 2461120.866181,
+          "validStartJD": 2461120.824206,
+          "validEndJD": 2461120.86474,
           "violationType": null
         },
         "horizonViolations": []
       },
       {
         "id": "M52",
-        "percent": 10.886792,
-        "subs": 43,
+        "percent": 11.147232,
+        "subs": 44,
         "overhead": 5,
-        "start": 2461120.866181,
-        "end": 2461120.90625,
+        "start": 2461120.86474,
+        "end": 2461120.905816,
         "flip": null,
         "transit": null,
         "constraint": {
           "isValid": true,
-          "validStartJD": 2461120.866181,
-          "validEndJD": 2461120.90625,
+          "validStartJD": 2461120.86474,
+          "validEndJD": 2461120.905816,
           "violationType": null
         },
         "horizonViolations": []
@@ -1346,242 +1346,242 @@
       [
         "calibration",
         "M76",
-        2461120.538194,
-        2461120.541667
+        2461120.537326,
+        2461120.540799
       ],
       [
         "imaging",
         "M76",
-        2461120.541667,
-        2461120.55
+        2461120.540799,
+        2461120.549132
       ],
       [
         "calibration",
         "M34",
-        2461120.55,
-        2461120.553472
+        2461120.549132,
+        2461120.552604
       ],
       [
         "imaging",
         "M34",
-        2461120.553472,
-        2461120.561806
+        2461120.552604,
+        2461120.560938
       ],
       [
         "calibration",
         "M45",
-        2461120.561806,
-        2461120.565278
+        2461120.560938,
+        2461120.56441
       ],
       [
         "imaging",
         "M45",
-        2461120.565278,
-        2461120.573611
+        2461120.56441,
+        2461120.572743
       ],
       [
         "calibration",
         "M41",
-        2461120.573611,
-        2461120.577083
+        2461120.572743,
+        2461120.576215
       ],
       [
         "imaging",
         "M41",
-        2461120.577083,
-        2461120.585417
+        2461120.576215,
+        2461120.584549
       ],
       [
         "calibration",
         "M42",
-        2461120.585417,
-        2461120.588889
+        2461120.584549,
+        2461120.588021
       ],
       [
         "imaging",
         "M42",
-        2461120.588889,
-        2461120.597222
+        2461120.588021,
+        2461120.596354
       ],
       [
         "calibration",
         "M103",
-        2461120.597222,
-        2461120.600694
+        2461120.596354,
+        2461120.599826
       ],
       [
         "imaging",
         "M103",
-        2461120.600694,
-        2461120.609028
+        2461120.599826,
+        2461120.60816
       ],
       [
         "calibration",
         "M93",
-        2461120.609028,
-        2461120.6125
+        2461120.60816,
+        2461120.611632
       ],
       [
         "imaging",
         "M93",
-        2461120.6125,
-        2461120.620833
+        2461120.611632,
+        2461120.619965
       ],
       [
         "calibration",
         "M78",
-        2461120.620833,
-        2461120.624306
+        2461120.619965,
+        2461120.623438
       ],
       [
         "imaging",
         "M78",
-        2461120.624306,
-        2461120.632639
+        2461120.623438,
+        2461120.631771
       ],
       [
         "calibration",
         "M50",
-        2461120.632639,
-        2461120.636111
+        2461120.631771,
+        2461120.635243
       ],
       [
         "imaging",
         "M50",
-        2461120.636111,
-        2461120.644444
+        2461120.635243,
+        2461120.643576
       ],
       [
         "calibration",
         "M47",
-        2461120.644444,
-        2461120.647917
+        2461120.643576,
+        2461120.647049
       ],
       [
         "imaging",
         "M47",
-        2461120.647917,
-        2461120.65625
+        2461120.647049,
+        2461120.655382
       ],
       [
         "calibration",
         "M46",
-        2461120.65625,
-        2461120.659722
+        2461120.655382,
+        2461120.658854
       ],
       [
         "imaging",
         "M46",
-        2461120.659722,
-        2461120.668056
+        2461120.658854,
+        2461120.667188
       ],
       [
         "calibration",
         "M1",
-        2461120.668056,
-        2461120.671528
+        2461120.667188,
+        2461120.67066
       ],
       [
         "imaging",
         "M1",
-        2461120.671528,
-        2461120.679861
+        2461120.67066,
+        2461120.678993
       ],
       [
         "calibration",
         "M35",
-        2461120.679861,
-        2461120.683333
+        2461120.678993,
+        2461120.682465
       ],
       [
         "imaging",
         "M35",
-        2461120.683333,
-        2461120.691667
+        2461120.682465,
+        2461120.690799
       ],
       [
         "calibration",
         "M37",
-        2461120.691667,
-        2461120.695139
+        2461120.690799,
+        2461120.694271
       ],
       [
         "imaging",
         "M37",
-        2461120.695139,
-        2461120.706389
+        2461120.694271,
+        2461120.705538
       ],
       [
         "calibration",
         "M48",
-        2461120.706389,
-        2461120.709861
+        2461120.705538,
+        2461120.70901
       ],
       [
         "imaging",
         "M48",
-        2461120.709861,
-        2461120.724792
+        2461120.70901,
+        2461120.723963
       ],
       [
         "calibration",
         "M67",
-        2461120.724792,
-        2461120.728264
+        2461120.723963,
+        2461120.727435
       ],
       [
         "imaging",
         "M67",
-        2461120.728264,
-        2461120.751319
+        2461120.727435,
+        2461120.750508
       ],
       [
         "calibration",
         "M44",
-        2461120.751319,
-        2461120.754792
+        2461120.750508,
+        2461120.75398
       ],
       [
         "imaging",
         "M44",
-        2461120.754792,
-        2461120.788125
+        2461120.75398,
+        2461120.787357
       ],
       [
         "calibration",
         "M95",
-        2461120.788125,
-        2461120.791597
+        2461120.787357,
+        2461120.790829
       ],
       [
         "imaging",
         "M95",
-        2461120.791597,
-        2461120.828611
+        2461120.790829,
+        2461120.824206
       ],
       [
         "calibration",
         "M65",
-        2461120.828611,
-        2461120.832083
+        2461120.824206,
+        2461120.827678
       ],
       [
         "imaging",
         "M65",
-        2461120.832083,
-        2461120.866181
+        2461120.827678,
+        2461120.86474
       ],
       [
         "calibration",
         "M52",
-        2461120.866181,
-        2461120.869653
+        2461120.86474,
+        2461120.868212
       ],
       [
         "imaging",
         "M52",
-        2461120.869653,
-        2461120.906998
+        2461120.868212,
+        2461120.906406
       ]
     ]
   },
@@ -1590,34 +1590,34 @@
       {
         "id": "M31",
         "window": [
-          2461329.50217,
-          2461329.884809
+          2461329.501302,
+          2461329.883941
         ],
-        "peak": 87.906507,
-        "transit": 2461329.678261,
-        "moonSeparation": 119.014354,
+        "peak": 87.601613,
+        "transit": 2461329.677621,
+        "moonSeparation": 119.022837,
         "dip": null,
         "scores": {
           "window": 100,
           "altitude": 96,
           "centering": 86,
           "moon": 96,
-          "composite": 96
+          "composite": 95
         }
       },
       {
         "id": "M33",
         "window": [
-          2461329.525781,
-          2461329.90217
+          2461329.525608,
+          2461329.901302
         ],
-        "peak": 81.36826,
-        "transit": 2461329.713664,
-        "moonSeparation": 126.460467,
+        "peak": 81.668964,
+        "transit": 2461329.713024,
+        "moonSeparation": 126.466264,
         "dip": null,
         "scores": {
           "window": 100,
-          "altitude": 84,
+          "altitude": 85,
           "centering": 97,
           "moon": 98,
           "composite": 95
@@ -1626,16 +1626,16 @@
       {
         "id": "M45",
         "window": [
-          2461329.630642,
-          2461329.913194
+          2461329.629774,
+          2461329.912326
         ],
-        "peak": 74.817836,
-        "transit": 2461329.806161,
-        "moonSeparation": 153.285388,
+        "peak": 75.11467,
+        "transit": 2461329.805521,
+        "moonSeparation": 153.295567,
         "dip": null,
         "scores": {
           "window": 83,
-          "altitude": 72,
+          "altitude": 73,
           "centering": 52,
           "moon": 100,
           "composite": 81
@@ -1644,16 +1644,16 @@
       {
         "id": "IC1396",
         "window": [
-          2461329.50217,
-          2461329.785503
+          2461329.501302,
+          2461329.783941
         ],
-        "peak": 71.790909,
-        "transit": 2461329.551026,
-        "moonSeparation": 99.119998,
+        "peak": 71.490665,
+        "transit": 2461329.550386,
+        "moonSeparation": 99.126742,
         "dip": null,
         "scores": {
           "window": 83,
-          "altitude": 67,
+          "altitude": 66,
           "centering": 24,
           "moon": 94,
           "composite": 73
@@ -1662,16 +1662,16 @@
       {
         "id": "NGC7000",
         "window": [
-          2461329.50217,
-          2461329.734809
+          2461329.501302,
+          2461329.733941
         ],
-        "peak": 84.960762,
-        "transit": 2461329.523186,
-        "moonSeparation": 85.6668,
+        "peak": 84.659856,
+        "transit": 2461329.522546,
+        "moonSeparation": 85.672419,
         "dip": null,
         "scores": {
           "window": 65,
-          "altitude": 91,
+          "altitude": 90,
           "centering": 10,
           "moon": 92,
           "composite": 71
@@ -1680,30 +1680,30 @@
       {
         "id": "M27",
         "window": [
-          2461329.50217,
-          2461329.655642
+          2461329.501302,
+          2461329.655469
         ],
-        "peak": 72.327761,
+        "peak": 72.629361,
         "transit": null,
-        "moonSeparation": 61.481658,
+        "moonSeparation": 61.485413,
         "dip": null,
         "scores": {
-          "window": 38,
+          "window": 39,
           "altitude": 68,
           "centering": 0,
           "moon": 80,
-          "composite": 52
+          "composite": 53
         }
       },
       {
         "id": "M42",
         "window": [
-          2461329.784809,
-          2461329.913194
+          2461329.783247,
+          2461329.912326
         ],
-        "peak": 45.317329,
-        "transit": 2461329.880873,
-        "moonSeparation": 146.528334,
+        "peak": 45.61893,
+        "transit": 2461329.880233,
+        "moonSeparation": 146.529588,
         "dip": null,
         "scores": {
           "window": 30,
@@ -1723,25 +1723,25 @@
           [
             "M31"
           ],
-          881.599947
+          872.416615
         ],
         [
           [
             "M33"
           ],
-          858.166616
+          856.583282
         ],
         [
           [
             "M45"
           ],
-          549.281266
+          549.281267
         ],
         [
           [
             "IC1396"
           ],
-          496.39997
+          495.183304
         ],
         [
           [
@@ -1756,35 +1756,35 @@
             "M31",
             "M33"
           ],
-          458.437473
+          455.999973
         ],
         [
           [
             "M31",
             "M45"
           ],
-          445.515623
+          442.448957
         ],
         [
           [
             "M31",
             "M42"
           ],
-          426.468738
+          422.272906
         ],
         [
           [
             "M33",
             "NGC7000"
           ],
-          419.099975
+          418.999975
         ],
         [
           [
             "M33",
             "M45"
           ],
-          416.990624
+          416.198958
         ]
       ],
       "triplets": [
@@ -1794,7 +1794,7 @@
             "M33",
             "M45"
           ],
-          301.968748
+          300.682637
         ],
         [
           [
@@ -1802,7 +1802,7 @@
             "M33",
             "M42"
           ],
-          293.079158
+          291.496751
         ],
         [
           [
@@ -1810,7 +1810,7 @@
             "M33",
             "NGC7000"
           ],
-          289.60739
+          288.333316
         ],
         [
           [
@@ -1818,7 +1818,7 @@
             "M33",
             "IC1396"
           ],
-          287.869427
+          286.705538
         ],
         [
           [
@@ -1826,7 +1826,7 @@
             "M33",
             "M27"
           ],
-          286.405538
+          285.372205
         ]
       ]
     }
@@ -1950,67 +1950,67 @@
   "best months": {
     "home M31": {
       "bestMonth": 10,
-      "peakAltitude": 88,
+      "peakAltitude": 87.7,
       "visibilityStart": 7,
       "visibilityEnd": 13
     },
     "home M33": {
       "bestMonth": 10,
-      "peakAltitude": 81.4,
+      "peakAltitude": 81.7,
       "visibilityStart": 7,
       "visibilityEnd": 13
     },
     "home M42": {
       "bestMonth": 12,
-      "peakAltitude": 45.3,
+      "peakAltitude": 45.6,
       "visibilityStart": 10,
       "visibilityEnd": 14
     },
     "home M45": {
       "bestMonth": 11,
-      "peakAltitude": 74.8,
+      "peakAltitude": 75.1,
       "visibilityStart": 8,
       "visibilityEnd": 14
     },
     "home NGC7000": {
       "bestMonth": 8,
-      "peakAltitude": 85,
+      "peakAltitude": 84.7,
       "visibilityStart": 5,
       "visibilityEnd": 12
     },
     "home IC1396": {
       "bestMonth": 8,
-      "peakAltitude": 71.8,
+      "peakAltitude": 71.5,
       "visibilityStart": 5,
       "visibilityEnd": 12
     },
     "home M27": {
       "bestMonth": 7,
-      "peakAltitude": 73.4,
+      "peakAltitude": 73.7,
       "visibilityStart": 5,
       "visibilityEnd": 11
     },
     "home NGC2070": {
       "bestMonth": null,
-      "peakAltitude": -18.4,
+      "peakAltitude": -18.1,
       "visibilityStart": null,
       "visibilityEnd": null
     },
     "home NGC3372": {
       "bestMonth": null,
-      "peakAltitude": -9.2,
+      "peakAltitude": -8.9,
       "visibilityStart": null,
       "visibilityEnd": null
     },
     "home NGC104": {
       "bestMonth": null,
-      "peakAltitude": -21.4,
+      "peakAltitude": -21.1,
       "visibilityStart": null,
       "visibilityEnd": null
     },
     "home NGC253": {
       "bestMonth": null,
-      "peakAltitude": 25.4,
+      "peakAltitude": 25.7,
       "visibilityStart": null,
       "visibilityEnd": null
     },
@@ -2215,325 +2215,325 @@
   },
   "yearly": {
     "home M31": {
-      "maxAltitude": 88.021,
+      "maxAltitude": 87.721,
       "weekly": [
         [
           0,
-          84.326688,
-          0.039382,
-          0.6178
+          84.152374,
+          0.039347,
+          0.615829
         ],
         [
           7,
-          78.190842,
-          0.278095,
-          13.363232
+          78.056495,
+          0.277557,
+          13.299693
         ],
         [
           14,
-          71.832116,
-          0.497255,
-          30.056494
+          71.702008,
+          0.496204,
+          29.898007
         ],
         [
           21,
-          65.368201,
-          0.349403,
-          10.947099
+          65.232907,
+          0.348579,
+          10.881635
         ],
         [
           28,
-          58.954257,
-          0.080159,
-          1.612885
+          58.810002,
+          0.079938,
+          1.601224
         ],
         [
           35,
-          52.501363,
-          0.127768,
-          3.592693
+          52.460564,
+          0.1274,
+          3.575124
         ],
         [
           42,
-          46.263934,
-          0.295148,
-          10.676172
+          46.096566,
+          0.293798,
+          10.537194
         ],
         [
           49,
-          40.041307,
-          0.218441,
-          3.188658
+          39.970892,
+          0.210597,
+          3.157239
         ],
         [
           56,
-          34.083617,
-          0.08194,
-          0.582064
+          33.889858,
+          0.081595,
+          0.552887
         ],
         [
           63,
-          28.206793,
-          0.038405,
+          28.10229,
+          0.038189,
           0
         ],
         [
           70,
-          22.558127,
-          0.137957,
+          22.434969,
+          0.136999,
           0
         ],
         [
           77,
-          17.180594,
-          0.107058,
+          17.037917,
+          0.106019,
           0
         ],
         [
           84,
-          12.036215,
-          0.045834,
+          11.872921,
+          0.045073,
           0
         ],
         [
           91,
-          9.002973,
-          0.002176,
+          8.905085,
+          0.002049,
           0
         ],
         [
           98,
-          11.022106,
-          0.032765,
+          10.936031,
+          0.034052,
           0
         ],
         [
           105,
-          13.112746,
-          0.079056,
+          13.03821,
+          0.080217,
           0
         ],
         [
           112,
-          15.270262,
-          0.09079,
+          15.298587,
+          0.091615,
           0
         ],
         [
           119,
-          17.583888,
-          0.003761,
+          17.626218,
+          0.00379,
           0
         ],
         [
           126,
-          20.056715,
-          0.103713,
+          20.113069,
+          0.104228,
           0
         ],
         [
           133,
-          22.789943,
-          0.184947,
+          22.860795,
+          0.185716,
           0
         ],
         [
           140,
-          25.69153,
-          0.211622,
+          25.878368,
+          0.212381,
           0
         ],
         [
           147,
-          29.072834,
-          0.035762,
+          29.173612,
+          0.035891,
           0
         ],
         [
           154,
-          32.742946,
-          0.109931,
-          0.410016
+          32.965706,
+          0.110209,
+          0.441333
         ],
         [
           161,
-          36.923018,
-          0.257307,
-          1.732842
+          37.16442,
+          0.257895,
+          1.7864
         ],
         [
           168,
-          41.629073,
-          0.345401,
-          7.297623
+          41.889455,
+          0.34686,
+          7.433888
         ],
         [
           175,
-          46.985999,
-          0.106975,
-          1.690614
+          47.265668,
+          0.107389,
+          1.712761
         ],
         [
           182,
-          52.778482,
-          0.090004,
-          1.373342
+          52.961711,
+          0.090214,
+          1.37913
         ],
         [
           189,
-          59.003347,
-          0.348454,
-          6.687595
+          59.317886,
+          0.349507,
+          6.730086
         ],
         [
           196,
-          65.651981,
-          0.536636,
-          24.679481
+          65.862827,
+          0.537913,
+          24.758792
         ],
         [
           203,
-          72.470605,
-          0.232997,
-          7.984774
+          72.687896,
+          0.233546,
+          8.007815
         ],
         [
           210,
-          79.412755,
-          0.046506,
-          0.686456
+          79.619021,
+          0.046575,
+          0.68743
         ],
         [
           217,
-          86.207031,
-          0.414283,
-          12.024816
+          86.179572,
+          0.414908,
+          12.019166
         ],
         [
           224,
-          88.021,
-          0.72331,
-          46.733318
+          87.721,
+          0.724435,
+          46.734893
         ],
         [
           231,
-          88.021,
-          0.404903,
-          21.005643
+          87.721,
+          0.40555,
+          21.008599
         ],
         [
           238,
-          88.021,
-          0.000443,
-          0.000939
+          87.721,
+          0.000438,
+          0.000922
         ],
         [
           245,
-          88.021,
-          0.440063,
-          16.100265
+          87.721,
+          0.440497,
+          16.072719
         ],
         [
           252,
-          88.021,
-          0.881686,
-          68.17495
+          87.721,
+          0.882905,
+          68.175622
         ],
         [
           259,
-          88.021,
-          0.609738,
-          40.396406
+          87.721,
+          0.610454,
+          40.499709
         ],
         [
           266,
-          88.021,
-          0.063827,
-          1.073265
+          87.721,
+          0.063934,
+          1.075519
         ],
         [
           273,
-          88.021,
-          0.417915,
-          16.393625
+          87.721,
+          0.418119,
+          16.405734
         ],
         [
           280,
-          88.021,
-          0.965367,
-          77.941658
+          87.721,
+          0.964748,
+          77.940527
         ],
         [
           287,
-          88.021,
-          0.759302,
-          58.418325
+          87.721,
+          0.75918,
+          58.364467
         ],
         [
           294,
-          88.021,
-          0.163819,
-          4.109405
+          87.721,
+          0.16379,
+          4.102908
         ],
         [
           301,
-          88.021,
-          0.281857,
-          11.288499
+          87.721,
+          0.281651,
+          11.260032
         ],
         [
           308,
-          88.021,
-          0.817651,
-          65.529441
+          87.721,
+          0.817115,
+          65.374837
         ],
         [
           315,
-          88.021,
-          0.756846,
-          59.941973
+          87.721,
+          0.756352,
+          59.799242
         ],
         [
           322,
-          88.021,
-          0.242605,
-          6.902532
+          87.721,
+          0.242482,
+          6.887755
         ],
         [
           329,
-          88.021,
-          0.14481,
-          4.82787
+          87.721,
+          0.144637,
+          4.812228
         ],
         [
           336,
-          88.021,
-          0.641895,
-          46.708489
+          87.721,
+          0.641257,
+          46.572052
         ],
         [
           343,
-          88.021,
-          0.689293,
-          52.783631
+          87.721,
+          0.688585,
+          52.623026
         ],
         [
           350,
-          88.021,
-          0.280058,
-          7.891401
+          87.721,
+          0.279795,
+          7.859603
         ],
         [
           357,
-          88.021,
-          0.040924,
-          0.838719
+          87.721,
+          0.040831,
+          0.833535
         ],
         [
           364,
-          85.298944,
-          0.451958,
-          27.297593
+          85.106661,
+          0.451237,
+          27.185878
         ]
       ]
     },
