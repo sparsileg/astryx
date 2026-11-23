@@ -320,7 +320,7 @@ const TUTORIAL_ADMIN_TOOLS = {
             id: 'check-updates',
             type: 'modal',
             title: 'Check for Target Updates',
-            body: '<strong>Check for Target Updates</strong> compares your current database version against the latest available update. Use this periodically to see if a newer database is available. If it is available, it will be automagically installed.<br><br>If you are running Astryx in local mode, rather than using the <em>astryx.tools</em> website, this operation does not work.<br><br>Note that database updates will be very rare.',
+            body: '<strong>Check for Target Updates</strong> compares your current database version against the latest available update. Use this periodically to see if a newer database is available. If it is available, it will be automagically installed.<br><br>The desktop app also checks <em>astryx.tools</em> when it starts, and asks before updating.<br><br>Note that database updates will be very rare.',
             target: null,
             position: 'center',
             waitFor: 'next',

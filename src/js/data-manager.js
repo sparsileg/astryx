@@ -290,9 +290,75 @@ const DataManager = {
         });
     },
 
-    async fetchAndLoadTargets(meta) {
+    /** The target database bundled with the app */
+    bundledTargetSource() {
+        return { base: APP_CONFIG.TARGET_DATA_PATH, remote: false };
+    },
+
+    /** The web app's target database on astryx.tools (Issue #344) */
+    remoteTargetSource() {
+        return { base: APP_CONFIG.TARGET_REMOTE_DATA_URL, remote: true };
+    },
+
+    /**
+     * Desktop also looks for a newer target database on astryx.tools, so one
+     * reaches it without an app release. The web app's bundled copy is that
+     * one already (Issue #344).
+     */
+    remoteTargetsEnabled() {
+        return typeof window.__TAURI__ !== 'undefined';
+    },
+
+    /** Every place a target database can come from */
+    targetSources() {
+        return this.remoteTargetsEnabled()
+            ? [this.bundledTargetSource(), this.remoteTargetSource()]
+            : [this.bundledTargetSource()];
+    },
+
+    /**
+     * The newest target database the sources offer, as {base, remote, meta},
+     * or null when none of them answered
+     */
+    async fetchNewestTargetMeta(sources) {
+        let newest = null;
+        for (const source of sources) {
+            const meta = await this.fetchTargetMeta(source.base, source.remote);
+            if (meta && (!newest || Number(meta.version) > Number(newest.meta.version))) {
+                newest = { ...source, meta };
+            }
+        }
+        return newest;
+    },
+
+    /** True when meta describes a newer target database than the stored one */
+    async isNewerThanStored(meta) {
+        const storedVersion = await this.getTargetVersion();
+        return !storedVersion || Number(meta.version) > Number(storedVersion);
+    },
+
+    /**
+     * Fetch with a time limit, so an unreachable server can't hold up startup
+     * (Issue #344)
+     */
+    async _fetchWithTimeout(url, timeoutMs, options = {}) {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), timeoutMs);
         try {
-            const response = await fetch(APP_CONFIG.TARGET_DATA_PATH + meta.filename);
+            return await fetch(url, { ...options, signal: controller.signal });
+        } finally {
+            clearTimeout(timer);
+        }
+    },
+
+    /**
+     * Download a target database and replace the stored one. Nothing is
+     * written unless the whole file parsed cleanly and holds the number of
+     * targets meta says (Issue #344).
+     */
+    async fetchAndLoadTargets(meta, base = APP_CONFIG.TARGET_DATA_PATH) {
+        try {
+            const response = await this._fetchWithTimeout(base + meta.filename, APP_CONFIG.TARGET_DOWNLOAD_TIMEOUT_MS);
             if (!response.ok) {
                 console.warn('Target CSV file not found or unavailable');
                 return false;
@@ -301,22 +367,18 @@ const DataManager = {
             const parsed = CSVUtils.parseTargetCSV(text);
 
             if (parsed.errors.length > 0) {
-                console.warn('Target CSV parse errors:', parsed.errors);
+                console.warn('Target CSV parse errors, database not loaded:', parsed.errors);
+                return false;
             }
 
-            if (parsed.targets.length === 0) {
-                console.warn('No targets parsed from CSV');
+            if (parsed.targets.length !== meta.count) {
+                console.warn(`Target CSV holds ${parsed.targets.length} targets, expected ${meta.count}; database not loaded`);
                 return false;
             }
 
             await DBManager.replaceTargets(parsed.targets, String(meta.version));
             await this.loadTargets();
             Log.debug(`Target database loaded: ${parsed.targets.length} targets (version ${meta.version})`);
-
-            if (parsed.targets.length !== meta.count) {
-                console.warn(`Count mismatch: expected ${meta.count}, loaded ${parsed.targets.length}`);
-            }
-
             return true;
         } catch (error) {
             console.warn('Failed to fetch and load targets:', error.message);
@@ -324,17 +386,29 @@ const DataManager = {
         }
     },
 
-    async fetchTargetMeta() {
+    /**
+     * A target database's targets-meta.json, or null when it can't be read
+     * or is in a format this version doesn't know. A remote one that can't
+     * be reached is expected (offline), so it's only a debug message.
+     */
+    async fetchTargetMeta(base = APP_CONFIG.TARGET_DATA_PATH, remote = false) {
+        const warn = remote ? Log.debug : console.warn;
         try {
-            const response = await fetch(APP_CONFIG.TARGET_DATA_PATH + 'targets-meta.json?v=' + Date.now());
+            const response = await this._fetchWithTimeout(base + 'targets-meta.json?v=' + Date.now(),
+                APP_CONFIG.TARGET_META_TIMEOUT_MS, { cache: 'no-store' });
             if (!response.ok) {
-                console.warn('targets-meta.json not found or unavailable');
+                warn(`targets-meta.json not found or unavailable at ${base}`);
                 return null;
             }
             const meta = await response.json();
+            // Files from before the format field are format 1
+            if ((meta.format ?? 1) !== APP_CONFIG.TARGET_DATA_FORMAT) {
+                warn(`targets-meta.json at ${base} is format ${meta.format}; this version reads ${APP_CONFIG.TARGET_DATA_FORMAT}`);
+                return null;
+            }
             return meta;
         } catch (error) {
-            console.warn('Failed to fetch targets-meta.json:', error.message);
+            warn(`Failed to fetch targets-meta.json from ${base}:`, error.message);
             return null;
         }
     },

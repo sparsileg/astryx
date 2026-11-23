@@ -5,6 +5,7 @@
 import { createRequire } from 'node:module';
 import { spawn } from 'node:child_process';
 import assert from 'node:assert';
+import fs from 'node:fs';
 
 const require = createRequire(process.env.PLAYWRIGHT_DIR + '/');
 const { chromium } = require('playwright');
@@ -251,6 +252,42 @@ async function openViewfinder(page, target) {
 // The canvas can still be read back (Snapshot): images from another origin would taint it
 const canvasReadable = page => page.evaluate(() => {
     try { return FOVCanvas.canvas.toDataURL('image/jpeg').length > 1000; } catch { return false; }
+});
+
+// A smaller target database served as the one on astryx.tools: the
+// bundled CSV's first REMOTE_COUNT targets, a version newer than the stored
+// one (Issue #344). The app only looks there on desktop, so the check turns
+// that on and calls the startup offer itself.
+const REMOTE_COUNT = 200;
+const REMOTE_DATA = 'https://app.astryx.tools/data/';
+async function serveRemoteTargets(page, { meta = {}, csv } = {}) {
+    const bundled = JSON.parse(fs.readFileSync('src/data/targets-meta.json', 'utf8'));
+    const lines = fs.readFileSync(`src/data/${bundled.filename}`, 'utf8').split(/\r?\n/);
+    const body = csv ?? lines.slice(0, REMOTE_COUNT + 1).join('\n') + '\n';
+    const remote = { format: 1, filename: 'astryx-targets-test.csv', version: bundled.version + 1, count: REMOTE_COUNT, ...meta };
+    page.remoteRequests = [];
+    await page.route(`${REMOTE_DATA}**`, route => {
+        const url = route.request().url();
+        page.remoteRequests.push(url);
+        // The CORS header src/_headers gives /data/ on Cloudflare
+        const headers = { 'Access-Control-Allow-Origin': '*' };
+        route.fulfill(url.includes('targets-meta.json')
+            ? { headers, contentType: 'application/json', body: JSON.stringify(remote) }
+            : { headers, contentType: 'text/csv', body });
+    });
+    return remote;
+}
+
+const targetState = page => page.evaluate(async () => ({
+    count: (await DBManager.getAll(APP_CONFIG.STORES.TARGETS)).length,
+    version: await DataManager.getTargetVersion(),
+}));
+
+// Run the desktop startup offer; resolves to its result, or to 'reloading'
+// when it reloaded the page
+const offerRemoteUpdate = page => page.evaluate(() => {
+    DataManager.remoteTargetsEnabled = () => true;
+    return App.offerRemoteTargetUpdate();
 });
 
 // ---------------------------------------------------------------------------
@@ -887,6 +924,153 @@ const CHECKS = [
             await page.check('#fov-show-dss');
             await page.waitForFunction(() => FOVCanvas.dssImage, null, { timeout: DSS_MS });
             assert.strictEqual(await page.evaluate(() => window.panelSeen), false, 'no panel for a cached image');
+        },
+    },
+    {
+        issue: 343, name: 'Viewfinder: Snapshot is the whole canvas, and its caption names the target, the Center box\'s RA/Dec, the rotation and the equipment, in Actual and Wider',
+        run: async page => {
+            await openViewfinder(page, 'Sh 2-248');
+            const equipment = 'Telescope: Test Refractor  ·  Camera: Test Sensor';
+            // The caption's center is the Center box's, whatever the mode
+            const expected = async rotation => {
+                const box = await page.textContent('#fov-center-coords');
+                const [, ra, dec] = box.match(/RA:\s+(.+)\nDec:\s+(.+)/);
+                return ['Sh 2-248 · Jellyfish Nebula', `Center: RA ${ra}  Dec ${dec}  ·  Rotation ${rotation}°`, equipment];
+            };
+            const snapshot = async () => {
+                await page.click('#fov-snapshot-btn');
+                const src = await page.locator('.fov-snapshot-overlay img').getAttribute('src');
+                assert.ok(src.startsWith('data:image/jpeg') && src.length > 1000, 'snapshot image shown');
+                // The whole canvas as shown, in Wider too (not cropped to the frame)
+                const size = await page.evaluate(() => {
+                    const img = document.querySelector('.fov-snapshot-overlay img');
+                    return [img.naturalWidth, img.naturalHeight, FOVCanvas.canvas.width, FOVCanvas.canvas.height];
+                });
+                assert.deepStrictEqual(size.slice(0, 2), size.slice(2), 'snapshot is the whole canvas');
+                await page.click('#fov-snapshot-close');
+                return page.evaluate(() => FOVView.snapshotCaptionLines());
+            };
+
+            await page.fill('#fov-rotation-input', '45');
+            assert.deepStrictEqual(await snapshot(), await expected(45), 'Actual');
+            await page.fill('#fov-rotation-input', '-30');
+            assert.deepStrictEqual(await snapshot(), await expected(330), 'negative rotation shown as 0-359');
+
+            await page.click('[data-mode="larger"]');
+            await page.waitForTimeout(SETTLE_MS);
+            assert.deepStrictEqual(await snapshot(), await expected(330), 'Wider');
+
+            // No common name: the designation alone, no stray separator
+            await page.evaluate(() => { FOVView.currentTarget = DataManager.getTarget('NGC 743'); });
+            const lines = await snapshot();
+            assert.strictEqual(lines[0], 'NGC 743');
+
+            // A caption wider than a small snapshot ends in an ellipsis inside it
+            const fits = await page.evaluate(() => {
+                const canvas = document.createElement('canvas');
+                canvas.width = 200;
+                canvas.height = 150;
+                const ctx = canvas.getContext('2d');
+                const line = FOVView._fitText(ctx, 'x'.repeat(500), 100);
+                return line.endsWith('…') && ctx.measureText(line).width <= 100;
+            });
+            assert.ok(fits, 'long line shortened with an ellipsis');
+        },
+    },
+    {
+        issue: 343, name: 'Viewfinder: Snapshot Save downloads <designation>.jpg, Copy puts a PNG on the clipboard, and the image has no context menu',
+        run: async page => {
+            await page.context().grantPermissions(['clipboard-read', 'clipboard-write'], { origin: URL });
+            await openViewfinder(page, 'Sh 2-248');
+            await page.click('#fov-snapshot-btn');
+
+            const download = page.waitForEvent('download');
+            await page.click('#fov-snapshot-save');
+            assert.strictEqual((await download).suggestedFilename(), 'Sh_2-248.jpg');
+
+            await page.click('#fov-snapshot-copy');
+            await toast(page, 'success', 'Snapshot copied');
+            const types = await page.evaluate(async () => (await navigator.clipboard.read()).flatMap(item => item.types));
+            assert.deepStrictEqual(types, ['image/png'], 'clipboard holds the image');
+
+            const menuBlocked = await page.evaluate(() => {
+                const e = new MouseEvent('contextmenu', { bubbles: true, cancelable: true });
+                return !document.querySelector('.fov-snapshot-overlay img').dispatchEvent(e);
+            });
+            assert.ok(menuBlocked, 'right-click menu suppressed on the image');
+            await page.click('#fov-snapshot-close');
+            assert.strictEqual(await page.locator('.fov-snapshot-overlay').count(), 0, 'Close removes the overlay');
+
+            // A designation with a character file names can't hold
+            const name = await page.evaluate(() => {
+                FOVView.currentTarget = { object: 'A/B: C' };
+                return FOVView.snapshotFileName();
+            });
+            assert.strictEqual(name, 'A_B__C.jpg');
+        },
+    },
+    {
+        issue: 344, name: 'Desktop: No to a newer database on astryx.tools changes nothing, Best Months included',
+        run: async page => {
+            await addLocations(page, 'Test Site');
+            await calculateBestMonths(page, 'Test Site');
+            const before = { ...await targetState(page), bestMonths: await bestMonthsSnapshot(page, 'Test Site', true) };
+            await serveRemoteTargets(page);
+            page.answers.push(false);
+            assert.strictEqual(await offerRemoteUpdate(page), false);
+            assert.match(page.dialogs.at(-1) ?? '', new RegExp(`newer target database is available \\(${REMOTE_COUNT} targets`));
+            assert.ok(!page.remoteRequests.some(u => u.endsWith('.csv')), 'nothing downloaded before Yes');
+            assert.deepStrictEqual({ ...await targetState(page), bestMonths: await bestMonthsSnapshot(page, 'Test Site', true) }, before);
+        },
+    },
+    {
+        issue: 344, name: 'Desktop: Yes loads the newer database from astryx.tools and reloads',
+        run: async page => {
+            const remote = await serveRemoteTargets(page);
+            page.answers.push(true);
+            await untilReady(page, () => offerRemoteUpdate(page).catch(() => 'reloading'));
+            assert.deepStrictEqual(await targetState(page), { count: REMOTE_COUNT, version: String(remote.version) });
+            assert.strictEqual(await page.evaluate(() => DataManager.getTargets().length), REMOTE_COUNT);
+        },
+    },
+    {
+        issue: 344, name: 'Desktop: astryx.tools unreachable, an older or same version, or an unknown format asks nothing',
+        run: async page => {
+            const before = await targetState(page);
+            await page.route(`${REMOTE_DATA}**`, route => route.abort());
+            assert.strictEqual(await offerRemoteUpdate(page), false, 'unreachable');
+            await page.unroute(`${REMOTE_DATA}**`);
+            await serveRemoteTargets(page, { meta: { version: Number(before.version) } });
+            assert.strictEqual(await offerRemoteUpdate(page), false, 'same version');
+            await page.unroute(`${REMOTE_DATA}**`);
+            await serveRemoteTargets(page, { meta: { format: 2 } });
+            assert.strictEqual(await offerRemoteUpdate(page), false, 'unknown format');
+            assert.deepStrictEqual(page.dialogs, [], 'no question asked');
+            assert.deepStrictEqual(await targetState(page), before);
+        },
+    },
+    {
+        issue: 344, name: 'Desktop: a truncated or miscounted download leaves the targets as they were',
+        run: async page => {
+            const before = await targetState(page);
+            await serveRemoteTargets(page, { meta: { count: REMOTE_COUNT + 1 } });
+            page.answers.push(true);
+            assert.strictEqual(await offerRemoteUpdate(page), false, 'count mismatch');
+            await toast(page, 'error', 'Failed to update target database');
+            await page.unroute(`${REMOTE_DATA}**`);
+            await serveRemoteTargets(page, { csv: '"Object","Catalogue","Type","RA"\n"M 1","Messier"' });
+            page.answers.push(true);
+            assert.strictEqual(await offerRemoteUpdate(page), false, 'truncated');
+            assert.deepStrictEqual(await targetState(page), before);
+        },
+    },
+    {
+        issue: 344, name: 'Desktop: Check for Target Updates finds the newer database on astryx.tools',
+        run: async page => {
+            const remote = await serveRemoteTargets(page);
+            await page.evaluate(() => { DataManager.remoteTargetsEnabled = () => true; });
+            await untilReady(page, () => openAdminItem(page, 'check-target-updates'));
+            assert.deepStrictEqual(await targetState(page), { count: REMOTE_COUNT, version: String(remote.version) });
         },
     },
 ];

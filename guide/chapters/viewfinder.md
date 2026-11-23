@@ -165,10 +165,21 @@ and plate solving centers the mount on it.
 
 ## Snapshot
 
-**Snapshot** shows the framing on its own, as the camera would record it.
-In Actual, it's the whole canvas. In Wider, it's just what's inside the
-frame, turned upright. To keep it, right-click the image and choose the save
-image option. Click **Close**, or click outside the image, to put it away.
+**Snapshot** shows the view as it is on screen. In Actual, that's the
+framing as the camera would record it. In Wider, it's the whole wider view
+with the dashed frame on it, so you can see the framing in its
+surroundings.
+
+**Save** keeps it as a JPEG named after the target, e.g. `Sh_2-248.jpg`.
+The desktop app asks where to put it, starting in your Downloads folder;
+in a browser it downloads there. **Copy** puts it on the clipboard, to paste into an
+email, a chat or an image editor. Click **Close**, or click outside the
+image, to put it away.
+
+A caption at the bottom left records how to frame it again: the target's
+designation and common name, the frame's center (as in the **Center** box)
+and rotation, and the telescope and camera. It's part of the image, so it's
+kept when you save it.
 
 ## Tips
 

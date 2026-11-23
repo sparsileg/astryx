@@ -1,0 +1,5 @@
+# Cloudflare static asset headers.
+# The desktop app (origin tauri://localhost or http://tauri.localhost) reads
+# the target database from here, so /data/ allows any origin (Issue #344).
+/data/*
+  Access-Control-Allow-Origin: *

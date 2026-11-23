@@ -15,10 +15,17 @@
 const APP_CONFIG = {
     APP_NAME: 'Astryx',
     APP_TITLE: 'Astryx - Astrophotography Planning Tool',
-    APP_VERSION: '1.98.1',
+    APP_VERSION: '1.101.0',
     DB_NAME: 'astryx-db',
     DB_VERSION: 8,
     TARGET_DATA_PATH: './data/',
+    // Desktop also checks the web app's copy, so a new target database reaches it without a release (Issue #344)
+    TARGET_REMOTE_DATA_URL: 'https://app.astryx.tools/data/',
+    TARGET_META_TIMEOUT_MS: 10000,
+    TARGET_DOWNLOAD_TIMEOUT_MS: 60000,
+    TARGET_UPDATE_RELOAD_DELAY_MS: 1500, // time to read the "reloading" toast
+    // The targets-meta.json "format" this version reads; files from before the field are format 1 (Issue #344)
+    TARGET_DATA_FORMAT: 1,
     // Served from astryx.tools rather than bundled, so it updates without an app release (issue #278)
     USER_GUIDE_URL: 'https://astryx.tools/astryx_assets/astryx-guide.pdf',
     DEFAULT_THEME: 'dark',
@@ -75,6 +82,19 @@ const APP_CONFIG = {
     FOV_LARGE_TARGET_WIDTH_PCT: 70,
     FOV_LARGE_TARGET_AREA_PCT: 50,
     FOV_SUGGESTED_TARGET_FRACTION: 0.7,
+    // Viewfinder snapshot caption (#343): font size as a fraction of the
+    // snapshot's width, never below the minimum; padding and margin in
+    // font sizes; white text on a translucent black box so it reads over
+    // bright nebulosity and black sky alike
+    FOV_SNAPSHOT_CAPTION_FONT_FRACTION: 0.02,
+    FOV_SNAPSHOT_CAPTION_MIN_FONT_PX: 11,
+    FOV_SNAPSHOT_CAPTION_LINE_HEIGHT: 1.35,
+    FOV_SNAPSHOT_CAPTION_PADDING_EM: 0.6,
+    FOV_SNAPSHOT_CAPTION_MARGIN_EM: 0.6,
+    FOV_SNAPSHOT_CAPTION_TEXT: '#ffffff',
+    FOV_SNAPSHOT_CAPTION_BACKGROUND: 'rgba(0, 0, 0, 0.65)',
+    FOV_SNAPSHOT_JPEG_QUALITY: 0.92,
+    FOV_SNAPSHOT_DEFAULT_NAME: 'Astryx_snapshot', // file name when no target is selected
 
     // Number of the top-ranked targets used to generate combinations
     TOP_RANKED_TARGETS: 37,

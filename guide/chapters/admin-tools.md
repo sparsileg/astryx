@@ -91,6 +91,12 @@ It needs an internet connection. The version of your target database is
 the number after "t" at the bottom of the sidebar, for example "v1.11.1 d6
 t12".
 
+The desktop app also checks astryx.tools each time it starts. When a newer
+target database is there, Astryx asks whether to update now. **Yes**
+downloads it and reloads, and Best Months are calculated again as above.
+**No** changes nothing, and Astryx asks again the next time it starts.
+Offline, the check is skipped without a message.
+
 ## Related
 
 - [Getting Started](getting-started.md): locations, horizon profiles, and

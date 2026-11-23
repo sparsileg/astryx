@@ -117,10 +117,11 @@ const App = {
             const inProgressTutorial = await TutorialManager.findInProgressTutorial();
             UIManager.updateTutorialMenuItems(inProgressTutorial);
 
-            // Calculate Best Months the selected location lacks, and those a
+            // Offer a newer target database from astryx.tools (desktop), then
+            // calculate Best Months the selected location lacks, and those a
             // catalogue update removed (skip if a target-DB reload is pending —
             // it would kill the calc mid-run)
-            if (!targetsReloadPending) {
+            if (!targetsReloadPending && !await this.offerRemoteTargetUpdate()) {
                 await UIManager.calculateMissingBestMonths();
             }
 
@@ -136,26 +137,37 @@ const App = {
     },
 
     /**
-     * Check for target database updates via fetch
+     * Load a newer bundled target database. Automatic: a new one comes with
+     * an installed release (or a web deploy).
      */
     async checkForTargetUpdates() {
-        const meta = await DataManager.fetchTargetMeta();
-        if (!meta) return; // Offline or no meta file - skip silently
+        const source = await DataManager.fetchNewestTargetMeta([DataManager.bundledTargetSource()]);
+        if (!source || !await DataManager.isNewerThanStored(source.meta)) return false;
 
-        const storedVersion = await DataManager.getTargetVersion();
-        const currentVersion = storedVersion ? String(storedVersion) : null;
-        const metaVersion = String(meta.version);
-
-        if (currentVersion && Number(currentVersion) >= Number(metaVersion)) {
-            return;
-        }
-
-        const loaded = await DataManager.fetchAndLoadTargets(meta);
+        const loaded = await DataManager.fetchAndLoadTargets(source.meta, source.base);
         if (loaded) {
             TargetFilter.initialize();
             setTimeout(() => location.reload(), 500);
         }
         return loaded; // true = reload scheduled; caller should skip further init work
+    },
+
+    /**
+     * Desktop: offer a newer target database from astryx.tools (Issue #344).
+     * Asked before anything is downloaded, so No leaves the targets and
+     * their Best Months as they were. True when a reload is scheduled.
+     */
+    async offerRemoteTargetUpdate() {
+        if (!DataManager.remoteTargetsEnabled()) return false;
+        const source = await DataManager.fetchNewestTargetMeta([DataManager.remoteTargetSource()]);
+        if (!source || !await DataManager.isNewerThanStored(source.meta)) return false;
+
+        const confirmed = await UIManager.confirm(
+            `A newer target database is available (${source.meta.count.toLocaleString()} targets, ` +
+                `was ${DataManager.getTargets().length.toLocaleString()}). Update now?\n\n` +
+                'Astryx will reload and recalculate Best Months for your locations.'
+        );
+        return confirmed && UIManager.installTargetUpdate(source);
     },
 
     async updateVersionDisplay() {

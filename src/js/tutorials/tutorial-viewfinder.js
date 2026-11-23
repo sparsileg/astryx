@@ -184,7 +184,7 @@ const TUTORIAL_VIEWFINDER = {
             id: 'snapshot',
             type: 'callout',
             title: 'Snapshot',
-            body: 'Takes a snapshot of your framing as the camera would record it, and displays it in a full-screen overlay. Use snapshots to record your planned framing, compare different rotation angles, or share a preview of your intended composition. To keep a snapshot, right-click it and choose the save image option.<br><br>In Actual mode the snapshot is the whole canvas: exactly what your sensor sees at the current rotation.<br><br>In Wider mode it crops the image to show only the content inside the draggable frame (your FOV), rotated to match the frame angle.',
+            body: 'Takes a snapshot of the view as it is on screen, with a caption of the target, center, rotation and equipment, and displays it in a full-screen overlay. Use snapshots to record your planned framing, compare different rotation angles, or share a preview of your intended composition. Use Save to keep it as a JPEG named after the target, or Copy to paste it into an email, a chat or an image editor.<br><br>In Actual mode the snapshot is the whole canvas: exactly what your sensor sees at the current rotation.<br><br>In Wider mode it is the whole wider view with the dashed frame on it, so you can see your framing in its surroundings.',
             target: '#fov-snapshot-btn',
             position: 'right',
             width: '450px',

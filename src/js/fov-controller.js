@@ -54,6 +54,7 @@ const FOVView = {
         this.actualModeState = null;
         this._offsetCenter = null;
         this._widerCenter = null;
+        this._shownCenter = null;
         this._boxDragged = false;
         this._targetInView = true;
         this.lastDSSFailureToastKey = null;
@@ -938,12 +939,11 @@ ${targetRows}
     },
 
     /**
-     * Show RA/Dec in the Center coordinates box
+     * RA as "06h 17m 13.0s" and Dec as "+22° 31′ 05.0″", as the Center box
+     * and the snapshot caption show them
+     * @returns {{ra: string, dec: string}}
      */
-    showCenterCoords({ raDeg, decDeg }) {
-        const el = document.getElementById('fov-center-coords');
-        if (!el) return;
-
+    formatCenterCoords({ raDeg, decDeg }) {
         const raHours = raDeg / 15;
         const raH = Math.floor(raHours);
         const raM = Math.floor((raHours - raH) * 60);
@@ -955,10 +955,22 @@ ${targetRows}
         const decM = Math.floor((decAbs - decD) * 60);
         const decS = ((decAbs - decD) * 60 - decM) * 60;
 
-        const raStr = `${String(raH).padStart(2,'0')}h ${String(raM).padStart(2,'0')}m ${raS.toFixed(1).padStart(4,'0')}s`;
-        const decStr = `${decSign}${String(decD).padStart(2,'0')}° ${String(decM).padStart(2,'0')}′ ${decS.toFixed(1).padStart(4,'0')}″`;
+        return {
+            ra: `${String(raH).padStart(2,'0')}h ${String(raM).padStart(2,'0')}m ${raS.toFixed(1).padStart(4,'0')}s`,
+            dec: `${decSign}${String(decD).padStart(2,'0')}° ${String(decM).padStart(2,'0')}′ ${decS.toFixed(1).padStart(4,'0')}″`
+        };
+    },
 
-        el.textContent = `Center:\nRA:  ${raStr}\nDec: ${decStr}`;
+    /**
+     * Show RA/Dec in the Center coordinates box, and keep it for the
+     * snapshot caption
+     */
+    showCenterCoords(center) {
+        const el = document.getElementById('fov-center-coords');
+        if (!el) return;
+        this._shownCenter = center;
+        const { ra, dec } = this.formatCenterCoords(center);
+        el.textContent = `Center:\nRA:  ${ra}\nDec: ${dec}`;
         el.style.display = 'block';
     },
 
@@ -1014,65 +1026,182 @@ ${targetRows}
     },
 
     /**
-     * Take a snapshot of the current framing and display in a modal
+     * The snapshot caption: target, frame center and rotation, equipment.
+     * Parts that aren't known are left out (#343).
+     * @returns {string[]}
+     */
+    snapshotCaptionLines() {
+        const lines = [];
+        const target = this.currentTarget;
+        if (target) {
+            lines.push(target.common ? `${target.object} · ${target.common}` : target.object);
+        }
+
+        const rotation = (((FOVCanvas.dragBoxAngle || 0) % 360) + 360) % 360;
+        const rotationText = `Rotation ${Number(rotation.toFixed(1))}°`;
+        if (this._shownCenter) {
+            const { ra, dec } = this.formatCenterCoords(this._shownCenter);
+            lines.push(`Center: RA ${ra}  Dec ${dec}  ·  ${rotationText}`);
+        } else {
+            lines.push(rotationText);
+        }
+
+        const telescope = SettingsManager.getSelectedTelescope();
+        const sensor = SettingsManager.getSelectedSensor();
+        const equipment = [telescope && `Telescope: ${telescope}`, sensor && `Camera: ${sensor}`].filter(Boolean);
+        if (equipment.length) lines.push(equipment.join('  ·  '));
+        return lines;
+    },
+
+    /**
+     * Draw the caption at the bottom left of the snapshot, on a box just
+     * big enough for the text, so it's part of the saved image (#343). A
+     * line wider than the snapshot ends in an ellipsis.
+     */
+    drawSnapshotCaption(canvas, lines) {
+        if (lines.length === 0) return;
+        const ctx = canvas.getContext('2d');
+        const fontPx = Math.max(APP_CONFIG.FOV_SNAPSHOT_CAPTION_MIN_FONT_PX,
+            Math.round(canvas.width * APP_CONFIG.FOV_SNAPSHOT_CAPTION_FONT_FRACTION));
+        const lineHeight = fontPx * APP_CONFIG.FOV_SNAPSHOT_CAPTION_LINE_HEIGHT;
+        const padding = fontPx * APP_CONFIG.FOV_SNAPSHOT_CAPTION_PADDING_EM;
+        const margin = fontPx * APP_CONFIG.FOV_SNAPSHOT_CAPTION_MARGIN_EM;
+        ctx.font = `${fontPx}px ${getComputedStyle(document.body).fontFamily}`;
+
+        const maxTextWidth = canvas.width - 2 * (margin + padding);
+        const fitted = lines.map(line => this._fitText(ctx, line, maxTextWidth));
+        const boxWidth = Math.max(...fitted.map(line => ctx.measureText(line).width)) + 2 * padding;
+        const boxHeight = fitted.length * lineHeight + 2 * padding;
+        const boxX = margin;
+        const boxY = canvas.height - margin - boxHeight;
+
+        ctx.fillStyle = APP_CONFIG.FOV_SNAPSHOT_CAPTION_BACKGROUND;
+        ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
+        ctx.fillStyle = APP_CONFIG.FOV_SNAPSHOT_CAPTION_TEXT;
+        ctx.textBaseline = 'middle';
+        fitted.forEach((line, i) => {
+            ctx.fillText(line, boxX + padding, boxY + padding + (i + 0.5) * lineHeight);
+        });
+    },
+
+    /** The text, shortened with an ellipsis until it fits the width */
+    _fitText(ctx, text, maxWidth) {
+        if (ctx.measureText(text).width <= maxWidth) return text;
+        let shortened = text;
+        while (shortened.length > 1 && ctx.measureText(shortened + '…').width > maxWidth) {
+            shortened = shortened.slice(0, -1);
+        }
+        return shortened.trimEnd() + '…';
+    },
+
+    /**
+     * Take a snapshot of the canvas as shown, captioned, and display it in
+     * a modal. In Wider that's the whole wider view with the dashed frame,
+     * at the same size as an Actual snapshot rather than cropped to the
+     * frame's few screen pixels.
      */
     takeSnapshot() {
-        const angle = (FOVCanvas.dragBoxAngle || 0) * Math.PI / 180;
         const srcCanvas = FOVCanvas.canvas;
-        const w = srcCanvas.width;
-        const h = srcCanvas.height;
-
-        // Create offscreen canvas for the snapshot
         const snapCanvas = document.createElement('canvas');
+        snapCanvas.width = srcCanvas.width;
+        snapCanvas.height = srcCanvas.height;
+        snapCanvas.getContext('2d').drawImage(srcCanvas, 0, 0);
 
-        if (this.largerMode && FOVCanvas.dragBox) {
-            const box = FOVCanvas.dragBox;
-            snapCanvas.width = box.width;
-            snapCanvas.height = box.height;
-            const snapCtx = snapCanvas.getContext('2d');
-            const cx = box.x + box.width / 2;
-            const cy = box.y + box.height / 2;
-
-            // Fill black for areas outside image
-            snapCtx.fillStyle = '#000000';
-            snapCtx.fillRect(0, 0, box.width, box.height);
-
-            // Translate to center of snap, rotate opposite to box angle, draw source
-            snapCtx.save();
-            snapCtx.translate(box.width / 2, box.height / 2);
-            snapCtx.rotate(-angle);
-            snapCtx.drawImage(srcCanvas, -cx, -cy);
-            snapCtx.restore();
-        } else {
-            // Actual mode — the canvas is the frame, already turned
-            snapCanvas.width = w;
-            snapCanvas.height = h;
-            snapCanvas.getContext('2d').drawImage(srcCanvas, 0, 0);
-        }
+        this.drawSnapshotCaption(snapCanvas, this.snapshotCaptionLines());
 
         // Show in modal overlay
         const overlay = document.createElement('div');
-        overlay.style.cssText = `
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.85); z-index: 99998;
-            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem;
-        `;
+        overlay.className = 'fov-snapshot-overlay';
+        const close = () => overlay.remove();
 
         const img = document.createElement('img');
-        img.src = snapCanvas.toDataURL('image/jpeg', 0.92);
-        img.style.cssText = `max-width: 90vw; max-height: 80vh; border: 2px solid var(--border-color); border-radius: 4px;`;
+        img.src = snapCanvas.toDataURL('image/jpeg', APP_CONFIG.FOV_SNAPSHOT_JPEG_QUALITY);
+        // The webview's own menu would save or copy the image without a
+        // usable name; the Save and Copy buttons do it properly
+        img.addEventListener('contextmenu', e => e.preventDefault());
 
-        const closeBtn = document.createElement('button');
-        closeBtn.textContent = 'Close';
-        closeBtn.className = 'btn-primary';
-        closeBtn.addEventListener('click', () => document.body.removeChild(overlay));
+        const actions = document.createElement('div');
+        actions.className = 'fov-snapshot-actions';
+        const button = (id, label, className, onClick) => {
+            const btn = document.createElement('button');
+            btn.id = id;
+            btn.textContent = label;
+            btn.className = className;
+            btn.addEventListener('click', onClick);
+            actions.appendChild(btn);
+        };
+        button('fov-snapshot-save', 'Save', 'btn-secondary', () => this.saveSnapshot(snapCanvas));
+        if (this.canCopySnapshot()) {
+            button('fov-snapshot-copy', 'Copy', 'btn-secondary', () => this.copySnapshot(snapCanvas));
+        }
+        button('fov-snapshot-close', 'Close', 'btn-primary', close);
 
         overlay.appendChild(img);
-        overlay.appendChild(closeBtn);
+        overlay.appendChild(actions);
         overlay.addEventListener('click', (e) => {
-            if (e.target === overlay) document.body.removeChild(overlay);
+            if (e.target === overlay) close();
         });
         document.body.appendChild(overlay);
+    },
+
+    /** The snapshot's default file name: the target's designation */
+    snapshotFileName() {
+        const name = this.currentTarget?.object ?? APP_CONFIG.FOV_SNAPSHOT_DEFAULT_NAME;
+        // No spaces, and none of the characters a file name can't hold on
+        // Windows, macOS or Linux
+        return `${name.replace(/[\s\\/:*?"<>|]/g, '_')}.jpg`;
+    },
+
+    /** The canvas as a Blob of the given image type */
+    _canvasBlob(canvas, type, quality) {
+        return new Promise((resolve, reject) => {
+            canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('the image could not be made')), type, quality);
+        });
+    },
+
+    /**
+     * Save the snapshot as a JPEG: through a Save dialog that starts in
+     * Downloads on desktop, as a download on the web
+     */
+    async saveSnapshot(canvas) {
+        const fileName = this.snapshotFileName();
+        try {
+            const blob = await this._canvasBlob(canvas, 'image/jpeg', APP_CONFIG.FOV_SNAPSHOT_JPEG_QUALITY);
+            if (typeof window.__TAURI__ === 'undefined') {
+                BackupManagerWeb.downloadBlob(blob, fileName);
+                return;
+            }
+            // Start in Downloads: a bare name opens the dialog in the app's
+            // working folder, the source folder under `just dev`
+            const { downloadDir, join } = window.__TAURI__.path;
+            const path = await window.__TAURI__.dialog.save({
+                defaultPath: await join(await downloadDir(), fileName),
+                filters: [{ name: 'JPEG image', extensions: ['jpg', 'jpeg'] }]
+            });
+            if (!path) return; // cancelled
+            await window.__TAURI__.fs.writeFile(path, new Uint8Array(await blob.arrayBuffer()));
+            UIManager.showToast(`Snapshot saved as ${path.split(/[/\\]/).pop()}`, 'success');
+        } catch (error) {
+            console.error('Snapshot save failed:', error);
+            UIManager.showToast('Snapshot not saved: ' + (error.message ?? error), 'error');
+        }
+    },
+
+    /** Whether this browser or webview can put an image on the clipboard */
+    canCopySnapshot() {
+        return typeof ClipboardItem !== 'undefined' && typeof navigator.clipboard?.write === 'function';
+    },
+
+    /** Copy the snapshot to the clipboard as a PNG, the image type clipboards take */
+    async copySnapshot(canvas) {
+        try {
+            const blob = await this._canvasBlob(canvas, 'image/png');
+            await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+            UIManager.showToast('Snapshot copied', 'success');
+        } catch (error) {
+            console.error('Snapshot copy failed:', error);
+            UIManager.showToast('Snapshot not copied: ' + (error.message ?? error), 'error');
+        }
     },
 
     /**

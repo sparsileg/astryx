@@ -1559,32 +1559,40 @@ const UIManager = {
         }
     },
 
+    /**
+     * Admin Tools → Check for Target Updates: the newest of the bundled
+     * database and, on desktop, the one on astryx.tools (Issue #344)
+     */
     async checkForTargetUpdates() {
-        const meta = await DataManager.fetchTargetMeta();
-        if (!meta) {
+        const source = await DataManager.fetchNewestTargetMeta(DataManager.targetSources());
+        if (!source) {
             this.showToast('Target update file not available', 'warning');
             return;
         }
-
-        const storedVersion = await DataManager.getTargetVersion();
-        const currentVersion = storedVersion ? String(storedVersion) : null;
-        const metaVersion = String(meta.version);
-
-        if (currentVersion && Number(currentVersion) >= Number(metaVersion)) {
+        if (!await DataManager.isNewerThanStored(source.meta)) {
             this.showToast('Target database is already up to date', 'success');
             return;
         }
+        await this.installTargetUpdate(source);
+    },
 
+    /**
+     * Download and store a newer target database, then reload. Best Months
+     * are recalculated for every location at the restart. True when the
+     * reload is scheduled.
+     */
+    async installTargetUpdate(source) {
         this.showToast('Updating target database...', 'info');
-        const loaded = await DataManager.fetchAndLoadTargets(meta);
+        const loaded = await DataManager.fetchAndLoadTargets(source.meta, source.base);
         if (loaded) {
             TargetFilter.initialize();
             await App.updateVersionDisplay();
             this.showToast('Target database updated - reloading...', 'success');
-            setTimeout(() => location.reload(), 1500);
+            setTimeout(() => location.reload(), APP_CONFIG.TARGET_UPDATE_RELOAD_DELAY_MS);
         } else {
             this.showToast('Failed to update target database', 'error');
         }
+        return loaded;
     },
 
     openImportTargetsModal() {
