@@ -526,12 +526,27 @@ const UIManager = {
     /**
      * Open about modal
      */
-    openAboutModal() {
+    async openAboutModal() {
         this.openModal('about-template', 'About', (action, modalBody) => {
             if (action === 'close') {
                 this.closeModal();
             }
         });
+
+        // The same versions as the sidebar line, and on desktop where the
+        // database is (Issues #361, #363)
+        const v = await App.versionInfo();
+        const set = (id, text) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = text;
+        };
+        set('about-app-version', v.app);
+        set('about-schema-version', v.schema);
+        set('about-target-version', v.target);
+        if (v.folder) {
+            set('about-database-folder', v.folder);
+            document.getElementById('about-database-folder-row')?.removeAttribute('hidden');
+        }
     },
 
     /**
@@ -2535,7 +2550,7 @@ const UIManager = {
                 const filenameInput = document.getElementById('backup-filename');
                 if (!filenameInput) return;
 
-                const base = `${APP_CONFIG.APP_NAME}-v${APP_CONFIG.APP_VERSION}-d${APP_CONFIG.DB_VERSION}`;
+                const base = BackupManagerWeb.fileNameBase();
                 const dtg  = TimeUtils.nowDTG();
                 const targetsChecked   = document.getElementById(targetId)?.checked;
                 const checkedUserData  = userDataIds.filter(id => document.getElementById(id)?.checked);

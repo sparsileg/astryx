@@ -2,6 +2,7 @@
 
 pub mod backup;
 pub mod cli;
+pub mod database;
 pub mod filters;
 pub mod imaging_programs;
 pub mod imaging_projects;

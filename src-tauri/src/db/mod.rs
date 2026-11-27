@@ -26,6 +26,9 @@ pub fn open_db(app_data_dir: &Path) -> Result<Connection, String> {
     let conn = Connection::open(&db_path).map_err(failed)?;
     // Also where a file that isn't a database fails
     let version = migrations::stored_version(&conn).map_err(failed)?;
+    if version > migrations::CURRENT_SCHEMA_VERSION {
+        return Err(newer_database_message(&db_path, version, app_data_dir));
+    }
     let backup = back_up_before_migrating(&conn, version, app_data_dir)?;
     init(&conn).map_err(|e| match &backup {
         Some(path) => format!(
@@ -75,9 +78,44 @@ fn back_up_before_migrating(
     Ok(Some(path))
 }
 
+/// A database migrated by a newer Astryx: this version would write rows
+/// without the newer columns, so it refuses to open it (Issue #348)
+fn newer_database_message(db_path: &Path, version: u32, dir: &Path) -> String {
+    let mut message = format!(
+        "The database {} was updated by a newer Astryx (schema v{version}; this version reads up to v{}).\n\nInstall the newer version",
+        db_path.display(),
+        migrations::CURRENT_SCHEMA_VERSION
+    );
+    // The first copy past this version holds the database as it was
+    // before the newer Astryx first updated it
+    let copy = pre_migration_copies(dir)
+        .unwrap_or_default()
+        .into_iter()
+        .filter(|(v, _)| *v > migrations::CURRENT_SCHEMA_VERSION)
+        .min_by_key(|(v, _)| *v);
+    match copy {
+        Some((_, path)) => message.push_str(&format!(
+            ", or replace the database with the copy saved before that update, {}. The copy won't have changes made since.",
+            path.display()
+        )),
+        None => message.push('.'),
+    }
+    message
+}
+
 /// Delete all but the KEPT_BACKUPS newest pre-migration copies
 fn prune_backups(dir: &Path) -> std::io::Result<()> {
-    let mut backups: Vec<(u32, PathBuf)> = fs::read_dir(dir)?
+    let mut backups = pre_migration_copies(dir)?;
+    backups.sort_by_key(|b| std::cmp::Reverse(b.0));
+    for (_, path) in backups.iter().skip(KEPT_BACKUPS) {
+        fs::remove_file(path)?;
+    }
+    Ok(())
+}
+
+/// The pre-migration copies in dir, with the version each was made for
+fn pre_migration_copies(dir: &Path) -> std::io::Result<Vec<(u32, PathBuf)>> {
+    Ok(fs::read_dir(dir)?
         .filter_map(|entry| {
             let path = entry.ok()?.path();
             let version = path
@@ -89,12 +127,7 @@ fn prune_backups(dir: &Path) -> std::io::Result<()> {
                 .ok()?;
             Some((version, path))
         })
-        .collect();
-    backups.sort_by_key(|b| std::cmp::Reverse(b.0));
-    for (_, path) in backups.iter().skip(KEPT_BACKUPS) {
-        fs::remove_file(path)?;
-    }
-    Ok(())
+        .collect())
 }
 
 /// Apply the connection pragmas and bring the schema up to date.
@@ -159,6 +192,68 @@ mod tests {
         assert_eq!(
             back_up_before_migrating(&test_conn(), migrations::CURRENT_SCHEMA_VERSION, &dir),
             Ok(None)
+        );
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    /// A database file in dir at the given schema version
+    fn database_at(dir: &Path, version: u32) {
+        Connection::open(dir.join("astryx.db"))
+            .unwrap()
+            .execute_batch(&format!("PRAGMA user_version = {version};"))
+            .unwrap();
+    }
+
+    #[test]
+    fn a_database_from_a_newer_astryx_is_refused() {
+        let dir = temp_dir("newer");
+        let newer = migrations::CURRENT_SCHEMA_VERSION + 1;
+        database_at(&dir, newer);
+
+        let message = open_db(&dir).unwrap_err();
+        assert!(message.contains(&format!("schema v{newer}")), "{message}");
+        assert!(
+            message.contains(&format!(
+                "reads up to v{}",
+                migrations::CURRENT_SCHEMA_VERSION
+            )),
+            "{message}"
+        );
+        assert!(!message.contains(".bak"), "{message}");
+        // Left as the newer Astryx wrote it
+        let conn = Connection::open(dir.join("astryx.db")).unwrap();
+        assert_eq!(migrations::stored_version(&conn).unwrap(), newer);
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn the_refusal_names_the_copy_this_version_can_read() {
+        let dir = temp_dir("newer-copy");
+        let current = migrations::CURRENT_SCHEMA_VERSION;
+        database_at(&dir, current + 2);
+        for version in [current, current + 1, current + 2] {
+            fs::write(
+                dir.join(format!("{BACKUP_PREFIX}{version}{BACKUP_SUFFIX}")),
+                "",
+            )
+            .unwrap();
+        }
+
+        let message = open_db(&dir).unwrap_err();
+        let readable = format!("{BACKUP_PREFIX}{}{BACKUP_SUFFIX}", current + 1);
+        assert!(message.contains(&readable), "{message}");
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn a_current_database_opens() {
+        let dir = temp_dir("current");
+        database_at(&dir, 0);
+        open_db(&dir).unwrap();
+        let conn = open_db(&dir).unwrap();
+        assert_eq!(
+            migrations::stored_version(&conn).unwrap(),
+            migrations::CURRENT_SCHEMA_VERSION
         );
         fs::remove_dir_all(&dir).unwrap();
     }

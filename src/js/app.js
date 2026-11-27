@@ -170,13 +170,28 @@ const App = {
         return confirmed && UIManager.installTargetUpdate(source);
     },
 
+    /**
+     * The versions the sidebar line and About show, from one place so the
+     * two can't disagree. On desktop the database schema version is
+     * SQLite's, not DB_VERSION (Issue #363).
+     */
+    async versionInfo() {
+        const database = DBManager.databaseInfo();
+        return {
+            app: APP_CONFIG.APP_VERSION,
+            schemaLetter: database.letter,
+            schemaVersion: database.schemaVersion,
+            schema: BackupManagerWeb.describeSchemaVersion(database.schemaVersion, database.platform),
+            target: await DataManager.getTargetVersion() ?? 'none',
+            folder: database.folder,
+        };
+    },
+
     async updateVersionDisplay() {
         const appVersionText = document.getElementById('app-version');
         if (appVersionText) {
-            const targetVersion = await DataManager.getTargetVersion();
-            appVersionText.textContent = `v${APP_CONFIG.APP_VERSION} `;
-            appVersionText.textContent += `d${APP_CONFIG.DB_VERSION} `;
-            appVersionText.textContent += `t${targetVersion || 'none'}`;
+            const v = await this.versionInfo();
+            appVersionText.textContent = `v${v.app} ${v.schemaLetter}${v.schemaVersion} t${v.target}`;
         }
     },
 

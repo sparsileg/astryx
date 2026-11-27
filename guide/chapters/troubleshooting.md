@@ -127,6 +127,13 @@ folder if it's empty.
 made by a newer version of Astryx than the one you're running. Update
 Astryx, then restore it.
 
+**The desktop app won't start: "updated by a newer Astryx".** A newer
+version of Astryx has updated the database, and this version can't use
+it. Install the newer version. The message also names the copy saved
+before the update, if there is one: replacing `astryx.db` with it brings
+back your data as it was then, without the changes made since. See
+[Backup and Restore](backup-restore.md) for where the database is.
+
 **A backup won't restore: "Failed to read backup file".** The message says
 what's wrong: the file isn't an Astryx backup, or a record in it is
 damaged, for example after the file was edited by hand.
@@ -135,3 +142,5 @@ damaged, for example after the file was edited by hand.
 
 Describe what you see, and what you expected, in an issue at
 [github.com/sparsileg/astryx/issues](https://github.com/sparsileg/astryx/issues).
+Include the versions from **About**, in the system menu (≡): the Astryx,
+database schema and target database versions.

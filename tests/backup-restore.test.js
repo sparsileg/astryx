@@ -3,7 +3,9 @@
  * Which backup files restore: same and older backup formats, not newer
  * ones (Issue #352); a file whose version fields or records aren't what
  * restore expects is refused before the restore dialog, and text from a
- * backup reaches the page escaped (Issue #362).
+ * backup reaches the page escaped (Issue #362). Backups and their file
+ * names carry the schema version of the database that made them, with its
+ * platform (Issue #363).
  */
 
 const { test } = require('node:test');
@@ -26,7 +28,10 @@ const { APP_CONFIG, BackupManagerWeb, ImagingLogView } =
 // the others are keyed by a name or designation
 const AUTO_INCREMENT = ['imagingProjects', 'imagingSessions', 'imagingPrograms'];
 const KEY_PATHS = { settings: 'id', toDoTargets: 'targetId', targets: 'object' };
+// The desktop database, unless a test says otherwise
+const DESKTOP = { platform: 'desktop', letter: 's', schemaVersion: 2, folder: '/home/user/.local/share/Astryx' };
 context.DBManager = {
+    databaseInfo: () => DESKTOP,
     storeKey: storeName => {
         const store = BackupManagerWeb.RESTORE_STORES.find(s => APP_CONFIG.STORES[s.storesKey] === storeName);
         return AUTO_INCREMENT.includes(store.key)
@@ -73,11 +78,40 @@ test('A backup without backupFormat is format 1; a newer format is refused (Issu
     assert.strictEqual(BackupManagerWeb.isFromNewerAstryx(backup({ backupFormat: APP_CONFIG.BACKUP_FORMAT + 1 })), true);
 });
 
-test('Backups record their format, and still the database version (Issue #352)', async () => {
+test('Backups record their format, and their database\'s schema version and platform (Issues #352, #363)', async () => {
     context.DBManager.get = async () => ({ id: 'target-version', value: '1795404695' });
     const file = await BackupManagerWeb.generateBackupData([]);
     assert.strictEqual(file.backupFormat, APP_CONFIG.BACKUP_FORMAT);
-    assert.strictEqual(file.dbVersion, APP_CONFIG.DB_VERSION);
+    assert.strictEqual(file.dbVersion, 2);
+    assert.strictEqual(file.platform, 'desktop');
+    assert.strictEqual(BackupManagerWeb.backupFileProblem(file, false), null);
+});
+
+test('Backup file names say which database made them: d on the web, s on desktop (Issue #363)', () => {
+    assert.strictEqual(BackupManagerWeb.fileNameBase(), `Astryx-v${APP_CONFIG.APP_VERSION}-s2`);
+    const web = { platform: 'web', letter: 'd', schemaVersion: APP_CONFIG.DB_VERSION, folder: null };
+    context.DBManager.databaseInfo = () => web;
+    try {
+        assert.strictEqual(BackupManagerWeb.fileNameBase(), `Astryx-v${APP_CONFIG.APP_VERSION}-d${APP_CONFIG.DB_VERSION}`);
+    } finally {
+        context.DBManager.databaseInfo = () => DESKTOP;
+    }
+});
+
+test('A schema version is shown with its platform, when the backup says (Issue #363)', () => {
+    assert.strictEqual(BackupManagerWeb.describeSchemaVersion(8, 'web'), '8 (web)');
+    assert.strictEqual(BackupManagerWeb.describeSchemaVersion(2, 'desktop'), '2 (desktop)');
+    assert.strictEqual(BackupManagerWeb.describeSchemaVersion(8, undefined), '8');
+});
+
+test('A backup whose platform is not web or desktop is refused; one without it restores (Issue #363)', () => {
+    for (const platform of ['phone', CANARY, 2, null, { web: true }]) {
+        assert.match(BackupManagerWeb.backupFileProblem(backup({ platform }), false), /platform/);
+    }
+    for (const platform of ['web', 'desktop']) {
+        assert.strictEqual(BackupManagerWeb.backupFileProblem(backup({ platform }), true), null);
+    }
+    assert.strictEqual(BackupManagerWeb.backupFileProblem(backup(), true), null);
 });
 
 test('A file whose version fields are not short strings or numbers is refused (Issue #362)', () => {

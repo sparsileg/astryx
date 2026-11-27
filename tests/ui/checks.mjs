@@ -1073,6 +1073,27 @@ const CHECKS = [
             assert.deepStrictEqual(await targetState(page), { count: REMOTE_COUNT, version: String(remote.version) });
         },
     },
+    {
+        issue: 363, name: 'About shows the same versions as the sidebar, and no database folder on the web',
+        run: async page => {
+            await page.click('#system-menu-btn');
+            await page.click('#system-menu [data-action="about"]');
+            await page.waitForFunction(() => document.getElementById('about-app-version')?.textContent !== '');
+            const about = await page.evaluate(() => ({
+                app: document.getElementById('about-app-version').textContent,
+                schema: document.getElementById('about-schema-version').textContent,
+                target: document.getElementById('about-target-version').textContent,
+                folderShown: !document.getElementById('about-database-folder-row').hidden,
+                sidebar: document.getElementById('app-version').textContent,
+                version: APP_CONFIG.APP_VERSION,
+                dbVersion: APP_CONFIG.DB_VERSION,
+            }));
+            assert.strictEqual(about.app, about.version);
+            assert.strictEqual(about.schema, `${about.dbVersion} (web)`);
+            assert.strictEqual(about.sidebar, `v${about.app} d${about.dbVersion} t${about.target}`);
+            assert.ok(!about.folderShown, 'database folder hidden on the web');
+        },
+    },
 ];
 
 // ---------------------------------------------------------------------------

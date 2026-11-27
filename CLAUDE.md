@@ -35,10 +35,16 @@ Builds, installers, and the GitHub Actions release workflow:
   state); changing it orphans that data.
 - The SQLite database is not under the identifier: `lib.rs` puts it in the
   system data folder + `Astryx` (`~/.local/share/Astryx/astryx.db` on Linux).
-  `just dev` and an installed build share that one file, so a dev build's
-  migration also upgrades the installed app's database.
+  A debug build (`just dev`) uses `Astryx-dev` instead, so a dev build's
+  migration never touches the installed app's database; it starts empty
+  until a backup is restored into it. The webview's data under the
+  identifier (localStorage, DSS cache) is still shared between the two.
+  An Astryx older than the database's schema refuses to open it (#348).
 - `APP_CONFIG.DB_VERSION` is the IndexedDB version (web). The SQLite schema
-  version is separate (`PRAGMA user_version`, see below).
+  version is separate (`PRAGMA user_version`, see below). Each platform
+  shows its own, through `DBManager.databaseInfo()`: `d8` on the web, `s2`
+  on desktop, in the sidebar, About, backup file names, and a backup's
+  `dbVersion` and `platform` fields (#363).
 
 ## Architecture
 

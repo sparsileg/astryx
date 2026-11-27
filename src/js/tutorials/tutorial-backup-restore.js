@@ -86,7 +86,7 @@ const TUTORIAL_BACKUP_RESTORE = {
             id: 'filename-userdata',
             type: 'callout',
             title: 'Backup Filename',
-            body: 'The filename is generated automatically and is read-only. It encodes the app name, version, database version, backup type, and a timestamp — for example <em>Astryx-v0.17.2-d8-userdata-20260316-222453</em>.<br><br>This naming convention makes it easy to identify backups by date and type when you need to restore.',
+            body: 'The filename is generated automatically and is read-only. It encodes the app name, version, database schema version (<em>d</em> on the web, <em>s</em> on the desktop app), backup type, and a timestamp — for example <em>Astryx-v1.102.0-d8-userdata-20261127-222453</em>.<br><br>This naming convention makes it easy to identify backups by date and type when you need to restore.',
             target: '#backup-filename',
             position: 'top',
             waitFor: 'next',

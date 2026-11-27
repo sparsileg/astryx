@@ -5,6 +5,7 @@ mod cli;
 mod commands;
 mod db;
 
+use std::path::PathBuf;
 use std::sync::{Arc, Mutex, MutexGuard};
 
 use tauri::Manager;
@@ -16,6 +17,8 @@ use commands::cli::CliCommand;
 
 pub struct AstryxState {
     pub db: Mutex<rusqlite::Connection>,
+    /// The folder holding the database, shown in About (Issue #361)
+    pub data_dir: PathBuf,
 }
 
 impl AstryxState {
@@ -29,6 +32,15 @@ impl AstryxState {
 }
 
 // ── Application entry point ───────────────────────────────────────────────────
+
+/// The database's folder in the system data folder. A debug build (`just
+/// dev`) keeps its own, so trying a migration never touches the installed
+/// app's database (Issue #361).
+const DATA_FOLDER: &str = if cfg!(debug_assertions) {
+    "Astryx-dev"
+} else {
+    "Astryx"
+};
 
 /// Report why the app can't start and exit: in a dialog on a normal start,
 /// since no window exists yet, and on stderr either way (Issue #301)
@@ -50,10 +62,16 @@ pub fn run() {
     // the app or open the database (issue #292)
     let command = cli::parse();
 
-    let app_data_dir = dirs_next::data_dir()
-        .unwrap_or_else(|| std::path::PathBuf::from("."))
-        .join("Astryx");
     let command_line = command.is_some();
+    // Never the working folder, where an empty database would open as if
+    // the user's data were gone (Issue #361)
+    let app_data_dir = match dirs_next::data_dir() {
+        Some(dir) => dir.join(DATA_FOLDER),
+        None => cannot_start(
+            "Couldn't find the system data folder, so there's nowhere to keep the database.",
+            command_line,
+        ),
+    };
     if let Err(e) = std::fs::create_dir_all(&app_data_dir) {
         cannot_start(
             &format!(
@@ -70,6 +88,7 @@ pub fn run() {
 
     let state = Arc::new(AstryxState {
         db: Mutex::new(db_conn),
+        data_dir: app_data_dir,
     });
 
     tauri::Builder::default()
@@ -165,6 +184,8 @@ pub fn run() {
             commands::imaging_programs::create_program,
             commands::imaging_programs::update_program,
             commands::imaging_programs::delete_program,
+            // Database
+            commands::database::get_database_info,
             // Backup
             commands::backup::read_zip_backup,
             commands::backup::write_backup_file,

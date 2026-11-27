@@ -1206,6 +1206,33 @@ select.altitude-override-active,
     font-weight: 600;
 }
 
+/* Version rows at the top of About (Issues #361, #363) */
+.about-versions {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.25rem 1rem;
+    margin: 0 0 1rem;
+}
+
+.about-versions div {
+    display: contents;
+}
+
+.about-versions div[hidden] {
+    display: none;
+}
+
+.about-versions dt {
+    color: var(--text-secondary);
+}
+
+.about-versions dd {
+    margin: 0;
+    color: var(--text-color);
+    font-family: "Lucida Console", "Courier", monospace;
+    overflow-wrap: anywhere;
+}
+
 .about-content p {
     color: var(--text-secondary);
     line-height: 1.6;

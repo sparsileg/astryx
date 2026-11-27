@@ -10,6 +10,9 @@
   Each migration commits with its version bump in one transaction, and
   `open_db` saves `astryx.db.pre-v{N}.bak` (newest 3 kept) before any
   pending migration runs (#301).
+  A database whose `user_version` is above `CURRENT_SCHEMA_VERSION` (a
+  newer Astryx migrated it) is refused at open, naming the copy this
+  version can read (#348).
 - Each command file has thin `#[tauri::command]` wrappers that lock with
   `state.conn()?` and call the store's `sql::` functions, which take a
   `&Connection` and hold the SQL. Tests live beside them and use

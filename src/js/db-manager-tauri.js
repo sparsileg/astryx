@@ -13,12 +13,25 @@ const DBManagerTauri = {
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
     /**
-     * No-op init — SQLite is opened in Rust at startup.
+     * SQLite is opened in Rust at startup. Reads its schema version and
+     * folder once, so databaseInfo() needn't wait (Issues #361, #363).
      * Matches DBManager.init() signature.
      */
     async init() {
+        this._databaseInfo = { platform: 'desktop', letter: 's', ...await invoke('get_database_info') };
         console.log('DBManagerTauri: SQLite backend ready');
         return true;
+    },
+
+    _databaseInfo: null,
+
+    /**
+     * What Astryx shows about this database: the platform, the letter
+     * before its schema version in the sidebar and backup file names (s,
+     * for schema), the SQLite schema version and the database's folder
+     */
+    databaseInfo() {
+        return this._databaseInfo;
     },
 
     close() {

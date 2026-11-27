@@ -267,7 +267,7 @@ const BackupManagerWeb = {
 
         try {
             const dtg = TimeUtils.nowDTG();
-            const filename = `${APP_CONFIG.APP_NAME}-v${APP_CONFIG.APP_VERSION}-d${APP_CONFIG.DB_VERSION}-userdata-${dtg}`;
+            const filename = `${this.fileNameBase()}-userdata-${dtg}`;
 
             const selectedStores = [
                 'settings', 'locations', 'telescopes', 'sensors', 'filters',
@@ -327,8 +327,10 @@ const BackupManagerWeb = {
         const backup = {
             version: APP_CONFIG.APP_VERSION,
             backupFormat: APP_CONFIG.BACKUP_FORMAT,
-            // Still written for older Astryx versions, which check it (Issue #352)
-            dbVersion: APP_CONFIG.DB_VERSION,
+            // The schema version of the database that made it, and which
+            // kind: web and desktop count separately (Issue #363)
+            dbVersion: DBManager.databaseInfo().schemaVersion,
+            platform: DBManager.databaseInfo().platform,
             targetVersion: targetVersionRecord ? targetVersionRecord.value : null,
             exportDate: new Date().toISOString()
         };
@@ -560,6 +562,26 @@ const BackupManagerWeb = {
     },
 
     /**
+     * Start of a backup's file name: app, version, and the database schema
+     * version after its letter, d (web) or s (desktop) (Issue #363)
+     */
+    fileNameBase() {
+        const { letter, schemaVersion } = DBManager.databaseInfo();
+        return `${APP_CONFIG.APP_NAME}-v${APP_CONFIG.APP_VERSION}-${letter}${schemaVersion}`;
+    },
+
+    // A backup's platform field: the database that made it (Issue #363)
+    BACKUP_PLATFORMS: ['web', 'desktop'],
+
+    /**
+     * A database schema version with its platform, "8 (web)", or the plain
+     * version for a backup that doesn't say (Issue #363)
+     */
+    describeSchemaVersion(schemaVersion, platform) {
+        return platform ? `${schemaVersion} (${platform})` : String(schemaVersion);
+    },
+
+    /**
      * Backup format of a file: older files have no backupFormat and are
      * format 1 (Issue #352)
      */
@@ -601,6 +623,9 @@ const BackupManagerWeb = {
             const ok = (typeof value === 'number' && Number.isFinite(value))
                 || (typeof value === 'string' && value.length <= APP_CONFIG.BACKUP_VERSION_FIELD_MAX_LENGTH);
             if (!ok) return `its ${field} is not a version number.`;
+        }
+        if (backupData.platform !== undefined && !this.BACKUP_PLATFORMS.includes(backupData.platform)) {
+            return 'its platform is not web or desktop.';
         }
         for (const store of this.RESTORE_STORES) {
             if (!this.storeInBackup(store, backupData)) continue;
@@ -823,7 +848,9 @@ const BackupManagerWeb = {
                     <span>${HtmlUtils.escapeHtml(backupData.version ?? 'Unknown')}</span>
 
                     <span style="color: var(--text-secondary);">Database:</span>
-                    <span>${HtmlUtils.escapeHtml(backupData.dbVersion ?? 'Unknown')}</span>
+                    <span>${HtmlUtils.escapeHtml(backupData.dbVersion === undefined || backupData.dbVersion === null
+                        ? 'Unknown'
+                        : BackupManagerWeb.describeSchemaVersion(backupData.dbVersion, backupData.platform))}</span>
 
                     <span style="color: var(--text-secondary);">Target:</span>
                     <span>${HtmlUtils.escapeHtml(backupData.targetVersion ?? '—')}</span>

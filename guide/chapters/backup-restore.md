@@ -31,8 +31,11 @@ own backup.
 
 The dialog shows the **Filename**, and the backup's size before and after
 compression. The filename records the Astryx version, the database
-version, what the backup holds, and the date and time, for example
-Astryx-v1.11.1-d6-userdata-20261007-2103.zip.
+schema version, what the backup holds, and the date and time, for example
+Astryx-v1.102.0-d8-userdata-20261127-2103.zip. The schema version starts
+with **d** on the web version and **s** on the desktop app: the two keep
+their data in different kinds of database, and count their versions
+separately.
 
 Where the file goes:
 
@@ -116,8 +119,9 @@ back up your current data first, so you can go back.
 ### The Restore Backup? Dialog
 
 The top of the dialog describes the file: when it was **Created**, the
-Astryx **Version** and **Database** version that made it, the **Target**
-database version, and its **Size**. Below that, Astryx compares the backup
+Astryx **Version** and **Database** schema version that made it, with
+whether it came from the web version or the desktop app (for example
+"8 (web)"), the **Target** database version, and its **Size**. Below that, Astryx compares the backup
 with your current data:
 
 | Message | What it means |
@@ -138,6 +142,26 @@ A backup made by a newer Astryx can't; Astryx shows **Backup From a Newer
 Astryx** instead, and restoring works once you've updated. A file that
 isn't an Astryx backup, or has been damaged, is refused with a message
 saying what's wrong with it.
+
+## Where Astryx Keeps Your Data
+
+- **Web version:** in your browser's own storage, for astryx.tools only.
+  Another browser, or a private window, has its own, empty storage.
+- **Desktop app:** in a database file, `astryx.db`, in a folder named
+  Astryx in your system's data folder:
+  - Linux: `~/.local/share/Astryx`
+  - Windows: `%APPDATA%\Astryx`
+
+  **About**, in the system menu (≡), shows this folder.
+
+  Before an update changes the database, Astryx saves a copy of it beside
+  the database, named like `astryx.db.pre-v3.bak`, and keeps the three
+  newest. The desktop app also keeps the window size, the sidebar width
+  and the sky images it has downloaded in folders named
+  `tools.astryx.astryx`. None of that needs backing up.
+
+Copying these files isn't the way to move your data: make a backup and
+restore it, as below.
 
 ## Moving to a New Computer
 

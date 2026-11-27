@@ -237,6 +237,15 @@ const DBManagerWeb = {
     },
 
     /**
+     * What Astryx shows about this database: the platform, the letter
+     * before its schema version in the sidebar and backup file names, and
+     * the version. The IndexedDB version is DB_VERSION (Issue #363).
+     */
+    databaseInfo() {
+        return { platform: 'web', letter: 'd', schemaVersion: APP_CONFIG.DB_VERSION, folder: null };
+    },
+
+    /**
      * A store's key: the field that holds it, and whether the store assigns
      * it (restore checks a backup's records against it, Issue #362)
      */

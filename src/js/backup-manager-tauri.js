@@ -237,7 +237,7 @@ const BackupManagerTauri = {
 
             const backupData = await this.generateBackupData(selectedStores);
             const dtg = TimeUtils.nowDTG();
-            const baseName = `${APP_CONFIG.APP_NAME}-v${APP_CONFIG.APP_VERSION}-d${APP_CONFIG.DB_VERSION}-userdata-${dtg}`;
+            const baseName = `${BackupManagerWeb.fileNameBase()}-userdata-${dtg}`;
             const savePath = `${backupFolder}/${baseName}.zip`;
 
             const jsonString = JSON.stringify(backupData, null, 2);
