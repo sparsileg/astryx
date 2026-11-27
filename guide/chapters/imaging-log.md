@@ -52,7 +52,9 @@ Each project is a card. Its lines show:
 
 - the name, with a link to the published image if you added one,
 - **Targets** and **Sessions**: how many of each,
-- the integration so far, by filter, for example "L: 6.5h  Ha: 3.0h",
+- the integration so far, by filter, for example "L: 6.5h  Ha: 3.0h"
+  (under an hour it's in minutes, "45m", and under a minute in seconds,
+  "20s"),
 - the **Status**, and the date the project was last changed (**Modified**).
 
 **Edit Project** opens the project form again. **Delete Project** deletes
@@ -121,7 +123,7 @@ in the morning.
 | Section | Fields |
 |:---------------------|:------------------------------------------------------|
 | Equipment | **Date**, **Location**, **Telescope**, **Sensor**, **Filter**, plus **Rotation (°)** (the camera angle your plate solver reported), **Temp Setpoint (°C)**, **Bin**, **Gain**, and **Offset**. |
-| Moon & Conditions | **Moon Set**, **Moon Rise**, **Illumination (%)**, **Angle from Moon (°)**, and the four condition lists. |
+| Moon & Conditions | **Moon Set**, **Moon Rise**, **Illumination (%)**, **Angle from Moon (°)**, and the four condition lists. A number you leave blank stays blank; it isn't saved as 0. |
 | Acquisition | **Sub Length (seconds)**, **Original Exposures**, **Used**, and **Integration Time**, which Astryx works out. |
 | Notes | Anything about the night. Notes are kept as plain text; if you write them in Markdown, they render when you paste them into a Markdown document. |
 
@@ -212,7 +214,7 @@ The **Reports** tab has three cards:
 
 | Report | What it shows |
 |:-------------------|:--------------------------------------------------------|
-| Catalog Coverage | For each catalog, how many targets you've imaged, counting each target's other designations too. |
+| Catalog Coverage | For each catalog Astryx knows (those you can filter by in Target Selection), how many targets you've imaged. A target counts once in its own catalog and once in each other catalog one of its other designations is in, so M 31 counts in Messier and NGC. Designations in other catalogs, such as LBN or Mel, aren't counted. |
 | Program Progress | Each program's progress, with **Targets Completed** (click a project's name to go to it) and, for a Manual List, **Targets yet to be imaged**. |
 | Project Status | For each status, how many projects, targets, and sessions. |
 

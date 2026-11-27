@@ -17,7 +17,7 @@
 const APP_CONFIG = {
     APP_NAME: 'Astryx',
     APP_TITLE: 'Astryx - Astrophotography Planning Tool',
-    APP_VERSION: '1.102.3',
+    APP_VERSION: '1.102.4',
     DB_NAME: 'astryx-db',
     DB_VERSION: 8,
     TARGET_DATA_PATH: './data/',
@@ -119,6 +119,7 @@ const APP_CONFIG = {
     FILTER_MAX_IMAGING_PROGRAM_TARGETS: 199,
     SEARCH_DEBOUNCE_MS: 300, // wait after the last keystroke in a search box before searching (#314, #334)
     PROJECT_TARGET_SEARCH_LIMIT: 10, // matches listed under the project dialog's target search (#314)
+    PROJECT_HIGHLIGHT_MS: 1500, // how long a project card stays highlighted after a report link opens it (#355)
     DEFAULT_MIN_SIZE: 4.0,   // target filter arc minutes
     DEFAULT_MAX_MAG: 14.5,   // target filter magnitude
     FILTER_MIN_SIZE_RANGE: [0.1, 999], // Settings bounds for Min Target Size, arcmin (#329)

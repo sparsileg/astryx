@@ -186,7 +186,7 @@ const ImagingLogView = {
         const sessionsByProject = ImagingLogManager.groupSessionsByProject(sessions);
 
         // Apply filters
-        const searchQuery = document.getElementById('imaging-log-project-search')?.value.toLowerCase() || '';
+        const searchQuery = document.getElementById('imaging-log-project-search')?.value.toLowerCase() ?? '';
         const statusFilter = document.getElementById('imaging-log-status-menu')?.querySelector('.astryx-dropdown-item.selected')?.dataset.value ?? '';
 
         let filteredProjects;
@@ -236,7 +236,7 @@ const ImagingLogView = {
                 sessionsContainer.classList.add('expanded');
                 sessionsContainer.style.maxHeight = sessionsContainer.scrollHeight + 'px';
                 if (chevron) chevron.classList.add('expanded');
-                if (addButton) addButton.style.display = 'inline-block';
+                if (addButton) addButton.hidden = false;
             }
         });
     },
@@ -263,7 +263,7 @@ const ImagingLogView = {
         return `
             <div class="project-card" data-project-id="${projectId}">
                 <div class="project-card-header" data-action="toggle-project-sessions" data-project-id="${projectId}">
-                    <div style="flex: 1;">
+                    <div class="project-card-heading">
                         <div class="project-card-title">
                     ${HtmlUtils.escapeHtml(project.name)}
                     ${project.publishedLink
@@ -299,7 +299,7 @@ const ImagingLogView = {
                     <span class="sessions-label">Imaging Sessions</span>
                     <button class="btn-secondary btn-sm add-session-btn"
                             id="add-session-btn-${projectId}"
-                            style="display: none; margin-left: auto;"
+                            hidden
                             data-action="add-session" data-project-id="${projectId}">
                         + Add Session
                     </button>
@@ -343,7 +343,7 @@ const ImagingLogView = {
             }).join('')}
         </tbody>
             </table>
-            ` : '<p style="color: var(--text-secondary); font-style: italic; padding: 1rem;">No sessions yet.</p>'}
+            ` : '<p class="imaging-log-empty">No sessions yet.</p>'}
                 </div>
             </div>
         `;
@@ -411,7 +411,7 @@ const ImagingLogView = {
                 e.stopPropagation();
                 expanded = !expanded;
                 if (expanded) {
-                    notesTextarea.style.cssText = 'height: 30rem !important; min-height: 30rem !important; resize: none !important;';
+                    notesTextarea.classList.add('project-notes-expanded');
                     expandBtn.textContent = 'Collapse';
                     requestAnimationFrame(() => {
                         requestAnimationFrame(() => {
@@ -421,8 +421,7 @@ const ImagingLogView = {
                         });
                     });
                 } else {
-                    notesTextarea.style.cssText = '';
-                    notesTextarea.setAttribute('rows', '6');
+                    notesTextarea.classList.remove('project-notes-expanded');
                     expandBtn.textContent = 'Expand';
                 }
             });
@@ -443,8 +442,8 @@ const ImagingLogView = {
             const project = await ImagingLogManager.getProject(projectId);
             document.getElementById('project-name').value = project.name;
             this._setSessionDropdownValue('project-status-menu', 'project-status-label', project.status);
-            document.getElementById('project-published-link').value = project.publishedLink || '';
-            document.getElementById('project-notes').value = project.notes || '';
+            document.getElementById('project-published-link').value = project.publishedLink ?? '';
+            document.getElementById('project-notes').value = project.notes ?? '';
             this.selectedTargets = [...project.targetDesignations];
             this.renderSelectedTargets();
         } else {
@@ -462,7 +461,7 @@ const ImagingLogView = {
 
         if (!query || query.length < 2) {
             resultsContainer.innerHTML = '';
-            resultsContainer.style.display = 'none';
+            resultsContainer.hidden = true;
             return;
         }
 
@@ -470,7 +469,7 @@ const ImagingLogView = {
 
         if (results.length === 0) {
             resultsContainer.innerHTML = '<p class="target-search-empty">No results</p>';
-            resultsContainer.style.display = 'block';
+            resultsContainer.hidden = false;
             return;
         }
 
@@ -486,7 +485,7 @@ const ImagingLogView = {
                 </div>
             `;
         }).join('');
-        resultsContainer.style.display = 'block';
+        resultsContainer.hidden = false;
 
         if (!resultsContainer._listenerAttached) {
             resultsContainer._listenerAttached = true;
@@ -517,7 +516,7 @@ const ImagingLogView = {
         const resultsContainer = document.getElementById('project-target-search-results');
         if (resultsContainer) {
             resultsContainer.innerHTML = '';
-            resultsContainer.style.display = 'none';
+            resultsContainer.hidden = true;
         }
     },
 
@@ -537,7 +536,7 @@ const ImagingLogView = {
         if (!container) return;
 
         if (this.selectedTargets.length === 0) {
-            container.innerHTML = '<p style="color: var(--text-secondary); font-style: italic;">No targets selected</p>';
+            container.innerHTML = '<p class="imaging-log-empty">No targets selected</p>';
             return;
         }
 
@@ -548,13 +547,10 @@ const ImagingLogView = {
                   ? `${designation} (${target.common})`
                   : designation;
 
-            let alsoText = '';
-            if (target && target.other) {
-                const otherDesignations = target.other.split(',').map(d => d.trim()).filter(d => d.length > 0);
-                if (otherDesignations.length > 0) {
-                    alsoText = ` <span style="color: var(--text-secondary); font-size: 0.9em;">(also: ${HtmlUtils.escapeHtml(otherDesignations.join(', '))})</span>`;
-                }
-            }
+            const otherDesignations = ImagingLogManager.otherDesignations(designation);
+            const alsoText = otherDesignations.length > 0
+                ? ` <span class="target-also">(also: ${HtmlUtils.escapeHtml(otherDesignations.join(', '))})</span>`
+                : '';
 
             html += `
                 <div class="selected-target-item">
@@ -598,7 +594,7 @@ const ImagingLogView = {
             targetDesignations: this.selectedTargets,
             status: status,
             notes: notes,
-            publishedLink: publishedLink || null
+            publishedLink: publishedLink === '' ? null : publishedLink
         };
 
         const validation = ImagingLogManager.validateProject(projectData);
@@ -608,6 +604,13 @@ const ImagingLogView = {
         }
 
         try {
+            // Only targets this save adds are checked, so editing the notes
+            // doesn't repeat the warning (Issue #355)
+            const previousTargets = this.currentProjectId
+                ? (await ImagingLogManager.getProject(this.currentProjectId)).targetDesignations
+                : [];
+            const addedTargets = projectData.targetDesignations.filter(d => !previousTargets.includes(d));
+
             if (this.currentProjectId) {
                 await ImagingLogManager.updateProject(this.currentProjectId, projectData);
                 UIManager.showToast(`Project "${name}" updated`, 'success');
@@ -618,7 +621,7 @@ const ImagingLogView = {
                 UIManager.markDataChanged();
             }
 
-            await this.checkTargetsAgainstProgramLimits(projectData.targetDesignations);
+            await this.checkTargetsAgainstProgramLimits(addedTargets);
             UIManager.closeModal();
             await this.renderProjectList();
         } catch (error) {
@@ -633,26 +636,10 @@ const ImagingLogView = {
         const warnings = [];
 
         targetDesignations.forEach(designation => {
-            const toCheck = [designation];
-            const target = DataManager.getTarget(designation);
-            if (target && target.other) {
-                const others = target.other.split(',').map(d => d.trim()).filter(d => d.length > 0);
-                others.forEach(o => toCheck.push(o));
-            }
-
-            toCheck.forEach(des => {
+            [designation, ...ImagingLogManager.otherDesignations(designation)].forEach(des => {
                 patternPrograms.forEach(program => {
-                    const normalizedDes = des.replace(/\s+/g, '').toUpperCase();
-                    const normalizedPrefix = program.catalogPrefix.replace(/\s+/g, '').toUpperCase();
-                    if (normalizedDes.startsWith(normalizedPrefix)) {
-                        const afterPrefix = normalizedDes.substring(normalizedPrefix.length);
-                        const match = afterPrefix.match(/^(\d+)([A-Z]*)$/);
-                        if (match) {
-                            const number = parseInt(match[1], 10);
-                            if (number > program.maxNumber) {
-                                warnings.push(`${des} exceeds max number (${program.maxNumber}) for program "${program.name}"`);
-                            }
-                        }
+                    if (ImagingLogManager.catalogNumber(des, program.catalogPrefix) > program.maxNumber) {
+                        warnings.push(`${des} exceeds max number (${program.maxNumber}) for program "${program.name}"`);
                     }
                 });
             });
@@ -671,6 +658,14 @@ const ImagingLogView = {
     // ============================================================================
     // Session Management
     // ============================================================================
+
+    /**
+     * Helper: a number box's value, or null when it's blank
+     */
+    _numberOrNull(inputId, parse) {
+        const value = document.getElementById(inputId).value;
+        return value === '' ? null : parse(value);
+    },
 
     /**
      * Helper: get selected value from a session modal custom dropdown
@@ -810,7 +805,7 @@ const ImagingLogView = {
             const session = await ImagingLogManager.getSession(sessionId);
             document.getElementById('session-project-id').value = session.projectId;
             DateInput.set(document.getElementById('session-date'), session.date);
-            document.getElementById('session-rotation').value = session.rotation || '';
+            document.getElementById('session-rotation').value = session.rotation ?? '';
             document.getElementById('session-temp-setpoint').value = session.tempSetpoint ?? '';
             document.getElementById('session-gain').value = session.gain ?? '';
             document.getElementById('session-offset').value = session.offset ?? '';
@@ -823,22 +818,22 @@ const ImagingLogView = {
                 document.getElementById('session-moon-rise').value = session.moonRise;
             }
 
-            document.getElementById('session-angle-from-moon').value = session.angleFromMoon || '';
+            document.getElementById('session-angle-from-moon').value = session.angleFromMoon ?? '';
             document.getElementById('session-sub-length').value = session.subLength;
             document.getElementById('session-num-exposures').value = session.numExposures;
             document.getElementById('session-used-exposures').value = session.usedExposures;
-            document.getElementById('session-notes').value = session.notes || '';
+            document.getElementById('session-notes').value = session.notes ?? '';
 
             // Set dropdown values
             this._setSessionDropdownValue('session-location-menu', 'session-location-label', session.location);
             this._setSessionDropdownValue('session-telescope-menu', 'session-telescope-label', session.telescope);
             this._setSessionDropdownValue('session-sensor-menu', 'session-sensor-label', session.sensor);
             this._setSessionDropdownValue('session-filter-menu', 'session-filter-label', session.filter);
-            this._setSessionDropdownValue('session-bin-menu', 'session-bin-label', session.bin || '1x1');
-            this._setSessionDropdownValue('session-clouds-menu', 'session-clouds-label', session.clouds || '');
-            this._setSessionDropdownValue('session-smoke-menu', 'session-smoke-label', session.smoke || '');
-            this._setSessionDropdownValue('session-seeing-menu', 'session-seeing-label', session.seeing || '');
-            this._setSessionDropdownValue('session-transparency-menu', 'session-transparency-label', session.transparency || '');
+            this._setSessionDropdownValue('session-bin-menu', 'session-bin-label', session.bin ?? '1x1');
+            this._setSessionDropdownValue('session-clouds-menu', 'session-clouds-label', session.clouds ?? '');
+            this._setSessionDropdownValue('session-smoke-menu', 'session-smoke-label', session.smoke ?? '');
+            this._setSessionDropdownValue('session-seeing-menu', 'session-seeing-label', session.seeing ?? '');
+            this._setSessionDropdownValue('session-transparency-menu', 'session-transparency-label', session.transparency ?? '');
 
             this.updateSessionIntegrationTime();
         } else {
@@ -872,7 +867,7 @@ const ImagingLogView = {
      * Update integration time display
      */
     updateSessionIntegrationTime() {
-        const subLength = parseFloat(document.getElementById('session-sub-length').value) || 0;
+        const subLength = Number(document.getElementById('session-sub-length').value);
         const usedInput = document.getElementById('session-used-exposures').value;
         const usedExposures = usedInput === '' ? null : parseFloat(usedInput);
 
@@ -970,18 +965,15 @@ const ImagingLogView = {
         const telescope = this._getSessionDropdownValue('session-telescope-menu');
         const sensor = this._getSessionDropdownValue('session-sensor-menu');
         const filter = this._getSessionDropdownValue('session-filter-menu');
-        const rotation = parseFloat(document.getElementById('session-rotation').value) || 0;
-
         // An empty number is null, as SQLite stores it, so web and desktop
-        // hold the same session (Issue #353)
-        const tempSetpointValue = document.getElementById('session-temp-setpoint').value;
-        const tempSetpoint = tempSetpointValue === '' ? null : parseFloat(tempSetpointValue);
-        const bin = this._getSessionDropdownValue('session-bin-menu') || '1x1';
-        const gainValue = document.getElementById('session-gain').value;
-        const gain = gainValue === '' ? null : parseInt(gainValue);
-        const offsetValue = document.getElementById('session-offset').value;
-        const offset = offsetValue === '' ? null : parseInt(offsetValue);
-        const moonIllumination = parseInt(document.getElementById('session-moon-illumination').value) || 0;
+        // hold the same session (Issue #353). A blank Rotation or Moon field
+        // stays blank, not 0 (Issue #355)
+        const rotation = this._numberOrNull('session-rotation', parseFloat);
+        const tempSetpoint = this._numberOrNull('session-temp-setpoint', parseFloat);
+        const bin = this._getSessionDropdownValue('session-bin-menu');
+        const gain = this._numberOrNull('session-gain', parseInt);
+        const offset = this._numberOrNull('session-offset', parseInt);
+        const moonIllumination = this._numberOrNull('session-moon-illumination', parseInt);
 
         const moonSetInput = document.getElementById('session-moon-set');
         const moonRiseInput = document.getElementById('session-moon-rise');
@@ -989,10 +981,10 @@ const ImagingLogView = {
             UIManager.showToast('Enter Moon Set and Moon Rise as 24-hour HH:MM, or leave them empty', 'error');
             return;
         }
-        const moonSet = TimeInput.value(moonSetInput) || null;
-        const moonRise = TimeInput.value(moonRiseInput) || null;
+        const moonSet = TimeInput.parse(moonSetInput.value);
+        const moonRise = TimeInput.parse(moonRiseInput.value);
 
-        const angleFromMoon = parseInt(document.getElementById('session-angle-from-moon').value) || 0;
+        const angleFromMoon = this._numberOrNull('session-angle-from-moon', parseInt);
         const clouds = this._getSessionDropdownValue('session-clouds-menu');
         const smoke = this._getSessionDropdownValue('session-smoke-menu');
         const seeing = this._getSessionDropdownValue('session-seeing-menu');
@@ -1065,7 +1057,6 @@ const ImagingLogView = {
         }
 
         try {
-            const session = await ImagingLogManager.getSession(sessionId);
             await ImagingLogManager.deleteSession(sessionId);
             UIManager.showToast('Session deleted', 'success');
             UIManager.markDataChanged();
@@ -1148,17 +1139,19 @@ const ImagingLogView = {
             }
 
             if (addButton) {
-                addButton.style.display = isExpanded ? 'none' : 'inline-block';
+                addButton.hidden = isExpanded;
             }
         }
     },
 
     /**
-     * Format integration time (seconds to hours)
+     * Format integration time: hours from an hour up, then minutes, then
+     * seconds, so short sessions don't show as 0.0h (Issue #355)
      */
     formatIntegrationTime(seconds) {
-        const hours = seconds / 3600;
-        return hours.toFixed(1) + 'h';
+        if (seconds >= 3600) return (seconds / 3600).toFixed(1) + 'h';
+        if (seconds >= 60) return Math.round(seconds / 60) + 'm';
+        return Math.round(seconds) + 's';
     },
 
     /**
@@ -1198,12 +1191,9 @@ const ImagingLogView = {
             return;
         }
 
-        let html = '';
-        for (const program of programs) {
-            html += await this.renderProgramCard(program);
-        }
-
-        container.innerHTML = html;
+        // Projects read once for every card (Issue #355)
+        const projects = (await ImagingLogManager.getAllProjects()).filter(p => p.status === 'Completed');
+        container.innerHTML = programs.map(program => this.renderProgramCard(program, projects)).join('');
 
         const actionButtons = document.querySelectorAll('.project-action-btn[data-program-id]');
         actionButtons.forEach(btn => {
@@ -1224,8 +1214,8 @@ const ImagingLogView = {
     /**
      * Render a single program card
      */
-    async renderProgramCard(program) {
-        const progress = await ImagingLogManager.getProgramProgress(program.id, true);
+    renderProgramCard(program, completedProjects) {
+        const progress = ImagingLogManager.programProgress(program, completedProjects);
         const progressPercent = parseFloat(progress.percentage);
         const isPattern = ImagingLogManager.isProgramPatternBased(program);
 
@@ -1241,10 +1231,10 @@ const ImagingLogView = {
         return `
             <div class="project-card">
                 <div class="project-card-header">
-                    <div style="flex: 1;">
+                    <div class="project-card-heading">
                         <div class="project-card-title">
                             ${HtmlUtils.escapeHtml(program.name)}
-                            ${isPattern ? `<span style="color: var(--text-secondary); font-size: 0.85em; margin-left: 0.5rem;">(${HtmlUtils.escapeHtml(program.catalogPrefix)} 1-${program.maxNumber})</span>` : ''}
+                            ${this.programRangeHtml(program, isPattern)}
                         </div>
                     </div>
                     <div class="project-card-actions">
@@ -1266,13 +1256,20 @@ const ImagingLogView = {
                     <span class="project-status-badge ${statusClass}">${status}</span>
                 </div>
 
-                <div style="margin-top: 0.75rem;">
-                    <div style="background: var(--border-color); height: 0.5rem; border-radius: 4px; overflow: hidden;">
-                        <div style="background: var(--primary-color); height: 100%; width: ${progressPercent}%; transition: width 0.3s;"></div>
-                    </div>
+                <div class="program-progress-bar program-card-progress">
+                    <div class="program-progress-fill" style="width: ${progressPercent}%;"></div>
                 </div>
             </div>
         `;
+    },
+
+    /**
+     * A pattern program's range after its name, e.g. "(NGC 1-110)"
+     */
+    programRangeHtml(program, isPattern) {
+        return isPattern
+            ? `<span class="program-range">(${HtmlUtils.escapeHtml(program.catalogPrefix)} 1-${program.maxNumber})</span>`
+            : '';
     },
 
     async handleEditProgram(programId) {
@@ -1352,13 +1349,8 @@ const ImagingLogView = {
 
         const toggleFields = () => {
             if (patternRadio && manualRadio) {
-                if (patternRadio.checked) {
-                    patternFields.style.display = 'block';
-                    manualFields.style.display = 'none';
-                } else {
-                    patternFields.style.display = 'none';
-                    manualFields.style.display = 'block';
-                }
+                patternFields.hidden = !patternRadio.checked;
+                manualFields.hidden = patternRadio.checked;
             }
         };
 
@@ -1476,7 +1468,7 @@ const ImagingLogView = {
         matchedDiv.innerHTML = '';
         failedDiv.innerHTML = '';
 
-        resultsDiv.style.display = 'block';
+        resultsDiv.hidden = false;
 
         summaryDiv.innerHTML = `
             <p><strong>Matched:</strong> ${results.matched.length} targets</p>
@@ -1486,10 +1478,10 @@ const ImagingLogView = {
         if (results.matched.length > 0) {
             matchedDiv.innerHTML = `
                 <details>
-                    <summary style="cursor: pointer; font-weight: 600; margin-bottom: 0.5rem;">
+                    <summary class="import-results-heading">
                         Matched Targets (${results.matched.length})
                     </summary>
-                    <div style="max-height: 12.5rem; overflow-y: auto; padding: 0.5rem; background: var(--hover-bg); border-radius: 4px;">
+                    <div class="imaging-log-scroll-list">
                         ${results.matched.map(m =>
                             `<div>${HtmlUtils.escapeHtml(m.input)} → ${HtmlUtils.escapeHtml(m.target.object)}</div>`
                         ).join('')}
@@ -1501,10 +1493,10 @@ const ImagingLogView = {
         if (results.failed.length > 0) {
             failedDiv.innerHTML = `
                 <details open>
-                    <summary style="cursor: pointer; font-weight: 600; margin-bottom: 0.5rem; color: var(--error-color);">
+                    <summary class="import-results-heading import-results-failed-heading">
                         Failed Targets (${results.failed.length})
                     </summary>
-                    <div style="max-height: 12.5rem; overflow-y: auto; padding: 0.5rem; background: var(--hover-bg); border-radius: 4px; margin-bottom: 0.5rem;">
+                    <div class="imaging-log-scroll-list import-results-failed-list">
                         ${results.failed.map(f =>
                             `<div>${HtmlUtils.escapeHtml(f.input)}</div>`
                         ).join('')}
@@ -1567,78 +1559,53 @@ const ImagingLogView = {
     // ============================================================================
 
     async renderReports() {
-        await this.renderCatalogCoverageReport();
-        await this.renderProgramProgressReport();
-        await this.renderProjectStatusReport();
+        // Programs, projects and sessions read once for all three reports (Issue #355)
+        const [programs, projects, sessions] = await Promise.all([
+            ImagingLogManager.getAllPrograms(),
+            ImagingLogManager.getAllProjects(),
+            ImagingLogManager.getAllSessions(),
+        ]);
+        const completed = projects.filter(p => p.status === 'Completed');
+        this.renderCatalogCoverageReport(completed);
+        this.renderProgramProgressReport(programs, completed);
+        this.renderProjectStatusReport(projects, sessions);
     },
 
-    async renderCatalogCoverageReport() {
+    renderCatalogCoverageReport(projects) {
         const container = document.getElementById('report-catalog-coverage');
         if (!container) return;
 
-        const allProjects = await ImagingLogManager.getAllProjects();
-        const projects = allProjects.filter(p => p.status === 'Completed');
-        const allTargets = new Set();
-
-        projects.forEach(project => {
-            project.targetDesignations.forEach(designation => {
-                allTargets.add(designation);
-                const target = DataManager.getTarget(designation);
-                if (target && target.other) {
-                    const otherDesignations = target.other.split(',').map(d => d.trim()).filter(d => d.length > 0);
-                    otherDesignations.forEach(other => allTargets.add(other));
-                }
-            });
-        });
-
-        const catalogCounts = {};
-        allTargets.forEach(designation => {
-            const catalog = this.getCatalogFromDesignation(designation);
-            catalogCounts[catalog] = (catalogCounts[catalog] || 0) + 1;
-        });
-
-        const sortedCatalogs = Object.entries(catalogCounts).sort((a, b) => b[1] - a[1]);
-
-        if (sortedCatalogs.length === 0) {
-            container.innerHTML = '<p style="color: var(--text-secondary);">No targets imaged yet.</p>';
+        const coverage = ImagingLogManager.catalogCoverage(projects);
+        if (coverage.length === 0) {
+            container.innerHTML = '<p class="imaging-log-empty">No targets imaged yet.</p>';
             return;
         }
 
         let html = '<table class="session-table">';
         html += '<thead><tr><th>Catalog</th><th>Targets Imaged</th></tr></thead>';
         html += '<tbody>';
-        sortedCatalogs.forEach(([catalog, count]) => {
+        coverage.forEach(([catalog, count]) => {
             html += `<tr><td>${HtmlUtils.escapeHtml(catalog)}</td><td>${count}</td></tr>`;
         });
         html += '</tbody></table>';
         container.innerHTML = html;
     },
 
-    async renderProgramProgressReport() {
+    renderProgramProgressReport(programs, projects) {
         const container = document.getElementById('report-program-progress');
         if (!container) return;
 
-        const programs = await ImagingLogManager.getAllPrograms();
-
         if (programs.length === 0) {
-            container.innerHTML = '<p style="color: var(--text-secondary);">No programs created yet.</p>';
+            container.innerHTML = '<p class="imaging-log-empty">No programs created yet.</p>';
             return;
         }
 
         let html = '';
-        // Issue #334: projects read once, not per program
-        const projects = (await ImagingLogManager.getAllProjects()).filter(p => p.status === 'Completed');
+        const imagedTargets = ImagingLogManager.imagedDesignations(projects);
 
         for (const program of programs) {
-            const progress = await ImagingLogManager.getProgramProgress(program.id, true);
+            const progress = ImagingLogManager.programProgress(program, projects);
             const isPattern = ImagingLogManager.isProgramPatternBased(program);
-
-            const imagedTargets = new Set();
-            projects.forEach(project => {
-                project.targetDesignations.forEach(designation => {
-                    imagedTargets.add(designation);
-                });
-            });
 
             let completedSection = '';
             if (progress.imaged > 0) {
@@ -1663,38 +1630,30 @@ const ImagingLogView = {
                     let targetProjects = projects.filter(p => p.targetDesignations.some(d => designations.includes(d)));
 
                     if (targetProjects.length === 0) {
-                        targetProjects = projects.filter(p => {
-                            return p.targetDesignations.some(designation => {
-                                const dbTarget = DataManager.getTarget(designation);
-                                if (dbTarget && dbTarget.other) {
-                                    const otherDesignations = dbTarget.other.split(',').map(d => d.trim());
-                                    return otherDesignations.some(d => designations.includes(d));
-                                }
-                                return false;
-                            });
-                        });
+                        targetProjects = projects.filter(p => p.targetDesignations.some(designation =>
+                            ImagingLogManager.otherDesignations(designation).some(d => designations.includes(d))
+                        ));
                     }
 
                     const projectLinks = targetProjects.map(proj =>
-                        `<span data-action="navigate-to-project" data-project-id="${HtmlUtils.escapeHtml(proj.id)}"
-                               style="cursor: pointer; color: var(--primary-color); text-decoration: underline;">
+                        `<span class="program-project-link" data-action="navigate-to-project" data-project-id="${HtmlUtils.escapeHtml(proj.id)}">
                             ${HtmlUtils.escapeHtml(proj.name)}
                         </span>`
                     ).join(', ');
 
                     completedHTML += `
-                        <div style="padding: 0.25rem;">
-                            <strong>${HtmlUtils.escapeHtml(label)}:</strong> ${projectLinks || '<span style="color: var(--text-secondary);">No project found</span>'}
+                        <div class="program-target-row">
+                            <strong>${HtmlUtils.escapeHtml(label)}:</strong> ${targetProjects.length > 0 ? projectLinks : '<span class="program-no-project">No project found</span>'}
                         </div>
                     `;
                 });
 
                 completedSection = `
-                    <details style="margin-bottom: 0.5rem;">
-                        <summary style="cursor: pointer; color: var(--success-color); font-size: 0.9rem;">
+                    <details class="program-completed">
+                        <summary class="program-report-summary program-completed-summary">
                             Targets Completed (${progress.imaged})
                         </summary>
-                        <div style="margin-top: 0.5rem; max-height: 12.5rem; overflow-y: auto; padding: 0.5rem; background: var(--hover-bg); border-radius: 4px; font-size: 0.9rem;">
+                        <div class="imaging-log-scroll-list program-report-list">
                             ${completedHTML}
                         </div>
                     </details>
@@ -1711,35 +1670,35 @@ const ImagingLogView = {
                     const sortedMissing = missingTargets.sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
                     missingSection = `
                         <details>
-                            <summary style="cursor: pointer; color: var(--text-secondary); font-size: 0.9rem;">
+                            <summary class="program-report-summary">
                                 Targets yet to be imaged (${missingTargets.length})
                             </summary>
-                            <div style="margin-top: 0.5rem; max-height: 9.375rem; overflow-y: auto; padding: 0.5rem; background: var(--hover-bg); border-radius: 4px; font-size: 0.9rem;">
+                            <div class="imaging-log-scroll-list program-report-list program-missing-list">
                                 ${sortedMissing.map(t => HtmlUtils.escapeHtml(t)).join(', ')}
                             </div>
                         </details>
                     `;
                 } else {
-                    missingSection = '<div style="color: var(--success-color); font-weight: 600;">✓ Program Complete!</div>';
+                    missingSection = '<div class="program-complete">✓ Program Complete!</div>';
                 }
             }
 
             html += `
-                <div class="info-card" style="margin-bottom: 1rem; padding: 1rem;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                        <strong style="font-size: 1.05rem;">
+                <div class="info-card program-report-card">
+                    <div class="program-report-header">
+                        <strong class="program-report-name">
                             ${HtmlUtils.escapeHtml(program.name)}
-                            ${isPattern ? `<span style="color: var(--text-secondary); font-size: 0.85em; margin-left: 0.5rem;">(${HtmlUtils.escapeHtml(program.catalogPrefix)} 1-${program.maxNumber})</span>` : ''}
+                            ${this.programRangeHtml(program, isPattern)}
                         </strong>
                         <span class="project-status-badge ${progress.imaged === progress.total && progress.total > 0 ? 'status-completed' : 'status-acquiring-data'}">
                             ${progress.imaged === 0 ? 'Not Started' : progress.imaged === progress.total && progress.total > 0 ? 'Complete' : 'Started'}
                         </span>
                     </div>
-                    <div style="margin-bottom: 0.5rem;">
+                    <div class="program-report-progress">
                         Progress: ${progress.imaged}/${progress.total} (${progress.percentage}%)
                     </div>
-                    <div style="background: var(--border-color); height: 0.5rem; border-radius: 4px; overflow: hidden; margin-bottom: 0.75rem;">
-                        <div style="background: var(--primary-color); height: 100%; width: ${progress.percentage}%;"></div>
+                    <div class="program-progress-bar program-report-bar">
+                        <div class="program-progress-fill" style="width: ${progress.percentage}%;"></div>
                     </div>
                     ${completedSection}
                     ${missingSection}
@@ -1759,16 +1718,14 @@ const ImagingLogView = {
         }
     },
 
-    async renderProjectStatusReport() {
+    renderProjectStatusReport(projects, sessions) {
         const container = document.getElementById('report-project-status');
         if (!container) return;
-        const projects = await ImagingLogManager.getAllProjects();
         if (projects.length === 0) {
-            container.innerHTML = '<p style="color: var(--text-secondary);">No projects created yet.</p>';
+            container.innerHTML = '<p class="imaging-log-empty">No projects created yet.</p>';
             return;
         }
-        // Issue #334: sessions read once, not per project
-        const sessionsByProject = ImagingLogManager.groupSessionsByProject(await ImagingLogManager.getAllSessions());
+        const sessionsByProject = ImagingLogManager.groupSessionsByProject(sessions);
         const statuses = ['Planning', 'Acquiring Data', 'Acquisition Complete', 'Processing', 'Completed'];
         const grouped = {};
 
@@ -1796,11 +1753,6 @@ const ImagingLogView = {
         }
         html += '</tbody></table>';
         container.innerHTML = html;
-    },
-
-    getCatalogFromDesignation(designation) {
-        const prefix = designation.split(' ')[0].replace(/[0-9-]/g, '');
-        return CATALOG_MAP[prefix] || 'Other';
     },
 
     /**
@@ -1857,21 +1809,13 @@ const ImagingLogView = {
         if (projectCard) {
             projectCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-            projectCard.style.transition = 'background-color 0.3s';
-            projectCard.style.backgroundColor = 'var(--primary-color)';
-            projectCard.style.opacity = '0.8';
-
-            setTimeout(() => {
-                projectCard.style.backgroundColor = '';
-                projectCard.style.opacity = '';
-            }, 1500);
+            projectCard.classList.add('project-card-highlight');
+            setTimeout(() => projectCard.classList.remove('project-card-highlight'), APP_CONFIG.PROJECT_HIGHLIGHT_MS);
 
             const sessionsContainer = document.getElementById(`project-sessions-${projectId}`);
             if (sessionsContainer && !sessionsContainer.classList.contains('expanded')) {
                 this.toggleProjectSessions(projectId);
             }
-        } else {
-            Log.debug('Project card NOT found!');
         }
     }
 

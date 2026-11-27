@@ -216,6 +216,168 @@
     font-style: italic;
 }
 
+/* A short "nothing here yet" line in a tab, report or dialog (Issue #355) */
+.imaging-log-empty {
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+.project-sessions-container .imaging-log-empty {
+    padding: 1rem;
+}
+
+/* ============================================================================
+   Cards, programs and reports (Issue #355)
+   ============================================================================ */
+
+.project-card-heading {
+    flex: 1;
+}
+
+.add-session-btn {
+    margin-left: auto;
+}
+
+/* Opened from a report link: flashes so it's easy to find */
+.project-card-highlight {
+    background-color: var(--primary-color);
+    opacity: 0.8;
+    transition: background-color 0.3s;
+}
+
+.target-also {
+    color: var(--text-secondary);
+    font-size: 0.9em;
+}
+
+.program-range {
+    color: var(--text-secondary);
+    font-size: 0.85em;
+    margin-left: 0.5rem;
+}
+
+/* The fill's width is the program's progress, set inline */
+.program-progress-bar {
+    background: var(--border-color);
+    height: 0.5rem;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.program-progress-fill {
+    background: var(--primary-color);
+    height: 100%;
+    transition: width 0.3s;
+}
+
+.program-card-progress {
+    margin-top: 0.75rem;
+}
+
+.program-report-card {
+    margin-bottom: 1rem;
+    padding: 1rem;
+}
+
+.program-report-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.program-report-name {
+    font-size: 1.05rem;
+}
+
+.program-report-progress {
+    margin-bottom: 0.5rem;
+}
+
+.program-report-bar {
+    margin-bottom: 0.75rem;
+}
+
+.program-completed {
+    margin-bottom: 0.5rem;
+}
+
+.program-report-summary {
+    cursor: pointer;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.program-completed-summary {
+    color: var(--success-color);
+}
+
+.program-target-row {
+    padding: 0.25rem;
+}
+
+.program-project-link {
+    cursor: pointer;
+    color: var(--primary-color);
+    text-decoration: underline;
+}
+
+.program-no-project {
+    color: var(--text-secondary);
+}
+
+.program-complete {
+    color: var(--success-color);
+    font-weight: 600;
+}
+
+/* A scrolling list of targets in a report or the import results */
+.imaging-log-scroll-list {
+    max-height: 12.5rem;
+    overflow-y: auto;
+    padding: 0.5rem;
+    background: var(--hover-bg);
+    border-radius: 4px;
+}
+
+.program-report-list {
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.program-missing-list {
+    max-height: 9.375rem;
+}
+
+.import-results {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+}
+
+.import-results-heading {
+    cursor: pointer;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.import-results-failed-heading {
+    color: var(--error-color);
+}
+
+.import-results-failed-list {
+    margin-bottom: 0.5rem;
+}
+
+/* Expand makes the notes box tall; beats .modal textarea's !important */
+.modal textarea.project-notes-expanded {
+    height: 30rem !important;
+    min-height: 30rem !important;
+    resize: none !important;
+}
+
 /* ============================================================================
    Session Table (for Phase 3)
    ============================================================================ */

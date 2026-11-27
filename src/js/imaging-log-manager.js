@@ -15,10 +15,10 @@ const ImagingLogManager = {
     async createProject(projectData) {
         const project = {
             name: projectData.name,
-            targetDesignations: projectData.targetDesignations || [],
-            status: projectData.status || 'Planning',
-            notes: projectData.notes || '',
-            publishedLink: projectData.publishedLink || null,
+            targetDesignations: projectData.targetDesignations ?? [],
+            status: projectData.status ?? 'Planning',
+            notes: projectData.notes ?? '',
+            publishedLink: projectData.publishedLink ?? null,
             created: new Date().toISOString(),
             modified: new Date().toISOString()
         };
@@ -41,7 +41,7 @@ const ImagingLogManager = {
         project.targetDesignations = projectData.targetDesignations;
         project.status = projectData.status;
         project.notes = projectData.notes;
-        project.publishedLink = projectData.publishedLink || null;
+        project.publishedLink = projectData.publishedLink ?? null;
         project.modified = new Date().toISOString();
 
         await DBManager.put(APP_CONFIG.STORES.IMAGING_PROJECTS, project);
@@ -99,14 +99,14 @@ const ImagingLogManager = {
             moonSet: sessionData.moonSet,
             moonRise: sessionData.moonRise,
             angleFromMoon: sessionData.angleFromMoon,
-            clouds: sessionData.clouds || '',
-            smoke: sessionData.smoke || '',
-            seeing: sessionData.seeing || '',
-            transparency: sessionData.transparency || '',
+            clouds: sessionData.clouds ?? '',
+            smoke: sessionData.smoke ?? '',
+            seeing: sessionData.seeing ?? '',
+            transparency: sessionData.transparency ?? '',
             subLength: sessionData.subLength,
             numExposures: sessionData.numExposures,
             usedExposures: sessionData.usedExposures,
-            notes: sessionData.notes || '',
+            notes: sessionData.notes ?? '',
             created: new Date().toISOString()
         };
 
@@ -213,7 +213,7 @@ const ImagingLogManager = {
         }
         // Manual list mode
         else {
-            program.targetDesignations = programData.targetDesignations || [];
+            program.targetDesignations = programData.targetDesignations ?? [];
         }
 
         const id = await DBManager.put(APP_CONFIG.STORES.IMAGING_PROGRAMS, program);
@@ -242,7 +242,7 @@ const ImagingLogManager = {
         }
         // Manual list mode
         else {
-            program.targetDesignations = programData.targetDesignations || [];
+            program.targetDesignations = programData.targetDesignations ?? [];
             // Remove pattern fields if switching modes
             delete program.catalogPrefix;
             delete program.maxNumber;
@@ -294,6 +294,16 @@ const ImagingLogManager = {
      * the program's maximum doesn't belong to it (Issue #306)
      */
     patternNumber(targetDesignation, catalogPrefix, maxNumber) {
+        const number = this.catalogNumber(targetDesignation, catalogPrefix);
+        return number !== null && number >= 1 && number <= maxNumber ? number : null;
+    },
+
+    /**
+     * The number a designation has in a catalogue, at any size, or null if
+     * it isn't in that catalogue. Spacing, case and a letter suffix don't
+     * matter (Issues #306, #355).
+     */
+    catalogNumber(targetDesignation, catalogPrefix) {
         if (!targetDesignation || !catalogPrefix) return null;
 
         // Normalize: remove spaces, convert to uppercase for comparison
@@ -303,10 +313,15 @@ const ImagingLogManager = {
 
         // Digits followed by an optional suffix (letters)
         const match = normalizedTarget.substring(normalizedPrefix.length).match(/^(\d+)[A-Z]*$/);
-        if (!match) return null;
+        return match ? parseInt(match[1], 10) : null;
+    },
 
-        const number = parseInt(match[1], 10);
-        return number >= 1 && number <= maxNumber ? number : null;
+    /**
+     * A target's other designations, from its Other field
+     */
+    otherDesignations(designation) {
+        const other = DataManager.getTarget(designation)?.other;
+        return other ? other.split(',').map(d => d.trim()).filter(d => d.length > 0) : [];
     },
 
     /**
@@ -327,10 +342,7 @@ const ImagingLogManager = {
             project.targetDesignations.forEach(designation => {
                 add(designation);
                 // Always check Other field for additional alternate designations
-                const target = DataManager.getTarget(designation);
-                if (target && target.other) {
-                    target.other.split(',').map(d => d.trim()).filter(d => d.length > 0).forEach(add);
-                }
+                this.otherDesignations(designation).forEach(add);
             });
         });
         return byNumber;
@@ -420,10 +432,10 @@ const ImagingLogManager = {
             // Used exposures, as in the project cards and sessions table. A
             // session with Used = 0 is taken as not processed yet and shaded
             // by the subs taken, so the night still shows (Issue #282)
-            const exposureCount = Number(session.usedExposures) || 0;
-            const taken = Number(session.numExposures) || 0;
+            const exposureCount = Number(session.usedExposures ?? 0);
+            const taken = Number(session.numExposures ?? 0);
             const processed = exposureCount > 0;
-            const subLength = session.subLength || 0;
+            const subLength = session.subLength ?? 0;
             const seconds = subLength * (processed ? exposureCount : taken);
 
             if (!byDate.has(session.date)) {
@@ -446,26 +458,13 @@ const ImagingLogManager = {
     },
 
     /**
-     * Get program progress (how many targets imaged)
+     * A program's progress (how many targets imaged) among the given
+     * projects, which the caller reads once for all its programs (Issue #355)
      */
-    async getProgramProgress(programId, completedOnly = false) {
-        const program = await this.getProgram(programId);
-        const fetchedProjects = await this.getAllProjects();
-        const allProjects = completedOnly
-            ? fetchedProjects.filter(p => p.status === 'Completed')
-            : fetchedProjects;
-
-        // Get all target designations from all projects
-        const imagedTargetSet = new Set();
-        allProjects.forEach(project => {
-            project.targetDesignations.forEach(designation => {
-                imagedTargetSet.add(designation);
-            });
-        });
-
+    programProgress(program, projects) {
         // Pattern-based program - calculate dynamically from projects
         if (this.isProgramPatternBased(program)) {
-            const imagedCount = this.patternMatches(program, allProjects).size;
+            const imagedCount = this.patternMatches(program, projects).size;
             return {
                 total: program.maxNumber,
                 imaged: imagedCount,
@@ -476,6 +475,7 @@ const ImagingLogManager = {
         }
 
         // Manual list program
+        const imagedTargetSet = this.imagedDesignations(projects);
         const imagedCount = program.targetDesignations.filter(designation =>
             imagedTargetSet.has(designation)
         ).length;
@@ -487,6 +487,39 @@ const ImagingLogManager = {
                 ? (imagedCount / program.targetDesignations.length * 100).toFixed(1)
                 : 0
         };
+    },
+
+    /**
+     * Every target designation the projects name
+     */
+    imagedDesignations(projects) {
+        return new Set(projects.flatMap(project => project.targetDesignations));
+    },
+
+    /**
+     * Catalog Coverage: for each catalog, how many of the projects' targets
+     * are in it, most first. A target counts once per catalog: its own, from
+     * the target database, and those of its other designations that
+     * CATALOG_MAP names. Designations in other catalogs aren't counted
+     * (Issue #355).
+     * @returns {Array<[string, number]>}
+     */
+    catalogCoverage(projects) {
+        const targetsByCatalog = new Map();
+        const count = (catalog, target) => {
+            if (!catalog) return;
+            if (!targetsByCatalog.has(catalog)) targetsByCatalog.set(catalog, new Set());
+            targetsByCatalog.get(catalog).add(target);
+        };
+        this.imagedDesignations(projects).forEach(designation => {
+            const target = DataManager.getTarget(designation);
+            const key = target?.object ?? designation;
+            count(target?.catalogue ?? this.getCatalogueFromDesignation(designation), key);
+            this.otherDesignations(designation).forEach(other => count(this.getCatalogueFromDesignation(other), key));
+        });
+        return [...targetsByCatalog.entries()]
+            .map(([catalog, targets]) => [catalog, targets.size])
+            .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
     },
 
     // ============================================================================
@@ -630,7 +663,7 @@ const ImagingLogManager = {
     getCatalogueFromDesignation(designation) {
         const prefix = designation.split(' ')[0].replace(/[0-9-]/g, '');
 
-        return CATALOG_MAP[prefix] || '';
+        return CATALOG_MAP[prefix] ?? '';
     },
 
     /**

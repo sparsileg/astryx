@@ -17,10 +17,8 @@ context.DataManager = { getTarget: name => TARGETS[name] };
 
 const NGC_110 = { id: 1, catalogPrefix: 'NGC', maxNumber: 110 };
 
-async function progress(program, designations) {
-    ImagingLogManager.getProgram = async () => program;
-    ImagingLogManager.getAllProjects = async () => designations.map((d, i) => ({ id: i, status: 'Completed', targetDesignations: [d] }));
-    return ImagingLogManager.getProgramProgress(program.id, true);
+function progress(program, designations) {
+    return ImagingLogManager.programProgress(program, designations.map((d, i) => ({ id: i, status: 'Completed', targetDesignations: [d] })));
 }
 
 test('A number above the program maximum does not match (Issue #306)', () => {
@@ -36,13 +34,13 @@ test('Spacing and suffix variants are one catalogue number (Issue #306)', () => 
     }
 });
 
-test('Progress counts each number once and never passes the program size (Issue #306)', async () => {
-    const p = await progress(NGC_110, ['NGC 52', 'NGC52', 'NGC 52A', 'NGC 7000', 'NGC 1']);
+test('Progress counts each number once and never passes the program size (Issue #306)', () => {
+    const p = progress(NGC_110, ['NGC 52', 'NGC52', 'NGC 52A', 'NGC 7000', 'NGC 1']);
     assert.strictEqual(p.imaged, 2);
     assert.strictEqual(p.total, 110);
 
     const small = { id: 2, catalogPrefix: 'NGC', maxNumber: 2 };
-    const full = await progress(small, ['NGC 1', 'NGC 2', 'NGC 2A', 'NGC 3', 'NGC 5194']);
+    const full = progress(small, ['NGC 1', 'NGC 2', 'NGC 2A', 'NGC 3', 'NGC 5194']);
     assert.strictEqual(full.imaged, 2);
     assert.strictEqual(full.percentage, '100.0');
 });

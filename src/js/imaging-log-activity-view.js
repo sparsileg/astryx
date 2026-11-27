@@ -7,6 +7,7 @@
 
 const ImagingLogActivityView = {
     currentYear: null,
+    _heatmapRenderId: 0,
 
     /**
      * Render the Activity tab: year slider + heatmap
@@ -18,12 +19,12 @@ const ImagingLogActivityView = {
         if (!container) return;
 
         if (years.length === 0) {
-            container.innerHTML = '<p style="color: var(--text-secondary);">No imaging sessions logged yet.</p>';
-            if (sliderWrapper) sliderWrapper.style.display = 'none';
+            container.innerHTML = '<p class="imaging-log-empty">No imaging sessions logged yet.</p>';
+            if (sliderWrapper) sliderWrapper.hidden = true;
             return;
         }
 
-        if (sliderWrapper) sliderWrapper.style.display = '';
+        if (sliderWrapper) sliderWrapper.hidden = false;
 
         if (!this.currentYear || !years.includes(this.currentYear)) {
             this.currentYear = years[0]; // most recent year with data
@@ -73,8 +74,8 @@ const ImagingLogActivityView = {
      */
     updateSliderBackground(slider) {
         const value = parseFloat(slider.value);
-        const min = parseFloat(slider.min) || 0;
-        const max = parseFloat(slider.max) || 100;
+        const min = parseFloat(slider.min);
+        const max = parseFloat(slider.max);
         const percentage = ((value - min) / (max - min)) * 100;
         slider.style.background = `linear-gradient(to right, var(--primary-color) 0%, var(--primary-color) ${percentage}%, var(--border-color) ${percentage}%, var(--border-color) 100%)`;
     },
@@ -90,8 +91,8 @@ const ImagingLogActivityView = {
         const row = document.querySelector('.activity-year-indicator-row');
         if (!label || !row) return;
 
-        const min = parseFloat(slider.min) || 0;
-        const max = parseFloat(slider.max) || 0;
+        const min = parseFloat(slider.min);
+        const max = parseFloat(slider.max);
         const value = parseFloat(slider.value);
         const percentage = max > min ? (value - min) / (max - min) : 0;
 
@@ -114,7 +115,10 @@ const ImagingLogActivityView = {
         const container = document.getElementById('imaging-log-activity-heatmap');
         if (!container) return;
 
+        // A fast drag starts several reads; only the latest one draws (Issue #355)
+        const renderId = ++this._heatmapRenderId;
         const activity = await ImagingLogManager.getActivityByYear(year);
+        if (renderId !== this._heatmapRenderId) return;
 
         // Quartile-based levels, relative to this year's own active nights —
         // integration time per night varies too much by equipment/target for
@@ -229,7 +233,3 @@ const ImagingLogActivityView = {
         return sortedArr[lo] + (sortedArr[hi] - sortedArr[lo]) * (idx - lo);
     }
 };
-
-// ----------------------------------------------------------------------
-// ----------------------------------------------------------------------
-// ----------------------------------------------------------------------
