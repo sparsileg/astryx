@@ -134,6 +134,20 @@ would be saved over yours at your next change. Nothing has been changed:
 (see **Still Stuck?** below) before clearing anything: your data is still
 there.
 
+**Astryx won't start: "Initialization Error".** **Reload Application**
+tries again; nothing on that page deletes your data. If it keeps
+happening, report it (see **Still Stuck?** below) with the message the
+page shows. On the web version, clearing this site's data in your
+browser's settings starts Astryx afresh, but it deletes all your
+locations, equipment, Imaging Log and settings, so restore a backup
+afterwards and clear it only as a last resort. On the desktop app, the
+page shows the folder that holds your database.
+
+**Astryx shows an error message but keeps working.** Something that runs
+as Astryx starts, such as automatic backups, the backup reminder or Best
+Months, failed. The message names it. The rest of Astryx works; reload to
+try again, and report it if it keeps happening.
+
 **The desktop app won't start: "updated by a newer Astryx".** A newer
 version of Astryx has updated the database, and this version can't use
 it. Install the newer version. The message also names the copy saved
@@ -144,6 +158,15 @@ back your data as it was then, without the changes made since. See
 **A backup won't restore: "Failed to read backup file".** The message says
 what's wrong: the file isn't an Astryx backup, or a record in it is
 damaged, for example after the file was edited by hand.
+
+## Desktop App on Linux
+
+**The desktop reports a crash when Astryx closes.** On some Linux machines
+with an NVIDIA graphics card, WebKit, which draws Astryx's window, crashed
+as Astryx closed, and the desktop showed a crash notice. Nothing was lost.
+Astryx now sets `WEBKIT_DISABLE_DMABUF_RENDERER=1` on Linux, which
+prevents it. To turn that off, start Astryx with
+`WEBKIT_DISABLE_DMABUF_RENDERER=0`.
 
 ## Still Stuck?
 

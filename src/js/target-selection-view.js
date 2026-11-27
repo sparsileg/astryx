@@ -10,7 +10,7 @@ const TargetSelectionView = {
     /**
      * Render the visibility view
      */
-    render(container, params) {
+    render(container) {
         this.container = container;
 
         // Load template

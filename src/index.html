@@ -1683,12 +1683,19 @@
           <p id="error-details" class="init-error-details">
             <!-- Error message will be inserted here -->
           </p>
+          <p class="init-error-message" id="init-error-web-help" hidden>
+            If reloading doesn't help, clearing this site's data in your browser's
+            settings starts Astryx afresh, but it deletes all your locations,
+            equipment, Imaging Log and settings. Report the problem first, and only
+            clear the data as a last resort.
+          </p>
+          <p class="init-error-message" id="init-error-desktop-help" hidden>
+            Your data is in astryx.db, in <span id="init-error-database-path"></span>.
+            Nothing here deletes it.
+          </p>
           <div>
             <button data-action="reload" class="btn-primary init-error-button">
               Reload Application
-            </button>
-            <button data-action="clear-and-reload" class="btn-danger init-error-button">
-              Clear Data & Reload
             </button>
           </div>
         </div>

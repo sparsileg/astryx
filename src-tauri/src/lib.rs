@@ -58,6 +58,14 @@ fn cannot_start(message: &str, command_line: bool) -> ! {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // WebKitGTK's DMA-BUF renderer crashes its web process on exit with the
+    // NVIDIA EGL driver, and the desktop reports the crash. The web process
+    // inherits this; a user can set it to 0 to turn it off (Issue #364)
+    #[cfg(target_os = "linux")]
+    if std::env::var_os("WEBKIT_DISABLE_DMABUF_RENDERER").is_none() {
+        std::env::set_var("WEBKIT_DISABLE_DMABUF_RENDERER", "1");
+    }
+
     // Before anything else, so help and command-line mistakes never start
     // the app or open the database (issue #292)
     let command = cli::parse();

@@ -23,7 +23,7 @@ const ToDoView = {
     /**
      * Render the To Do List view
      */
-    render(container, params) {
+    render(container) {
         this.container = container;
 
         // Load template

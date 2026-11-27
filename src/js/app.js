@@ -14,6 +14,7 @@ const App = {
         console.log('Initializing ' + APP_CONFIG.APP_NAME + '...');
 
         let cliCommand = null;
+        let targetsReloadPending = false;
         try {
             // Initialize database
             await DBManager.init();
@@ -29,12 +30,11 @@ const App = {
             }
 
             await this.loadStoredData();
-            await DataManager.pruneDroppedLocations();
             TargetFilter.initialize();
             await ToDoManager.init();
 
             // Check for target database updates
-            const targetsReloadPending = await this.checkForTargetUpdates();
+            targetsReloadPending = await this.checkForTargetUpdates();
 
             // Initialize UI
             UIManager.init();
@@ -76,9 +76,6 @@ const App = {
                 }
             });
 
-            // Initial route
-            this.route();
-
             // Set app title
             const appTitleText = document.getElementById('app-title');
             if (appTitleText) {
@@ -90,26 +87,38 @@ const App = {
             if (appNameText) {
                 appNameText.textContent  = `${APP_CONFIG.APP_NAME} `;
             }
-
-            // Display version numbers
-            await App.updateVersionDisplay();
-
-            // Initialize auto-backup timer (resume if pending from last session)
-            await BackupManager.initAutoBackup();
-
-            // Initialize backup reminder system
-            BackupReminder.init();
-
-            // Clear expired sky images once per start, off the startup path
-            setTimeout(() => DSSCache.purge(), APP_CONFIG.DSS_PURGE_DELAY_MS);
-
-            // A restore reloads at once, and says it worked here (Issue #354)
-            const restoredMessage = localStorage.getItem(BackupManagerWeb.RESTORED_MESSAGE_KEY);
-            if (restoredMessage) {
-                localStorage.removeItem(BackupManagerWeb.RESTORED_MESSAGE_KEY);
-                UIManager.showToast(restoredMessage, 'success');
+        } catch (error) {
+            console.error('Failed to initialize ' + APP_CONFIG.APP_NAME + ':', error);
+            if (cliCommand) {
+                await CliTasks.fail(error);
+                return;
             }
+            this.showInitializationError(error);
+            return;
+        }
 
+        // The app is usable from here: a failed step shows a toast and the
+        // steps after it still run (Issue #356)
+        await this.startupStep('The first view', () => this.route());
+        await this.startupStep('The version display', () => App.updateVersionDisplay());
+
+        // Initialize auto-backup timer (resume if pending from last session)
+        await this.startupStep('Automatic backups', () => BackupManager.initAutoBackup());
+
+        // Initialize backup reminder system
+        await this.startupStep('The backup reminder', () => BackupReminder.init());
+
+        // Clear expired sky images once per start, off the startup path
+        setTimeout(() => DSSCache.purge(), APP_CONFIG.DSS_PURGE_DELAY_MS);
+
+        // A restore reloads at once, and says it worked here (Issue #354)
+        const restoredMessage = localStorage.getItem(BackupManagerWeb.RESTORED_MESSAGE_KEY);
+        if (restoredMessage) {
+            localStorage.removeItem(BackupManagerWeb.RESTORED_MESSAGE_KEY);
+            UIManager.showToast(restoredMessage, 'success');
+        }
+
+        await this.startupStep('Tutorials', async () => {
             // Resume tutorial if flagged before a reload
             const resumeTutorial = localStorage.getItem('resumeTutorialAfterReload');
             if (resumeTutorial) {
@@ -120,23 +129,34 @@ const App = {
             // Check for in-progress tutorial and update menu accordingly
             const inProgressTutorial = await TutorialManager.findInProgressTutorial();
             UIManager.updateTutorialMenuItems(inProgressTutorial);
+        });
 
-            // Offer a newer target database from astryx.tools (desktop), then
-            // calculate Best Months the selected location lacks, and those a
-            // catalogue update removed (skip if a target-DB reload is pending —
-            // it would kill the calc mid-run)
+        await this.startupStep('Removing Best Months of deleted locations',
+            () => DataManager.pruneDroppedLocations());
+
+        // Offer a newer target database from astryx.tools (desktop), then
+        // calculate Best Months the selected location lacks, and those a
+        // catalogue update removed (skip if a target-DB reload is pending —
+        // it would kill the calc mid-run)
+        await this.startupStep('Target database update and Best Months', async () => {
             if (!targetsReloadPending && !await this.offerRemoteTargetUpdate()) {
                 await UIManager.calculateMissingBestMonths();
             }
+        });
 
-            console.log(APP_CONFIG.APP_NAME + ' initialized successfully');
+        console.log(APP_CONFIG.APP_NAME + ' initialized successfully');
+    },
+
+    /**
+     * Run one start-up step the app can do without: a failure is reported
+     * and leaves the app running (Issue #356)
+     */
+    async startupStep(what, step) {
+        try {
+            await step();
         } catch (error) {
-            console.error('Failed to initialize' + APP_CONFIG.APP_NAME + ':', error);
-            if (cliCommand) {
-                await CliTasks.fail(error);
-                return;
-            }
-            this.showInitializationError(error);
+            console.error(`${what} failed at start-up:`, error);
+            UIManager.showToast(`${what} failed: ${error.message}`, 'error', APP_CONFIG.TOAST_LONG_DURATION_MS);
         }
     },
 
@@ -363,32 +383,16 @@ const App = {
      * Route to appropriate view based on hash
      */
     route() {
+        // Anything after a ? is ignored: no view takes parameters, and
+        // decoding a stray % stopped start-up (Issue #356)
         const hash = window.location.hash.slice(1) || 'visibility';
-        const [view, queryString] = hash.split('?');
-        const params = this.parseQueryString(queryString);
-
-        this.loadView(view, params);
-    },
-
-    /**
-     * Parse query string into object
-     */
-    parseQueryString(queryString) {
-        if (!queryString) return {};
-
-        const params = {};
-        queryString.split('&').forEach(param => {
-            const [key, value] = param.split('=');
-            params[key] = decodeURIComponent(value);
-        });
-
-        return params;
+        this.loadView(hash.split('?')[0]);
     },
 
     /**
      * Load a view
      */
-    loadView(viewName, params = {}) {
+    loadView(viewName) {
         Log.debug('LOAD VIEW:', viewName);
 
         // Cleanup current view
@@ -412,24 +416,24 @@ const App = {
             /* to do list */
         case 'todo':
             this.currentView = ToDoView;
-            ToDoView.render(container, params);
+            ToDoView.render(container);
             break;
 
             /* target selection */
         case 'target-select':
             this.currentView = TargetSelectionView;
-            TargetSelectionView.render(container, params);
+            TargetSelectionView.render(container);
             break;
 
         case 'daily-visibility':
             this.currentView = DailyVisibilityView;
-            DailyVisibilityView.render(container, params);
+            DailyVisibilityView.render(container);
             break;
 
             /* yearly observability */
         case 'yearly-observability':
             this.currentView = YearlyObservabilityView;
-            YearlyObservabilityView.render(container, params);
+            YearlyObservabilityView.render(container);
             break;
 
             /* field of view */
@@ -508,28 +512,25 @@ const App = {
     showInitializationError(error) {
         const content = document.getElementById('initialization-error-template').content.cloneNode(true);
         content.getElementById('error-details').textContent = error.message ?? 'Unknown error';
-        // A failed read changed nothing: say so, and don't offer Clear Data (Issue #347)
+        // A failed read changed nothing: say so (Issue #347)
         if (error.storedDataIntact) {
             content.getElementById('init-error-cause').hidden = true;
             content.getElementById('init-error-data-intact').hidden = false;
-            content.querySelector('[data-action="clear-and-reload"]').hidden = true;
+        }
+        // Nothing on this page deletes data: the web explains clearing it in
+        // the browser, and desktop says where its database is (Issue #356)
+        if (DBManager === DBManagerTauri) {
+            content.getElementById('init-error-database-path').textContent = DBManager.databaseInfo()?.folder
+                ?? "the folder the User Guide's \"Where Astryx Keeps Your Data\" names";
+            content.getElementById('init-error-desktop-help').hidden = false;
+        } else {
+            content.getElementById('init-error-web-help').hidden = false;
         }
 
         document.body.innerHTML = '';
         document.body.appendChild(content);
 
-        document.querySelectorAll('[data-action]').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const action = btn.dataset.action;
-                if (action === 'reload') {
-                    location.reload();
-                } else if (action === 'clear-and-reload') {
-                    localStorage.clear();
-                    indexedDB.deleteDatabase('astryx-db');
-                    location.reload();
-                }
-            });
-        });
+        document.querySelector('[data-action="reload"]').addEventListener('click', () => location.reload());
     }
 };
 

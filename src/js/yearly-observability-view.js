@@ -14,7 +14,7 @@ const YearlyObservabilityView = {
     /**
      * Render the yearly observability view
      */
-    render(container, params = {}) {
+    render(container) {
         const template = document.getElementById('yo-view-template');
         const content = template.content.cloneNode(true);
         container.innerHTML = '';
