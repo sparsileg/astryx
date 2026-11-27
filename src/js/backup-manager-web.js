@@ -326,6 +326,8 @@ const BackupManagerWeb = {
         const targetVersionRecord = await DBManager.get(APP_CONFIG.STORES.SETTINGS, 'target-version');
         const backup = {
             version: APP_CONFIG.APP_VERSION,
+            backupFormat: APP_CONFIG.BACKUP_FORMAT,
+            // Still written for older Astryx versions, which check it (Issue #352)
             dbVersion: APP_CONFIG.DB_VERSION,
             targetVersion: targetVersionRecord ? targetVersionRecord.value : null,
             exportDate: new Date().toISOString()
@@ -506,7 +508,7 @@ const BackupManagerWeb = {
      */
     async handleRestoreFileSelected(modalBody) {
         if (!this.restoreFile) {
-            this.showToast('No file selected', 'error');
+            UIManager.showToast('No file selected', 'error');
             return;
         }
 
@@ -514,9 +516,11 @@ const BackupManagerWeb = {
             // Read and parse the backup file
             const backupData = await this.readRestoreFile(this.restoreFile);
 
-            // Check version compatibility
-            if (backupData.dbVersion !== APP_CONFIG.DB_VERSION) {
-                this.showVersionMismatchModal(backupData.dbVersion, APP_CONFIG.DB_VERSION);
+            const problem = this.backupFileProblem(backupData, true);
+            if (problem) throw new Error(problem);
+
+            if (this.isFromNewerAstryx(backupData)) {
+                this.showNewerBackupModal(backupData);
                 return;
             }
 
@@ -525,7 +529,7 @@ const BackupManagerWeb = {
 
         } catch (error) {
             console.error('Failed to read backup file:', error);
-            this.showToast('Failed to read backup file: ' + error.message, 'error');
+            UIManager.showToast('Failed to read backup file: ' + error.message, 'error', APP_CONFIG.TOAST_LONG_DURATION_MS);
         }
     },
 
@@ -556,17 +560,85 @@ const BackupManagerWeb = {
     },
 
     /**
-     * Show version mismatch modal
+     * Backup format of a file: older files have no backupFormat and are
+     * format 1 (Issue #352)
      */
-    showVersionMismatchModal(backupVersion, currentVersion) {
-        UIManager.openModal('version-mismatch-template', 'Version Mismatch', null);
+    backupFormatOf(backupData) {
+        return backupData.backupFormat ?? 1;
+    },
+
+    /**
+     * Whether a backup was made in a format this version can't read. Same
+     * and older formats restore; their data goes through the load-time
+     * migrations after the reload (Issue #352).
+     */
+    isFromNewerAstryx(backupData) {
+        return this.backupFormatOf(backupData) > APP_CONFIG.BACKUP_FORMAT;
+    },
+
+    /**
+     * Why a backup file can't be restored, or null when it can. Checked
+     * before the restore dialog shows any of it (Issue #362).
+     * - The version fields are short strings or numbers.
+     * - Each store the file holds has the shape restore expects.
+     * - checkKeys (web): each record's key has the type its store uses. A
+     *   store with its own keys takes whole numbers; the others take
+     *   strings (names, designations, ids). IndexedDB keeps a restored
+     *   record's key as it is in the file. On desktop the Rust restore
+     *   command checks them, and rolls the restore back on a bad one.
+     */
+    backupFileProblem(backupData, checkKeys) {
+        if (backupData === null || typeof backupData !== 'object' || Array.isArray(backupData)) {
+            return 'this file is not an Astryx backup.';
+        }
+        const format = this.backupFormatOf(backupData);
+        if (!Number.isInteger(format) || format < 1) {
+            return 'its backup format is not a version number.';
+        }
+        for (const field of ['version', 'dbVersion', 'targetVersion']) {
+            const value = backupData[field];
+            if (value === undefined || value === null) continue;
+            const ok = (typeof value === 'number' && Number.isFinite(value))
+                || (typeof value === 'string' && value.length <= APP_CONFIG.BACKUP_VERSION_FIELD_MAX_LENGTH);
+            if (!ok) return `its ${field} is not a version number.`;
+        }
+        for (const store of this.RESTORE_STORES) {
+            if (!this.storeInBackup(store, backupData)) continue;
+            const data = backupData[store.backupKey];
+            const records = store.isArray ? data : [data];
+            if (!Array.isArray(records)) return `its ${store.name} are not a list of records.`;
+            const bad = records.findIndex(record => record === null || typeof record !== 'object' || Array.isArray(record));
+            if (bad !== -1) return `${store.name} record ${bad + 1} is not a record.`;
+            if (!checkKeys) continue;
+            const { keyPath, autoIncrement } = DBManager.storeKey(APP_CONFIG.STORES[store.storesKey]);
+            const badKey = records.findIndex(record => {
+                const key = record[keyPath];
+                return autoIncrement
+                    ? key !== undefined && !(Number.isSafeInteger(key) && key > 0)
+                    : typeof key !== 'string' || key === '';
+            });
+            if (badKey !== -1) {
+                return `${store.name} record ${badKey + 1}: its ${keyPath} is not ${autoIncrement ? 'a whole number' : 'text'}.`;
+            }
+        }
+        return null;
+    },
+
+    /**
+     * Tell the user a backup comes from a newer Astryx
+     */
+    showNewerBackupModal(backupData) {
+        UIManager.openModal('newer-backup-template', 'Backup From a Newer Astryx', null);
 
         setTimeout(() => {
-            const messageDiv = document.getElementById('version-mismatch-message');
+            const messageDiv = document.getElementById('newer-backup-message');
             if (messageDiv) {
+                const madeBy = backupData.version ? ` ${HtmlUtils.escapeHtml(backupData.version)}` : '';
                 messageDiv.innerHTML = `
-                    <p>This backup file (database version <strong>${backupVersion}</strong>) is incompatible
-                    with your current Astryx version (database version <strong>${currentVersion}</strong>).</p>
+                    <p>This backup was made by Astryx${madeBy}, in backup format
+                    <strong>${HtmlUtils.escapeHtml(BackupManagerWeb.backupFormatOf(backupData))}</strong>. This version of Astryx
+                    (${HtmlUtils.escapeHtml(APP_CONFIG.APP_VERSION)}) reads backup formats up to
+                    <strong>${APP_CONFIG.BACKUP_FORMAT}</strong>.</p>
                 `;
             }
         }, 0);
@@ -742,19 +814,19 @@ const BackupManagerWeb = {
             <div style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 4px; padding: 1rem;">
                 <div style="display: grid; grid-template-columns: auto 1fr; gap: 0.5rem 1rem; font-size: 0.9rem;">
                     <span style="color: var(--text-secondary);">File:</span>
-                    <span style="font-weight: 500;">${this.restoreFile.name}</span>
+                    <span style="font-weight: 500;">${HtmlUtils.escapeHtml(this.restoreFile.name)}</span>
 
                     <span style="color: var(--text-secondary);">Created:</span>
                     <span>${exportDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} at ${exportDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</span>
 
                     <span style="color: var(--text-secondary);">Version:</span>
-                    <span>${backupData.version || 'Unknown'}</span>
+                    <span>${HtmlUtils.escapeHtml(backupData.version ?? 'Unknown')}</span>
 
                     <span style="color: var(--text-secondary);">Database:</span>
-                    <span>${backupData.dbVersion || 'Unknown'}</span>
+                    <span>${HtmlUtils.escapeHtml(backupData.dbVersion ?? 'Unknown')}</span>
 
                     <span style="color: var(--text-secondary);">Target:</span>
-                    <span>${backupData.targetVersion || '—'}</span>
+                    <span>${HtmlUtils.escapeHtml(backupData.targetVersion ?? '—')}</span>
 
                     <span style="color: var(--text-secondary);">Size:</span>
                     <span>${this.formatBytes(this.restoreFile.size)}</span>
@@ -978,9 +1050,8 @@ const BackupManagerWeb = {
                 if (targetVersionRecord) records.push(targetVersionRecord);
                 writes.push({ storeName: settingsStore, clear: true, records });
             } else {
-                const storeName = APP_CONFIG.STORES[store.storesKey];
-                this.checkRecordKeys(store, storeName, data);
-                writes.push({ storeName, clear: true, records: data });
+                // Each record's key was checked before the restore dialog (backupFileProblem)
+                writes.push({ storeName: APP_CONFIG.STORES[store.storesKey], clear: true, records: data });
             }
             // Restored targets bring back their own target version
             if (key === 'targets' && backupData.targetVersion) {
@@ -992,20 +1063,6 @@ const BackupManagerWeb = {
             }
         }
         await DBManager.writeStores(writes);
-    },
-
-    /**
-     * Throw, naming the store and record, when a record lacks the key its
-     * store needs, e.g. "Locations record 3: missing name". The database would
-     * reject it anyway, but only with a message that names neither.
-     */
-    checkRecordKeys(store, storeName, records) {
-        const key = DBManager.requiredKey(storeName);
-        if (key === null) return;
-        const bad = records.findIndex(record => record?.[key] === undefined || record?.[key] === null);
-        if (bad !== -1) {
-            throw new Error(`${store.name} record ${bad + 1}: missing ${key}`);
-        }
     },
 
     /**

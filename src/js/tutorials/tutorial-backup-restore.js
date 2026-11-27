@@ -230,7 +230,7 @@ const TUTORIAL_BACKUP_RESTORE = {
             id: 'restore-file-info',
             type: 'callout',
             title: 'Backup File Information',
-            body: 'The restore dialog shows details about the backup file — filename, creation date, Astryx version, and file size. If the backup is more than 30 days old a warning is shown, since restoring old data may overwrite more recent changes.<br><br>If the database version in the backup does not match your current Astryx version, the restore will be blocked — backups must match the current database schema.',
+            body: 'The restore dialog shows details about the backup file — filename, creation date, Astryx version, and file size. If the backup is more than 30 days old a warning is shown, since restoring old data may overwrite more recent changes.<br><br>A backup made by your version of Astryx or an older one can be restored. One made by a newer Astryx is refused until you update.',
             target: '#modal-close',
             position: 'top',
             width: '440px',

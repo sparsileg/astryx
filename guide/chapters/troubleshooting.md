@@ -123,8 +123,13 @@ data, once **Minutes before backup** has passed. On the desktop app,
 backups go to the **Backup Folder** in Settings, or to your Downloads
 folder if it's empty.
 
-**A backup won't restore: "Version Mismatch".** The backup was made by a
-version of Astryx with a different database version.
+**A backup won't restore: "Backup From a Newer Astryx".** The backup was
+made by a newer version of Astryx than the one you're running. Update
+Astryx, then restore it.
+
+**A backup won't restore: "Failed to read backup file".** The message says
+what's wrong: the file isn't an Astryx backup, or a record in it is
+damaged, for example after the file was edited by hand.
 
 ## Still Stuck?
 

@@ -248,24 +248,26 @@ const ImagingLogView = {
         const integrationTime = ImagingLogManager.integrationTimeByFilter(sessions);
         const integrationHTML = Object.entries(integrationTime)
               .filter(([filter, seconds]) => seconds > 0)
-              .map(([filter, seconds]) => `${filter}: ${this.formatIntegrationTime(seconds)}`)
+              .map(([filter, seconds]) => `${HtmlUtils.escapeHtml(filter)}: ${this.formatIntegrationTime(seconds)}`)
               .join(' &nbsp; ');
 
         sessions.sort((a, b) => new Date(a.date) - new Date(b.date));
 
-        const statusClass = this.getStatusClass(project.status);
+        const statusClass = HtmlUtils.escapeHtml(this.getStatusClass(project.status));
+        // Escaped: on the web, a restored record keeps the id it has in the file (Issue #362)
+        const projectId = HtmlUtils.escapeHtml(project.id);
         const lastModified = TimeUtils.formatDisplayDate(TimeUtils.formatDateForInput(new Date(project.modified)));
 
-        const sessionsId = `project-sessions-${project.id}`;
+        const sessionsId = `project-sessions-${projectId}`;
 
         return `
-            <div class="project-card" data-project-id="${project.id}">
-                <div class="project-card-header" data-action="toggle-project-sessions" data-project-id="${project.id}">
+            <div class="project-card" data-project-id="${projectId}">
+                <div class="project-card-header" data-action="toggle-project-sessions" data-project-id="${projectId}">
                     <div style="flex: 1;">
                         <div class="project-card-title">
                     ${HtmlUtils.escapeHtml(project.name)}
                     ${project.publishedLink
-                        ? `<a href="${HtmlUtils.escapeAttr(project.publishedLink)}" target="_blank" rel="noopener noreferrer"
+                        ? `<a href="${HtmlUtils.escapeHtml(project.publishedLink)}" target="_blank" rel="noopener noreferrer"
                               title="View published image" class="project-published-link" data-action="noop">🔗</a>`
                         : `<span title="Edit project to add published image link" class="project-published-link-inactive">🔗</span>`
                     }
@@ -273,32 +275,32 @@ const ImagingLogView = {
                     </div>
                     <div class="project-card-actions">
                         <button class="project-action-btn btn-danger btn-small"
-                                data-action="delete-project" data-project-id="${project.id}">
+                                data-action="delete-project" data-project-id="${projectId}">
                             Delete Project
                         </button>
                         <button class="project-action-btn btn-secondary btn-small"
-                                data-action="edit-project" data-project-id="${project.id}">
+                                data-action="edit-project" data-project-id="${projectId}">
                             Edit Project
                         </button>
                     </div>
                 </div>
 
-                <div class="project-card-meta" data-action="toggle-project-sessions" data-project-id="${project.id}">
+                <div class="project-card-meta" data-action="toggle-project-sessions" data-project-id="${projectId}">
                     <span>Targets: ${project.targetDesignations.length}</span>
                     <span>Sessions: ${sessions.length}</span>
                     ${integrationHTML ? `<span class="imaging-session-integration">${integrationHTML}</span>` : '<span>Integration: -</span>'}
-                    <span class="project-status-badge ${statusClass}">${project.status}</span>
+                    <span class="project-status-badge ${statusClass}">${HtmlUtils.escapeHtml(project.status)}</span>
                     <span>Modified: ${lastModified}</span>
                 </div>
 
                 <!-- Sessions Toggle Row -->
-                <div class="project-sessions-toggle" data-action="toggle-project-sessions" data-project-id="${project.id}">
-                    <span class="sessions-chevron" id="chevron-${project.id}">▶</span>
+                <div class="project-sessions-toggle" data-action="toggle-project-sessions" data-project-id="${projectId}">
+                    <span class="sessions-chevron" id="chevron-${projectId}">▶</span>
                     <span class="sessions-label">Imaging Sessions</span>
                     <button class="btn-secondary btn-sm add-session-btn"
-                            id="add-session-btn-${project.id}"
+                            id="add-session-btn-${projectId}"
                             style="display: none; margin-left: auto;"
-                            data-action="add-session" data-project-id="${project.id}">
+                            data-action="add-session" data-project-id="${projectId}">
                         + Add Session
                     </button>
                 </div>
@@ -324,7 +326,7 @@ const ImagingLogView = {
                       : 0;
                 const integrationSeconds = session.subLength * exposureCount;
                 return `
-                                        <tr data-action="show-session" data-session-id="${session.id}" data-project-id="${project.id}">
+                                        <tr data-action="show-session" data-session-id="${HtmlUtils.escapeHtml(session.id)}" data-project-id="${projectId}">
                                             <td>${TimeUtils.formatDisplayDate(session.date)}</td>
                                             <td>${HtmlUtils.escapeHtml(session.filter)}</td>
                                             <td>${exposureCount} × ${session.subLength}s</td>
@@ -332,7 +334,7 @@ const ImagingLogView = {
                                             <td>${HtmlUtils.escapeHtml(session.location)}</td>
                                             <td>
                                                 <button class="btn-danger btn-sm"
-                                                        data-action="delete-session" data-session-id="${session.id}">
+                                                        data-action="delete-session" data-session-id="${HtmlUtils.escapeHtml(session.id)}">
                                                     Delete
                                                 </button>
                                             </td>
@@ -479,7 +481,7 @@ const ImagingLogView = {
 
             return `
                 <div class="target-search-result"
-                     data-action="add-target-to-project" data-target-id="${HtmlUtils.escapeAttr(target.object)}">
+                     data-action="add-target-to-project" data-target-id="${HtmlUtils.escapeHtml(target.object)}">
                     ${HtmlUtils.escapeHtml(displayName)}
                 </div>
             `;
@@ -558,7 +560,7 @@ const ImagingLogView = {
                 <div class="selected-target-item">
                     <span>${HtmlUtils.escapeHtml(displayName)}${alsoText}</span>
                     <button class="btn-danger btn-sm"
-                            data-action="remove-target-from-project" data-target-id="${HtmlUtils.escapeAttr(designation)}">
+                            data-action="remove-target-from-project" data-target-id="${HtmlUtils.escapeHtml(designation)}">
                         Remove
                     </button>
                 </div>
@@ -1245,11 +1247,11 @@ const ImagingLogView = {
                     </div>
                     <div class="project-card-actions">
                         <button class="project-action-btn btn-danger btn-small"
-                                data-program-id="${program.id}" data-action="delete">
+                                data-program-id="${HtmlUtils.escapeHtml(program.id)}" data-action="delete">
                             Delete Program
                         </button>
                         <button class="project-action-btn btn-secondary btn-small"
-                                data-program-id="${program.id}" data-action="edit">
+                                data-program-id="${HtmlUtils.escapeHtml(program.id)}" data-action="edit">
                             Edit Program
                         </button>
                     </div>
@@ -1604,7 +1606,7 @@ const ImagingLogView = {
         html += '<thead><tr><th>Catalog</th><th>Targets Imaged</th></tr></thead>';
         html += '<tbody>';
         sortedCatalogs.forEach(([catalog, count]) => {
-            html += `<tr><td>${catalog}</td><td>${count}</td></tr>`;
+            html += `<tr><td>${HtmlUtils.escapeHtml(catalog)}</td><td>${count}</td></tr>`;
         });
         html += '</tbody></table>';
         container.innerHTML = html;
@@ -1672,7 +1674,7 @@ const ImagingLogView = {
                     }
 
                     const projectLinks = targetProjects.map(proj =>
-                        `<span data-action="navigate-to-project" data-project-id="${proj.id}"
+                        `<span data-action="navigate-to-project" data-project-id="${HtmlUtils.escapeHtml(proj.id)}"
                                style="cursor: pointer; color: var(--primary-color); text-decoration: underline;">
                             ${HtmlUtils.escapeHtml(proj.name)}
                         </span>`

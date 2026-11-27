@@ -10,12 +10,14 @@
  *   y — new features (like cloud cover strip, imaging log)
  *   z — bug fixes, UI tweaks, tutorial updates
  *
- * DB_VERSION must be an integer
+ * DB_VERSION must be an integer. It is the IndexedDB schema version only:
+ * raising it must not change which backups restore. That is BACKUP_FORMAT's
+ * job (Issue #352).
  */
 const APP_CONFIG = {
     APP_NAME: 'Astryx',
     APP_TITLE: 'Astryx - Astrophotography Planning Tool',
-    APP_VERSION: '1.101.0',
+    APP_VERSION: '1.101.1',
     DB_NAME: 'astryx-db',
     DB_VERSION: 8,
     TARGET_DATA_PATH: './data/',
@@ -178,6 +180,16 @@ const APP_CONFIG = {
     // Settings that belong to this machine, kept when settings are restored
     // from a backup, e.g. a web backup has no backup folder (issue #249)
     BACKUP_RESTORE_KEPT_SETTINGS: ['backupFolder', 'lastBackupTimestamp'],
+
+    // Backup file format, written as backupFormat. Restore accepts this format
+    // and older ones; a file without the field is format 1. Raise it only when
+    // a store's records change in a way the load-time migrations can't absorb
+    // (Issue #352).
+    BACKUP_FORMAT: 1,
+
+    // Longest version, dbVersion or targetVersion string a backup file may
+    // hold; anything else is refused before the restore dialog (Issue #362)
+    BACKUP_VERSION_FIELD_MAX_LENGTH: 32,
 
     // Session analysis learned defaults (issue #145)
     DEFAULT_SUB_GAP_S: 5,              // seconds between end of exposure and start of next (camera download + overhead)

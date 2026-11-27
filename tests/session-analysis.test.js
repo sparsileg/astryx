@@ -28,12 +28,6 @@ const context = loadApp([
     'js/session-report-pdf.js',
     'js/fov-calculations.js',
 ]);
-// HtmlUtils.escapeHtml escapes through the DOM; this does what a browser's textContent/innerHTML does
-context.document = {
-    createElement: () => ({
-        set textContent(text) { this.innerHTML = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); },
-    }),
-};
 const { APP_CONFIG, SessionReportView, SessionReportPdf, AsiairLogParser, SettingsManager, TimeUtils, SessionFusion, SessionRecommendations, dateToJD, jdToDate, findTargetTransit } =
     get(context, '({ APP_CONFIG, SessionReportView, SessionReportPdf, AsiairLogParser, SettingsManager, TimeUtils, SessionFusion, SessionRecommendations, dateToJD, jdToDate, findTargetTransit })');
 

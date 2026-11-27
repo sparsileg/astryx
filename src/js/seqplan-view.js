@@ -701,7 +701,7 @@ const SeqPlanView = {
             // Main imaging entry (full window)
             html += `
             <p style="margin-bottom: 0.5rem;">
-                <strong>${index + 1}. <a href="#" class="block-link" data-action="show-target-detail" data-target-id="${HtmlUtils.escapeAttr(target.targetId)}">${HtmlUtils.escapeHtml(target.name)}</a></strong> •
+                <strong>${index + 1}. <a href="#" class="block-link" data-action="show-target-detail" data-target-id="${HtmlUtils.escapeHtml(target.targetId)}">${HtmlUtils.escapeHtml(target.name)}</a></strong> •
                 Start: ${this._localTime(targetStartTime)} •
                 End: ${this._localTime(targetEndTime)} (${target.imagingMinutes.toFixed(0)}m) •
                 ${target.exposureCount} × ${target.exposureTime}s${flipWarning}
@@ -827,7 +827,7 @@ const SeqPlanView = {
                 <div style="display: flex; align-items: center; gap: 0.3rem;">
                     <input type="number"
                         class="seq-plan-exposure-input"
-                        id="exposure-${HtmlUtils.escapeAttr(target.targetId)}"
+                        id="exposure-${HtmlUtils.escapeHtml(target.targetId)}"
                         value="${target.exposureTime}"
                         min="1">
                     <span style="font-size: 0.85rem; color: var(--text-secondary);">sec</span>
@@ -835,13 +835,13 @@ const SeqPlanView = {
                 <div>
                     <input type="range"
                            class="seq-plan-slider"
-                           id="slider-${HtmlUtils.escapeAttr(target.targetId)}"
+                           id="slider-${HtmlUtils.escapeHtml(target.targetId)}"
                            min="0"
                            max="100"
                            step="1"
                            value="${target.allocatedPercent.toFixed(0)}">
                 </div>
-                <div class="seq-plan-allocation-value" id="value-${HtmlUtils.escapeAttr(target.targetId)}">
+                <div class="seq-plan-allocation-value" id="value-${HtmlUtils.escapeHtml(target.targetId)}">
                     ${target.allocatedPercent.toFixed(0)}% • ${target.exposureCount} × ${target.exposureTime}s
                 </div>
             `;

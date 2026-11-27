@@ -289,9 +289,13 @@ const BackupManagerTauri = {
             };
             this._restoreData = backupData;
 
-            // Check version compatibility
-            if (backupData.dbVersion !== APP_CONFIG.DB_VERSION) {
-                this.showVersionMismatchModal(backupData.dbVersion, APP_CONFIG.DB_VERSION);
+            // Key types are checked by the Rust restore command, which rolls the
+            // whole restore back on a bad id (commands/backup.rs)
+            const problem = BackupManagerWeb.backupFileProblem(backupData, false);
+            if (problem) throw new Error(problem);
+
+            if (BackupManagerWeb.isFromNewerAstryx(backupData)) {
+                this.showNewerBackupModal(backupData);
                 return;
             }
 
@@ -304,8 +308,8 @@ const BackupManagerTauri = {
         }
     },
 
-    showVersionMismatchModal(backupVersion, currentVersion) {
-        BackupManagerWeb.showVersionMismatchModal.call(this, backupVersion, currentVersion);
+    showNewerBackupModal(backupData) {
+        BackupManagerWeb.showNewerBackupModal.call(this, backupData);
     },
 
     showRestoreConfirmModal(backupData) {

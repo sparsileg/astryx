@@ -456,8 +456,8 @@ const TargetFilter = {
             const checkboxesHTML = this.filters.catalog.available
                   .map(catalog => `
                     <div class="astryx-dropdown-item">
-                        <input type="checkbox" id="catalog-${HtmlUtils.escapeAttr(catalog)}" value="${HtmlUtils.escapeAttr(catalog)}">
-                        <label for="catalog-${HtmlUtils.escapeAttr(catalog)}">${HtmlUtils.escapeHtml(catalog)}</label>
+                        <input type="checkbox" id="catalog-${HtmlUtils.escapeHtml(catalog)}" value="${HtmlUtils.escapeHtml(catalog)}">
+                        <label for="catalog-${HtmlUtils.escapeHtml(catalog)}">${HtmlUtils.escapeHtml(catalog)}</label>
                     </div>
                 `).join('');
 
@@ -478,8 +478,8 @@ const TargetFilter = {
                     const displayName = OBJECT_TYPES[type] || type;
                     return `
                         <div class="astryx-dropdown-item">
-                            <input type="checkbox" id="type-${HtmlUtils.escapeAttr(type)}" value="${HtmlUtils.escapeAttr(type)}">
-                            <label for="type-${HtmlUtils.escapeAttr(type)}">${HtmlUtils.escapeHtml(displayName)}</label>
+                            <input type="checkbox" id="type-${HtmlUtils.escapeHtml(type)}" value="${HtmlUtils.escapeHtml(type)}">
+                            <label for="type-${HtmlUtils.escapeHtml(type)}">${HtmlUtils.escapeHtml(displayName)}</label>
                         </div>
                     `;
                 }).join('');

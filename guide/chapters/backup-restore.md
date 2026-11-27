@@ -133,8 +133,11 @@ have now and how many the backup holds, for example "12 → 15", and whether
 it's **identical** or **differs**. Imaging projects and sessions are
 restored together.
 
-A backup made by a version of Astryx with a different database version
-can't be restored; Astryx shows **Version Mismatch** instead.
+A backup made by your version of Astryx or an older one can be restored.
+A backup made by a newer Astryx can't; Astryx shows **Backup From a Newer
+Astryx** instead, and restoring works once you've updated. A file that
+isn't an Astryx backup, or has been damaged, is refused with a message
+saying what's wrong with it.
 
 ## Moving to a New Computer
 

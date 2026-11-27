@@ -36,10 +36,10 @@ context.localStorage = {
 };
 context.UIManager = { showToast: () => {}, updateSidebarCurrentTarget: () => {} };
 
-test('escapeAttr escapes every character that can end or change an attribute (Issue #337)', () => {
-    assert.strictEqual(HtmlUtils.escapeAttr(`Bob's "Back" <Yard> & Co`), 'Bob&#39;s &quot;Back&quot; &lt;Yard&gt; &amp; Co');
-    assert.strictEqual(HtmlUtils.escapeAttr(null), '');
-    assert.strictEqual(HtmlUtils.escapeAttr(0), '0');
+test('escapeHtml escapes every character that can end or change text or an attribute (Issues #337, #362)', () => {
+    assert.strictEqual(HtmlUtils.escapeHtml(`Bob's "Back" <Yard> & Co`), 'Bob&#39;s &quot;Back&quot; &lt;Yard&gt; &amp; Co');
+    assert.strictEqual(HtmlUtils.escapeHtml(null), '');
+    assert.strictEqual(HtmlUtils.escapeHtml(0), '0');
 });
 
 test('Quick date steps share one forecast request per location (Issue #308)', async () => {

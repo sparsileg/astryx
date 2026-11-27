@@ -237,12 +237,12 @@ const DBManagerWeb = {
     },
 
     /**
-     * The key every record of a store must hold, or null when the store
-     * assigns its own keys
+     * A store's key: the field that holds it, and whether the store assigns
+     * it (restore checks a backup's records against it, Issue #362)
      */
-    requiredKey(storeName) {
+    storeKey(storeName) {
         const store = this.db.transaction([storeName], 'readonly').objectStore(storeName);
-        return store.autoIncrement ? null : store.keyPath;
+        return { keyPath: store.keyPath, autoIncrement: store.autoIncrement };
     },
 
     /**

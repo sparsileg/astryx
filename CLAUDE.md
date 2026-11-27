@@ -77,7 +77,7 @@ Builds, installers, and the GitHub Actions release workflow:
 | User preferences | `SettingsManager` |
 | Debug logging | `Log.debug(...)`, gated by `APP_CONFIG.FEATURES.DEBUG_LOGGING` |
 | User-facing messages | `UIManager.showToast(msg, 'success' \| 'error' \| 'warning', duration)`; duration defaults to `TOAST_DURATION_MS`, `TOAST_LONG_DURATION_MS` for longer messages |
-| HTML escaping | `HtmlUtils.escapeHtml` (text content only, does not escape quotes) |
+| HTML escaping | `HtmlUtils.escapeHtml`, for text content and quoted attribute values alike |
 | Time / JD / timezone / DST | `TimeUtils`, `SettingsManager.isDSTActive` (an instant), `isDSTOnDate` (a night) |
 | Tooltips | `data-tooltip-key` → `TOOLTIPS` in `tooltips.js` |
 | Dropdowns | custom `.astryx-dropdown` (`-dropdown` / `-trigger` / `-label` / `-menu` IDs), not native `<select>` |

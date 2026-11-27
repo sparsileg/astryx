@@ -550,7 +550,7 @@ const UIManager = {
         const zoneList = document.getElementById('manage-time-zone-list');
         if (zoneList) {
             zoneList.innerHTML = Intl.supportedValuesOf('timeZone')
-                .map(zone => `<option value="${HtmlUtils.escapeAttr(zone)}"></option>`).join('');
+                .map(zone => `<option value="${HtmlUtils.escapeHtml(zone)}"></option>`).join('');
         }
         document.getElementById('manage-time-zone').value = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
@@ -604,8 +604,8 @@ const UIManager = {
                             </small>
                         </div>
                         <div style="display: flex; gap: 0.5rem;">
-                            <button class="btn-sm btn-secondary" data-location="${HtmlUtils.escapeAttr(name)}" data-action="edit">Edit</button>
-                            <button class="btn-sm btn-danger" data-location="${HtmlUtils.escapeAttr(name)}" data-action="delete">Delete</button>
+                            <button class="btn-sm btn-secondary" data-location="${HtmlUtils.escapeHtml(name)}" data-action="edit">Edit</button>
+                            <button class="btn-sm btn-danger" data-location="${HtmlUtils.escapeHtml(name)}" data-action="delete">Delete</button>
                         </div>
                     `;
 
@@ -2193,7 +2193,7 @@ const UIManager = {
                                 Multiplier: ${tel.multiplier}x
                             </div>
                         </div>
-                        <button class="btn-sm btn-danger" data-action="delete-telescope" data-name="${HtmlUtils.escapeAttr(name)}">Delete</button>
+                        <button class="btn-sm btn-danger" data-action="delete-telescope" data-name="${HtmlUtils.escapeHtml(name)}">Delete</button>
                     </div>
                 </div>
             `;
@@ -2320,7 +2320,7 @@ const UIManager = {
                                 Pixel Size: ${sensor.pixelSizeX} × ${sensor.pixelSizeY} µm
                             </div>
                         </div>
-                        <button class="btn-sm btn-danger" data-action="delete-sensor" data-name="${HtmlUtils.escapeAttr(name)}">Delete</button>
+                        <button class="btn-sm btn-danger" data-action="delete-sensor" data-name="${HtmlUtils.escapeHtml(name)}">Delete</button>
                     </div>
                 </div>
             `;
@@ -2429,7 +2429,7 @@ const UIManager = {
                 <div class="info-card" style="padding: 1rem; margin-bottom: 0.75rem;">
                     <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
                         <strong style="color: var(--primary-color); font-size: 1.05rem;">${HtmlUtils.escapeHtml(name)}</strong>
-                        <button class="btn-sm btn-danger" data-action="delete-filter" data-name="${HtmlUtils.escapeAttr(name)}">Delete</button>
+                        <button class="btn-sm btn-danger" data-action="delete-filter" data-name="${HtmlUtils.escapeHtml(name)}">Delete</button>
                     </div>
                 </div>
             `;
