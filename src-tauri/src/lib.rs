@@ -173,7 +173,6 @@ pub fn run() {
             commands::imaging_projects::delete_project,
             // Imaging Sessions
             commands::imaging_sessions::get_all_sessions,
-            commands::imaging_sessions::get_sessions_for_project,
             commands::imaging_sessions::get_session,
             commands::imaging_sessions::create_session,
             commands::imaging_sessions::update_session,

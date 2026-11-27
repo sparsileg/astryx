@@ -17,9 +17,11 @@ const SRC_DIR = path.join(__dirname, '..', '..', 'src');
  * @param {Object} [options]
  * @param {string} [options.now] - ISO instant that `new Date()` and `Date.now()`
  *     return, for code that works from "today" (Best Months, Yearly Observability)
+ * @param {Object} [options.globals] - globals a file needs while it loads,
+ *     e.g. the `document` app.js checks to start the app
  * @returns {vm.Context}
  */
-function loadApp(appFiles, testScripts = [], { now } = {}) {
+function loadApp(appFiles, testScripts = [], { now, globals = {} } = {}) {
     const indexHtml = fs.readFileSync(path.join(SRC_DIR, 'index.html'), 'utf8');
     const scriptOrder = [...indexHtml.matchAll(/<script src="([^"]+)"><\/script>/g)].map(m => m[1]);
     const wanted = new Set(appFiles);
@@ -29,7 +31,7 @@ function loadApp(appFiles, testScripts = [], { now } = {}) {
         throw new Error(`Not loaded by index.html: ${missing.join(', ')}`);
     }
 
-    const context = vm.createContext({ console });
+    const context = vm.createContext({ console, ...globals });
     if (now) {
         vm.runInContext(`
             const FIXED_NOW = ${Date.parse(now)};

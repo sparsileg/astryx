@@ -7,7 +7,6 @@
     ],
     "permissions": [
         "core:default",
-        "core:event:default",
         "dialog:default",
         "fs:default",
         "fs:allow-read-file",
@@ -19,7 +18,6 @@
         "fs:allow-stat",
         "fs:allow-read-dir",
         "fs:scope-appdata-recursive",
-        "fs:scope-download-recursive",
         "opener:default"
     ]
 }

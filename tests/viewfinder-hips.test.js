@@ -211,3 +211,20 @@ test('every mirror host is allowed by the web CSP', () => {
         assert.ok(connectSrc.includes(new URL(url).origin), `${url} missing from connect-src`);
     }
 });
+
+test('the CSP lets Tauri use its IPC protocol and allows no base or form target; the web headers forbid framing (Issue #358)', () => {
+    const fs = require('node:fs');
+    const path = require('node:path');
+    const html = fs.readFileSync(path.join(__dirname, '..', 'src', 'index.html'), 'utf8');
+    const csp = html.match(/http-equiv="Content-Security-Policy" content="([^"]+)"/)[1];
+    const directives = Object.fromEntries(csp.split(';').map(d => d.trim().split(/\s+/)).map(([name, ...values]) => [name, values]));
+    assert.ok(directives['connect-src'].includes('ipc:'), 'ipc: (Linux, macOS)');
+    assert.ok(directives['connect-src'].includes('http://ipc.localhost'), 'http://ipc.localhost (Windows)');
+    assert.deepStrictEqual(directives['base-uri'], ["'none'"]);
+    assert.deepStrictEqual(directives['form-action'], ["'none'"]);
+
+    const headers = fs.readFileSync(path.join(__dirname, '..', 'src', '_headers'), 'utf8');
+    const all = headers.split('\n/*\n')[1];
+    assert.match(all, /Content-Security-Policy: frame-ancestors 'none'/);
+    assert.match(all, /X-Content-Type-Options: nosniff/);
+});

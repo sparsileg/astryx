@@ -86,6 +86,15 @@ const DBManagerTauri = {
         await invoke('restore_stores', { restore: { targets, targetVersion: version } });
     },
 
+    /**
+     * A call the desktop has no command for. It throws, so the gap shows the
+     * first time something uses it instead of succeeding silently while the
+     * web does the real thing (Issue #350).
+     */
+    unsupported(what) {
+        throw new Error(`DBManagerTauri: ${what} not supported on desktop`);
+    },
+
     // ── Store handler registry ────────────────────────────────────────────────
 
     _getHandler(storeName) {
@@ -151,14 +160,15 @@ const DBManagerTauri = {
                 await invoke('set_target_version', { version: String(data.value) });
                 return data.id;
             }
+            DBManagerTauri.unsupported(`saving the settings record "${data.id}"`);
         },
 
         async delete(key) {
-            // Settings rows are not individually deleted
+            DBManagerTauri.unsupported('deleting a settings record');
         },
 
         async clear() {
-            // Settings are not bulk-cleared
+            DBManagerTauri.unsupported('clearing the settings');
         },
 
         async putBulk(items) {
@@ -310,6 +320,9 @@ const DBManagerTauri = {
 
     // ── Targets ───────────────────────────────────────────────────────────────
 
+    // get and put are reached only through the generic interface, which
+    // nothing calls for targets; kept so both backends offer the same calls
+    // (Issue #350)
     _targetsHandler: {
         async get(object) {
             const all = await invoke('get_all_targets');
@@ -326,8 +339,7 @@ const DBManagerTauri = {
         },
 
         async delete(object) {
-            // Individual target deletion not needed in current app flow
-            console.warn('DBManagerTauri: individual target delete not implemented');
+            DBManagerTauri.unsupported('deleting one target');
         },
 
         async clear() {
@@ -524,6 +536,9 @@ const DBManagerTauri = {
 
     // ── Tutorial Progress ─────────────────────────────────────────────────────
 
+    // delete is reached only through the generic interface, which nothing
+    // calls for tutorial progress; kept so both backends offer the same calls
+    // (Issue #350)
     _tutorialProgressHandler: {
         async get(id) {
             const result = await invoke('get_tutorial_progress', { id });
@@ -532,8 +547,7 @@ const DBManagerTauri = {
         },
 
         async getAll() {
-            // Not needed in current app flow
-            return [];
+            DBManagerTauri.unsupported('listing tutorial progress');
         },
 
         async put(data) {
@@ -549,7 +563,7 @@ const DBManagerTauri = {
         },
 
         async clear() {
-            // Not needed in current app flow
+            DBManagerTauri.unsupported('clearing tutorial progress');
         },
 
         async putBulk(items) {

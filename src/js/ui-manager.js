@@ -599,24 +599,23 @@ const UIManager = {
             locationsList.innerHTML = '';
 
             if (Object.keys(locations).length === 0) {
-                locationsList.innerHTML = '<p style="padding: 1rem; color: var(--text-secondary); text-align: center;">No locations added yet</p>';
+                locationsList.innerHTML = '<p class="saved-list-empty">No locations added yet</p>';
             } else {
                 Object.entries(locations).forEach(([name, loc]) => {
                     const locationItem = document.createElement('div');
-                    locationItem.className = 'location-list-item';
-                    locationItem.style.cssText = 'padding: 0.75rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;';
+                    locationItem.className = 'saved-item location-list-item';
 
                     locationItem.innerHTML = `
                         <div>
                             <strong>${HtmlUtils.escapeHtml(name)}</strong><br>
-                            <small style="color: var(--text-secondary);">
+                            <small class="saved-item-details">
                                 ${loc.latitude.toFixed(4)}°, ${loc.longitude.toFixed(4)}° |
                                 Elev: ${loc.elevation}m |
                                 ${HtmlUtils.escapeHtml(loc.timeZone ?? 'Time zone not set')} (UTC${loc.timezone >= 0 ? '+' : ''}${loc.timezone}) |
                                 Bortle: ${loc.bortle}
                             </small>
                         </div>
-                        <div style="display: flex; gap: 0.5rem;">
+                        <div class="saved-item-actions">
                             <button class="btn-sm btn-secondary" data-location="${HtmlUtils.escapeHtml(name)}" data-action="edit">Edit</button>
                             <button class="btn-sm btn-danger" data-location="${HtmlUtils.escapeHtml(name)}" data-action="delete">Delete</button>
                         </div>
@@ -2187,7 +2186,7 @@ const UIManager = {
         const telescopeNames = Object.keys(telescopes);
 
         if (telescopeNames.length === 0) {
-            listDiv.innerHTML = '<p style="color: var(--text-secondary); font-style: italic;">No telescopes defined yet.</p>';
+            listDiv.innerHTML = '<p class="saved-list-empty">No telescopes defined yet.</p>';
             const mb = document.getElementById('modal-body');
             if (mb) mb.scrollTop = 0;
             return;
@@ -2196,18 +2195,16 @@ const UIManager = {
         listDiv.innerHTML = telescopeNames.map(name => {
             const tel = telescopes[name];
             return `
-                <div class="info-card" style="padding: 1rem; margin-bottom: 0.75rem;">
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;">
-                        <div style="flex: 1;">
-                            <strong style="color: var(--primary-color); font-size: 1.05rem;">${HtmlUtils.escapeHtml(name)}</strong>
-                            <div style="margin-top: 0.5rem; font-size: 0.9rem; color: var(--text-secondary);">
-                                Focal Length: ${tel.focalLength} mm<br>
-                                Aperture: ${tel.aperture} mm<br>
-                                Multiplier: ${tel.multiplier}x
-                            </div>
+                <div class="info-card saved-item equipment-card">
+                    <div class="equipment-card-info">
+                        <strong class="equipment-card-name">${HtmlUtils.escapeHtml(name)}</strong>
+                        <div class="saved-item-details equipment-card-details">
+                            Focal Length: ${tel.focalLength} mm<br>
+                            Aperture: ${tel.aperture} mm<br>
+                            Multiplier: ${tel.multiplier}x
                         </div>
-                        <button class="btn-sm btn-danger" data-action="delete-telescope" data-name="${HtmlUtils.escapeHtml(name)}">Delete</button>
                     </div>
+                    <button class="btn-sm btn-danger" data-action="delete-telescope" data-name="${HtmlUtils.escapeHtml(name)}">Delete</button>
                 </div>
             `;
         }).join('');
@@ -2316,7 +2313,7 @@ const UIManager = {
         const sensors = DataManager.getSensors();
         const sensorNames = Object.keys(sensors);
         if (sensorNames.length === 0) {
-            listDiv.innerHTML = '<p style="color: var(--text-secondary); font-style: italic;">No sensors defined yet.</p>';
+            listDiv.innerHTML = '<p class="saved-list-empty">No sensors defined yet.</p>';
             const mb = document.getElementById('modal-body');
             if (mb) mb.scrollTop = 0;
             return;
@@ -2324,17 +2321,15 @@ const UIManager = {
         listDiv.innerHTML = sensorNames.map(name => {
             const sensor = sensors[name];
             return `
-                <div class="info-card" style="padding: 1rem; margin-bottom: 0.75rem;">
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;">
-                        <div style="flex: 1;">
-                            <strong style="color: var(--primary-color); font-size: 1.05rem;">${HtmlUtils.escapeHtml(name)}</strong>
-                            <div style="margin-top: 0.5rem; font-size: 0.9rem; color: var(--text-secondary);">
-                                Resolution: ${sensor.resolutionX} × ${sensor.resolutionY} pixels<br>
-                                Pixel Size: ${sensor.pixelSizeX} × ${sensor.pixelSizeY} µm
-                            </div>
+                <div class="info-card saved-item equipment-card">
+                    <div class="equipment-card-info">
+                        <strong class="equipment-card-name">${HtmlUtils.escapeHtml(name)}</strong>
+                        <div class="saved-item-details equipment-card-details">
+                            Resolution: ${sensor.resolutionX} × ${sensor.resolutionY} pixels<br>
+                            Pixel Size: ${sensor.pixelSizeX} × ${sensor.pixelSizeY} µm
                         </div>
-                        <button class="btn-sm btn-danger" data-action="delete-sensor" data-name="${HtmlUtils.escapeHtml(name)}">Delete</button>
                     </div>
+                    <button class="btn-sm btn-danger" data-action="delete-sensor" data-name="${HtmlUtils.escapeHtml(name)}">Delete</button>
                 </div>
             `;
         }).join('');
@@ -2432,18 +2427,16 @@ const UIManager = {
         const filters = DataManager.getFilters();
         const filterNames = Object.keys(filters).sort();
         if (filterNames.length === 0) {
-            listDiv.innerHTML = '<p style="color: var(--text-secondary); font-style: italic;">No filters defined yet.</p>';
+            listDiv.innerHTML = '<p class="saved-list-empty">No filters defined yet.</p>';
             const mb = document.getElementById('modal-body');
             if (mb) mb.scrollTop = 0;
             return;
         }
         listDiv.innerHTML = filterNames.map(name => {
             return `
-                <div class="info-card" style="padding: 1rem; margin-bottom: 0.75rem;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
-                        <strong style="color: var(--primary-color); font-size: 1.05rem;">${HtmlUtils.escapeHtml(name)}</strong>
-                        <button class="btn-sm btn-danger" data-action="delete-filter" data-name="${HtmlUtils.escapeHtml(name)}">Delete</button>
-                    </div>
+                <div class="info-card saved-item equipment-card">
+                    <strong class="equipment-card-name">${HtmlUtils.escapeHtml(name)}</strong>
+                    <button class="btn-sm btn-danger" data-action="delete-filter" data-name="${HtmlUtils.escapeHtml(name)}">Delete</button>
                 </div>
             `;
         }).join('');

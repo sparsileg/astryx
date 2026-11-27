@@ -137,3 +137,87 @@
 .best-months-progress-eta {
     font-size: 0.9em;
 }
+
+/* Initialization Error page (Issue #347) */
+.init-error-title {
+    color: var(--error-color);
+    margin-bottom: 1rem;
+    font-size: 2rem;
+}
+
+.init-error-message {
+    margin-bottom: 2rem;
+    max-width: 500px;
+    line-height: 1.6;
+}
+
+.init-error-details {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin-bottom: 2rem;
+    font-family: monospace;
+}
+
+.init-error-button {
+    margin: 0.5rem;
+}
+
+/* Saved equipment and locations lists: one row per item, its actions on the
+   right (Issue #350) */
+.saved-list-empty {
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+.saved-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+}
+
+.saved-item-details {
+    color: var(--text-secondary);
+}
+
+.saved-item-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+#location-list {
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+}
+
+#location-list .saved-list-empty {
+    padding: 1rem;
+    text-align: center;
+}
+
+.location-list-item {
+    padding: 0.75rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+/* Telescope, sensor and filter cards: the Delete button stays level with the name */
+.equipment-card {
+    align-items: flex-start;
+    margin-bottom: 0.75rem;
+}
+
+.equipment-card-info {
+    flex: 1;
+}
+
+.equipment-card-name {
+    color: var(--primary-color);
+    font-size: 1.05rem;
+}
+
+.equipment-card-details {
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+}

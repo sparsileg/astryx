@@ -6,15 +6,7 @@ use tauri::State;
 
 #[tauri::command]
 pub fn get_all_sessions(state: State<Arc<AstryxState>>) -> Result<Vec<serde_json::Value>, String> {
-    sql::query_sessions(&*state.conn()?, None)
-}
-
-#[tauri::command]
-pub fn get_sessions_for_project(
-    project_id: i64,
-    state: State<Arc<AstryxState>>,
-) -> Result<Vec<serde_json::Value>, String> {
-    sql::query_sessions(&*state.conn()?, Some(project_id))
+    sql::query_sessions(&*state.conn()?)
 }
 
 #[tauri::command]
@@ -54,7 +46,7 @@ pub(crate) mod sql {
 
     pub fn get_session(conn: &Connection, id: i64) -> Result<Option<serde_json::Value>, String> {
         let result = conn.query_row(
-            "SELECT id, project_id, target_designation, date, location, telescope, sensor,
+            "SELECT id, project_id, date, location, telescope, sensor,
                     filter, rotation, temp_setpoint, bin, gain, offset, moon_illumination,
                     moon_set, moon_rise, angle_from_moon, clouds, smoke, seeing, transparency,
                     sub_length, num_exposures, used_exposures, notes, created
@@ -75,14 +67,13 @@ pub(crate) mod sql {
     ) -> Result<serde_json::Value, String> {
         conn.execute(
             "INSERT INTO imaging_sessions
-                 (project_id, target_designation, date, location, telescope, sensor, filter,
+                 (project_id, date, location, telescope, sensor, filter,
                   rotation, temp_setpoint, bin, gain, offset, moon_illumination,
                   moon_set, moon_rise, angle_from_moon, clouds, smoke, seeing, transparency,
                   sub_length, num_exposures, used_exposures, notes, created)
-             VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?19,?20,?21,?22,?23,?24,?25)",
+             VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?19,?20,?21,?22,?23,?24)",
             rusqlite::params![
                 session["projectId"].as_i64().ok_or("missing projectId")?,
-                session["targetDesignation"].as_str(),
                 session["date"].as_str().ok_or("missing date")?,
                 session["location"].as_str(),
                 session["telescope"].as_str(),
@@ -120,15 +111,14 @@ pub(crate) mod sql {
     ) -> Result<serde_json::Value, String> {
         conn.execute(
             "UPDATE imaging_sessions SET
-                 project_id=?1, target_designation=?2, date=?3, location=?4, telescope=?5,
-                 sensor=?6, filter=?7, rotation=?8, temp_setpoint=?9, bin=?10, gain=?11,
-                 offset=?12, moon_illumination=?13, moon_set=?14, moon_rise=?15,
-                 angle_from_moon=?16, clouds=?17, smoke=?18, seeing=?19, transparency=?20,
-                 sub_length=?21, num_exposures=?22, used_exposures=?23, notes=?24
-             WHERE id=?25",
+                 project_id=?1, date=?2, location=?3, telescope=?4,
+                 sensor=?5, filter=?6, rotation=?7, temp_setpoint=?8, bin=?9, gain=?10,
+                 offset=?11, moon_illumination=?12, moon_set=?13, moon_rise=?14,
+                 angle_from_moon=?15, clouds=?16, smoke=?17, seeing=?18, transparency=?19,
+                 sub_length=?20, num_exposures=?21, used_exposures=?22, notes=?23
+             WHERE id=?24",
             rusqlite::params![
                 session["projectId"].as_i64().ok_or("missing projectId")?,
-                session["targetDesignation"].as_str(),
                 session["date"].as_str().ok_or("missing date")?,
                 session["location"].as_str(),
                 session["telescope"].as_str(),
@@ -170,37 +160,21 @@ pub(crate) mod sql {
         .map_err(|e| e.to_string())
     }
 
-    pub fn query_sessions(
-        conn: &Connection,
-        project_id: Option<i64>,
-    ) -> Result<Vec<serde_json::Value>, String> {
-        let sql = match project_id {
-            Some(_) => {
-                "SELECT id, project_id, target_designation, date, location, telescope, sensor,
+    pub fn query_sessions(conn: &Connection) -> Result<Vec<serde_json::Value>, String> {
+        let mut stmt = conn
+            .prepare(
+                "SELECT id, project_id, date, location, telescope, sensor,
                         filter, rotation, temp_setpoint, bin, gain, offset, moon_illumination,
                         moon_set, moon_rise, angle_from_moon, clouds, smoke, seeing, transparency,
                         sub_length, num_exposures, used_exposures, notes, created
-                 FROM imaging_sessions WHERE project_id = ?1 ORDER BY date"
-            }
-            None => {
-                "SELECT id, project_id, target_designation, date, location, telescope, sensor,
-                        filter, rotation, temp_setpoint, bin, gain, offset, moon_illumination,
-                        moon_set, moon_rise, angle_from_moon, clouds, smoke, seeing, transparency,
-                        sub_length, num_exposures, used_exposures, notes, created
-                 FROM imaging_sessions ORDER BY date"
-            }
-        };
-
-        let mut stmt = conn.prepare(sql).map_err(|e| e.to_string())?;
-
-        let rows: Vec<serde_json::Value> = match project_id {
-            Some(pid) => stmt.query_map(rusqlite::params![pid], row_to_session),
-            None => stmt.query_map([], row_to_session),
-        }
-        .map_err(|e| e.to_string())?
-        .collect::<rusqlite::Result<Vec<_>>>()
-        .map_err(|e| e.to_string())?;
-
+                 FROM imaging_sessions ORDER BY date",
+            )
+            .map_err(|e| e.to_string())?;
+        let rows = stmt
+            .query_map([], row_to_session)
+            .map_err(|e| e.to_string())?
+            .collect::<rusqlite::Result<Vec<_>>>()
+            .map_err(|e| e.to_string())?;
         Ok(rows)
     }
 
@@ -208,30 +182,29 @@ pub(crate) mod sql {
         Ok(serde_json::json!({
             "id":                row.get::<_, i64>(0)?,
             "projectId":         row.get::<_, i64>(1)?,
-            "targetDesignation": row.get::<_, Option<String>>(2)?,
-            "date":              row.get::<_, String>(3)?,
-            "location":          row.get::<_, Option<String>>(4)?,
-            "telescope":         row.get::<_, Option<String>>(5)?,
-            "sensor":            row.get::<_, Option<String>>(6)?,
-            "filter":            row.get::<_, Option<String>>(7)?,
-            "rotation":          row.get::<_, Option<f64>>(8)?,
-            "tempSetpoint":      row.get::<_, Option<f64>>(9)?,
-            "bin":               row.get::<_, Option<String>>(10)?,
-            "gain":              row.get::<_, Option<f64>>(11)?,
-            "offset":            row.get::<_, Option<f64>>(12)?,
-            "moonIllumination":  row.get::<_, Option<f64>>(13)?,
-            "moonSet":           row.get::<_, Option<String>>(14)?,
-            "moonRise":          row.get::<_, Option<String>>(15)?,
-            "angleFromMoon":     row.get::<_, Option<f64>>(16)?,
-            "clouds":            row.get::<_, Option<String>>(17)?,
-            "smoke":             row.get::<_, Option<String>>(18)?,
-            "seeing":            row.get::<_, Option<String>>(19)?,
-            "transparency":      row.get::<_, Option<String>>(20)?,
-            "subLength":         row.get::<_, f64>(21)?,
-            "numExposures":      row.get::<_, i64>(22)?,
-            "usedExposures":     row.get::<_, Option<i64>>(23)?,
-            "notes":             row.get::<_, Option<String>>(24)?,
-            "created":           row.get::<_, String>(25)?,
+            "date":              row.get::<_, String>(2)?,
+            "location":          row.get::<_, Option<String>>(3)?,
+            "telescope":         row.get::<_, Option<String>>(4)?,
+            "sensor":            row.get::<_, Option<String>>(5)?,
+            "filter":            row.get::<_, Option<String>>(6)?,
+            "rotation":          row.get::<_, Option<f64>>(7)?,
+            "tempSetpoint":      row.get::<_, Option<f64>>(8)?,
+            "bin":               row.get::<_, Option<String>>(9)?,
+            "gain":              row.get::<_, Option<f64>>(10)?,
+            "offset":            row.get::<_, Option<f64>>(11)?,
+            "moonIllumination":  row.get::<_, Option<f64>>(12)?,
+            "moonSet":           row.get::<_, Option<String>>(13)?,
+            "moonRise":          row.get::<_, Option<String>>(14)?,
+            "angleFromMoon":     row.get::<_, Option<f64>>(15)?,
+            "clouds":            row.get::<_, Option<String>>(16)?,
+            "smoke":             row.get::<_, Option<String>>(17)?,
+            "seeing":            row.get::<_, Option<String>>(18)?,
+            "transparency":      row.get::<_, Option<String>>(19)?,
+            "subLength":         row.get::<_, f64>(20)?,
+            "numExposures":      row.get::<_, i64>(21)?,
+            "usedExposures":     row.get::<_, Option<i64>>(22)?,
+            "notes":             row.get::<_, Option<String>>(23)?,
+            "created":           row.get::<_, String>(24)?,
         }))
     }
 }
@@ -257,7 +230,7 @@ mod tests {
     /// A session as handleSaveSession builds it, every field filled in.
     fn session(project_id: i64, date: &str) -> serde_json::Value {
         json!({
-            "projectId": project_id, "targetDesignation": "M 42", "date": date,
+            "projectId": project_id, "date": date,
             "location": "Home", "telescope": "RedCat 51", "sensor": "ASI2600MC Pro", "filter": "L-eXtreme",
             "rotation": 92.5, "tempSetpoint": -10.0, "bin": "1x1", "gain": 100.0, "offset": 50.0,
             "moonIllumination": 23.0, "moonSet": "22:15", "moonRise": "11:40", "angleFromMoon": 87.0,
@@ -330,7 +303,7 @@ mod tests {
     }
 
     #[test]
-    fn sessions_are_filtered_by_project_and_sorted_by_date() {
+    fn sessions_are_sorted_by_date() {
         let mut conn = test_conn();
         let orion = new_project(&mut conn);
         let other = new_project(&mut conn);
@@ -342,16 +315,12 @@ mod tests {
             rows.iter().map(|s| s["date"].clone()).collect::<Vec<_>>()
         };
         assert_eq!(
-            dates(query_sessions(&conn, None).unwrap()),
+            dates(query_sessions(&conn).unwrap()),
             vec![
                 json!("2026-09-01"),
                 json!("2026-09-02"),
                 json!("2026-09-03")
             ]
-        );
-        assert_eq!(
-            dates(query_sessions(&conn, Some(orion)).unwrap()),
-            vec![json!("2026-09-01"), json!("2026-09-03")]
         );
     }
 
@@ -374,7 +343,7 @@ mod tests {
     fn session_for_missing_project_is_rejected() {
         let conn = test_conn();
         assert!(create_session(&conn, &session(999, "2026-09-01")).is_err());
-        assert!(query_sessions(&conn, None).unwrap().is_empty());
+        assert!(query_sessions(&conn).unwrap().is_empty());
     }
 
     #[test]
@@ -383,7 +352,7 @@ mod tests {
         let project_id = new_project(&mut conn);
         create_session(&conn, &session(project_id, "2026-09-01")).unwrap();
         crate::commands::imaging_projects::sql::delete_project(&conn, project_id).unwrap();
-        assert!(query_sessions(&conn, None).unwrap().is_empty());
+        assert!(query_sessions(&conn).unwrap().is_empty());
     }
 
     #[test]

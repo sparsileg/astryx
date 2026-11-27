@@ -3,22 +3,84 @@
 // its first .json file, so a backup zipped again by hand still reads.
 // Writes backup files, and restores the ticked stores from backup data.
 
+use crate::commands::settings::{self, APP_SETTINGS_ID};
 use crate::AstryxState;
 use std::io::Read;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use tauri::State;
+use tauri::{AppHandle, Manager, State};
+use tauri_plugin_fs::FsExt;
 
+/// Read the backup in the zip at `path`: only a file the restore dialog
+/// picked, which the dialog adds to the fs scope (Issue #359).
 #[tauri::command]
-pub fn read_zip_backup(path: String, _state: State<Arc<AstryxState>>) -> Result<String, String> {
+pub fn read_zip_backup(path: String, app: AppHandle) -> Result<String, String> {
+    if !app.fs_scope().is_allowed(&path) {
+        return Err(format!("Astryx only restores a backup you picked: {path}"));
+    }
     read_zip(&path)
 }
 
 /// Write a backup zip to `path`. Written here rather than through the fs
 /// plugin so any Backup Folder the user chooses works, not only folders
-/// inside the plugin's scope.
+/// inside the plugin's scope. Only a .zip in the saved Backup Folder or
+/// Downloads (auto-backup's default), or the file the save dialog returned
+/// (Issue #359).
 #[tauri::command]
-pub fn write_backup_file(path: String, bytes: Vec<u8>) -> Result<(), String> {
+pub fn write_backup_file(
+    path: String,
+    bytes: Vec<u8>,
+    app: AppHandle,
+    state: State<Arc<AstryxState>>,
+) -> Result<(), String> {
+    let stored = settings::sql::get(&*state.conn()?, APP_SETTINGS_ID)?;
+    let mut folders: Vec<PathBuf> = stored
+        .as_deref()
+        .and_then(backup_folder)
+        .into_iter()
+        .collect();
+    if let Ok(downloads) = app.path().download_dir() {
+        folders.push(downloads);
+    }
+    let chosen = app.fs_scope().is_allowed(&path);
+    if !may_write_backup(Path::new(&path), &folders, chosen) {
+        return Err(format!(
+            "Astryx only saves a backup as a .zip in the Backup Folder, Downloads or where you chose to save it: {path}"
+        ));
+    }
     std::fs::write(&path, bytes).map_err(|e| format!("Couldn't write {path}: {e}"))
+}
+
+/// The Backup Folder in the stored app settings, if one is set.
+fn backup_folder(settings_json: &str) -> Option<PathBuf> {
+    let settings: serde_json::Value = serde_json::from_str(settings_json).ok()?;
+    settings["backupFolder"]
+        .as_str()
+        .filter(|folder| !folder.is_empty())
+        .map(PathBuf::from)
+}
+
+/// Whether a backup may be written at `path`: a .zip directly inside one of
+/// `folders`, or anywhere the save dialog returned (`chosen`). Folders are
+/// compared after resolving `..` and links, so neither leads elsewhere
+/// (Issue #359).
+fn may_write_backup(path: &Path, folders: &[PathBuf], chosen: bool) -> bool {
+    let is_zip = path
+        .extension()
+        .is_some_and(|ext| ext.eq_ignore_ascii_case("zip"));
+    if !is_zip {
+        return false;
+    }
+    if chosen {
+        return true;
+    }
+    let Some(parent) = path.parent().and_then(|p| p.canonicalize().ok()) else {
+        return false;
+    };
+    folders
+        .iter()
+        .filter_map(|folder| folder.canonicalize().ok())
+        .any(|folder| folder == parent)
 }
 
 /// Replace the restored stores in one transaction, so a restore that fails
@@ -240,15 +302,14 @@ pub(crate) mod sql {
     fn insert_session(conn: &Connection, session: &Value) -> Result<(), String> {
         conn.execute(
             "INSERT INTO imaging_sessions
-                 (id, project_id, target_designation, date, location, telescope, sensor, filter,
+                 (id, project_id, date, location, telescope, sensor, filter,
                   rotation, temp_setpoint, bin, gain, offset, moon_illumination,
                   moon_set, moon_rise, angle_from_moon, clouds, smoke, seeing, transparency,
                   sub_length, num_exposures, used_exposures, notes, created)
-             VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?19,?20,?21,?22,?23,?24,?25,?26)",
+             VALUES (?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11,?12,?13,?14,?15,?16,?17,?18,?19,?20,?21,?22,?23,?24,?25)",
             rusqlite::params![
                 session["id"].as_i64().ok_or("missing id")?,
                 session["projectId"].as_i64().ok_or("missing projectId")?,
-                session["targetDesignation"].as_str(),
                 session["date"].as_str().ok_or("missing date")?,
                 session["location"].as_str(),
                 session["telescope"].as_str(),
@@ -294,6 +355,82 @@ pub(crate) mod sql {
         )
         .map_err(|e| e.to_string())?;
         insert_program_targets(conn, id, program)
+    }
+}
+
+#[cfg(test)]
+mod file_tests {
+    use super::{backup_folder, may_write_backup};
+    use std::path::{Path, PathBuf};
+
+    /// A Backup Folder and a folder beside it, under the system temp folder
+    fn folders(test: &str) -> (PathBuf, PathBuf) {
+        let root = std::env::temp_dir().join(format!("astryx-{test}-{}", std::process::id()));
+        let backups = root.join("Backups");
+        let other = root.join("Other");
+        std::fs::create_dir_all(&backups).unwrap();
+        std::fs::create_dir_all(&other).unwrap();
+        (backups, other)
+    }
+
+    #[test]
+    fn a_backup_goes_only_in_a_chosen_folder_as_a_zip() {
+        let (backups, other) = folders("write");
+        let allowed = [backups.clone()];
+        assert!(may_write_backup(
+            &backups.join("Astryx.zip"),
+            &allowed,
+            false
+        ));
+        assert!(may_write_backup(
+            &backups.join("Astryx.ZIP"),
+            &allowed,
+            false
+        ));
+        // Not a zip, even in the Backup Folder or where the dialog chose
+        assert!(!may_write_backup(&backups.join(".bashrc"), &allowed, false));
+        assert!(!may_write_backup(
+            &backups.join("Astryx.zip.sh"),
+            &allowed,
+            true
+        ));
+        // Outside it, or leading out of it
+        assert!(!may_write_backup(
+            &other.join("Astryx.zip"),
+            &allowed,
+            false
+        ));
+        assert!(!may_write_backup(
+            &backups.join("../Other/Astryx.zip"),
+            &allowed,
+            false
+        ));
+        assert!(!may_write_backup(
+            &backups.join("sub/Astryx.zip"),
+            &allowed,
+            false
+        ));
+        assert!(!may_write_backup(Path::new("Astryx.zip"), &[], false));
+        // Where the save dialog chose
+        assert!(may_write_backup(&other.join("Astryx.zip"), &allowed, true));
+        // A Backup Folder written with .. still matches
+        assert!(may_write_backup(
+            &backups.join("Astryx.zip"),
+            &[other.join("../Backups")],
+            false
+        ));
+        std::fs::remove_dir_all(backups.parent().unwrap()).unwrap();
+    }
+
+    #[test]
+    fn the_backup_folder_comes_from_the_stored_settings() {
+        assert_eq!(
+            backup_folder(r#"{"theme":"dark","backupFolder":"/home/me/Backups"}"#),
+            Some(PathBuf::from("/home/me/Backups"))
+        );
+        assert_eq!(backup_folder(r#"{"backupFolder":""}"#), None);
+        assert_eq!(backup_folder(r#"{"theme":"dark"}"#), None);
+        assert_eq!(backup_folder("not json"), None);
     }
 }
 
@@ -347,7 +484,7 @@ mod tests {
     fn export(conn: &Connection) -> ImagingLog {
         (
             get_all_projects(conn).unwrap(),
-            query_sessions(conn, None).unwrap(),
+            query_sessions(conn).unwrap(),
             get_all_programs(conn).unwrap(),
         )
     }
@@ -400,7 +537,7 @@ mod tests {
             (project_ids[2], "2026-09-04"),
         ] {
             create_session(&conn, &json!({
-                "projectId": project_id, "targetDesignation": null, "date": date,
+                "projectId": project_id, "date": date,
                 "location": "Home", "telescope": null, "sensor": null, "filter": null,
                 "rotation": 0.0, "tempSetpoint": null, "bin": "1x1", "gain": 0.0, "offset": null,
                 "moonIllumination": 0.0, "moonSet": null, "moonRise": null, "angleFromMoon": 0.0,
@@ -514,7 +651,7 @@ mod tests {
         .unwrap();
         create_program(&mut target, &json!({ "name": "Stale", "status": "Started", "created": "2020-01-01", "targetDesignations": ["M 1"] })).unwrap();
         let projects_before = get_all_projects(&target).unwrap();
-        let sessions_before = query_sessions(&target, None).unwrap();
+        let sessions_before = query_sessions(&target).unwrap();
         let restore = sql::Restore {
             imaging_programs: Some(backup.2.clone()),
             ..Default::default()

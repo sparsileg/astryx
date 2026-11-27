@@ -127,6 +127,13 @@ folder if it's empty.
 made by a newer version of Astryx than the one you're running. Update
 Astryx, then restore it.
 
+**Astryx won't start: "Astryx couldn't read its settings" (or "its
+data").** Astryx stops rather than start with default settings, which
+would be saved over yours at your next change. Nothing has been changed:
+**Reload Application** to try again. If it keeps happening, report it
+(see **Still Stuck?** below) before clearing anything: your data is still
+there.
+
 **The desktop app won't start: "updated by a newer Astryx".** A newer
 version of Astryx has updated the database, and this version can't use
 it. Install the newer version. The message also names the copy saved

@@ -143,11 +143,12 @@ const DataManager = {
             location.timezone = TimeUtils.standardOffsetHours(location.timeZone, new Date().getFullYear());
         }
 
-        this.locations[name] = location;
+        // Memory changes only once the write has succeeded (Issue #349)
         await DBManager.put(APP_CONFIG.STORES.LOCATIONS, {
             name: name,
             ...location
         });
+        this.locations[name] = location;
     },
 
     /**
@@ -158,12 +159,13 @@ const DataManager = {
     /**
      * Delete a location. Its Best Months data is removed from the targets
      * first, in one bulk write, so a failure leaves the location in place
-     * (Issue #316).
+     * (Issue #316). Memory changes only once the write has succeeded
+     * (Issue #349).
      */
     async deleteLocation(name) {
         await this.cleanupLocationDataFromTargets(name);
-        delete this.locations[name];
         await DBManager.delete(APP_CONFIG.STORES.LOCATIONS, name);
+        delete this.locations[name];
     },
 
     /**
@@ -472,8 +474,9 @@ const DataManager = {
             return false;
         }
 
-        this.pinnedTargets.push(target);
+        // Memory changes only once the write has succeeded (Issue #349)
         await DBManager.put(APP_CONFIG.STORES.PINNED_TARGETS, target);
+        this.pinnedTargets.push(target);
         document.dispatchEvent(new CustomEvent('pinned-targets-updated'));
         return true;
     },
@@ -482,7 +485,7 @@ const DataManager = {
      * Unpin a target
      */
     async unpinTarget(name) {
-        this.pinnedTargets = this.pinnedTargets.filter(t => t.name !== name);
+        // Memory changes only once the write has succeeded (Issue #349)
         await DBManager.delete(APP_CONFIG.STORES.PINNED_TARGETS, name);
         await this.loadPinnedTargets();
         document.dispatchEvent(new CustomEvent('pinned-targets-updated'));
@@ -526,19 +529,21 @@ const DataManager = {
      * Save a telescope
      */
     async saveTelescope(name, telescope) {
-        this.telescopes[name] = telescope;
+        // Memory changes only once the write has succeeded (Issue #349)
         await DBManager.put(APP_CONFIG.STORES.TELESCOPES, {
             name: name,
             ...telescope
         });
+        this.telescopes[name] = telescope;
     },
 
     /**
      * Delete a telescope
      */
     async deleteTelescope(name) {
-        delete this.telescopes[name];
+        // Memory changes only once the write has succeeded (Issue #349)
         await DBManager.delete(APP_CONFIG.STORES.TELESCOPES, name);
+        delete this.telescopes[name];
     },
 
     // ============================================================================
@@ -579,19 +584,21 @@ const DataManager = {
      * Save a sensor
      */
     async saveSensor(name, sensor) {
-        this.sensors[name] = sensor;
+        // Memory changes only once the write has succeeded (Issue #349)
         await DBManager.put(APP_CONFIG.STORES.SENSORS, {
             name: name,
             ...sensor
         });
+        this.sensors[name] = sensor;
     },
 
     /**
      * Delete a sensor
      */
     async deleteSensor(name) {
-        delete this.sensors[name];
+        // Memory changes only once the write has succeeded (Issue #349)
         await DBManager.delete(APP_CONFIG.STORES.SENSORS, name);
+        delete this.sensors[name];
     },
 
     // ============================================================================
@@ -627,15 +634,17 @@ const DataManager = {
      * Save a filter
      */
     async saveFilter(name) {
-        this.filters[name] = {};
+        // Memory changes only once the write has succeeded (Issue #349)
         await DBManager.put(APP_CONFIG.STORES.FILTERS, { name: name });
+        this.filters[name] = {};
     },
 
     /**
      * Delete a filter
      */
     async deleteFilter(name) {
-        delete this.filters[name];
+        // Memory changes only once the write has succeeded (Issue #349)
         await DBManager.delete(APP_CONFIG.STORES.FILTERS, name);
+        delete this.filters[name];
     },
 };

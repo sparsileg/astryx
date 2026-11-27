@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- CSP kept in sync with src-tauri/tauri.conf.json app.security.csp — Issue #181 -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://app.astryx.tools https://api.open-meteo.com https://skies.esac.esa.int https://stpubdata.s3.us-east-1.amazonaws.com https://casda.csiro.au https://alasky.cds.unistra.fr https://hips.china-vo.org; img-src 'self' data: blob:; font-src 'self' data:">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' ipc: http://ipc.localhost https://app.astryx.tools https://api.open-meteo.com https://skies.esac.esa.int https://stpubdata.s3.us-east-1.amazonaws.com https://casda.csiro.au https://alasky.cds.unistra.fr https://hips.china-vo.org; img-src 'self' data: blob:; font-src 'self' data:; base-uri 'none'; form-action 'none'">
     <title id="app-title"></title>
     <link rel="stylesheet" href="css/backup-restore.css">
     <link rel="stylesheet" href="css/base.css">
@@ -744,7 +744,7 @@
           <!-- Location List -->
           <div class="form-group" style="margin-top: 1rem;">
             <h4>Existing Locations</h4>
-            <div id="location-list" style="max-height: 200px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 4px;">
+            <div id="location-list">
               <!-- Locations will be populated here -->
             </div>
           </div>
@@ -1673,18 +1673,21 @@
       <!-- Initialization Error Template -->
       <template id="initialization-error-template">
         <div class="init-error-container">
-          <h1 style="color: var(--error-color); margin-bottom: 1rem; font-size: 2rem;">Initialization Error</h1>
-          <p style="margin-bottom: 2rem; max-width: 500px; line-height: 1.6;">
+          <h1 class="init-error-title">Initialization Error</h1>
+          <p class="init-error-message" id="init-error-cause">
             Failed to initialize properly. This might be due to browser compatibility issues or corrupted data.
           </p>
-          <p id="error-details" style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 2rem; font-family: monospace;">
+          <p class="init-error-message" id="init-error-data-intact" hidden>
+            Your stored settings and data haven't been changed. Reload to try again.
+          </p>
+          <p id="error-details" class="init-error-details">
             <!-- Error message will be inserted here -->
           </p>
           <div>
-            <button data-action="reload" style="padding: 0.75rem 1.5rem; background: var(--primary-color); color: var(--primary-text); border: none; border-radius: 6px; cursor: pointer; margin: 0.5rem; font-weight: 500;">
+            <button data-action="reload" class="btn-primary init-error-button">
               Reload Application
             </button>
-            <button data-action="clear-and-reload" style="padding: 0.75rem 1.5rem; background: var(--error-color); color: white; border: none; border-radius: 6px; cursor: pointer; margin: 0.5rem; font-weight: 500;">
+            <button data-action="clear-and-reload" class="btn-danger init-error-button">
               Clear Data & Reload
             </button>
           </div>

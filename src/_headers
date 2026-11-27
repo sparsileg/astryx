@@ -3,3 +3,9 @@
 # the target database from here, so /data/ allows any origin (Issue #344).
 /data/*
   Access-Control-Allow-Origin: *
+# No other site may frame the app, and files are served only as their
+# declared type (Issue #358). The CSP itself is the meta tag in index.html,
+# shared with the desktop app; a meta tag can't set frame-ancestors.
+/*
+  Content-Security-Policy: frame-ancestors 'none'
+  X-Content-Type-Options: nosniff

@@ -23,19 +23,13 @@ const App = {
             // side effects below: no target update, backups, tutorials or toasts
             cliCommand = await CliTasks.getCommand();
             if (cliCommand) {
-                if (!await SettingsManager.init() || !await DataManager.init()) {
-                    throw new Error("the stored settings and data couldn't be loaded");
-                }
+                await this.loadStoredData();
                 await CliTasks.run(cliCommand);
                 return;
             }
 
-            // Load settings and data
-            const settingsLoaded = await SettingsManager.init();
-            const dataLoaded = await DataManager.init();
-            // Only with everything loaded: an empty location list would
-            // read as every location dropped
-            if (settingsLoaded && dataLoaded) await DataManager.pruneDroppedLocations();
+            await this.loadStoredData();
+            await DataManager.pruneDroppedLocations();
             TargetFilter.initialize();
             await ToDoManager.init();
 
@@ -144,6 +138,26 @@ const App = {
             }
             this.showInitializationError(error);
         }
+    },
+
+    /**
+     * Load the stored settings and data, stopping start-up when either read
+     * fails. Carrying on with the defaults would save them over every stored
+     * setting at the next change (Issue #347).
+     */
+    async loadStoredData() {
+        if (!await SettingsManager.init()) throw this.storedDataError('settings');
+        if (!await DataManager.init()) throw this.storedDataError('data');
+    },
+
+    /**
+     * A failed read: the stored data is untouched, so the error page offers
+     * a reload, not Clear Data (Issue #347)
+     */
+    storedDataError(what) {
+        const error = new Error(`${APP_CONFIG.APP_NAME} couldn't read its ${what}`);
+        error.storedDataIntact = true;
+        return error;
     },
 
     /**
@@ -492,67 +506,30 @@ const App = {
      * Show initialization error
      */
     showInitializationError(error) {
-        const template = document.getElementById('initialization-error-template');
-        if (template) {
-            const content = template.content.cloneNode(true);
-            const errorDetails = content.getElementById('error-details');
-            if (errorDetails) {
-                errorDetails.textContent = error.message || 'Unknown error';
-            }
-
-            document.body.innerHTML = '';
-            document.body.appendChild(content);
-
-            document.querySelectorAll('[data-action]').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const action = btn.dataset.action;
-                    if (action === 'reload') {
-                        location.reload();
-                    } else if (action === 'clear-and-reload') {
-                        localStorage.clear();
-                        indexedDB.deleteDatabase('astryx-db');
-                        location.reload();
-                    }
-                });
-            });
-        } else {
-            document.body.innerHTML = '';
-
-            const wrapper = document.createElement('div');
-            wrapper.style.cssText = 'display: flex; align-items: center; justify-content: center; height: 100vh; flex-direction: column; text-align: center; padding: 2rem;';
-
-            const heading = document.createElement('h1');
-            heading.style.cssText = 'color: #ef4444; margin-bottom: 1rem;';
-            heading.textContent = 'Initialization Error';
-            wrapper.appendChild(heading);
-
-            const message = document.createElement('p');
-            message.textContent = `${APP_CONFIG.APP_NAME} failed to initialize properly.`;
-            wrapper.appendChild(message);
-
-            const detail = document.createElement('p');
-            detail.style.cssText = 'color: #666; font-family: monospace; margin: 1rem 0;';
-            detail.textContent = error.message || 'Unknown error';
-            wrapper.appendChild(detail);
-
-            const reloadBtn = document.createElement('button');
-            reloadBtn.style.cssText = 'padding: 0.75rem 1.5rem; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer; margin: 0.5rem;';
-            reloadBtn.textContent = 'Reload Application';
-            reloadBtn.addEventListener('click', () => location.reload());
-            wrapper.appendChild(reloadBtn);
-
-            const clearBtn = document.createElement('button');
-            clearBtn.style.cssText = 'padding: 0.75rem 1.5rem; background: #ef4444; color: white; border: none; border-radius: 6px; cursor: pointer; margin: 0.5rem;';
-            clearBtn.textContent = 'Clear Data & Reload';
-            clearBtn.addEventListener('click', () => {
-                localStorage.clear();
-                DBManager.deleteDatabase();
-                location.reload();
-            });
-            wrapper.appendChild(clearBtn);
-
-            document.body.appendChild(wrapper);
+        const content = document.getElementById('initialization-error-template').content.cloneNode(true);
+        content.getElementById('error-details').textContent = error.message ?? 'Unknown error';
+        // A failed read changed nothing: say so, and don't offer Clear Data (Issue #347)
+        if (error.storedDataIntact) {
+            content.getElementById('init-error-cause').hidden = true;
+            content.getElementById('init-error-data-intact').hidden = false;
+            content.querySelector('[data-action="clear-and-reload"]').hidden = true;
         }
+
+        document.body.innerHTML = '';
+        document.body.appendChild(content);
+
+        document.querySelectorAll('[data-action]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const action = btn.dataset.action;
+                if (action === 'reload') {
+                    location.reload();
+                } else if (action === 'clear-and-reload') {
+                    localStorage.clear();
+                    indexedDB.deleteDatabase('astryx-db');
+                    location.reload();
+                }
+            });
+        });
     }
 };
 

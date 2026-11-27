@@ -1,5 +1,11 @@
 // src-tauri/src/db/schema.rs
 // All CREATE TABLE statements. Each is idempotent (IF NOT EXISTS).
+//
+// A constant is frozen once a migration uses it: migrate_v1 is built from
+// these texts, so editing one would change what v1 creates on a new install
+// while upgraded databases keep the old shape, and a later ALTER TABLE could
+// fail on one of them. A change is a new ADD_… constant and a new migration
+// (Issue #350).
 
 // ── Settings ──────────────────────────────────────────────────────────────────
 // Single-row store keyed by id. The 'app-settings' row holds all app settings
@@ -144,7 +150,8 @@ CREATE INDEX IF NOT EXISTS idx_project_targets_designation ON project_targets(de
 // ── Imaging Sessions ──────────────────────────────────────────────────────────
 // Equipment fields (location, telescope, sensor, filter) are stored as snapshot
 // strings — they record what was used, independent of equipment store records.
-// target_designation denormalizes the project's primary target for query convenience.
+// target_designation and its index are unused: nothing ever wrote the column,
+// and it stays only because migrations never drop (Issue #350).
 
 pub const CREATE_IMAGING_SESSIONS: &str = "
 CREATE TABLE IF NOT EXISTS imaging_sessions (

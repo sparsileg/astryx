@@ -92,7 +92,6 @@ const DBManagerWeb = {
                     if (!db.objectStoreNames.contains(APP_CONFIG.STORES.IMAGING_SESSIONS)) {
                         const sessionsStore = db.createObjectStore(APP_CONFIG.STORES.IMAGING_SESSIONS, { keyPath: 'id', autoIncrement: true });
                         sessionsStore.createIndex('projectId', 'projectId', { unique: false });
-                        sessionsStore.createIndex('targetDesignation', 'targetDesignation', { unique: false });
                         sessionsStore.createIndex('date', 'date', { unique: false });
                         console.log('Created imagingSessions store with indices');
                     }
