@@ -80,9 +80,13 @@ const BackupReminder = {
 
         const days = this.daysSinceBackup();
 
+        // Theme colors through classes, so Night keeps its dimmed
+        // warning color (Issue #354)
+        indicator.classList.remove('due', 'overdue');
+
         if (days === null) {
             text.textContent = 'Last backup: never';
-            indicator.style.color = 'var(--warning-color, #f59e0b)';
+            indicator.classList.add('due');
             return;
         }
 
@@ -93,13 +97,11 @@ const BackupReminder = {
 
         text.textContent = label;
 
-        // Color based on thresholds — amber and orange avoid red/green confusion
+        // The warning color, not red, so red/green confusion doesn't matter
         if (daysRounded >= APP_CONFIG.BACKUP_REMINDER_RED_DAYS) {
-            indicator.style.color = '#f97316'; // orange
+            indicator.classList.add('overdue');
         } else if (daysRounded >= APP_CONFIG.BACKUP_REMINDER_AMBER_DAYS) {
-            indicator.style.color = '#f59e0b'; // amber
-        } else {
-            indicator.style.color = 'var(--text-secondary)';
+            indicator.classList.add('due');
         }
     },
 

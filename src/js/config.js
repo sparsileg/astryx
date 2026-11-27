@@ -17,7 +17,7 @@
 const APP_CONFIG = {
     APP_NAME: 'Astryx',
     APP_TITLE: 'Astryx - Astrophotography Planning Tool',
-    APP_VERSION: '1.102.0',
+    APP_VERSION: '1.102.1',
     DB_NAME: 'astryx-db',
     DB_VERSION: 8,
     TARGET_DATA_PATH: './data/',
@@ -167,8 +167,8 @@ const APP_CONFIG = {
 
     // Backup reminder constants
     BACKUP_REMINDER_INTERVAL_DAYS: 7,   // default reminder interval (days)
-    BACKUP_REMINDER_AMBER_DAYS: 7,      // sidebar indicator turns amber after this many days
-    BACKUP_REMINDER_RED_DAYS: 14,       // sidebar indicator turns orange/red after this many days
+    BACKUP_REMINDER_AMBER_DAYS: 7,      // sidebar indicator turns the warning color after this many days
+    BACKUP_REMINDER_RED_DAYS: 14,       // and bold after this many
     BACKUP_RESTORE_AGE_WARNING_DAYS: [30, 90, 180], // restore dialog: an older backup is marked age-30, age-90, age-180 (#338)
 
     // Settings left out when the restore dialog compares a backup with current
@@ -190,6 +190,25 @@ const APP_CONFIG = {
     // Longest version, dbVersion or targetVersion string a backup file may
     // hold; anything else is refused before the restore dialog (Issue #362)
     BACKUP_VERSION_FIELD_MAX_LENGTH: 32,
+
+    // The Backup dialog's size estimate: typical bytes per record in a
+    // backup's JSON (Best Months left out), the fixed fields, and how much
+    // a zip keeps, measured on real backups (Issue #354)
+    BACKUP_SIZE_BYTES_PER_RECORD: {
+        settings: 500,
+        locations: 1000,
+        telescopes: 500,
+        sensors: 500,
+        filters: 150,
+        pinnedTargets: 100,
+        toDoTargets: 100,
+        imagingProjects: 2000,
+        imagingSessions: 1200,
+        imagingPrograms: 300,
+        targets: 292,
+    },
+    BACKUP_SIZE_OVERHEAD_BYTES: 2000,
+    BACKUP_COMPRESSION_RATIO: { targets: 0.09, userData: 0.26 },
 
     // Session analysis learned defaults (issue #145)
     DEFAULT_SUB_GAP_S: 5,              // seconds between end of exposure and start of next (camera download + overhead)

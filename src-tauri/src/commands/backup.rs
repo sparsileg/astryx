@@ -1,6 +1,6 @@
 // src-tauri/src/commands/backup.rs
-// Reads a zipped Astryx backup file and returns the JSON contents as a string.
-// The zip always contains a single JSON file.
+// Reads a zipped Astryx backup file and returns the JSON contents as a string:
+// its first .json file, so a backup zipped again by hand still reads.
 // Writes backup files, and restores the ticked stores from backup data.
 
 use crate::AstryxState;
@@ -28,19 +28,18 @@ pub fn restore_stores(restore: sql::Restore, state: State<Arc<AstryxState>>) -> 
     sql::restore_stores(&mut *state.conn()?, &restore)
 }
 
-/// Return the contents of the first file in the zip at `path`.
+/// Return the contents of the backup in the zip at `path`.
 fn read_zip(path: &str) -> Result<String, String> {
     let file = std::fs::File::open(path).map_err(|e| format!("Failed to open file: {}", e))?;
 
     let mut archive =
         zip::ZipArchive::new(file).map_err(|e| format!("Failed to read ZIP: {}", e))?;
 
-    if archive.is_empty() {
-        return Err("ZIP file is empty".to_string());
-    }
-
+    let name = backup_entry_name((0..archive.len()).filter_map(|i| archive.name_for_index(i)))
+        .ok_or("this zip holds no backup (.json) file.")?
+        .to_string();
     let mut zip_file = archive
-        .by_index(0)
+        .by_name(&name)
         .map_err(|e| format!("Failed to read ZIP entry: {}", e))?;
 
     let mut contents = String::new();
@@ -49,6 +48,18 @@ fn read_zip(path: &str) -> Result<String, String> {
         .map_err(|e| format!("Failed to read ZIP contents: {}", e))?;
 
     Ok(contents)
+}
+
+/// The backup in a zip: its first .json file, skipping folders and what
+/// macOS adds when it zips a folder (__MACOSX/, ._ copies) (Issue #354).
+/// The web's BackupManagerWeb.backupEntryName does the same.
+fn backup_entry_name<'a>(mut names: impl Iterator<Item = &'a str>) -> Option<&'a str> {
+    names.find(|name| {
+        let base = name.rsplit('/').next().unwrap_or(name);
+        base.to_lowercase().ends_with(".json")
+            && !base.starts_with("._")
+            && !name.starts_with("__MACOSX/")
+    })
 }
 
 // ── Database ──────────────────────────────────────────────────────────────────
@@ -288,6 +299,30 @@ pub(crate) mod sql {
 
 #[cfg(test)]
 mod tests {
+    use super::backup_entry_name;
+
+    #[test]
+    fn the_backup_is_the_first_json_file_in_the_zip() {
+        let hand_zipped = [
+            "__MACOSX/",
+            "__MACOSX/backups/._Astryx-userdata.json",
+            "backups/",
+            "backups/._Astryx-userdata.json",
+            "backups/notes.txt",
+            "backups/Astryx-userdata.JSON",
+            "backups/second.json",
+        ];
+        assert_eq!(
+            backup_entry_name(hand_zipped.into_iter()),
+            Some("backups/Astryx-userdata.JSON")
+        );
+        assert_eq!(
+            backup_entry_name(["Astryx-v1-s2-userdata.json"].into_iter()),
+            Some("Astryx-v1-s2-userdata.json")
+        );
+        assert_eq!(backup_entry_name(["readme.txt", "data/"].into_iter()), None);
+    }
+
     use super::*;
     use crate::commands::imaging_programs::sql::{create_program, get_all_programs};
     use crate::commands::imaging_projects::sql::{
@@ -594,14 +629,17 @@ mod tests {
     }
 
     #[test]
-    fn read_zip_rejects_an_empty_archive() {
+    fn read_zip_rejects_an_archive_without_a_backup() {
         let path = temp_path("empty.zip");
         zip::ZipWriter::new(std::fs::File::create(&path).unwrap())
             .finish()
             .unwrap();
         let result = read_zip(path.to_str().unwrap());
         std::fs::remove_file(&path).unwrap();
-        assert_eq!(result.unwrap_err(), "ZIP file is empty");
+        assert_eq!(
+            result.unwrap_err(),
+            "this zip holds no backup (.json) file."
+        );
     }
 
     #[test]

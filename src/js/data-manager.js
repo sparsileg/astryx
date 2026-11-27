@@ -193,6 +193,29 @@ const DataManager = {
         });
     },
 
+    /**
+     * Remove per-location values held for a location that no longer exists:
+     * a restore that replaces the locations drops some without running
+     * deleteLocation's cleanup (Issue #354). Run once at startup, after
+     * the locations and targets are loaded.
+     */
+    async pruneDroppedLocations() {
+        const dropped = new Set();
+        for (const target of this.targetDatabase) {
+            for (const field of this.PER_LOCATION_FIELDS) {
+                const values = target[field];
+                if (!values || typeof values !== 'object') continue;
+                for (const name of Object.keys(values)) {
+                    if (!this.locations[name]) dropped.add(name);
+                }
+            }
+        }
+        for (const name of dropped) {
+            await this.cleanupLocationDataFromTargets(name);
+        }
+        await SettingsManager.forgetBestMonthsExcept(Object.keys(this.locations));
+    },
+
     // ============================================================================
     // Target Database
     // ============================================================================

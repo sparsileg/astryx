@@ -434,6 +434,101 @@
     }
 }
 
+/* ============================================================================
+   Restore dialogs (Issue #354: was inline styles)
+   ============================================================================ */
+
+.restore-picker,
+.newer-backup {
+    text-align: center;
+    padding: 2rem;
+}
+
+.restore-picker-prompt {
+    margin-bottom: 1.5rem;
+    color: var(--text-color);
+}
+
+.restore-picker #restore-browse-btn {
+    padding: 0.75rem 2rem;
+}
+
+#restore-selected-file {
+    margin-top: 1rem;
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+#restore-selected-file.chosen {
+    color: var(--primary-color);
+    font-style: normal;
+}
+
+#restore-file-info,
+#restore-stores-list {
+    margin-bottom: 1.5rem;
+}
+
+.restore-file-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 1rem;
+}
+
+.restore-file-details {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.5rem 1rem;
+    font-size: 0.9rem;
+}
+
+.restore-file-label {
+    color: var(--text-secondary);
+}
+
+.restore-file-name {
+    font-weight: 500;
+}
+
+/* Sessions go with projects: shown, but not tickable on their own */
+.backup-restore-checkbox-item.linked .backup-restore-checkbox-label,
+.backup-restore-checkbox-item.linked .backup-restore-count-compare {
+    opacity: 0.6;
+}
+
+.backup-restore-warning-content .restore-warning-lead {
+    margin-bottom: 0.5rem;
+}
+
+.newer-backup-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.newer-backup h3 {
+    color: var(--error-color);
+    margin-bottom: 1rem;
+}
+
+#newer-backup-message {
+    color: var(--text-color);
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+}
+
+.newer-backup-note {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+/* The restore dialogs' Continue and Restore, until a file or the
+   confirmation is chosen */
+#modal-save-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
 #backup-reminder-indicator {
     font-family: "Lucida Console", "Courier", monospace;
     font-size: 0.8rem;
@@ -444,6 +539,16 @@
     width: fit-content;
     align-items: center;
     gap: 0.4rem;
+}
+
+/* A backup due, then overdue: the theme's warning color (Issue #354) */
+#backup-reminder-indicator.due,
+#backup-reminder-indicator.overdue {
+    color: var(--warning-color);
+}
+
+#backup-reminder-indicator.overdue {
+    font-weight: 700;
 }
 
 /* Circled ? after the backup line, so it reads as clickable; the whole line opens About Your Data Storage */

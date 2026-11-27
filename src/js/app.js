@@ -31,8 +31,11 @@ const App = {
             }
 
             // Load settings and data
-            await SettingsManager.init();
-            await DataManager.init();
+            const settingsLoaded = await SettingsManager.init();
+            const dataLoaded = await DataManager.init();
+            // Only with everything loaded: an empty location list would
+            // read as every location dropped
+            if (settingsLoaded && dataLoaded) await DataManager.pruneDroppedLocations();
             TargetFilter.initialize();
             await ToDoManager.init();
 
@@ -105,6 +108,13 @@ const App = {
 
             // Clear expired sky images once per start, off the startup path
             setTimeout(() => DSSCache.purge(), APP_CONFIG.DSS_PURGE_DELAY_MS);
+
+            // A restore reloads at once, and says it worked here (Issue #354)
+            const restoredMessage = localStorage.getItem(BackupManagerWeb.RESTORED_MESSAGE_KEY);
+            if (restoredMessage) {
+                localStorage.removeItem(BackupManagerWeb.RESTORED_MESSAGE_KEY);
+                UIManager.showToast(restoredMessage, 'success');
+            }
 
             // Resume tutorial if flagged before a reload
             const resumeTutorial = localStorage.getItem('resumeTutorialAfterReload');

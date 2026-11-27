@@ -14,102 +14,26 @@ const BackupManagerTauri = {
     restoreFile: null,      // { name, path, size } — set when user picks a file
     _restoreData: null,     // Parsed JSON backup data
 
-    // ── Utilities ─────────────────────────────────────────────────────────────
+    // ── Counts, selection and size: BackupManagerWeb's (Issue #354) ─────────
 
     formatBytes(bytes) {
-        if (bytes === 0) return '0 B';
-        const k = 1024;
-        const sizes = ['B', 'KB', 'MB', 'GB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        return BackupManagerWeb.formatBytes(bytes);
     },
 
-    // ── Counts (identical logic to BackupManagerWeb) ──────────────────────────
-
     async countDataStoreItems() {
-        const counts = {
-            settings: 1,
-            locations: 0,
-            telescopes: 0,
-            sensors: 0,
-            filters: 0,
-            pinnedTargets: 0,
-            toDoTargets: 0,
-            imagingProjects: 0,
-            imagingSessions: 0,
-            imagingPrograms: 0,
-            targets: 0
-        };
-
-        try {
-            counts.locations      = (await DBManager.getAll(APP_CONFIG.STORES.LOCATIONS)).length;
-            counts.telescopes     = (await DBManager.getAll(APP_CONFIG.STORES.TELESCOPES)).length;
-            counts.sensors        = (await DBManager.getAll(APP_CONFIG.STORES.SENSORS)).length;
-            counts.filters        = (await DBManager.getAll(APP_CONFIG.STORES.FILTERS)).length;
-            counts.pinnedTargets  = (await DBManager.getAll(APP_CONFIG.STORES.PINNED_TARGETS)).length;
-            counts.toDoTargets    = (await DBManager.getAll(APP_CONFIG.STORES.TODO_TARGETS)).length;
-            counts.imagingProjects = (await DBManager.getAll(APP_CONFIG.STORES.IMAGING_PROJECTS)).length;
-            counts.imagingSessions = (await DBManager.getAll(APP_CONFIG.STORES.IMAGING_SESSIONS)).length;
-            counts.imagingPrograms = (await DBManager.getAll(APP_CONFIG.STORES.IMAGING_PROGRAMS)).length;
-            counts.targets        = (await DBManager.getAll(APP_CONFIG.STORES.TARGETS)).length;
-        } catch (error) {
-            console.error('Error counting data store items:', error);
-        }
-
-        return counts;
+        return BackupManagerWeb.countDataStoreItems();
     },
 
     updateBackupCounts(counts) {
-        document.getElementById('backup-count-settings')?.textContent && (document.getElementById('backup-count-settings').textContent = `(${counts.settings})`);
-        document.getElementById('backup-count-locations') && (document.getElementById('backup-count-locations').textContent = `(${counts.locations})`);
-        document.getElementById('backup-count-telescopes') && (document.getElementById('backup-count-telescopes').textContent = `(${counts.telescopes})`);
-        document.getElementById('backup-count-sensors') && (document.getElementById('backup-count-sensors').textContent = `(${counts.sensors})`);
-        document.getElementById('backup-count-filters') && (document.getElementById('backup-count-filters').textContent = `(${counts.filters})`);
-        document.getElementById('backup-count-pinned') && (document.getElementById('backup-count-pinned').textContent = `(${counts.pinnedTargets})`);
-        document.getElementById('backup-count-todo') && (document.getElementById('backup-count-todo').textContent = `(${counts.toDoTargets})`);
-        document.getElementById('backup-count-imaging') && (document.getElementById('backup-count-imaging').textContent = `(${counts.imagingProjects} / ${counts.imagingSessions})`);
-        document.getElementById('backup-count-programs') && (document.getElementById('backup-count-programs').textContent = `(${counts.imagingPrograms})`);
-        document.getElementById('backup-count-targets') && (document.getElementById('backup-count-targets').textContent = `(${counts.targets})`);
+        BackupManagerWeb.updateBackupCounts(counts);
     },
-
-    // ── Backup store selection (identical to BackupManagerWeb) ────────────────
 
     getSelectedBackupStores() {
-        const selectedStores = [];
-        if (document.getElementById('backup-settings')?.checked) selectedStores.push('settings');
-        if (document.getElementById('backup-locations')?.checked) selectedStores.push('locations');
-        if (document.getElementById('backup-telescopes')?.checked) selectedStores.push('telescopes');
-        if (document.getElementById('backup-sensors')?.checked) selectedStores.push('sensors');
-        if (document.getElementById('backup-filters')?.checked) selectedStores.push('filters');
-        if (document.getElementById('backup-pinned')?.checked) selectedStores.push('pinnedTargets');
-        if (document.getElementById('backup-todo')?.checked) selectedStores.push('toDoTargets');
-        if (document.getElementById('backup-imaging')?.checked) {
-            selectedStores.push('imagingProjects');
-            selectedStores.push('imagingSessions');
-        }
-        if (document.getElementById('backup-programs')?.checked) selectedStores.push('imagingPrograms');
-        if (document.getElementById('backup-targets')?.checked) selectedStores.push('targets');
-        return selectedStores;
-    },
-
-    backupSelectAll(checked) {
-        document.querySelectorAll('#modal-body input[type="checkbox"]').forEach(cb => {
-            cb.checked = checked;
-        });
-    },
-
-    async calculateBackupSize(selectedStores) {
-        return BackupManagerWeb.calculateBackupSize.call(this, selectedStores);
+        return BackupManagerWeb.getSelectedBackupStores();
     },
 
     async updateBackupSizeEstimates() {
-        const selectedStores = this.getSelectedBackupStores();
-        const uncompressedSize = await this.calculateBackupSize(selectedStores);
-        const hasTargets = selectedStores.includes('targets');
-        const compressionRatio = hasTargets ? 0.09 : 0.26;
-        const compressedSize = Math.floor(uncompressedSize * compressionRatio);
-        document.getElementById('backup-size-uncompressed').textContent = this.formatBytes(uncompressedSize);
-        document.getElementById('backup-size-compressed').textContent = '~' + this.formatBytes(compressedSize);
+        return BackupManagerWeb.updateBackupSizeEstimates();
     },
 
     // ── Generate backup data (identical to BackupManagerWeb) ─────────────────
@@ -152,7 +76,8 @@ const BackupManagerTauri = {
             const zipBlob = await zip.generateAsync({ type: 'uint8array', compression: 'DEFLATE' });
             await this._writeBackupFile(savePath, zipBlob);
 
-            await SettingsManager.saveSetting('lastBackupTimestamp', TimeUtils.nowDTG());
+            // Epoch ms, which a change of time zone can't shift (Issue #346)
+            await SettingsManager.saveSetting('lastBackupTimestamp', Date.now());
             BackupReminder.onBackupComplete();
 
             const fileSize = this.formatBytes(zipBlob.length);
@@ -193,7 +118,7 @@ const BackupManagerTauri = {
         if (!lastChange) return;
 
         // Don't fire if a backup has already been made after the last change.
-        // lastChange is epoch ms; lastBackup is a DTG string.
+        // Both are epoch ms; a lastBackup saved before Issue #346 is a DTG.
         const lastBackup = SettingsManager.getSetting('lastBackupTimestamp');
         if (lastBackup && TimeUtils.dtgToMs(lastBackup) >= Number(lastChange)) return;
 
@@ -246,7 +171,8 @@ const BackupManagerTauri = {
             const zipBlob = await zip.generateAsync({ type: 'uint8array', compression: 'DEFLATE' });
             await this._writeBackupFile(savePath, zipBlob);
 
-            await SettingsManager.saveSetting('lastBackupTimestamp', TimeUtils.nowDTG());
+            // Epoch ms, which a change of time zone can't shift (Issue #346)
+            await SettingsManager.saveSetting('lastBackupTimestamp', Date.now());
             BackupReminder.onBackupComplete();
             UIManager.showToast(fromLastSession ? 'Auto-backup saved: changes from your last session' : 'Auto-backup saved', 'success');
         } catch (error) {

@@ -439,7 +439,6 @@ const UIManager = {
                 saveBtn.className = 'btn-primary btn-sm';
                 saveBtn.textContent = 'Restore';
                 saveBtn.disabled = true;
-                saveBtn.style.opacity = '0.5';
                 saveBtn.addEventListener('click', () => {
                     if (onAction) {
                         onAction('restore', modalBody);
@@ -451,7 +450,6 @@ const UIManager = {
                 saveBtn.className = 'btn-primary btn-sm';
                 saveBtn.textContent = 'Continue';
                 saveBtn.disabled = true;
-                saveBtn.style.opacity = '0.5';
                 saveBtn.addEventListener('click', () => {
                     if (onAction) {
                         onAction('continue', modalBody);
@@ -2659,18 +2657,13 @@ const UIManager = {
                     const file = e.target.files[0];
                     if (file) {
                         selectedFileDiv.textContent = `Selected: ${file.name} (${BackupManager.formatBytes(file.size)})`;
-                        selectedFileDiv.style.color = 'var(--primary-color)';
-                        selectedFileDiv.style.fontStyle = 'normal';
+                        selectedFileDiv.classList.add('chosen');
 
                         // Store file for later use
                         BackupManager.restoreFile = file;
 
-                        // Enable Continue button (we'll add this next)
                         const continueBtn = document.getElementById('modal-save-btn');
-                        if (continueBtn) {
-                            continueBtn.disabled = false;
-                            continueBtn.style.opacity = '1';
-                        }
+                        if (continueBtn) continueBtn.disabled = false;
                     }
                 });
             }

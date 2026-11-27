@@ -76,69 +76,15 @@ const BackupManagerWeb = {
     },
 
     /**
-     * Calculate estimated backup size based on selected stores
+     * Estimated backup size of the selected stores, from the record counts
+     * and typical bytes per record. Backups leave out Best Months, so a
+     * location's estimate holds none (Issue #354).
      */
     async calculateBackupSize(selectedStores) {
-        let totalSize = 0;
-
-        // Get actual counts
         const counts = await this.countDataStoreItems();
-
-        // Check if Best Months calculations have been run (stored in targets, not locations)
-        let locationsWithBestMonths = 0;
-        if (selectedStores.includes('targets')) {
-            // Check a sample target to see if it has Best Months data
-            const targets = await DBManager.getAll(APP_CONFIG.STORES.TARGETS);
-            if (targets.length > 0) {
-                const sampleTarget = targets[0];
-                if (sampleTarget.bestMonth && typeof sampleTarget.bestMonth === 'object') {
-                    // Count how many locations have calculations (keys in bestMonth object)
-                    locationsWithBestMonths = Object.keys(sampleTarget.bestMonth).length;
-                }
-            }
-        }
-
-        // Refined estimates based on real data
-        const estimates = {
-            settings: 500,            // ~500 bytes (negligible)
-            locationsBase: 1000,      // ~1 KB per location without Best Months
-            bestMonthsPerTarget: 214, // ~214 bytes per target in Best Months data
-            telescopes: 500,          // ~500 bytes per telescope
-            sensors: 500,             // ~500 bytes per sensor
-            filters: 150,             // ~150 bytes per filter
-            pinnedTargets: 100,       // Conservative estimate
-            toDoTargets: 100,         // Conservative estimate
-            imagingProjects: 2000,    // ~2 KB per project
-            imagingSessions: 1200,    // ~1.2 KB per session
-            imagingPrograms: 300,     // ~300 bytes per program
-            targets: 292              // 4265KB / 14593 = 292 bytes per target
-        };
-
-        selectedStores.forEach(store => {
-            if (store === 'locations') {
-                // Base location size
-                totalSize += counts.locations * estimates.locationsBase;
-                // Add Best Months data (214 bytes per target per location with calculations)
-                if (locationsWithBestMonths > 0) {
-                    totalSize += locationsWithBestMonths * counts.targets * estimates.bestMonthsPerTarget;
-                }
-            } else if (store === 'imagingProjects') {
-                totalSize += counts.imagingProjects * estimates.imagingProjects;
-            } else if (store === 'imagingSessions') {
-                totalSize += counts.imagingSessions * estimates.imagingSessions;
-            } else if (store === 'settings') {
-                totalSize += estimates.settings;
-            } else {
-                const count = counts[store] || 0;
-                const estimate = estimates[store] || 100;
-                totalSize += count * estimate;
-            }
-        });
-
-        // Add overhead for JSON structure (version, exportDate, etc.)
-        totalSize += 2000; // ~2KB overhead
-
-        return totalSize;
+        const perRecord = APP_CONFIG.BACKUP_SIZE_BYTES_PER_RECORD;
+        return selectedStores.reduce((total, store) => total + counts[store] * perRecord[store],
+            APP_CONFIG.BACKUP_SIZE_OVERHEAD_BYTES);
     },
 
     /**
@@ -158,11 +104,8 @@ const BackupManagerWeb = {
     async updateBackupSizeEstimates() {
         const selectedStores = this.getSelectedBackupStores();
         const uncompressedSize = await this.calculateBackupSize(selectedStores);
-
-        // Compression ratio based on real data: ~9% with targets, ~26% without
-        const hasTargets = selectedStores.includes('targets');
-        const compressionRatio = hasTargets ? 0.09 : 0.26;
-        const compressedSize = Math.floor(uncompressedSize * compressionRatio);
+        const ratio = APP_CONFIG.BACKUP_COMPRESSION_RATIO[selectedStores.includes('targets') ? 'targets' : 'userData'];
+        const compressedSize = Math.floor(uncompressedSize * ratio);
 
         document.getElementById('backup-size-uncompressed').textContent = this.formatBytes(uncompressedSize);
         document.getElementById('backup-size-compressed').textContent = '~' + this.formatBytes(compressedSize);
@@ -191,16 +134,6 @@ const BackupManagerWeb = {
     },
 
     /**
-     * Select/deselect all backup checkboxes
-     */
-    backupSelectAll(checked) {
-        const checkboxes = document.querySelectorAll('#modal-body input[type="checkbox"]');
-        checkboxes.forEach(cb => {
-            cb.checked = checked;
-        });
-    },
-
-    /**
      * Handle NEW Backup save action
      */
     scheduleAutoBackup() {
@@ -226,7 +159,7 @@ const BackupManagerWeb = {
         if (!lastChange) return;
 
         // Don't fire if a backup has already been made after the last change.
-        // lastChange is epoch ms; lastBackup is a DTG string.
+        // Both are epoch ms; a lastBackup saved before Issue #346 is a DTG.
         const lastBackup = SettingsManager.getSetting('lastBackupTimestamp');
         if (lastBackup && TimeUtils.dtgToMs(lastBackup) >= Number(lastChange)) return;
 
@@ -283,7 +216,7 @@ const BackupManagerWeb = {
 
             this.downloadBlob(zipBlob, filename + '.zip');
 
-            await SettingsManager.saveSetting('lastBackupTimestamp', TimeUtils.nowDTG());
+            await SettingsManager.saveSetting('lastBackupTimestamp', Date.now());
             BackupReminder.onBackupComplete();
             // A page can't tell whether the browser saved a download it
             // started, so the message doesn't claim it did (Issue #312)
@@ -299,7 +232,7 @@ const BackupManagerWeb = {
         const selectedStores = this.getSelectedBackupStores();
 
         if (selectedStores.length === 0) {
-            this.showToast('Please select at least one data store to backup', 'warning');
+            UIManager.showToast('Please select at least one data store to backup', 'warning');
             return;
         }
 
@@ -315,7 +248,7 @@ const BackupManagerWeb = {
 
         } catch (error) {
             console.error('Backup failed:', error);
-            this.showToast('Backup failed: ' + error.message, 'error');
+            UIManager.showToast('Backup failed: ' + (error.message ?? error), 'error');
         }
     },
 
@@ -335,10 +268,11 @@ const BackupManagerWeb = {
             exportDate: new Date().toISOString()
         };
 
-        // Add settings if selected
+        // The app-settings record, never another record in that store such
+        // as target-version; none saved yet, no settings (Issue #354)
         if (selectedStores.includes('settings')) {
-            const settings = await DBManager.getAll(APP_CONFIG.STORES.SETTINGS);
-            backup.settings = settings.length > 0 ? settings[0] : {};
+            const settings = await DBManager.get(APP_CONFIG.STORES.SETTINGS, 'app-settings');
+            if (settings) backup.settings = settings;
         }
 
         // Add locations if selected
@@ -424,8 +358,8 @@ const BackupManagerWeb = {
 
         this.downloadBlob(zipBlob, filename + '.zip');
 
-        // Update last backup timestamp
-        await SettingsManager.saveSetting('lastBackupTimestamp', TimeUtils.nowDTG());
+        // Epoch ms, which a change of time zone can't shift (Issue #346)
+        await SettingsManager.saveSetting('lastBackupTimestamp', Date.now());
         BackupReminder.onBackupComplete();
 
         // Show success modal
@@ -546,8 +480,9 @@ const BackupManagerWeb = {
             const zip = new JSZip();
             const zipContent = await zip.loadAsync(file);
 
-            // Find the JSON file inside the ZIP
-            const jsonFileName = Object.keys(zipContent.files)[0];
+            const jsonFileName = this.backupEntryName(Object.values(zipContent.files)
+                .filter(entry => !entry.dir).map(entry => entry.name));
+            if (!jsonFileName) throw new Error('this zip holds no backup (.json) file.');
             const jsonContent = await zipContent.files[jsonFileName].async('string');
             return JSON.parse(jsonContent);
 
@@ -559,6 +494,19 @@ const BackupManagerWeb = {
         } else {
             throw new Error('Unsupported file format. Please select a .zip or .json backup file.');
         }
+    },
+
+    /**
+     * The backup in a zip: its first .json file, skipping what macOS adds
+     * when it zips a folder (__MACOSX/, ._ copies), so a backup zipped
+     * again by hand still restores (Issue #354). Desktop: read_zip in
+     * commands/backup.rs does the same.
+     */
+    backupEntryName(names) {
+        return names.find(name => {
+            const base = name.split('/').pop();
+            return base.toLowerCase().endsWith('.json') && !base.startsWith('._') && !name.startsWith('__MACOSX/');
+        });
     },
 
     /**
@@ -730,8 +678,8 @@ const BackupManagerWeb = {
 
     /**
      * One store's data as text that is equal exactly when the data is: record
-     * order, key order, and null vs missing fields don't matter, so web and
-     * desktop data compare equal.
+     * order, key order, and null, empty or missing fields don't matter, so
+     * web and desktop data compare equal (Issues #249, #353).
      */
     canonicalStore(store, data) {
         if (store.key === 'settings') {
@@ -745,7 +693,9 @@ const BackupManagerWeb = {
     },
 
     /**
-     * JSON with object keys sorted and null/undefined values dropped
+     * JSON with object keys sorted and null, undefined and '' values
+     * dropped. SQLite stores an empty number field as NULL, IndexedDB as
+     * it was saved (Issue #353).
      */
     canonicalJson(value) {
         if (Array.isArray(value)) {
@@ -753,7 +703,7 @@ const BackupManagerWeb = {
         }
         if (value !== null && typeof value === 'object') {
             const entries = Object.keys(value).sort()
-                .filter(key => value[key] !== null && value[key] !== undefined)
+                .filter(key => value[key] !== null && value[key] !== undefined && value[key] !== '')
                 .map(key => `${JSON.stringify(key)}:${this.canonicalJson(value[key])}`);
             return `{${entries.join(',')}}`;
         }
@@ -803,7 +753,6 @@ const BackupManagerWeb = {
             if (confirmCheckbox && restoreBtn) {
                 confirmCheckbox.addEventListener('change', () => {
                     restoreBtn.disabled = !confirmCheckbox.checked;
-                    restoreBtn.style.opacity = confirmCheckbox.checked ? '1' : '0.5';
                 });
             }
         }, 0);
@@ -836,26 +785,26 @@ const BackupManagerWeb = {
         }
 
         let html = `
-            <div style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 4px; padding: 1rem;">
-                <div style="display: grid; grid-template-columns: auto 1fr; gap: 0.5rem 1rem; font-size: 0.9rem;">
-                    <span style="color: var(--text-secondary);">File:</span>
-                    <span style="font-weight: 500;">${HtmlUtils.escapeHtml(this.restoreFile.name)}</span>
+            <div class="restore-file-card">
+                <div class="restore-file-details">
+                    <span class="restore-file-label">File:</span>
+                    <span class="restore-file-name">${HtmlUtils.escapeHtml(this.restoreFile.name)}</span>
 
-                    <span style="color: var(--text-secondary);">Created:</span>
+                    <span class="restore-file-label">Created:</span>
                     <span>${exportDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} at ${exportDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</span>
 
-                    <span style="color: var(--text-secondary);">Version:</span>
+                    <span class="restore-file-label">Version:</span>
                     <span>${HtmlUtils.escapeHtml(backupData.version ?? 'Unknown')}</span>
 
-                    <span style="color: var(--text-secondary);">Database:</span>
+                    <span class="restore-file-label">Database:</span>
                     <span>${HtmlUtils.escapeHtml(backupData.dbVersion === undefined || backupData.dbVersion === null
                         ? 'Unknown'
                         : BackupManagerWeb.describeSchemaVersion(backupData.dbVersion, backupData.platform))}</span>
 
-                    <span style="color: var(--text-secondary);">Target:</span>
+                    <span class="restore-file-label">Target:</span>
                     <span>${HtmlUtils.escapeHtml(backupData.targetVersion ?? '—')}</span>
 
-                    <span style="color: var(--text-secondary);">Size:</span>
+                    <span class="restore-file-label">Size:</span>
                     <span>${this.formatBytes(this.restoreFile.size)}</span>
                 </div>
         `;
@@ -938,34 +887,21 @@ const BackupManagerWeb = {
                     status = `<span class="backup-restore-store-status">${identical ? 'identical' : 'differs'}</span>`;
                 }
 
-                // Special handling for imagingSessions - make it disabled and linked to projects
-                if (store.key === 'imagingSessions') {
-                    html += `
-                        <div class="${rowClass}">
-                            <input type="checkbox" id="restore-${store.key}" checked disabled data-store="${store.key}">
-                            <label for="restore-${store.key}" class="backup-restore-checkbox-label" style="opacity: 0.6;">${store.name}</label>
-                            <span class="backup-restore-count-compare" style="opacity: 0.6;">
-                                ${currentCount}
-                                <span class="backup-restore-count-arrow">→</span>
-                                ${backupCount}
-                            </span>
-                            ${status}
-                        </div>
-                    `;
-                } else {
-                    html += `
-                        <div class="${rowClass}">
-                            <input type="checkbox" id="restore-${store.key}" checked data-store="${store.key}">
-                            <label for="restore-${store.key}" class="backup-restore-checkbox-label">${store.name}</label>
-                            <span class="backup-restore-count-compare">
-                                ${currentCount}
-                                <span class="backup-restore-count-arrow">→</span>
-                                ${backupCount}
-                            </span>
-                            ${status}
-                        </div>
-                    `;
-                }
+                // Sessions are restored with projects: shown, not tickable
+                const linked = store.key === 'imagingSessions';
+                if (linked) rowClass += ' linked';
+                html += `
+                    <div class="${rowClass}">
+                        <input type="checkbox" id="restore-${store.key}" checked${linked ? ' disabled' : ''} data-store="${store.key}">
+                        <label for="restore-${store.key}" class="backup-restore-checkbox-label">${store.name}</label>
+                        <span class="backup-restore-count-compare">
+                            ${currentCount}
+                            <span class="backup-restore-count-arrow">→</span>
+                            ${backupCount}
+                        </span>
+                        ${status}
+                    </div>
+                `;
             }
         });
 
@@ -1005,6 +941,12 @@ const BackupManagerWeb = {
             return;
         }
 
+        // Until the reload, the app still holds the old data in memory, and
+        // anything that saved it would write it over the restore: stop the
+        // auto-backup timer and a Best Months run first (Issue #354)
+        clearTimeout(BackupManager._autoBackupTimer);
+        BestMonths.cancelCalculation();
+
         try {
             UIManager.showToast('Restoring data...', 'info');
 
@@ -1015,28 +957,27 @@ const BackupManagerWeb = {
             // (Not with settings: marking saves the in-memory settings over them.)
             if (!selectedStores.includes('settings')) {
                 await UIManager.markDataChanged();
+                clearTimeout(BackupManager._autoBackupTimer);
             }
-
-            // Close modal and show success
-            UIManager.closeModal();
-            UIManager.showToast(`Successfully restored ${selectedStores.length} data stores`, 'success');
-
-            // Reload the page to reflect changes
-            setTimeout(() => {
-                // If a tutorial is active, flag it to resume after reload
-                const activeTutorial = TutorialEngine._currentTutorial?.id;
-                if (activeTutorial) {
-                    localStorage.setItem('resumeTutorialAfterReload', activeTutorial);
-                }
-                location.reload();
-            }, 1500);
-
         } catch (error) {
             console.error('Restore failed:', error);
             // Every restore runs in one transaction, so a failure changes nothing (Issue #299)
             UIManager.showToast('Restore failed, nothing was changed: ' + (error.message ?? error), 'error', APP_CONFIG.TOAST_LONG_DURATION_MS);
+            await BackupManager.initAutoBackup();
+            return;
         }
+
+        // Reload at once; the success message shows after it (App.init)
+        const activeTutorial = TutorialEngine._currentTutorial?.id;
+        if (activeTutorial) {
+            localStorage.setItem('resumeTutorialAfterReload', activeTutorial);
+        }
+        localStorage.setItem(this.RESTORED_MESSAGE_KEY, `Successfully restored ${selectedStores.length} data stores`);
+        location.reload();
     },
+
+    // The success message a restore leaves for the page after its reload
+    RESTORED_MESSAGE_KEY: 'restoredMessageAfterReload',
 
     /**
      * Get list of currently selected restore stores

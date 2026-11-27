@@ -972,13 +972,15 @@ const ImagingLogView = {
         const filter = this._getSessionDropdownValue('session-filter-menu');
         const rotation = parseFloat(document.getElementById('session-rotation').value) || 0;
 
+        // An empty number is null, as SQLite stores it, so web and desktop
+        // hold the same session (Issue #353)
         const tempSetpointValue = document.getElementById('session-temp-setpoint').value;
-        const tempSetpoint = tempSetpointValue === '' ? '' : parseFloat(tempSetpointValue);
+        const tempSetpoint = tempSetpointValue === '' ? null : parseFloat(tempSetpointValue);
         const bin = this._getSessionDropdownValue('session-bin-menu') || '1x1';
         const gainValue = document.getElementById('session-gain').value;
-        const gain = gainValue === '' ? '' : parseInt(gainValue);
+        const gain = gainValue === '' ? null : parseInt(gainValue);
         const offsetValue = document.getElementById('session-offset').value;
-        const offset = offsetValue === '' ? '' : parseInt(offsetValue);
+        const offset = offsetValue === '' ? null : parseInt(offsetValue);
         const moonIllumination = parseInt(document.getElementById('session-moon-illumination').value) || 0;
 
         const moonSetInput = document.getElementById('session-moon-set');

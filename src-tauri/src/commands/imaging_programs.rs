@@ -68,23 +68,24 @@ pub(crate) mod sql {
     }
 
     pub fn get_program(conn: &Connection, id: i64) -> Result<Option<serde_json::Value>, String> {
+        // No status: the Programs tab works it out from the sessions (#338),
+        // and web programs have none, so the two compare equal (Issue #353)
         let result = conn.query_row(
-            "SELECT id, name, status, catalog_prefix, max_number, created
+            "SELECT id, name, catalog_prefix, max_number, created
              FROM imaging_programs WHERE id = ?1",
             rusqlite::params![id],
             |row| {
                 Ok((
                     row.get::<_, i64>(0)?,
                     row.get::<_, String>(1)?,
-                    row.get::<_, String>(2)?,
-                    row.get::<_, Option<String>>(3)?,
-                    row.get::<_, Option<i64>>(4)?,
-                    row.get::<_, String>(5)?,
+                    row.get::<_, Option<String>>(2)?,
+                    row.get::<_, Option<i64>>(3)?,
+                    row.get::<_, String>(4)?,
                 ))
             },
         );
 
-        let (pid, name, status, catalog_prefix, max_number, created) = match result {
+        let (pid, name, catalog_prefix, max_number, created) = match result {
             Ok(row) => row,
             Err(rusqlite::Error::QueryReturnedNoRows) => return Ok(None),
             Err(e) => return Err(e.to_string()),
@@ -95,7 +96,6 @@ pub(crate) mod sql {
             return Ok(Some(serde_json::json!({
                 "id":            pid,
                 "name":          name,
-                "status":        status,
                 "catalogPrefix": catalog_prefix,
                 "maxNumber":     max_number,
                 "created":       created,
@@ -117,7 +117,6 @@ pub(crate) mod sql {
         Ok(Some(serde_json::json!({
             "id":                 pid,
             "name":               name,
-            "status":             status,
             "created":            created,
             "targetDesignations": designations,
         })))
@@ -216,11 +215,11 @@ mod tests {
     use serde_json::json;
 
     fn messier() -> serde_json::Value {
-        json!({ "name": "Messier", "status": "Started", "catalogPrefix": "M", "maxNumber": 110, "created": "2026-01-01" })
+        json!({ "name": "Messier", "catalogPrefix": "M", "maxNumber": 110, "created": "2026-01-01" })
     }
 
     fn favourites() -> serde_json::Value {
-        json!({ "name": "Favourites", "status": "Started", "created": "2026-02-01",
+        json!({ "name": "Favourites", "created": "2026-02-01",
                 "targetDesignations": ["NGC 7000", "IC 1396", "Sh2-129"] })
     }
 
@@ -263,11 +262,20 @@ mod tests {
             .as_i64()
             .unwrap();
         let mut changed = favourites();
-        changed["status"] = json!("Complete");
+        changed["name"] = json!("Summer");
         changed["targetDesignations"] = json!(["IC 1396"]);
         let updated = update_program(&mut conn, id, &changed).unwrap();
-        assert_eq!(updated["status"], "Complete");
+        assert_eq!(updated["name"], "Summer");
         assert_eq!(updated["targetDesignations"], json!(["IC 1396"]));
+    }
+
+    #[test]
+    fn a_program_has_no_status() {
+        let mut conn = test_conn();
+        let mut started = messier();
+        started["status"] = json!("Started");
+        let created = create_program(&mut conn, &started).unwrap();
+        assert_eq!(created.get("status"), None);
     }
 
     #[test]

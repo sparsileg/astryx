@@ -20,7 +20,7 @@ const SettingsManager = {
         lastBestMonthsCalculated: null, // Timestamp of last best months calc
         lastBestMonthsLocation: null,  // Location used for last best months calc
         autoBackupEnabled: true,       // Auto-backup on data change
-        lastChangeTimestamp: null,     // DTG of last data change
+        lastChangeTimestamp: null,     // epoch ms of last data change
         learnedSubGapS: APP_CONFIG.DEFAULT_SUB_GAP_S,             // Learned camera download + overhead (issue #145)
         learnedDitherDurationS: APP_CONFIG.DEFAULT_DITHER_DURATION_S, // Learned dither + settle duration (issue #145)
         framesPerDither: APP_CONFIG.DEFAULT_FRAMES_PER_DITHER,    // User-settable frames between dithers (issue #145)
@@ -303,6 +303,21 @@ const SettingsManager = {
         return this.settings.bestMonthsVersions[locationName] === APP_CONFIG.BEST_MONTHS_VERSION;
     },
 
+    /**
+     * Forget the Best Months altitudes and versions recorded for locations
+     * not in names; saves only when there were any (Issue #354)
+     */
+    async forgetBestMonthsExcept(names) {
+        const keep = entries => Object.fromEntries(Object.entries(entries).filter(([name]) => names.includes(name)));
+        const altitudes = keep(this.settings.bestMonthsAltitudes);
+        const versions = keep(this.settings.bestMonthsVersions);
+        if (Object.keys(altitudes).length === Object.keys(this.settings.bestMonthsAltitudes).length &&
+            Object.keys(versions).length === Object.keys(this.settings.bestMonthsVersions).length) return;
+        this.settings.bestMonthsAltitudes = altitudes;
+        this.settings.bestMonthsVersions = versions;
+        await this.saveSettings();
+    },
+
     async clearBestMonthsAltitudes() {
         this.settings.bestMonthsAltitudes = {};
         this.settings.bestMonthsVersions = {};
@@ -440,8 +455,8 @@ const SettingsManager = {
         return this.settings.lastChangeTimestamp;
     },
 
-    async setLastChangeTimestamp(dtg) {
-        this.settings.lastChangeTimestamp = dtg;
+    async setLastChangeTimestamp(ms) {
+        this.settings.lastChangeTimestamp = ms;
         await this.saveSettings();
     },
 

@@ -2496,18 +2496,18 @@
 
       <!-- Restore File Picker Template -->
       <template id="restore-picker-template">
-        <div style="text-align: center; padding: 2rem;">
-          <p style="margin-bottom: 1.5rem; color: var(--text-color);">
+        <div class="restore-picker">
+          <p class="restore-picker-prompt">
             Select a backup file to restore:
           </p>
 
-          <input type="file" id="restore-file-input" accept=".zip,.json" style="display: none;">
+          <input type="file" id="restore-file-input" accept=".zip,.json" hidden>
 
-          <button type="button" class="btn-primary" id="restore-browse-btn" style="padding: 0.75rem 2rem;">
+          <button type="button" class="btn-primary" id="restore-browse-btn">
             Browse Files
           </button>
 
-          <div id="restore-selected-file" style="margin-top: 1rem; color: var(--text-secondary); font-style: italic;">
+          <div id="restore-selected-file">
             No file selected
           </div>
         </div>
@@ -2515,7 +2515,7 @@
 
       <!-- Restore Confirmation Template -->
       <template id="restore-confirm-template">
-        <div id="restore-file-info" style="margin-bottom: 1.5rem;">
+        <div id="restore-file-info">
           <!-- File metadata will be inserted here -->
         </div>
 
@@ -2524,7 +2524,7 @@
           <button type="button" class="backup-restore-select-btn" id="restore-select-none">Select None</button>
         </div>
 
-        <div id="restore-stores-list" style="margin-bottom: 1.5rem;">
+        <div id="restore-stores-list">
           <!-- Data stores checkboxes will be inserted here -->
         </div>
 
@@ -2533,7 +2533,7 @@
             ⚠️ IMPORTANT: This will permanently delete your current data
           </div>
           <div class="backup-restore-warning-content">
-            <p style="margin-bottom: 0.5rem;"><strong>Backup your current data first!</strong> This restore operation will:</p>
+            <p class="restore-warning-lead"><strong>Backup your current data first!</strong> This restore operation will:</p>
             <ul>
               <li>Delete all selected data stores</li>
               <li>Replace them with backup file contents</li>
@@ -2550,18 +2550,18 @@
         </div>
       </template>
 
-      <!-- Version Mismatch Modal Template -->
+      <!-- Backup From a Newer Astryx Template -->
       <template id="newer-backup-template">
-        <div style="text-align: center; padding: 2rem;">
-          <div style="font-size: 3rem; margin-bottom: 1rem;">⚠️</div>
+        <div class="newer-backup">
+          <div class="newer-backup-icon">⚠️</div>
 
-          <h3 style="color: var(--error-color); margin-bottom: 1rem;">Backup From a Newer Astryx</h3>
+          <h3>Backup From a Newer Astryx</h3>
 
-          <div id="newer-backup-message" style="color: var(--text-color); line-height: 1.6; margin-bottom: 1.5rem;">
+          <div id="newer-backup-message">
             <!-- Version details will be inserted here -->
           </div>
 
-          <p style="color: var(--text-secondary); font-size: 0.9rem;">
+          <p class="newer-backup-note">
             Update Astryx to the latest version, then restore this backup.
           </p>
         </div>

@@ -78,8 +78,8 @@ See [Getting Started](getting-started.md) for these settings.
 ## The Backup Reminder
 
 At the bottom of the sidebar, **Last backup** says how long ago you
-last backed up, or **never**. It turns amber after 7 days and orange
-after 14. When Astryx starts, and once a day while it's open, it also reminds you
+last backed up, or **never**. It turns the theme's warning color (amber
+or orange) after 7 days, and bold after 14. When Astryx starts, and once a day while it's open, it also reminds you
 if your last backup is older than **Backup reminder every** in Settings.
 
 Where your data lives depends on which Astryx you use. The web version
@@ -108,7 +108,8 @@ the bottom of the sidebar.
 6. Click **Restore**.
 
 Astryx replaces each selected kind of data with the backup's copy, then
-reloads.
+reloads at once and says how many kinds of data it restored. Locations
+that weren't in the backup also lose their Best Months.
 
 ::: note
 Restoring replaces, it doesn't merge. A restored To Do List, for example,

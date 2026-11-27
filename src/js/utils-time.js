@@ -216,7 +216,8 @@ const TimeUtils = {
 
     /**
      * Convert a DTG string (YYYYMMDD-HHMMSS, local time) to epoch ms.
-     * Older settings hold epoch ms, which pass through unchanged.
+     * Reads lastBackupTimestamp: epoch ms since Issue #346, which pass
+     * through unchanged, or a DTG saved before then.
      * @returns {number} Epoch ms, NaN if unparseable
      */
     dtgToMs(dtg) {
